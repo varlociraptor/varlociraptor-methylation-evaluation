@@ -1,11 +1,13 @@
+configfile: "config/config.yaml"
+
 rule get_genome:
     output:
         "resources/genome.fasta",
     params:
-        species="homo_sapiens",
-        datatype="dna",
-        build="GRCh38",
-        release="110",
+        species=config["sample"]["species"],
+        datatype=config["sample"]["datatype"],
+        build=config["sample"]["build"],
+        release=config["sample"]["release"],
     log:
         "logs/get_genome.log",
     cache: "omit-software"  # save space and time with between workflow caching (see docs)
@@ -16,11 +18,11 @@ rule get_chromosome:
     output:
         "resources/chr1.fasta",
     params:
-        species="homo_sapiens",
-        datatype="dna",
-        build="GRCh38",
-        release="110",
-        chromosome="I",  # optional: restrict to chromosome
+        species=config["sample"]["species"],
+        datatype=config["sample"]["datatype"],
+        build=config["sample"]["build"],
+        release=config["sample"]["release"],
+        chromosome=config["sample"]["chromosome"],  # optional: restrict to chromosome
         # branch="plants",  # optional: specify branch
     log:
         "logs/get_genome.log",

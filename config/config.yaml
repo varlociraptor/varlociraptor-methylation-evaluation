@@ -1,0 +1,6 @@
+sample:
+  species: "homo_sapiens"
+  datatype: "dna"
+  build: "GRCh38"
+  release: "110"
+  chromosome: "1"
