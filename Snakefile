@@ -40,3 +40,4 @@ rule find_methylation:
         cd ~/Documents/Promotion/varlociraptor/
         cargo run -- candidates ~/Documents/Promotion/varlociraptor-methylation-evaluation/{input} ~/Documents/Promotion/varlociraptor-methylation-evaluation/{output}
         """
+        
