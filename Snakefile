@@ -28,6 +28,9 @@ rule get_chromosome:
     wrapper:
         "v2.3.2/bio/reference/ensembl-sequence"
 
+
+"""Later    shell: varlociraptor --candidates {input} {output}"""
+
 rule find_methylation:
     input: 
         "resources/genome.fasta",
@@ -41,3 +44,4 @@ rule find_methylation:
         cargo run -- candidates ~/Documents/Promotion/varlociraptor-methylation-evaluation/{input} ~/Documents/Promotion/varlociraptor-methylation-evaluation/{output}
         """
         
+
