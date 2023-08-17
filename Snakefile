@@ -1,6 +1,8 @@
 configfile: "config/config.yaml"
 
+
 sample_config = config["sample"]
+
 
 rule get_genome:
     output:
@@ -15,6 +17,7 @@ rule get_genome:
     cache: "omit-software"  # save space and time with between workflow caching (see docs)
     wrapper:
         "v2.3.2/bio/reference/ensembl-sequence"
+
 
 rule get_chromosome:
     output:
@@ -35,17 +38,16 @@ rule get_chromosome:
 
 """Later    shell: varlociraptor --candidates {input} {output}"""
 
+
 rule find_methylation:
-    input: 
+    input:
         "resources/genome.fasta",
     output:
-        "resources/candidates.vcf",
+        "resources/candidates.bcf",
     log:
         "logs/compute_candidates.log",
-    shell: 
+    shell:
         """ 
         cd ~/Documents/Promotion/varlociraptor/
         cargo run -- candidates ~/Documents/Promotion/varlociraptor-methylation-evaluation/{input} ~/Documents/Promotion/varlociraptor-methylation-evaluation/{output}
         """
-        
-
