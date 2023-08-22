@@ -2,6 +2,7 @@ configfile: "config/config.yaml"
 
 
 sample_config = config["sample"]
+resource_path = config["resource_path"]
 
 
 rule get_genome:
@@ -30,24 +31,48 @@ rule get_chromosome:
         chromosome=sample_config["chromosome"],  # optional: restrict to chromosome
         # branch="plants",  # optional: specify branch
     log:
-        "logs/get_genome.log",
+        "logs/get_chromosome.log",
     cache: "omit-software"  # save space and time with between workflow caching (see docs)
     wrapper:
         "v2.3.2/bio/reference/ensembl-sequence"
 
 
-"""Later    shell: varlociraptor --candidates {input} {output}"""
-
-
-rule find_methylation:
+rule find_candidates:
     input:
-        "resources/genome.fasta",
+        "resources/example-genome.fasta",
     output:
-        "resources/candidates.bcf",
+        "resources/example-candidates.bcf",
     log:
-        "logs/compute_candidates.log",
+        "logs/find_candidates.log",
     shell:
         """ 
         cd ~/Documents/Promotion/varlociraptor/
-        cargo run -- candidates ~/Documents/Promotion/varlociraptor-methylation-evaluation/{input} ~/Documents/Promotion/varlociraptor-methylation-evaluation/{output}
+        cargo run -- methylation-candidates {resource_path}/{input} {resource_path}/{output}
+        """
+
+
+rule sam_to_bam:
+    input:
+        "resources/example-reads.sam",
+    output:
+        "resources/example-reads.bam",
+    log:
+        "logs/sam_to_bam.log",
+    shell:
+        "samtools view -bS resources/example-reads.sam > resources/example-reads.bam"
+
+
+rule compute_meth_probs:
+    input:
+        fasta="resources/example-genome.fasta",
+        bam="resources/example-reads.bam",
+        candidates="resources/example-candidates.bcf",
+    output:
+        "resources/observations.bcf",
+    log:
+        "logs/copute.log",
+    shell:
+        """ 
+        cd ~/Documents/Promotion/varlociraptor/
+        cargo run -- preprocess variants {resource_path}/{input.fasta} --candidates {resource_path}/{input.candidates} --bam {resource_path}/{input.bam} > {resource_path}/{output}
         """

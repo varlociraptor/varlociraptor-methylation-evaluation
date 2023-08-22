@@ -4,3 +4,5 @@ sample:
   build: "GRCh38"
   release: "110"
   chromosome: "1"
+
+resource_path: "~/Documents/Promotion/varlociraptor-methylation-evaluation"
