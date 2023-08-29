@@ -1,4 +1,108 @@
-# Main entrypoint of the workflow. 
-# Please follow the best practices: 
+# Main entrypoint of the workflow.
+# Please follow the best practices:
 # https://snakemake.readthedocs.io/en/stable/snakefiles/best_practices.html,
-# in particular regarding the standardized folder structure mentioned there. 
+# in particular regarding the standardized folder structure mentioned there.
+
+
+configfile: "config/config.yaml"
+
+
+read_type = config["read_type"]
+sample_config = config["sample"]
+
+
+bam_file = (
+    "resources/example-reads-pacbio.bam"
+    if read_type == "PacBio"
+    else "resources/example-reads-illumina.bam"
+)
+
+
+rule get_genome:
+    output:
+        "resources/genome.fasta",
+    params:
+        species=sample_config["species"],
+        datatype=sample_config["datatype"],
+        build=sample_config["build"],
+        release=sample_config["release"],
+    log:
+        "logs/get_genome.log",
+    cache: "omit-software"  # save space and time with between workflow caching (see docs)
+    wrapper:
+        "v2.3.2/bio/reference/ensembl-sequence"
+
+
+rule get_chromosome:
+    output:
+        "resources/chr1.fasta",
+    params:
+        species=sample_config["species"],
+        datatype=sample_config["datatype"],
+        build=sample_config["build"],
+        release=sample_config["release"],
+        chromosome=sample_config["chromosome"],
+    log:
+        "logs/get_chromosome.log",
+    cache: "omit-software"  # save space and time with between workflow caching (see docs)
+    wrapper:
+        "v2.3.2/bio/reference/ensembl-sequence"
+
+
+rule find_candidates:
+    input:
+        "resources/example-genome.fasta",
+    output:
+        "resources/example-candidates.bcf",
+    log:
+        "logs/find_candidates.log",
+    params:
+        resource_path=config["resource_path"],
+    shell:
+        """ 
+        cd ~/Documents/Promotion/varlociraptor/
+        cargo run -- methylation-candidates {params.resource_path}/{input} {params.resource_path}/{output}
+        """
+
+
+rule sam_to_bam:
+    input:
+        "resources/example-reads.sam",
+    output:
+        "resources/example-reads.bam",
+    log:
+        "logs/sam_to_bam.log",
+    shell:
+        "samtools view -bS resources/example-reads.sam > resources/example-reads.bam"
+
+
+rule compute_meth_probs:
+    input:
+        fasta="resources/example-genome.fasta",
+        bam=bam_file,
+        candidates="resources/example-candidates.bcf",
+    output:
+        "resources/observations.bcf",
+    log:
+        "logs/copute.log",
+    params:
+        resource_path=config["resource_path"],
+        read_type=config["read_type"],
+    shell:
+        """ 
+        cd ~/Documents/Promotion/varlociraptor/
+        cargo run -- preprocess variants {params.resource_path}/{input.fasta} --candidates {params.resource_path}/{input.candidates} --bam {params.resource_path}/{input.bam} --read-type {params.read_type}> {params.resource_path}/{output}
+        """
+
+
+rule convert_to_vcf:
+    input:
+        "resources/observations.bcf",
+    output:
+        "resources/observations.vcf",
+    log:
+        "logs/convert_to_vcf.log",
+    shell:
+        """
+        bcftools view {input} > {output}
+        """
