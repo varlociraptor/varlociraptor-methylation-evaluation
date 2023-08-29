@@ -6,3 +6,4 @@ sample:
   chromosome: "1"
 
 resource_path: "~/Documents/Promotion/varlociraptor-methylation-evaluation"
+read_type: "PacBio"
