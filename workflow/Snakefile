@@ -11,10 +11,12 @@ read_type = config["read_type"]
 sample_config = config["sample"]
 
 
-bam_file = (
-    "resources/example-reads-pacbio.bam"
+
+
+reads = (
+    "resources/example-reads-pacbio"
     if read_type == "PacBio"
-    else "resources/example-reads-illumina.bam"
+    else "resources/example-reads-illumina"
 )
 
 
@@ -57,41 +59,44 @@ rule find_candidates:
     log:
         "logs/find_candidates.log",
     params:
-        resource_path=config["resource_path"],
+        varlo_path=config["varlo_path"],
+        pipeline_path=config["pipeline_path"],
     shell:
         """ 
-        cd ~/Documents/Promotion/varlociraptor/
-        cargo run -- methylation-candidates {params.resource_path}/{input} {params.resource_path}/{output}
+        cd {params.varlo_path}
+        cargo run -- methylation-candidates {params.pipeline_path}{input} {params.pipeline_path}/{output}
         """
 
 
 rule sam_to_bam:
     input:
-        "resources/example-reads.sam",
+        reads + ".sam",
     output:
-        "resources/example-reads.bam",
+        reads + ".bam",
     log:
         "logs/sam_to_bam.log",
+    params:
+        pipeline_path=config["pipeline_path"],
     shell:
-        "samtools view -bS resources/example-reads.sam > resources/example-reads.bam"
+        "samtools view -bS {params.pipeline_path}{input} > {params.pipeline_path}/{output}"
 
 
 rule compute_meth_probs:
     input:
         fasta="resources/example-genome.fasta",
-        bam=bam_file,
+        bam=reads + ".bam",
         candidates="resources/example-candidates.bcf",
     output:
         "resources/observations.bcf",
     log:
         "logs/copute.log",
     params:
-        resource_path=config["resource_path"],
+        pipeline_path=config["pipeline_path"],
         read_type=config["read_type"],
     shell:
         """ 
-        cd ~/Documents/Promotion/varlociraptor/
-        cargo run -- preprocess variants {params.resource_path}/{input.fasta} --candidates {params.resource_path}/{input.candidates} --bam {params.resource_path}/{input.bam} --read-type {params.read_type}> {params.resource_path}/{output}
+        cd {params.varlo_path}
+        cargo run -- preprocess variants {params.pipeline_path}/{input.fasta} --candidates {params.pipeline_path}/{input.candidates} --bam {params.pipeline_path}/{input.bam} --read-type {params.read_type}> {params.pipeline_path}/{output}
         """
 
 
