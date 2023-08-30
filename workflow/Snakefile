@@ -94,7 +94,7 @@ rule compute_meth_observations:
         bam=bam_read,
         candidates="resources/example-candidates.bcf",
     output:
-        "resources/normal.bcf",
+        "results/normal.bcf",
     log:
         "logs/copute.log",
     conda:
@@ -112,9 +112,9 @@ rule compute_meth_observations:
 
 rule observations_to_vcf:
     input:
-        "resources/normal.bcf",
+        "results/normal.bcf",
     output:
-        "resources/normal.vcf",
+        "results/normal.vcf",
     conda:
         "envs/samtools.yaml"
     log:
@@ -124,12 +124,13 @@ rule observations_to_vcf:
         bcftools view {input} > {output}
         """
 
+
 rule call_methylation:
     input:
-        preprocess_obs="resources/normal.bcf",
-        scenario="resources/scenario.yaml"
+        preprocess_obs="results/normal.bcf",
+        scenario="resources/scenario.yaml",
     output:
-        "resources/calls.bcf",
+        "results/calls.bcf",
     log:
         "logs/copute.log",
     conda:
@@ -144,11 +145,12 @@ rule call_methylation:
         cargo run -- call variants generic  --scenario {params.pipeline_path}{input.scenario} --obs normal={params.pipeline_path}{input.preprocess_obs} > {params.pipeline_path}/{output}
         """
 
+
 rule calls_to_vcf:
     input:
-        "resources/calls.bcf",
+        "results/calls.bcf",
     output:
-        "resources/calls.vcf",
+        "results/calls.vcf",
     conda:
         "envs/samtools.yaml"
     log:
