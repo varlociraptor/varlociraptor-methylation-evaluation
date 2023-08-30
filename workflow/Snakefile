@@ -56,6 +56,8 @@ rule find_candidates:
         "resources/example-candidates.bcf",
     log:
         "logs/find_candidates.log",
+    conda:
+        "envs/rust.yaml"
     params:
         varlo_path=config["varlo_path"],
         pipeline_path=config["pipeline_path"],
@@ -73,6 +75,8 @@ rule sam_to_bam:
         reads + ".bam",
     log:
         "logs/sam_to_bam.log",
+    conda:
+        "envs/samtools.yaml"
     params:
         pipeline_path=config["pipeline_path"],
     shell:
@@ -88,6 +92,8 @@ rule compute_meth_probs:
         "resources/observations.bcf",
     log:
         "logs/copute.log",
+    conda:
+        "envs/rust.yaml"
     params:
         pipeline_path=config["pipeline_path"],
         read_type=config["read_type"],
@@ -103,6 +109,8 @@ rule convert_to_vcf:
         "resources/observations.bcf",
     output:
         "resources/observations.vcf",
+    conda:
+        "envs/samtools.yaml"
     log:
         "logs/convert_to_vcf.log",
     shell:
