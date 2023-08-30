@@ -57,11 +57,12 @@ rule find_candidates:
     log:
         "logs/find_candidates.log",
     params:
-        resource_path=config["resource_path"],
+        varlo_path=config["varlo_path"],
+        pipeline_path=config["pipeline_path"],
     shell:
         """ 
-        cd ~/Documents/Promotion/varlociraptor/
-        cargo run -- methylation-candidates {params.resource_path}/{input} {params.resource_path}/{output}
+        cd {params.varlo_path}
+        cargo run -- methylation-candidates {params.pipeline_path}{input} {params.pipeline_path}/{output}
         """
 
 
@@ -72,8 +73,10 @@ rule sam_to_bam:
         reads + ".bam",
     log:
         "logs/sam_to_bam.log",
+    params:
+        pipeline_path=config["pipeline_path"],
     shell:
-        "samtools view -bS resources/example-reads.sam > resources/example-reads.bam"
+        "samtools view -bS {params.pipeline_path}{input} > {params.pipeline_path}/{output}"
 
 
 rule compute_meth_probs:
@@ -86,12 +89,12 @@ rule compute_meth_probs:
     log:
         "logs/copute.log",
     params:
-        resource_path=config["resource_path"],
+        pipeline_path=config["pipeline_path"],
         read_type=config["read_type"],
     shell:
         """ 
-        cd ~/Documents/Promotion/varlociraptor/
-        cargo run -- preprocess variants {params.resource_path}/{input.fasta} --candidates {params.resource_path}/{input.candidates} --bam {params.resource_path}/{input.bam} --read-type {params.read_type}> {params.resource_path}/{output}
+        cd {params.varlo_path}
+        cargo run -- preprocess variants {params.pipeline_path}/{input.fasta} --candidates {params.pipeline_path}/{input.candidates} --bam {params.pipeline_path}/{input.bam} --read-type {params.read_type}> {params.pipeline_path}/{output}
         """
 
 
