@@ -11,10 +11,15 @@ read_type = config["read_type"]
 sample_config = config["sample"]
 
 
-reads = (
-    "resources/example-reads-pacbio"
+bam_read = (
+    "resources/example-reads-pacbio.bam"
     if read_type == "PacBio"
-    else "resources/example-reads-illumina"
+    else "resources/example-reads-illumina.bam"
+)
+sam_read = (
+    "resources/example-reads-pacbio.sam"
+    if read_type == "PacBio"
+    else "resources/example-reads-illumina.sam"
 )
 
 
@@ -70,9 +75,9 @@ rule find_candidates:
 
 rule sam_to_bam:
     input:
-        reads + ".sam",
+        sam_read,
     output:
-        reads + ".bam",
+        bam_read,
     log:
         "logs/sam_to_bam.log",
     conda:
@@ -83,32 +88,67 @@ rule sam_to_bam:
         "samtools view -bS {params.pipeline_path}{input} > {params.pipeline_path}/{output}"
 
 
-rule compute_meth_probs:
+rule compute_meth_observations:
     input:
         fasta="resources/example-genome.fasta",
-        bam=reads + ".bam",
+        bam=bam_read,
         candidates="resources/example-candidates.bcf",
     output:
-        "resources/observations.bcf",
+        "resources/normal.bcf",
     log:
         "logs/copute.log",
     conda:
         "envs/rust.yaml"
     params:
+        varlo_path=config["varlo_path"],
         pipeline_path=config["pipeline_path"],
         read_type=config["read_type"],
     shell:
         """ 
         cd {params.varlo_path}
-        cargo run -- preprocess variants {params.pipeline_path}/{input.fasta} --candidates {params.pipeline_path}/{input.candidates} --bam {params.pipeline_path}/{input.bam} --read-type {params.read_type}> {params.pipeline_path}/{output}
+        cargo run -- preprocess variants {params.pipeline_path}{input.fasta} --candidates {params.pipeline_path}{input.candidates} --bam {params.pipeline_path}{input.bam} --read-type {params.read_type}> {params.pipeline_path}{output}
         """
 
 
-rule convert_to_vcf:
+rule observations_to_vcf:
     input:
-        "resources/observations.bcf",
+        "resources/normal.bcf",
     output:
-        "resources/observations.vcf",
+        "resources/normal.vcf",
+    conda:
+        "envs/samtools.yaml"
+    log:
+        "logs/convert_to_vcf.log",
+    shell:
+        """
+        bcftools view {input} > {output}
+        """
+
+rule call_methylation:
+    input:
+        preprocess_obs="resources/normal.bcf",
+        scenario="resources/scenario.yaml"
+    output:
+        "resources/calls.bcf",
+    log:
+        "logs/copute.log",
+    conda:
+        "envs/rust.yaml"
+    params:
+        varlo_path=config["varlo_path"],
+        pipeline_path=config["pipeline_path"],
+        read_type=config["read_type"],
+    shell:
+        """ 
+        cd {params.varlo_path}
+        cargo run -- call variants generic  --scenario {params.pipeline_path}{input.scenario} --obs normal={params.pipeline_path}{input.preprocess_obs} > {params.pipeline_path}/{output}
+        """
+
+rule calls_to_vcf:
+    input:
+        "resources/calls.bcf",
+    output:
+        "resources/calls.vcf",
     conda:
         "envs/samtools.yaml"
     log:
