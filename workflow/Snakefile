@@ -11,10 +11,10 @@ read_type = config["read_type"]
 sample_config = config["sample"]
 
 
-bam_file = (
-    "resources/example-reads-pacbio.bam"
+reads = (
+    "resources/example-reads-pacbio"
     if read_type == "PacBio"
-    else "resources/example-reads-illumina.bam"
+    else "resources/example-reads-illumina"
 )
 
 
@@ -67,9 +67,9 @@ rule find_candidates:
 
 rule sam_to_bam:
     input:
-        "resources/example-reads.sam",
+        reads + ".sam",
     output:
-        "resources/example-reads.bam",
+        reads + ".bam",
     log:
         "logs/sam_to_bam.log",
     shell:
@@ -79,7 +79,7 @@ rule sam_to_bam:
 rule compute_meth_probs:
     input:
         fasta="resources/example-genome.fasta",
-        bam=bam_file,
+        bam=reads + ".bam",
         candidates="resources/example-candidates.bcf",
     output:
         "resources/observations.bcf",
