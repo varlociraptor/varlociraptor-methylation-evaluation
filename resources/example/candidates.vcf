@@ -1,0 +1,9 @@
+##fileformat=VCFv4.2
+##FILTER=<ID=PASS,Description="All filters passed">
+##contig=<ID=20>
+##bcftools_viewVersion=1.15.1+htslib-1.15.1
+##bcftools_viewCommand=view resources/example-candidates.bcf; Date=Thu Aug 31 11:27:23 2023
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO
+20	1	.	CG	<METH>	.	.	.
+20	6	.	CG	<METH>	.	.	.
+20	13	.	CG	<METH>	.	.	.
