@@ -13,27 +13,27 @@ sra_accession = config["sra_accession"]
 
 
 aligned_bam_reads = (
-    "resources/example/aligned-reads-pacbio.bam"
+    "resources/aligned-reads-pacbio.bam"
     if read_type == "PacBio"
-    else "resources/example/aligned-reads-illumina.bam"
+    else "resources/aligned-reads-illumina.bam"
 )
 
 aligned_bam_reads_index = (
-    "resources/example/aligned-reads-pacbio.bam.bai"
+    "resources/aligned-reads-pacbio.bam.bai"
     if read_type == "PacBio"
-    else "resources/example/aligned-reads-illumina.bam.bai"
+    else "resources/aligned-reads-illumina.bam.bai"
 )
 
 aligned_sam_reads = (
-    "resources/example/aligned-reads-pacbio.sam"
+    "resources/aligned-reads-pacbio.sam"
     if read_type == "PacBio"
-    else "resources/example/aligned-reads-illumina.sam"
+    else "resources/aligned-reads-illumina.sam"
 )
 
 
 rule get_genome:
     output:
-        "resources/example/genome.fasta",
+        "resources/genome.fasta",
     params:
         species=sample_config["species"],
         datatype=sample_config["datatype"],
@@ -48,7 +48,7 @@ rule get_genome:
 
 rule get_chromosome:
     output:
-        "resources/example/chr1.fasta",
+        "resources/chr1.fasta",
     params:
         species=sample_config["species"],
         datatype=sample_config["datatype"],
@@ -64,9 +64,9 @@ rule get_chromosome:
 
 rule genome_index:
     input:
-        "resources/example/genome.fasta",
+        "resources/genome.fasta",
     output:
-        "resources/example/genome.fasta.fai",
+        "resources/genome.fasta.fai",
     log:
         "logs/genome_index.log",
     conda:
@@ -81,9 +81,9 @@ rule genome_index:
 
 rule find_candidates:
     input:
-        "resources/example/genome.fasta",
+        "resources/genome.fasta",
     output:
-        "resources/example/candidates.bcf",
+        "resources/candidates.bcf",
     log:
         "logs/find_candidates.log",
     conda:
@@ -100,9 +100,9 @@ rule find_candidates:
 
 rule candidates_to_vcf:
     input:
-        "resources/example/candidates.bcf",
+        "resources/candidates.bcf",
     output:
-        "resources/example/candidates.vcf",
+        "resources/candidates.vcf",
     conda:
         "envs/samtools.yaml"
     log:
@@ -115,10 +115,10 @@ rule candidates_to_vcf:
 
 rule get_fastq_pe_gz:
     output:
-        "resources/{accession}_1.fastq.gz",
-        "resources/{accession}_2.fastq.gz",
+        "resources/{sra_accession}_1.fastq.gz",
+        "resources/{sra_accession}_2.fastq.gz",
     log:
-        "logs/get_fastq_pe_gz.log",
+        "logs/pe/{sra_accession}.gz.log",
     params:
         extra="--skip-technical",
     threads: 6
@@ -128,10 +128,12 @@ rule get_fastq_pe_gz:
 
 rule align_reads:
     input:
-        fasta="resources/example/genome.fasta",
-        reads="resources/example/reads.fastq.gz",
+        fasta="resources/genome.fasta",
+        reads1=expand("resources/{sra_accession}_1.fastq.gz", sra_accession=sra_accession),
+        reads2=expand("resources/{sra_accession}_2.fastq.gz", sra_accession=sra_accession),
+    
     output:
-        "aligned-reads-illumina.sam",
+        aligned_sam_reads,
     conda:
         "envs/bwa-meth.yaml"
     log:
@@ -139,7 +141,7 @@ rule align_reads:
     shell:
         """
         bwameth.py index-mem2 {input.fasta}
-        bwameth.py --reverence {input.fasta} {input.reads} > {output}
+        bwameth.py --reverence {input.fasta} {input.reads1} {input.reads2} > {output}
         """
 
 
@@ -180,9 +182,9 @@ rule aligned_reads_index:
 rule compute_meth_observations:
     input:
         aligned_bam_reads_index,
-        fasta="resources/example/genome.fasta",
+        fasta="resources/genome.fasta",
         bam=aligned_bam_reads,
-        candidates="resources/example/candidates.bcf",
+        candidates="resources/candidates.bcf",
     output:
         "results/normal.bcf",
     log:
@@ -218,7 +220,7 @@ rule observations_to_vcf:
 rule call_methylation:
     input:
         preprocess_obs="results/normal.bcf",
-        scenario="resources/example/scenario.yaml",
+        scenario="resources/scenario.yaml",
     output:
         "results/calls.bcf",
     log:
