@@ -118,7 +118,7 @@ rule get_fastq_pe_gz:
         "resources/{accession}_1.fastq.gz",
         "resources/{accession}_2.fastq.gz",
     log:
-        "logs/get_fastq_pe_gz.log",
+        "logs/pe/{accession}.gz.log",
     params:
         extra="--skip-technical",
     threads: 6
