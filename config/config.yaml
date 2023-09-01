@@ -7,6 +7,7 @@ sample:
 
 varlo_path: "~/Documents/Promotion/varlociraptor/"
 pipeline_path: "~/Documents/Promotion/varlociraptor-methylation-evaluation/"
+sra_accession: "SRR13050956"
 
 # varlo_path: "/projects/koesterlab/benchmark-methylation/varlociraptor/"
 # pipeline_path: "/projects/koesterlab/benchmark-methylation/varlociraptor-methylation-evaluation/"
