@@ -9,21 +9,22 @@ configfile: "config/config.yaml"
 
 read_type = config["read_type"]
 sample_config = config["sample"]
+sra_accession = config["sra_accession"]
 
 
-bam_read = (
+aligned_bam_reads = (
     "resources/example/aligned-reads-pacbio.bam"
     if read_type == "PacBio"
     else "resources/example/aligned-reads-illumina.bam"
 )
 
-bam_read_index = (
+aligned_bam_reads_index = (
     "resources/example/aligned-reads-pacbio.bam.bai"
     if read_type == "PacBio"
     else "resources/example/aligned-reads-illumina.bam.bai"
 )
 
-sam_read = (
+aligned_sam_reads = (
     "resources/example/aligned-reads-pacbio.sam"
     if read_type == "PacBio"
     else "resources/example/aligned-reads-illumina.sam"
@@ -112,6 +113,19 @@ rule candidates_to_vcf:
         """
 
 
+rule get_fastq_pe_gz:
+    output:
+        "resources/{accession}_1.fastq.gz",
+        "resources/{accession}_2.fastq.gz",
+    log:
+        "logs/get_fastq_pe_gz.log",
+    params:
+        extra="--skip-technical",
+    threads: 6
+    wrapper:
+        "v2.6.0/bio/sra-tools/fasterq-dump"
+
+
 rule align_reads:
     input:
         fasta="resources/example/genome.fasta",
@@ -131,9 +145,9 @@ rule align_reads:
 
 rule aligned_reads_to_bam:
     input:
-        sam_read,
+        aligned_sam_reads,
     output:
-        bam_read,
+        aligned_bam_reads,
     log:
         "logs/aligned_reads_to_bam.log",
     conda:
@@ -146,11 +160,11 @@ rule aligned_reads_to_bam:
         """
 
 
-rule aligned_read_index:
+rule aligned_reads_index:
     input:
-        bam_read,
+        aligned_bam_reads,
     output:
-        bam_read_index,
+        aligned_bam_reads_index,
     log:
         "logs/aligned_reads_to_bam.log",
     conda:
@@ -165,9 +179,9 @@ rule aligned_read_index:
 
 rule compute_meth_observations:
     input:
-        bam_read_index,
+        aligned_bam_reads_index,
         fasta="resources/example/genome.fasta",
-        bam=bam_read,
+        bam=aligned_bam_reads,
         candidates="resources/example/candidates.bcf",
     output:
         "results/normal.bcf",
