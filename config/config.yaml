@@ -5,11 +5,13 @@ sample:
   release: "110"
   chromosome: "1"
 
-# varlo_path: "~/Documents/Promotion/varlociraptor/"
-# pipeline_path: "~/Documents/Promotion/varlociraptor-methylation-evaluation/"
+varlo_path: "~/Documents/Promotion/varlociraptor/"
+pipeline_path: "~/Documents/Promotion/varlociraptor-methylation-evaluation/"
+methylFastQ_path: "~/Documents/Promotion/MethylFASTQ/"
 
-varlo_path: "/projects/koesterlab/benchmark-methylation/varlociraptor/"
-pipeline_path: "/projects/koesterlab/benchmark-methylation/varlociraptor-methylation-evaluation/"
+# varlo_path: "/projects/koesterlab/benchmark-methylation/varlociraptor/"
+# pipeline_path: "/projects/koesterlab/benchmark-methylation/varlociraptor-methylation-evaluation/"
+#methylFastQ_path: "~/Documents/Promotion/MethylFASTQ/""
 
 read_type: "Illumina"
 sra_accession: "SRR13050956"

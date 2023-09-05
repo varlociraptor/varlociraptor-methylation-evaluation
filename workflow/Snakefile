@@ -13,27 +13,27 @@ sra_accession = config["sra_accession"]
 
 
 aligned_bam_reads = (
-    "resources/aligned-reads-pacbio.bam"
+    "resources/example_new/aligned-reads-pacbio.bam"
     if read_type == "PacBio"
-    else "resources/aligned-reads-illumina.bam"
+    else "resources/example_new/aligned-reads-illumina.bam"
 )
 
 aligned_bam_reads_index = (
-    "resources/aligned-reads-pacbio.bam.bai"
+    "resources/example_new/aligned-reads-pacbio.bam.bai"
     if read_type == "PacBio"
-    else "resources/aligned-reads-illumina.bam.bai"
+    else "resources/example_new/aligned-reads-illumina.bam.bai"
 )
 
 aligned_sam_reads = (
-    "resources/aligned-reads-pacbio.sam"
+    "resources/example_new/aligned-reads-pacbio.sam"
     if read_type == "PacBio"
-    else "resources/aligned-reads-illumina.sam"
+    else "resources/example_new/aligned-reads-illumina.sam"
 )
 
 
 rule get_genome:
     output:
-        "resources/genome.fasta",
+        "resources/example_new/genome.fasta",
     params:
         species=sample_config["species"],
         datatype=sample_config["datatype"],
@@ -48,7 +48,7 @@ rule get_genome:
 
 rule get_chromosome:
     output:
-        "resources/chr1.fasta",
+        "resources/example_new/chr1.fasta",
     params:
         species=sample_config["species"],
         datatype=sample_config["datatype"],
@@ -64,9 +64,9 @@ rule get_chromosome:
 
 rule genome_index:
     input:
-        "resources/genome.fasta",
+        "resources/example_new/genome.fasta",
     output:
-        "resources/genome.fasta.fai",
+        "resources/example_new/genome.fasta.fai",
     log:
         "logs/genome_index.log",
     conda:
@@ -81,9 +81,9 @@ rule genome_index:
 
 rule find_candidates:
     input:
-        "resources/genome.fasta",
+        "resources/example_new/genome.fasta",
     output:
-        "resources/candidates.bcf",
+        "resources/example_new/candidates.bcf",
     log:
         "logs/find_candidates.log",
     conda:
@@ -100,9 +100,9 @@ rule find_candidates:
 
 rule candidates_to_vcf:
     input:
-        "resources/candidates.bcf",
+        "resources/example_new/candidates.bcf",
     output:
-        "resources/candidates.vcf",
+        "resources/example_new/candidates.vcf",
     conda:
         "envs/samtools.yaml"
     log:
@@ -113,25 +113,47 @@ rule candidates_to_vcf:
         """
 
 
-rule get_fastq_pe_gz:
+""" rule get_fastq_pe_gz:
     output:
-        "resources/{sra_accession}_1.fastq.gz",
-        "resources/{sra_accession}_2.fastq.gz",
+        "resources/example_new/{sra_accession}_1.fastq.gz",
+        "resources/example_new/{sra_accession}_2.fastq.gz",
     log:
         "logs/pe/{sra_accession}.gz.log",
     params:
         extra="--skip-technical",
     threads: 6
+    conda:
+        "envs/fastq-wrapper.yaml"
     wrapper:
-        "v2.6.0/bio/sra-tools/fasterq-dump"
+        "v2.6.0/bio/sra-tools/fasterq-dump" """
+
+
+rule fake_meth_data:
+    input:
+        fasta="resources/example_new/genome.fasta",
+    output:
+        "resources/example_new/genome_pe_f150r150_dir_R1.fastq",
+        "resources/example_new/genome_pe_f150r150_dir_R2.fastq",
+    log:
+        "logs/fake_meth_data.log",
+    params:
+        pipeline_path=config["pipeline_path"],
+        methylFastQ_path=config["methylFastQ_path"],
+    conda:
+        "envs/methylFastQ.yaml"
+    shell:
+        """
+        python {params.methylFastQ_path}src/methylFASTQ.py -i {input} -o {params.pipeline_path}resources/example_new --seq paired_end --chh 0 --chg 0 --cg 0.5
+        """
 
 
 rule align_reads:
     input:
-        fasta="resources/genome.fasta",
-        reads1=expand("resources/{sra_accession}_1.fastq.gz", sra_accession=sra_accession),
-        reads2=expand("resources/{sra_accession}_2.fastq.gz", sra_accession=sra_accession),
-    
+        fasta="resources/example_new/genome.fasta",
+        # reads1=expand(   "resources/example_new/{sra_accession}_1.fastq.gz",    sra_accession=sra_accession, ),
+        # reads2=expand(   "resources/example_new/{sra_accession}_2.fastq.gz",  sra_accession=sra_accession,),
+        reads1="resources/example_new/genome_pe_f150r150_dir_R1.fastq",
+        reads2="resources/example_new/genome_pe_f150r150_dir_R2.fastq",
     output:
         aligned_sam_reads,
     conda:
@@ -147,6 +169,7 @@ rule align_reads:
 
 rule aligned_reads_to_bam:
     input:
+        # "resources/example_new/aligned_reads-illumina.sam",
         aligned_sam_reads,
     output:
         aligned_bam_reads,
@@ -182,9 +205,9 @@ rule aligned_reads_index:
 rule compute_meth_observations:
     input:
         aligned_bam_reads_index,
-        fasta="resources/genome.fasta",
+        fasta="resources/example_new/genome.fasta",
         bam=aligned_bam_reads,
-        candidates="resources/candidates.bcf",
+        candidates="resources/example_new/candidates.bcf",
     output:
         "results/normal.bcf",
     log:
@@ -220,7 +243,7 @@ rule observations_to_vcf:
 rule call_methylation:
     input:
         preprocess_obs="results/normal.bcf",
-        scenario="resources/scenario.yaml",
+        scenario="resources/example_new/scenario.yaml",
     output:
         "results/calls.bcf",
     log:
