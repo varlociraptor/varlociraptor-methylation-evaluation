@@ -1,0 +1,13 @@
+samples:
+  normal:
+    resolution: 0.1
+    universe: "[0.0,1.0]"
+
+events:
+  undermethylated:
+    "normal:]0.0,0.45["
+  methylated_normal:
+    "normal:[0.45,0.65]"
+  overmethylated:
+    "normal:]0.65,1.0]"
+
