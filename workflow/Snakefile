@@ -87,7 +87,7 @@ rule find_candidates:
     log:
         "logs/find_candidates.log",
     conda:
-        "envs/rust.yaml"
+        "envs/varlociraptor.yaml"
     params:
         varlo_path=config["varlo_path"],
         pipeline_path=config["pipeline_path"],
@@ -190,7 +190,7 @@ rule compute_meth_observations:
     log:
         "logs/copute.log",
     conda:
-        "envs/rust.yaml"
+        "envs/varlociraptor.yaml"
     params:
         varlo_path=config["varlo_path"],
         pipeline_path=config["pipeline_path"],
@@ -226,7 +226,7 @@ rule call_methylation:
     log:
         "logs/copute.log",
     conda:
-        "envs/rust.yaml"
+        "envs/varlociraptor.yaml"
     params:
         varlo_path=config["varlo_path"],
         pipeline_path=config["pipeline_path"],
