@@ -1,0 +1,4 @@
+channels:
+  - bioconda
+dependencies:
+  - snakemake-wrapper-utils=0.6.1
