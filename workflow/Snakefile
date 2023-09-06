@@ -75,7 +75,7 @@ rule genome_index:
         pipeline_path=config["pipeline_path"],
     shell:
         """ 
-        samtools index {params.pipeline_path}/{input}
+        samtools faidx {params.pipeline_path}{input}
         """
 
 
@@ -163,7 +163,7 @@ rule align_reads:
     shell:
         """
         bwameth.py index-mem2 {input.fasta}
-        bwameth.py --reverence {input.fasta} {input.reads1} {input.reads2} > {output}
+        bwameth.py --reference {input.fasta} {input.reads1} {input.reads2} > {output}
         """
 
 
@@ -197,8 +197,24 @@ rule aligned_reads_index:
     params:
         pipeline_path=config["pipeline_path"],
     shell:
-        """ 
+        """
+        samtools sort -o {input} {input} 
         samtools index {params.pipeline_path}/{input}
+        """
+
+rule methylDackel:
+    input:
+        genome="resources/example_new/genome.fasta",
+        alignments=aligned_bam_reads
+    output:
+        "results/alignments_CpG.bedgraph",
+    conda:
+        "envs/methylDackel.yaml"
+    log:
+        "logs/methylDackel.log",
+    shell:
+        """
+        MethylDackel extract {input.genome} {input.alignments}
         """
 
 
@@ -208,6 +224,7 @@ rule compute_meth_observations:
         fasta="resources/example_new/genome.fasta",
         bam=aligned_bam_reads,
         candidates="resources/example_new/candidates.bcf",
+        index="resources/example_new/genome.fasta.fai",
     output:
         "results/normal.bcf",
     log:
@@ -224,7 +241,7 @@ rule compute_meth_observations:
         cargo run -- preprocess variants {params.pipeline_path}{input.fasta} --candidates {params.pipeline_path}{input.candidates} --bam {params.pipeline_path}{input.bam} --read-type {params.read_type}> {params.pipeline_path}{output}
         """
 
-
+# Unused
 rule observations_to_vcf:
     input:
         "results/normal.bcf",
@@ -272,5 +289,5 @@ rule calls_to_vcf:
         "logs/convert_to_vcf.log",
     shell:
         """
-        bcftools view {input} > {output}
+        bcftools view {input} -o {output}
         """
