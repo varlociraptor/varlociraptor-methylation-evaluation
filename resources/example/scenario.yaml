@@ -4,10 +4,10 @@ samples:
     universe: "[0.0,1.0]"
 
 events:
-  unmethylated:
+  homo_methylated:
     "normal:0.0"
   hetero_methylated:
     "normal:0.5"
-  homo_methylated:
+  unmethylated:
     "normal:1.0"
 
