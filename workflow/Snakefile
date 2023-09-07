@@ -19,9 +19,9 @@ aligned_bam_reads = (
 )
 
 aligned_bam_reads_index = (
-    "resources/example_new/aligned-reads-pacbio.bam.bai"
+    "resources/example_new/aligned-reads-pacbio-sorted.bam.bai"
     if read_type == "PacBio"
-    else "resources/example_new/aligned-reads-illumina.bam.bai"
+    else "resources/example_new/aligned-reads-illumina-sorted.bam.bai"
 )
 
 aligned_sam_reads = (
@@ -30,6 +30,18 @@ aligned_sam_reads = (
     else "resources/example_new/aligned-reads-illumina.sam"
 )
 
+aligned_bam_reads_sorted = (
+    "resources/example_new/aligned-reads-pacbio-sorted.bam"
+    if read_type == "PacBio"
+    else "resources/example_new/aligned-reads-illumina-sorted.bam"
+)
+
+
+
+rule all:
+    input:
+        "results/alignments_CpG.bedGraph",
+        "results/calls.vcf",
 
 rule get_genome:
     output:
@@ -143,7 +155,7 @@ rule fake_meth_data:
         "envs/methylFastQ.yaml"
     shell:
         """
-        python {params.methylFastQ_path}src/methylFASTQ.py -i {input} -o {params.pipeline_path}resources/example_new --seq paired_end --chh 0 --chg 0 --cg 0.5
+        python {params.methylFastQ_path}src/methylFASTQ.py -i {input} -o {params.pipeline_path}resources/example_new --seq paired_end --chh 0 --chg 0 --cg 0.7
         """
 
 
@@ -181,13 +193,30 @@ rule aligned_reads_to_bam:
         pipeline_path=config["pipeline_path"],
     shell:
         """ 
-        samtools view -bS {params.pipeline_path}{input} > {params.pipeline_path}/{output}
+        samtools view -bS {params.pipeline_path}{input} > {params.pipeline_path}/{output}    
         """
+
+rule sort_aligned_reads:
+    input:
+        aligned_bam_reads,
+    output:
+        aligned_bam_reads_sorted,
+    log:
+        "logs/sort_aligned_reads.log",
+    conda:
+        "envs/samtools.yaml"
+    params:
+        pipeline_path=config["pipeline_path"],
+    shell:
+        """
+        samtools sort {input} -o {output}    
+        """
+
 
 
 rule aligned_reads_index:
     input:
-        aligned_bam_reads,
+        aligned_bam_reads_sorted,
     output:
         aligned_bam_reads_index,
     log:
@@ -198,23 +227,24 @@ rule aligned_reads_index:
         pipeline_path=config["pipeline_path"],
     shell:
         """
-        samtools sort -o {input} {input} 
         samtools index {params.pipeline_path}/{input}
         """
 
 rule methylDackel:
     input:
         genome="resources/example_new/genome.fasta",
-        alignments=aligned_bam_reads
+        alignments=aligned_bam_reads_sorted,
     output:
-        "results/alignments_CpG.bedgraph",
+        "results/alignments_CpG.bedGraph",
     conda:
         "envs/methylDackel.yaml"
     log:
         "logs/methylDackel.log",
+    params:
+        pipeline_path=config["pipeline_path"],
     shell:
         """
-        MethylDackel extract {input.genome} {input.alignments}
+        MethylDackel extract {input.genome} {input.alignments} -o {params.pipeline_path}/results/alignments --mergeContext
         """
 
 
@@ -222,7 +252,7 @@ rule compute_meth_observations:
     input:
         aligned_bam_reads_index,
         fasta="resources/example_new/genome.fasta",
-        bam=aligned_bam_reads,
+        bam=aligned_bam_reads_sorted,
         candidates="resources/example_new/candidates.bcf",
         index="resources/example_new/genome.fasta.fai",
     output:
