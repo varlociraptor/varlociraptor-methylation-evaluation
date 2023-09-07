@@ -40,8 +40,8 @@ aligned_bam_reads_sorted = (
 
 rule all:
     input:
-        "results/alignments_CpG.bedGraph",
-        "results/calls.vcf",
+        "results/scatter_plot.png"
+
 
 rule get_genome:
     output:
@@ -250,11 +250,11 @@ rule methylDackel:
 
 rule compute_meth_observations:
     input:
-        aligned_bam_reads_index,
         fasta="resources/example_new/genome.fasta",
+        fasta_index="resources/example_new/genome.fasta.fai",
         bam=aligned_bam_reads_sorted,
+        bam_index=aligned_bam_reads_index,
         candidates="resources/example_new/candidates.bcf",
-        index="resources/example_new/genome.fasta.fai",
     output:
         "results/normal.bcf",
     log:
@@ -268,7 +268,7 @@ rule compute_meth_observations:
     shell:
         """ 
         cd {params.varlo_path}
-        cargo run -- preprocess variants {params.pipeline_path}{input.fasta} --candidates {params.pipeline_path}{input.candidates} --bam {params.pipeline_path}{input.bam} --read-type {params.read_type}> {params.pipeline_path}{output}
+        cargo run -- preprocess variants {params.pipeline_path}{input.fasta} --candidates {params.pipeline_path}{input.candidates} --bam {params.pipeline_path}{input.bam} --read-type {params.read_type} > {params.pipeline_path}{output}
         """
 
 # Unused
@@ -321,3 +321,14 @@ rule calls_to_vcf:
         """
         bcftools view {input} -o {output}
         """
+
+rule plot_results:
+    input:
+        bedGraph="results/alignments_CpG.bedGraph",
+        calls="results/calls.vcf",
+    output:
+        "results/scatter_plot.png"
+    conda:
+        "envs/matplotlib.yaml"
+    script:
+        "scripts/scatter_plot.py"
