@@ -1,4 +1,5 @@
 channels:
   - conda-forge
 dependencies:
-  - matplotlib=3.7.2
+  - altair
+  - vl-convert-python
