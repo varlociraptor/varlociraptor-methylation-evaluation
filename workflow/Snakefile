@@ -36,11 +36,18 @@ aligned_bam_reads_sorted = (
     else "resources/example_new/aligned-reads-illumina-sorted.bam"
 )
 
+aligned_sam_reads_sorted = (
+    "resources/example_new/aligned-reads-pacbio-sorted.sam"
+    if read_type == "PacBio"
+    else "resources/example_new/aligned-reads-illumina-sorted.sam"
+)
 
 
 rule all:
     input:
-        "results/scatter_plot.png"
+        dv="results/scatter_plot_dv.png",
+        tv="results/scatter_plot_tv.png",
+        td="results/scatter_plot_td.png"
 
 
 rule get_genome:
@@ -109,7 +116,7 @@ rule find_candidates:
         cargo run -- methylation-candidates {params.pipeline_path}{input} {params.pipeline_path}{output}
         """
 
-
+# Unused
 rule candidates_to_vcf:
     input:
         "resources/example_new/candidates.bcf",
@@ -198,9 +205,11 @@ rule aligned_reads_to_bam:
 
 rule sort_aligned_reads:
     input:
-        aligned_bam_reads,
+        bam_unsorted=aligned_bam_reads,
+        sam_unsorted=aligned_sam_reads,
     output:
-        aligned_bam_reads_sorted,
+        bam_sorted=aligned_bam_reads_sorted,
+        sam_sorted=aligned_sam_reads_sorted,
     log:
         "logs/sort_aligned_reads.log",
     conda:
@@ -209,7 +218,8 @@ rule sort_aligned_reads:
         pipeline_path=config["pipeline_path"],
     shell:
         """
-        samtools sort {input} -o {output}    
+        samtools sort {input.bam_unsorted} -o {output.bam_sorted}    
+        samtools sort {input.sam_unsorted} -o {output.sam_sorted}    
         """
 
 
@@ -326,9 +336,12 @@ rule plot_results:
     input:
         bedGraph="results/alignments_CpG.bedGraph",
         calls="results/calls.vcf",
+        true_meth="resources/example_new/genome_pe_f150r150_dir.ch3"
     output:
-        "results/scatter_plot.png"
+        dv="results/scatter_plot_dv.png",
+        tv="results/scatter_plot_tv.png",
+        td="results/scatter_plot_td.png"
     conda:
-        "envs/matplotlib.yaml"
+        "envs/altair.yaml"
     script:
         "scripts/scatter_plot.py"
