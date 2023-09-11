@@ -150,11 +150,9 @@ rule fake_meth_data_methylFASTQ:
     input:
         fasta="resources/example_new/genome.fasta",
     output:
-        "resources/example_new/genome_se_f150r150_dir.fastq",
-        # "resources/example_new/genome_pe_f150r150_dir_R1.fastq",
-        # "resources/example_new/genome_pe_f150r150_dir_R2.fastq",
-        "resources/example_new/genome_se_f150r150_dir.ch3"
-        # "resources/example_new/genome_pe_f150r150_dir.ch3"
+        "resources/example_new/genome_pe_f150r150_dir_R1.fastq",
+        "resources/example_new/genome_pe_f150r150_dir_R2.fastq",
+        "resources/example_new/genome_pe_f150r150_dir.ch3"
     log:
         "logs/fake_meth_data.log",
     params:
@@ -164,7 +162,7 @@ rule fake_meth_data_methylFASTQ:
         "envs/methylFastQ.yaml"
     shell:
         """
-        python {params.methylFastQ_path}src/methylFASTQ.py -i {input} -o {params.pipeline_path}resources/example_new --seq single_end --chh 0.0 --chg 0.0 --cg 0.0 --snp 0.0 --error 0.0
+        python {params.methylFastQ_path}src/methylFASTQ.py -i {input} -o {params.pipeline_path}resources/example_new --seq paired_end --chh 0.0 --chg 0.0 --cg 0.0 --snp 0.0 --error 0.0
         """
 
 
@@ -175,9 +173,9 @@ rule align_reads:
         # reads1=expand(   "resources/example_new/{sra_accession}_1.fastq.gz",    sra_accession=sra_accession, ),
         # reads2=expand(   "resources/example_new/{sra_accession}_2.fastq.gz",  sra_accession=sra_accession,),
         
-        # reads1="resources/example_new/genome_pe_f150r150_dir_R1.fastq",
-        # reads2="resources/example_new/genome_pe_f150r150_dir_R2.fastq",
-        reads1="resources/example_new/genome_se_f150r150_dir.fastq",
+        reads1="resources/example_new/genome_pe_f150r150_dir_R1.fastq",
+        reads2="resources/example_new/genome_pe_f150r150_dir_R2.fastq",
+        # reads1="resources/example_new/genome_se_f150r150_dir.fastq",
     output:
         aligned_sam_reads,
     conda:
@@ -187,7 +185,7 @@ rule align_reads:
     shell:
         """
         bwameth.py index-mem2 {input.fasta}
-        bwameth.py --reference {input.fasta} {input.reads1}  > {output}
+        bwameth.py --reference {input.fasta} {input.reads1} {input.reads2}> {output}
         """
 
 
@@ -246,7 +244,7 @@ rule aligned_reads_index:
 rule methylDackel:
     input:
         genome="resources/example_new/genome.fasta",
-        alignment=aligned_bam_reads_sorted,
+        alignments=aligned_bam_reads_sorted,
         alignment_index=aligned_bam_reads_index
     output:
         "results/alignments_CpG.bedGraph",
@@ -258,7 +256,7 @@ rule methylDackel:
         pipeline_path=config["pipeline_path"],
     shell:
         """
-        MethylDackel extract {input.genome} {input.alignment} -o {params.pipeline_path}/results/alignments --mergeContext
+        MethylDackel extract {input.genome} {input.alignments} -o {params.pipeline_path}/results/alignments --mergeContext
         """
 
 
@@ -340,8 +338,8 @@ rule plot_results:
     input:
         bedGraph="results/alignments_CpG.bedGraph",
         calls="results/calls.vcf",
-        true_meth="resources/example_new/genome_se_f150r150_dir.ch3"
-        # true_meth="resources/example_new/genome_pe_f150r150_dir.ch3"
+        # true_meth="resources/example_new/genome_se_f150r150_dir.ch3"
+        true_meth="resources/example_new/genome_pe_f150r150_dir.ch3"
     output:
         dv="results/scatter_plot_dv.png",
         tv="results/scatter_plot_tv.png",
