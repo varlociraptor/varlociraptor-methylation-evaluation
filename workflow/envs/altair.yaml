@@ -1,5 +1,5 @@
 channels:
   - conda-forge
 dependencies:
-  - altair
-  - vl-convert-python
+  - altair=5.1.1
+  - vl-convert-python=0.13.1
