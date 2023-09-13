@@ -1,4 +1,8 @@
 channels:
   - bioconda
 dependencies:
-  - snakemake-wrapper-utils=0.6.1
+  - sra-tools=3.0.6
+  - pigz=2.6
+  - pbzip2=1.1.13
+  - snakemake-wrapper-utils=0.6.2
+
