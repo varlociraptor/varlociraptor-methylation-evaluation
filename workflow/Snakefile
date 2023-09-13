@@ -9,37 +9,38 @@ configfile: "config/config.yaml"
 
 read_type = config["read_type"]
 sample_config = config["sample"]
-sra_accession = config["sra_accession"]
+accession = config["accession"]
+bedGraphs, = glob_wildcards("resources/HG002/bedGraph/{accNumber}.bedGraph")
 
 
 aligned_bam_reads = (
-    "resources/HG002/aligned-reads-pacbio.bam"
+    "resources/aligned-reads-pacbio.bam"
     if read_type == "PacBio"
-    else "resources/HG002/aligned-reads-illumina.bam"
+    else "resources/aligned-reads-illumina.bam"
 )
 
 aligned_bam_reads_index = (
-    "resources/HG002/aligned-reads-pacbio-sorted.bam.bai"
+    "resources/aligned-reads-pacbio-sorted.bam.bai"
     if read_type == "PacBio"
-    else "resources/HG002/aligned-reads-illumina-sorted.bam.bai"
+    else "resources/aligned-reads-illumina-sorted.bam.bai"
 )
 
 aligned_sam_reads = (
-    "resources/HG002/aligned-reads-pacbio.sam"
+    "resources/aligned-reads-pacbio.sam"
     if read_type == "PacBio"
-    else "resources/HG002/aligned-reads-illumina.sam"
+    else "resources/aligned-reads-illumina.sam"
 )
 
 aligned_bam_reads_sorted = (
-    "resources/HG002/aligned-reads-pacbio-sorted.bam"
+    "resources/aligned-reads-pacbio-sorted.bam"
     if read_type == "PacBio"
-    else "resources/HG002/aligned-reads-illumina-sorted.bam"
+    else "resources/aligned-reads-illumina-sorted.bam"
 )
 
 aligned_sam_reads_sorted = (
-    "resources/HG002/aligned-reads-pacbio-sorted.sam"
+    "resources/aligned-reads-pacbio-sorted.sam"
     if read_type == "PacBio"
-    else "resources/HG002/aligned-reads-illumina-sorted.sam"
+    else "resources/aligned-reads-illumina-sorted.sam"
 )
 
 
@@ -52,7 +53,7 @@ rule all:
 
 rule get_genome:
     output:
-        "resources/HG002/genome.fasta",
+        "resources/genome.fasta",
     params:
         species=sample_config["species"],
         datatype=sample_config["datatype"],
@@ -67,7 +68,7 @@ rule get_genome:
 
 rule get_chromosome:
     output:
-        "resources/HG002/chr1.fasta",
+        "resources/chr1.fasta",
     params:
         species=sample_config["species"],
         datatype=sample_config["datatype"],
@@ -83,9 +84,9 @@ rule get_chromosome:
 
 rule genome_index:
     input:
-        "resources/HG002/genome.fasta",
+        "resources/genome.fasta",
     output:
-        "resources/HG002/genome.fasta.fai",
+        "resources/genome.fasta.fai",
     log:
         "logs/genome_index.log",
     conda:
@@ -100,9 +101,9 @@ rule genome_index:
 
 rule find_candidates:
     input:
-        "resources/HG002/genome.fasta",
+        "resources/genome.fasta",
     output:
-        "resources/HG002/candidates.bcf",
+        "resources/candidates.bcf",
     log:
         "logs/find_candidates.log",
     conda:
@@ -119,9 +120,9 @@ rule find_candidates:
 # Unused
 rule candidates_to_vcf:
     input:
-        "resources/HG002/candidates.bcf",
+        "resources/candidates.bcf",
     output:
-        "resources/HG002/candidates.vcf",
+        "resources/candidates.vcf",
     conda:
         "envs/samtools.yaml"
     log:
@@ -132,46 +133,29 @@ rule candidates_to_vcf:
         """
 
 
-rule get_fastq_pe_gz:
+
+
+rule get_fastq_pe:
     output:
-        "resources/HG002/{sra_accession}_1.fastq.gz",
-        "resources/HG002/{sra_accession}_2.fastq.gz",
+        # the wildcard name must be accession, pointing to an SRA number
+        "resources/{accession}_1.fastq",
+        "resources/{accession}_2.fastq",
     log:
-        "logs/pe/{sra_accession}.gz.log",
+        "logs/pe/{accession}.log"
     params:
-        extra="--skip-technical",
-    threads: 6
+        extra="--skip-technical"
+    threads: 6  # defaults to 6
     conda:
         "envs/fastq-wrapper.yaml"
     wrapper:
         "v2.6.0/bio/sra-tools/fasterq-dump"
 
 
-
-""" rule fake_meth_data_methylFASTQ:
-    input:
-        fasta="resources/HG002/genome.fasta",
-    output:
-        "resources/HG002/genome_pe_f150r150_dir_R1.fastq",
-        "resources/HG002/genome_pe_f150r150_dir_R2.fastq",
-        "resources/HG002/genome_pe_f150r150_dir.ch3"
-    log:
-        "logs/fake_meth_data.log",
-    params:
-        pipeline_path=config["pipeline_path"],
-        methylFastQ_path=config["methylFastQ_path"],
-    conda:
-        "envs/methylFastQ.yaml"
-    shell:
-     
-        python {params.methylFastQ_path}src/methylFASTQ.py -i {input} -o {params.pipeline_path}resources/HG002 --seq paired_end --chh 0.0 --chg 0.0 --cg 0.5 --snp 0.0 --error 0.0
- """
-
 rule align_reads:
     input:
-        fasta="resources/HG002/genome.fasta",
-        reads1="resources/HG002/{sra_accession}_1.fastq.gz",
-        reads2="resources/HG002/{sra_accession}_2.fastq.gz",
+        fasta="resources/genome.fasta",
+        reads1=expand("resources/{accession}_1.fastq", accession=accession),
+        reads2=expand("resources/{accession}_2.fastq", accession=accession),
     output:
         aligned_sam_reads,
     conda:
@@ -238,7 +222,7 @@ rule aligned_reads_index:
 
 rule methylDackel:
     input:
-        genome="resources/HG002/genome.fasta",
+        genome="resources/genome.fasta",
         alignments=aligned_bam_reads_sorted,
         alignment_index=aligned_bam_reads_index
     output:
@@ -257,11 +241,11 @@ rule methylDackel:
 
 rule compute_meth_observations:
     input:
-        genome="resources/HG002/genome.fasta",
-        genome_index="resources/HG002/genome.fasta.fai",
+        genome="resources/genome.fasta",
+        genome_index="resources/genome.fasta.fai",
         alignments=aligned_bam_reads_sorted,
         alignments_index=aligned_bam_reads_index,
-        candidates="resources/HG002/candidates.bcf",
+        candidates="resources/candidates.bcf",
     output:
         "results/normal.bcf",
     log:
@@ -297,7 +281,7 @@ rule observations_to_vcf:
 rule call_methylation:
     input:
         preprocess_obs="results/normal.bcf",
-        scenario="resources/HG002/scenario.yaml",
+        scenario="resources/scenario.yaml",
     output:
         "results/calls.bcf",
     log:
@@ -331,9 +315,9 @@ rule calls_to_vcf:
 
 rule compute_avg_bedGraph:
     input:
-        expand("resources/HG002/bedGraph/{bed}.bedGraph", bed=glob_wildcards("*.bedGraph"))
+        expand("resources/HG002/bedGraph/{bed}.bedGraph", bed=bedGraphs)
     output:
-        "resources/HG002/bed_avg.bedGraph",
+        "resources/bed_avg.bedGraph",
     log:
         "logs/compute_avg_bedGraph.log",
     script:
@@ -344,8 +328,8 @@ rule plot_results:
     input:
         bedGraph="results/alignments_CpG.bedGraph",
         calls="results/calls.vcf",
-        # true_meth="resources/HG002/genome_se_f150r150_dir.ch3"
-        true_meth="resources/HG002/bed_avg.bedGraph"
+        # true_meth="resources/genome_se_f150r150_dir.ch3"
+        true_meth="resources/bed_avg.bedGraph"
     output:
         dv="results/scatter_plot_dv.png",
         tv="results/scatter_plot_tv.png",
