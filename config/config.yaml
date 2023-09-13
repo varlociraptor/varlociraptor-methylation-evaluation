@@ -14,4 +14,4 @@ methylFastQ_path: "~/Documents/Promotion/MethylFASTQ/"
 # methylFastQ_path: "/projects/koesterlab/benchmark-methylation/MethylFASTQ/"
 
 read_type: "Illumina"
-sra_accession: "SRR1766444"
+accession: "SRR1766444"

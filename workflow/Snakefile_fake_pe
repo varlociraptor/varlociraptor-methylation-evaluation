@@ -9,7 +9,7 @@ configfile: "config/config.yaml"
 
 read_type = config["read_type"]
 sample_config = config["sample"]
-sra_accession = config["sra_accession"]
+accession = config["accession"]
 
 
 aligned_bam_reads = (
@@ -134,10 +134,10 @@ rule candidates_to_vcf:
 
 """ rule get_fastq_pe_gz:
     output:
-        "resources/example_new/{sra_accession}_1.fastq.gz",
-        "resources/example_new/{sra_accession}_2.fastq.gz",
+        "resources/example_new/{accession}_1.fastq.gz",
+        "resources/example_new/{accession}_2.fastq.gz",
     log:
-        "logs/pe/{sra_accession}.gz.log",
+        "logs/pe/{accession}.gz.log",
     params:
         extra="--skip-technical",
     threads: 6
@@ -170,8 +170,8 @@ rule fake_meth_data_methylFASTQ:
 rule align_reads:
     input:
         fasta="resources/example_new/genome.fasta",
-        # reads1=expand(   "resources/example_new/{sra_accession}_1.fastq.gz",    sra_accession=sra_accession, ),
-        # reads2=expand(   "resources/example_new/{sra_accession}_2.fastq.gz",  sra_accession=sra_accession,),
+        # reads1=expand(   "resources/example_new/{accession}_1.fastq.gz",    accession=accession, ),
+        # reads2=expand(   "resources/example_new/{accession}_2.fastq.gz",  accession=accession,),
         
         reads1="resources/example_new/genome_pe_f150r150_dir_R1.fastq",
         reads2="resources/example_new/genome_pe_f150r150_dir_R2.fastq",
