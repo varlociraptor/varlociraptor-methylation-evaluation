@@ -1,6 +1,9 @@
 import altair as alt
 import pandas as pd
 
+import heapq
+
+
 
 bedgraph_dict = {}
 vcf_dict = {}
@@ -42,10 +45,8 @@ with open(snakemake.input["calls"], 'r') as vcf_file, open(snakemake.input["bedG
             ch3_dict[(chrom, position2)] = avg_methylation
             i += 1
 
-print(len(bedgraph_dict), len(vcf_dict), len(ch3_dict))
 
 bedgraph_positions = [key for key in bedgraph_dict if key in vcf_dict and key in ch3_dict]
-print(len(bedgraph_positions))
 bedgraph_meth_values = [bedgraph_dict[key] for key in bedgraph_positions]
 
 vcf_positions = [key for key in vcf_dict if key in bedgraph_dict and key in ch3_dict]
@@ -58,7 +59,19 @@ missing_positions1 = [key for key in bedgraph_dict if key not in vcf_dict and ke
 missing_positions2 = [key for key in vcf_dict if key not in bedgraph_dict and key not in ch3_dict]
 missing_positions3 = [key for key in ch3_dict if key not in bedgraph_dict and key not in vcf_dict]
 
-print(missing_positions3)
+
+# Berechnen Sie die Abweichungen zwischen ch3_meth_values und vcf_af_values
+deviations = [abs(x - y) for x, y in zip(ch3_meth_values, vcf_af_values)]
+
+# Verwenden Sie heapq.nlargest, um die Positionen mit den größten 10 Abweichungswerten zu erhalten
+top_10_positions_with_deviation = heapq.nsmallest(30, zip(deviations, ch3_positions))
+
+# Trennen Sie die Positionen und Abweichungswerte
+top_10_deviations, top_10_positions = zip(*top_10_positions_with_deviation)
+
+# Drucken Sie die Positionen mit den größten 10 Abweichungswerten
+for i, (deviation, position) in enumerate(zip(top_10_deviations, top_10_positions), 1):
+    print(f"Position {i}: {position}, Abweichung: {deviation}")
 
 
 

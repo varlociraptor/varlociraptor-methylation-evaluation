@@ -1,48 +1,60 @@
 import pickle
+import numpy as np
 
-# Erweitern Sie die Wildcards und erstellen Sie eine Liste aller passenden Dateipfade
 
 bedGraph_files = [snakemake.input[i] for i in range(len(snakemake.input))]
 
-# Ein Dictionary zum Speichern der summierten Methylierungswerte pro Position
 bedGrap_entry = {}
 
-i = 0
-# Iterieren Sie durch alle Bedgraph-Dateien
+
+all_keys = set()
+
+# Durchlaufen Sie alle Bedgraph-Dateien
 for file_path in bedGraph_files:
+    # Initialisieren Sie ein leeres Set für die Schlüssel in dieser Datei
+    file_keys = set()
+    
     with open(file_path, "r") as file:
         for line in file:
-            if i % 50000 == 0:
-                print(file_path, bedGraph_files, "\n")
-            i+= 1
             parts = line.strip().split("\t")
             chrom, start, end, methylation, meth_reads, unmeth_reads = parts
-            
-            # Konvertieren Sie die Werte in Zahlen
+
             methylation = float(methylation)
             meth_reads = int(meth_reads)
             unmeth_reads = int(unmeth_reads)
-            
-            # Berechnen Sie den Durchschnitt für diese Position
-            key = (chrom, start, end)
-            if key not in bedGrap_entry:
-                bedGrap_entry[key] = [methylation, meth_reads, unmeth_reads]
-            else:
-                bedGrap_entry[key][0] += meth_reads
-                bedGrap_entry[key][1] += unmeth_reads
 
-with open("bedGrap_entry.pkl", "wb") as outfile:
+            key = (chrom, start, end)
+            
+            # Fügen Sie den Schlüssel zur Liste der Schlüssel für diese Datei hinzu
+            file_keys.add(key)
+
+            if key not in bedGrap_entry:
+                bedGrap_entry[key] = [[methylation], meth_reads, unmeth_reads]
+            else:
+                bedGrap_entry[key][0].append(methylation)
+                bedGrap_entry[key][1] += meth_reads
+                bedGrap_entry[key][2] += unmeth_reads
+            print(bedGrap_entry[key], file_path)
+
+    # Aktualisieren Sie das Set der Schlüssel für alle Dateien
+    if not all_keys:
+        all_keys = file_keys
+    else:
+        all_keys.intersection_update(file_keys)
+
+# Entfernen Sie Schlüssel aus dem Dictionary, die nicht in allen Dateien vorhanden sind
+keys_to_remove = set(bedGrap_entry.keys()) - all_keys
+for key in keys_to_remove:
+    del bedGrap_entry[key]
+
+with open("bedGraph_entry.pkl", "wb") as outfile:
     pickle.dump(bedGrap_entry, outfile)
 
-# Erstellen Sie eine neue Bedgraph-Datei für den Durchschnitt
 
-output_file = snakemake.output[0]  # Name der Ausgabedatei
-with open(output_file, "w") as outfile:
+with open(snakemake.output[0], "w") as outfile:
     for key, values in bedGrap_entry.items():
-        if i % 1000 == 0:
-            print(key, values)
         chrom, start, end = key
-        meth_reads, unmeth_reads = values[0], values[1]
-        avg_methylation = meth_reads / (meth_reads + unmeth_reads) if meth_reads + unmeth_reads != 0 else 0
-        outfile.write(f"{chrom}\t{start}\t{end}\t{avg_methylation:.4f}\t{meth_reads:.0f}\t{unmeth_reads:.0f}\n")
-        i += 1
+        meth, meth_reads, unmeth_reads = values[0], values[1], values[2]
+        if np.mean(meth) / np.std(meth) > 0.2:
+            avg_methylation = meth_reads / (meth_reads + unmeth_reads) if meth_reads + unmeth_reads != 0 else 0
+            outfile.write(f"{chrom}\t{start}\t{end}\t{avg_methylation:.4f}\t{meth_reads:.0f}\t{unmeth_reads:.0f}\n")
