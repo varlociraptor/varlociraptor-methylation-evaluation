@@ -50,37 +50,6 @@ rule all:
         td="results/scatter_plot_td.png"
 
 
-rule get_genome:
-    output:
-        "resources/example_new/genome.fasta",
-    params:
-        species=sample_config["species"],
-        datatype=sample_config["datatype"],
-        build=sample_config["build"],
-        release=sample_config["release"],
-    log:
-        "logs/get_genome.log",
-    cache: "omit-software"  # save space and time with between workflow caching (see docs)
-    wrapper:
-        "v2.3.2/bio/reference/ensembl-sequence"
-
-
-rule get_chromosome:
-    output:
-        "resources/example_new/chr1.fasta",
-    params:
-        species=sample_config["species"],
-        datatype=sample_config["datatype"],
-        build=sample_config["build"],
-        release=sample_config["release"],
-        chromosome=sample_config["chromosome"],
-    log:
-        "logs/get_chromosome.log",
-    cache: "omit-software"  # save space and time with between workflow caching (see docs)
-    wrapper:
-        "v2.3.2/bio/reference/ensembl-sequence"
-
-
 rule genome_index:
     input:
         "resources/example_new/genome.fasta",
@@ -132,29 +101,12 @@ rule candidates_to_vcf:
         """
 
 
-""" rule get_fastq_pe_gz:
-    output:
-        "resources/example_new/{accession}_1.fastq.gz",
-        "resources/example_new/{accession}_2.fastq.gz",
-    log:
-        "logs/pe/{accession}.gz.log",
-    params:
-        extra="--skip-technical",
-    threads: 6
-    conda:
-        "envs/fastq-wrapper.yaml"
-    wrapper:
-        "v2.6.0/bio/sra-tools/fasterq-dump" """
-
 rule fake_meth_data_methylFASTQ:
     input:
         fasta="resources/example_new/genome.fasta",
     output:
         "resources/example_new/genome_se_f150r150_dir.fastq",
-        # "resources/example_new/genome_pe_f150r150_dir_R1.fastq",
-        # "resources/example_new/genome_pe_f150r150_dir_R2.fastq",
         "resources/example_new/genome_se_f150r150_dir.ch3"
-        # "resources/example_new/genome_pe_f150r150_dir.ch3"
     log:
         "logs/fake_meth_data.log",
     params:
@@ -172,11 +124,6 @@ rule fake_meth_data_methylFASTQ:
 rule align_reads:
     input:
         fasta="resources/example_new/genome.fasta",
-        # reads1=expand(   "resources/example_new/{accession}_1.fastq.gz",    accession=accession, ),
-        # reads2=expand(   "resources/example_new/{accession}_2.fastq.gz",  accession=accession,),
-        
-        # reads1="resources/example_new/genome_pe_f150r150_dir_R1.fastq",
-        # reads2="resources/example_new/genome_pe_f150r150_dir_R2.fastq",
         reads1="resources/example_new/genome_se_f150r150_dir.fastq",
     output:
         aligned_sam_reads,
@@ -193,7 +140,6 @@ rule align_reads:
 
 rule aligned_reads_to_bam:
     input:
-        # "resources/example_new/aligned_reads-illumina.sam",
         aligned_sam_reads,
     output:
         aligned_bam_reads,
