@@ -295,7 +295,7 @@ rule call_methylation:
     shell:
         """ 
         cd {params.varlo_path}
-        cargo run -- call variants generic --scenario {params.pipeline_path}{input.scenario} --obs normal={params.pipeline_path}{input.preprocess_obs} > {params.pipeline_path}/{output}
+        cargo run -- call variants --omit-strand-bias generic --scenario {params.pipeline_path}{input.scenario} --obs normal={params.pipeline_path}{input.preprocess_obs} > {params.pipeline_path}/{output}
         """
 
 
@@ -313,9 +313,32 @@ rule calls_to_vcf:
         bcftools view {input} -o {output}
         """
 
+rule download_bedGraphs:
+    output:
+        "resources/HG002/{bedGraph}.bedGraph.gz",
+    log:
+        "logs/HG002/{bedGraph}.log",
+    params:
+        pipeline_path=config["pipeline_path"],
+        bedGraphs = config["bedGraphs_HG002"]
+    script:
+        "scripts/get_bedGraph_data.py"
+
+
+rule process_data:
+    input:
+        "resources/HG002/{bedGraph}.bedGraph.gz"
+    output:
+        "resources/HG002/{bedGraph}.bedGraph"
+    shell:
+        "gunzip -c {input} > {output}"
+
+
 rule compute_avg_bedGraph:
     input:
-        expand("resources/HG002/bedGraph/{bed}.bedGraph", bed=bedGraphs)
+        # expand("resources/HG002/bedGraph/{bed}.bedGraph", bed=bedGraphs),
+        expand("resources/HG002/{bedGraph}.bedGraph", bedGraph=config["bedGraphs_HG002"])
+
     output:
         "resources/bed_avg.bedGraph",
     log:
