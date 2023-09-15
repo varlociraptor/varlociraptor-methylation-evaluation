@@ -164,33 +164,33 @@ rule align_reads:
     shell:
         """
         bwameth.py index-mem2 {input.fasta}
-        bwameth.py --reference {input.fasta} {input.reads1} {input.reads2}> {output}
+        bwameth.py --threads 10 --reference {input.fasta} {input.reads1} {input.reads2}  | samtools view -S -b - > {output}
         """
 
 
-rule aligned_reads_to_bam:
+rule aligned_reads_sorted_sam:
     input:
-        aligned_sam_reads,
-    output:
         aligned_bam_reads,
+    output:
+        sam_reads=aligned_sam_reads,
+        sam_sorted=aligned_sam_reads_sorted,
     log:
-        "logs/aligned_reads_to_bam.log",
+        "logs/aligned_reads_sorted_sam.log",
     conda:
         "envs/samtools.yaml"
     params:
         pipeline_path=config["pipeline_path"],
     shell:
         """ 
-        samtools view -bS {params.pipeline_path}{input} > {params.pipeline_path}/{output}    
+        samtools view -bS {params.pipeline_path}{input} > {params.pipeline_path}/{output.sam_reads}    
+        samtools sort {output.sam_reads} -o {output.sam_sorted}    
         """
 
 rule sort_aligned_reads:
     input:
-        bam_unsorted=aligned_bam_reads,
-        sam_unsorted=aligned_sam_reads,
+        aligned_bam_reads,
     output:
-        bam_sorted=aligned_bam_reads_sorted,
-        sam_sorted=aligned_sam_reads_sorted,
+        aligned_bam_reads_sorted,
     log:
         "logs/sort_aligned_reads.log",
     conda:
@@ -199,8 +199,7 @@ rule sort_aligned_reads:
         pipeline_path=config["pipeline_path"],
     shell:
         """
-        samtools sort {input.bam_unsorted} -o {output.bam_sorted}    
-        samtools sort {input.sam_unsorted} -o {output.sam_sorted}    
+        samtools sort {input} -o {output}    
         """
 
 rule aligned_reads_index:
@@ -218,7 +217,6 @@ rule aligned_reads_index:
         """
         samtools index {params.pipeline_path}/{input}
         """
-
 
 rule compute_meth_observations:
     input:
