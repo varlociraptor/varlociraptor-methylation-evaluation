@@ -56,5 +56,5 @@ with open(snakemake.output[0], "w") as outfile:
         chrom, start, end = key
         meth, meth_reads, unmeth_reads = values[0], values[1], values[2]
         if np.mean(meth) / np.std(meth) > 0.2:
-            avg_methylation = meth_reads / (meth_reads + unmeth_reads) if meth_reads + unmeth_reads != 0 else 0
+            avg_methylation = (meth_reads / (meth_reads + unmeth_reads)) * 100 if meth_reads + unmeth_reads != 0 else 0
             outfile.write(f"{chrom}\t{start}\t{end}\t{avg_methylation:.4f}\t{meth_reads:.0f}\t{unmeth_reads:.0f}\n")

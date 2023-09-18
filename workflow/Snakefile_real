@@ -156,7 +156,7 @@ rule align_reads:
         reads1=expand("resources/{accession}_1.fastq", accession=accession),
         reads2=expand("resources/{accession}_2.fastq", accession=accession),
     output:
-        aligned_sam_reads,
+        aligned_bam_reads,
     conda:
         "envs/bwa-meth.yaml"
     log:
@@ -216,6 +216,24 @@ rule aligned_reads_index:
     shell:
         """
         samtools index {params.pipeline_path}/{input}
+        """
+
+rule methylDackel:
+    input:
+        genome="resources/example_new/genome.fasta",
+        alignment=aligned_bam_reads_sorted,
+        alignment_index=aligned_bam_reads_index
+    output:
+        "results/alignments_CpG.bedGraph",
+    conda:
+        "envs/methylDackel.yaml"
+    log:
+        "logs/methylDackel.log",
+    params:
+        pipeline_path=config["pipeline_path"],
+    shell:
+        """
+        MethylDackel extract {input.genome} {input.alignment} -o {params.pipeline_path}/results/alignments --mergeContext
         """
 
 rule compute_meth_observations:

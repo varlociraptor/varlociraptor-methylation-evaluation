@@ -116,7 +116,7 @@ rule fake_meth_data_methylFASTQ:
         "envs/methylFastQ.yaml"
     shell:
         """
-        python {params.methylFastQ_path}src/methylFASTQ.py -i {input} -o {params.pipeline_path}resources/example_new --seq single_end --chh 0.0 --chg 0.0 --cg 0.5 --snp 0.0 --error 0.0
+        python {params.methylFastQ_path}src/methylFASTQ.py -i {input} -o {params.pipeline_path}resources/example_new --seq single_end --chh 0.0 --chg 0.0 --cg 0.5 --snp 0.0 --error 0.0 --coverage 50
         """
 
 
@@ -295,3 +295,9 @@ rule plot_results:
         "envs/altair.yaml"
     script:
         "scripts/scatter_plot.py"
+
+rule delete:
+    shell:
+        """
+        find resources/example_new/ -type f -not \( -name 'genome.fasta' -or -name 'scenario.yaml' \) -delete && rm -r results
+        """

@@ -1,6 +1,6 @@
 samples:
   normal:
-    resolution: 0.1
+    resolution: 0.001
     universe: "[0.0,1.0]"
 
 events:
