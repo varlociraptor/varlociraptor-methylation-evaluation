@@ -62,10 +62,10 @@ missing_positions3 = [key for key in ch3_dict if key not in bedgraph_dict and ke
 
 
 # Berechnen Sie die Abweichungen zwischen ch3_meth_values und vcf_af_values
-deviations = [abs(x - y) for x, y in zip(bedgraph_meth_values, vcf_af_values)]
+deviations = [abs(x - y) for x, y in zip(ch3_meth_values, vcf_af_values)]
 
 # Verwenden Sie heapq.nlargest, um die Positionen mit den größten 10 Abweichungswerten zu erhalten
-top_10_positions_with_deviation = heapq.nlargest(30, zip(deviations, bedgraph_positions))
+top_10_positions_with_deviation = heapq.nlargest(10, zip(deviations, ch3_positions))
 
 # Trennen Sie die Positionen und Abweichungswerte
 top_10_deviations, top_10_positions = zip(*top_10_positions_with_deviation)
