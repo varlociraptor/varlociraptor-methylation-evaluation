@@ -61,24 +61,17 @@ missing_positions2 = [key for key in vcf_dict if key not in bedgraph_dict and ke
 missing_positions3 = [key for key in ch3_dict if key not in bedgraph_dict and key not in vcf_dict]
 
 
-# Berechnen Sie die Abweichungen zwischen ch3_meth_values und vcf_af_values
-deviations = [abs(x - y) for x, y in zip(ch3_meth_values, vcf_af_values)]
 
-# Verwenden Sie heapq.nlargest, um die Positionen mit den größten 10 Abweichungswerten zu erhalten
-top_10_positions_with_deviation = heapq.nlargest(10, zip(deviations, ch3_positions))
+# deviations = [abs(x - y) for x, y in zip(ch3_meth_values, vcf_af_values)]
+# top_10_positions_with_deviation = heapq.nlargest(10, zip(deviations, ch3_positions))
+# top_10_deviations, top_10_positions = zip(*top_10_positions_with_deviation)
 
-# Trennen Sie die Positionen und Abweichungswerte
-top_10_deviations, top_10_positions = zip(*top_10_positions_with_deviation)
-
-# Drucken Sie die Positionen mit den größten 10 Abweichungswerten
-for i, (deviation, position) in enumerate(zip(top_10_deviations, top_10_positions), 1):
-    print(f"Position {i}: {position}, Abweichung: {deviation}")
+# for i, (deviation, position) in enumerate(zip(top_10_deviations, top_10_positions), 1):
+#     print(f"Position {i}: {position}, Deviation: {deviation}")
 
 
 
-# print(bedgraph_methylation_values)
-# Create a scatterplot
-# Create the proportional straight line
+
 line = alt.Chart(pd.DataFrame({'x': [1, 100], 'y': [1, 100]})).mark_line(color='red').encode(
     x='x:Q',
     y='y:Q'
@@ -107,7 +100,6 @@ final_chart.save(snakemake.output["tv"], scale_factor=2.0)
 
 
 # Plot MethylDackel vs Varlociraptor
-
 deviation = sum(abs(x - y) for x, y in zip(bedgraph_meth_values, vcf_af_values))
 
 
@@ -131,9 +123,6 @@ final_chart.save(snakemake.output["dv"], scale_factor=2.0)
 
 # Plot TrueMeth vs MethylDackel
 deviation = sum(abs(x - y) for x, y in zip(ch3_meth_values, bedgraph_meth_values))
-
-print(len(bedgraph_meth_values))
-print(len(bedgraph_dict))
 
 data = pd.DataFrame({
     'TrueMeth': ch3_meth_values,
