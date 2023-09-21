@@ -9,9 +9,8 @@ bedGrap_entry = {}
 
 all_keys = set()
 
-# Durchlaufen Sie alle Bedgraph-Dateien
+
 for file_path in bedGraph_files:
-    # Initialisieren Sie ein leeres Set für die Schlüssel in dieser Datei
     file_keys = set()
     
     with open(file_path, "r") as file:
@@ -25,7 +24,6 @@ for file_path in bedGraph_files:
 
             key = (chrom, start, end)
             
-            # Fügen Sie den Schlüssel zur Liste der Schlüssel für diese Datei hinzu
             file_keys.add(key)
 
             if key not in bedGrap_entry:
@@ -36,25 +34,24 @@ for file_path in bedGraph_files:
                 bedGrap_entry[key][2] += unmeth_reads
             print(bedGrap_entry[key], file_path)
 
-    # Aktualisieren Sie das Set der Schlüssel für alle Dateien
+
     if not all_keys:
         all_keys = file_keys
     else:
         all_keys.intersection_update(file_keys)
 
-# Entfernen Sie Schlüssel aus dem Dictionary, die nicht in allen Dateien vorhanden sind
 keys_to_remove = set(bedGrap_entry.keys()) - all_keys
 for key in keys_to_remove:
     del bedGrap_entry[key]
 
-with open("bedGraph_entry.pkl", "wb") as outfile:
-    pickle.dump(bedGrap_entry, outfile)
+# with open("bedGraph_entry.pkl", "wb") as outfile:
+#     pickle.dump(bedGrap_entry, outfile)
 
 
 with open(snakemake.output[0], "w") as outfile:
     for key, values in bedGrap_entry.items():
         chrom, start, end = key
         meth, meth_reads, unmeth_reads = values[0], values[1], values[2]
-        if np.mean(meth) / np.std(meth) > 0.2:
+        if np.std(meth) / (np.mean(meth) + 0.01) > 0.2:
             avg_methylation = (meth_reads / (meth_reads + unmeth_reads)) * 100 if meth_reads + unmeth_reads != 0 else 0
             outfile.write(f"{chrom}\t{start}\t{end}\t{avg_methylation:.4f}\t{meth_reads:.0f}\t{unmeth_reads:.0f}\n")
