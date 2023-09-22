@@ -32,7 +32,6 @@ for file_path in bedGraph_files:
                 bedGrap_entry[key][0].append(methylation)
                 bedGrap_entry[key][1] += meth_reads
                 bedGrap_entry[key][2] += unmeth_reads
-            print(bedGrap_entry[key], file_path)
 
 
     if not all_keys:

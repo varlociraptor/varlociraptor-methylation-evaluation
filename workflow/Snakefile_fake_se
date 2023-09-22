@@ -293,7 +293,7 @@ rule plot_results:
         tv="results/scatter_plot_tv.png",
         td="results/scatter_plot_td.png"
     conda:
-        "envs/altair.yaml"
+        "envs/plot.yaml"
     script:
         "scripts/scatter_plot.py"
 
