@@ -10,7 +10,7 @@ scattergather:
     split=8
 
 read_type = config["read_type"]
-chr21_config = config["sample"]
+chromosome_conf = config["sample"]
 accession = config["accession"]
 
 
@@ -50,14 +50,14 @@ rule all:
         tv="results/scatter_plot_tv.png",
 
 
-rule get_chr21:
+rule get_genome:
     output:
         "resources/genome.fasta",
     params:
-        species=chr21_config["species"],
-        datatype=chr21_config["datatype"],
-        build=chr21_config["build"],
-        release=chr21_config["release"],
+        species=chromosome_conf["species"],
+        datatype=chromosome_conf["datatype"],
+        build=chromosome_conf["build"],
+        release=chromosome_conf["release"],
     log:
         "logs/get_chr21.log",
     cache: "omit-software"  # save space and time with between workflow caching (see docs)
@@ -67,20 +67,38 @@ rule get_chr21:
 
 rule get_chromosome:
     output:
-        "resources/chr21.fasta",
+        "resources/chromosome.fasta",
     params:
-        species=chr21_config["species"],
-        datatype=chr21_config["datatype"],
-        build=chr21_config["build"],
-        release=chr21_config["release"],
-        chromosome=chr21_config["chromosome"],
+        species=chromosome_conf["species"],
+        datatype=chromosome_conf["datatype"],
+        build=chromosome_conf["build"],
+        release=chromosome_conf["release"],
+        chromosome=chromosome_conf["chromosome"],
     log:
         "logs/get_chromosome.log",
     cache: "omit-software"  # save space and time with between workflow caching (see docs)
     wrapper:
         "v2.3.2/bio/reference/ensembl-sequence"
 
-# Maybe samtools supports threads (look it up)
+
+rule filter_genome:
+    input:
+        "resources/genome.fasta",
+    output:
+        "resources/chr21.fasta",
+    log:
+        "logs/filter_genome.log",
+    conda:
+        "envs/samtools.yaml"
+    params:
+        pipeline_path=config["pipeline_path"],
+    threads: 10
+    shell:
+        """ 
+        samtools faidx {input} 21 > {output}
+        """
+
+
 rule chr21_index:
     input:
         "resources/chr21.fasta",
@@ -137,7 +155,6 @@ rule candidates_to_vcf:
 
 
 
-
 rule get_fastq_pe:
     output:
         # the wildcard name must be accession, pointing to an SRA number
@@ -156,11 +173,11 @@ rule get_fastq_pe:
 
 rule align_reads:
     input:
-        fasta="resources/chr21.fasta",
+        fasta="resources/genome.fasta",
         reads1=expand("resources/{accession}_1.fastq", accession=accession),
         reads2=expand("resources/{accession}_2.fastq", accession=accession),
     output:
-        aligned_bam_reads,
+        "resources/genome_aligned"
     conda:
         "envs/bwa-meth.yaml"
     log:
@@ -171,6 +188,24 @@ rule align_reads:
         bwameth.py index-mem2 {input.fasta}
         bwameth.py --threads {threads} --reference {input.fasta} {input.reads1} {input.reads2}  | samtools view -S -b - > {output}
         """
+
+rule filter_aligned_reads:
+    input:
+        "resources/genome_aligned"
+    output:
+        aligned_bam_reads
+    log:
+        "logs/chr21_index.log",
+    conda:
+        "envs/samtools.yaml"
+    params:
+        pipeline_path=config["pipeline_path"],
+    threads: 10
+    shell:
+        """ 
+        samtools view -b -o {output} {input} chr21
+        """
+
 
 
 rule aligned_reads_sorted_sam:
@@ -353,6 +388,8 @@ rule compute_avg_bedGraph:
         "resources/bed_avg.bedGraph",
     log:
         "logs/compute_avg_bedGraph.log",
+    params:
+        chromosome=chromosome_conf["chromosome"],
     script:
         "scripts/compute_avg_bedGraph.py"
 

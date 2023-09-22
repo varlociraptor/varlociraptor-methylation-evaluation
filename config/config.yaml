@@ -23,7 +23,11 @@ methylFastQ_path: "~/Documents/Promotion/MethylFASTQ/"
 
 
 read_type: "Illumina"
-accession: "SRR13051250"
+accession: "SRR13051058"
+
+# Das hier ist das, was ich eigentlich nutzen moechte: SRR13051058
+# accession: "SRR13051250"
+
 
 bedGraphs_HG002:
   - GSM5649436_TruSeq_HG002_LAB01_REP02

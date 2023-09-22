@@ -17,21 +17,21 @@ for file_path in bedGraph_files:
         for line in file:
             parts = line.strip().split("\t")
             chrom, start, end, methylation, meth_reads, unmeth_reads = parts
+            if chrom == snakemake.params[chromosome]:
+                methylation = float(methylation)
+                meth_reads = int(meth_reads)
+                unmeth_reads = int(unmeth_reads)
 
-            methylation = float(methylation)
-            meth_reads = int(meth_reads)
-            unmeth_reads = int(unmeth_reads)
+                key = (chrom, start, end)
+                
+                file_keys.add(key)
 
-            key = (chrom, start, end)
-            
-            file_keys.add(key)
-
-            if key not in bedGrap_entry:
-                bedGrap_entry[key] = [[methylation], meth_reads, unmeth_reads]
-            else:
-                bedGrap_entry[key][0].append(methylation)
-                bedGrap_entry[key][1] += meth_reads
-                bedGrap_entry[key][2] += unmeth_reads
+                if key not in bedGrap_entry:
+                    bedGrap_entry[key] = [[methylation], meth_reads, unmeth_reads]
+                else:
+                    bedGrap_entry[key][0].append(methylation)
+                    bedGrap_entry[key][1] += meth_reads
+                    bedGrap_entry[key][2] += unmeth_reads
 
 
     if not all_keys:
