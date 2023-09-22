@@ -348,17 +348,14 @@ rule compute_avg_bedGraph:
 
 rule plot_results:
     input:
-        bedGraph="results/alignments_CpG.bedGraph",
         calls="results/calls.vcf",
         # true_meth="resources/genome_se_f150r150_dir.ch3"
         true_meth="resources/bed_avg.bedGraph"
     output:
-        dv="results/scatter_plot_dv.png",
         tv="results/scatter_plot_tv.png",
-        td="results/scatter_plot_td.png"
     conda:
         "envs/altair.yaml"
     log:
         "logs/plot_results.log",
     script:
-        "scripts/scatter_plot.py"
+        "scripts/scatter_plot_real.py"
