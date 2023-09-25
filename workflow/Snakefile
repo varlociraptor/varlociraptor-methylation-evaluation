@@ -7,41 +7,43 @@
 configfile: "config/config.yaml"
 
 scattergather:
-    split_candidates=10
+    split_candidates=10,
+    split_reads=10,
 
 read_type = config["read_type"]
-chromosome_conf = config["sample"]
+genome_config = config["sample"]
 accession = config["accession"]
 
 
+
 aligned_bam_reads = (
-    "resources/aligned-reads-pacbio.bam"
+    "resources/example_new/aligned-reads-pacbio.bam"
     if read_type == "PacBio"
-    else "resources/aligned-reads-illumina.bam"
+    else "resources/example_new/aligned-reads-illumina.bam"
 )
 
 aligned_bam_reads_index = (
-    "resources/aligned-reads-pacbio-sorted.bam.bai"
+    "resources/example_new/aligned-reads-pacbio-sorted.bam.bai"
     if read_type == "PacBio"
-    else "resources/aligned-reads-illumina-sorted.bam.bai"
+    else "resources/example_new/aligned-reads-illumina-sorted.bam.bai"
 )
 
 aligned_sam_reads = (
-    "resources/aligned-reads-pacbio.sam"
+    "resources/example_new/aligned-reads-pacbio.sam"
     if read_type == "PacBio"
-    else "resources/aligned-reads-illumina.sam"
+    else "resources/example_new/aligned-reads-illumina.sam"
 )
 
 aligned_bam_reads_sorted = (
-    "resources/aligned-reads-pacbio-sorted.bam"
+    "resources/example_new/aligned-reads-pacbio-sorted.bam"
     if read_type == "PacBio"
-    else "resources/aligned-reads-illumina-sorted.bam"
+    else "resources/example_new/aligned-reads-illumina-sorted.bam"
 )
 
 aligned_sam_reads_sorted = (
-    "resources/aligned-reads-pacbio-sorted.sam"
+    "resources/example_new/aligned-reads-pacbio-sorted.sam"
     if read_type == "PacBio"
-    else "resources/aligned-reads-illumina-sorted.sam"
+    else "resources/example_new/aligned-reads-illumina-sorted.sam"
 )
 
 
@@ -52,62 +54,14 @@ rule all:
         td="results/scatter_plot_td.png"
 
 
-rule get_genome:
-    output:
-        "resources/genome.fasta",
-    params:
-        species=chromosome_conf["species"],
-        datatype=chromosome_conf["datatype"],
-        build=chromosome_conf["build"],
-        release=chromosome_conf["release"],
-    log:
-        "logs/get_chr21.log",
-    cache: "omit-software"  # save space and time with between workflow caching (see docs)
-    wrapper:
-        "v2.3.2/bio/reference/ensembl-sequence"
 
-
-rule get_chromosome:
-    output:
-        "resources/chromosome.fasta",
-    params:
-        species=chromosome_conf["species"],
-        datatype=chromosome_conf["datatype"],
-        build=chromosome_conf["build"],
-        release=chromosome_conf["release"],
-        chromosome=chromosome_conf["chromosome"],
-    log:
-        "logs/get_chromosome.log",
-    cache: "omit-software"  # save space and time with between workflow caching (see docs)
-    wrapper:
-        "v2.3.2/bio/reference/ensembl-sequence"
-
-
-rule filter_genome:
+rule genome_index:
     input:
-        "resources/genome.fasta",
+        "resources/example_new/genome.fasta",
     output:
-        "resources/chr21.fasta",
+        "resources/example_new/genome.fasta.fai",
     log:
-        "logs/filter_genome.log",
-    conda:
-        "envs/samtools.yaml"
-    params:
-        pipeline_path=config["pipeline_path"],
-    threads: 10
-    shell:
-        """ 
-        samtools faidx {input} 21 > {output}
-        """
-
-
-rule chr21_index:
-    input:
-        "resources/chr21.fasta",
-    output:
-        "resources/chr21.fasta.fai",
-    log:
-        "logs/chr21_index.log",
+        "logs/genome_index.log",
     conda:
         "envs/samtools.yaml"
     params:
@@ -120,9 +74,9 @@ rule chr21_index:
 
 rule find_candidates:
     input:
-        "resources/chr21.fasta",
+        "resources/example_new/genome.fasta",
     output:
-        "resources/candidates.bcf",
+        "resources/example_new/candidates.bcf",
     log:
         "logs/find_candidates.log",
     conda:
@@ -136,80 +90,115 @@ rule find_candidates:
         cargo run -- methylation-candidates {params.pipeline_path}{input} {params.pipeline_path}{output}
         """
 
-
-
 # Unused
 rule candidates_to_vcf:
     input:
-        "resources/candidates.bcf",
+        "resources/example_new/candidates.bcf",
     output:
-        "resources/candidates.vcf",
+        "resources/example_new/candidates.vcf",
     conda:
         "envs/samtools.yaml"
     log:
         "logs/convert_to_vcf.log",
-    threads: 10
     shell:
         """
-        bcftools view --threads {threads} {input} > {output}
+        bcftools view {input} > {output}
+        """
+        
+rule split_candidates:
+    input:
+        "resources/example_new/candidates.bcf",
+    output:
+        scatter.split_candidates("resources/example_new/candidates_{scatteritem}.bcf")
+    log:
+        "logs/split_candidates.log",
+    conda:
+        "envs/rbt.yaml"
+    shell:
+        "rbt vcf-split {input} {output}"
+
+
+
+rule fake_meth_data_methylFASTQ:
+    input:
+        fasta="resources/example_new/genome.fasta",
+    output:
+        "resources/example_new/genome_pe_f150r150_dir_R1.fastq",
+        "resources/example_new/genome_pe_f150r150_dir_R2.fastq",
+        "resources/example_new/genome_pe_f150r150_dir.ch3"
+    log:
+        "logs/fake_meth_data.log",
+    params:
+        pipeline_path=config["pipeline_path"],
+        methylFastQ_path=config["methylFastQ_path"],
+    conda:
+        "envs/methylFastQ.yaml"
+    shell:
+        """
+        python {params.methylFastQ_path}src/methylFASTQ.py -i {input} -o {params.pipeline_path}resources/example_new --seq paired_end --chh 0.0 --chg 0.0 --cg 0.5 --snp 0.0 --error 0.0 --coverage 50
         """
 
+# rule split_reads1:
+#     input:
+#         "resources/example_new/genome_pe_f150r150_dir_R1.fastq",
+#     output:
+#         scatter.split_reads("resources/example_new/read1_{scatteritem}.fastq"),
+#     log:
+#         "logs/split_reads1.log",
+#     conda:
+#         "envs/rbt.yaml"
+#     shell:
+#         """
+#         rbt fastq-split {output} < {input}
+#         """
 
-
-
-rule get_fastq_pe:
-    output:
-        # the wildcard name must be accession, pointing to an SRA number
-        "resources/{accession}_1.fastq",
-        "resources/{accession}_2.fastq",
-    log:
-        "logs/pe/{accession}.log"
-    params:
-        extra="--skip-technical"
-    threads: 20  # defaults to 6
-    conda:
-        "envs/fastq-wrapper.yaml"
-    wrapper:
-        "v2.6.0/bio/sra-tools/fasterq-dump"
+# rule split_reads2:
+#     input:
+#         "resources/example_new/genome_pe_f150r150_dir_R2.fastq",
+#     output:
+#         scatter.split_reads("resources/example_new/read2_{scatteritem}.fastq"),
+#     log:
+#         "logs/split_reads2.log",
+#     conda:
+#         "envs/rbt.yaml"
+#     shell:
+#         """
+#         rbt fastq-split {output} < {input}
+#         """
 
 
 rule align_reads:
     input:
-        fasta="resources/genome.fasta",
-        reads1=expand("resources/{accession}_1.fastq", accession=accession),
-        reads2=expand("resources/{accession}_2.fastq", accession=accession),
+        fasta="resources/example_new/genome.fasta",
+        # reads1="resources/example_new/read1_{scatteritem}.fastq",
+        # reads2="resources/example_new/read2_{scatteritem}.fastq",
+        reads1="resources/example_new/genome_pe_f150r150_dir_R1.fastq",
+        reads2="resources/example_new/genome_pe_f150r150_dir_R2.fastq",
     output:
-        "resources/genome_aligned.bam"
+        # "resources/example_new/aligned-reads-{scatteritem}.bam"
+        aligned_bam_reads
     conda:
         "envs/bwa-meth.yaml"
     log:
+        # "logs/align_reads_{scatteritem}.log",
         "logs/align_reads.log",
-    threads: 20
     shell:
         """
         bwameth.py index-mem2 {input.fasta}
-        bwameth.py --threads {threads} --reference {input.fasta} {input.reads1} {input.reads2}  | samtools view -S -b - > {output}
+        bwameth.py --threads 10 --reference {input.fasta} {input.reads1} {input.reads2}  | samtools view -S -b - > {output}
         """
 
-rule filter_aligned_reads:
-    input:
-        "resources/genome_aligned.bam"
-    output:
-        aligned_bam_reads
-    log:
-        "logs/chr21_index.log",
-    conda:
-        "envs/samtools.yaml"
-    params:
-        pipeline_path=config["pipeline_path"],
-    threads: 10
-    shell:
-        """ 
-        samtools view -b -o {output} {input} chr21
-        """
+# rule gather_alignment:
+#     input:
+#         gather.split_reads("resources/example_new/aligned-reads-{scatteritem}.bam")
+#     output:
+#         aligned_bam_reads
+#     shell:
+#         "cat {input} > {output}"
 
 
-# Unused
+
+
 rule aligned_reads_sorted_sam:
     input:
         aligned_bam_reads,
@@ -222,16 +211,16 @@ rule aligned_reads_sorted_sam:
         "envs/samtools.yaml"
     params:
         pipeline_path=config["pipeline_path"],
-    threads: 10
     shell:
         """ 
-        samtools view -@ {threads} -bS {params.pipeline_path}{input} > {params.pipeline_path}/{output.sam_reads}    
-        samtools sort -@ {threads} {output.sam_reads} -o {output.sam_sorted}    
+        samtools view -bS {params.pipeline_path}{input} > {params.pipeline_path}/{output.sam_reads}    
+        samtools sort {output.sam_reads} -o {output.sam_sorted}    
         """
 
 rule sort_aligned_reads:
     input:
-        aligned_bam_reads,
+        aligned_sam_reads_sorted
+        # aligned_bam_reads,
     output:
         aligned_bam_reads_sorted,
     log:
@@ -240,11 +229,12 @@ rule sort_aligned_reads:
         "envs/samtools.yaml"
     params:
         pipeline_path=config["pipeline_path"],
-    threads: 10
     shell:
         """
-        samtools sort -@ {threads}  {input} -o {output}    
+        samtools view -bS {params.pipeline_path}{input} > {params.pipeline_path}/{output}    
+
         """
+        # samtools sort {input} -o {output}    
 
 rule aligned_reads_index:
     input:
@@ -257,16 +247,15 @@ rule aligned_reads_index:
         "envs/samtools.yaml"
     params:
         pipeline_path=config["pipeline_path"],
-    threads: 10
     shell:
         """
-        samtools index -@ {threads} {params.pipeline_path}/{input}
+        samtools index {params.pipeline_path}/{input}
         """
 
 rule methylDackel:
     input:
-        chr21="resources/chr21.fasta",
-        alignment=aligned_bam_reads_sorted,
+        genome="resources/example_new/genome.fasta",
+        alignments=aligned_bam_reads_sorted,
         alignment_index=aligned_bam_reads_index
     output:
         "results/alignments_CpG.bedGraph",
@@ -278,21 +267,23 @@ rule methylDackel:
         pipeline_path=config["pipeline_path"],
     shell:
         """
-        MethylDackel extract {input.chr21} {input.alignment} -o {params.pipeline_path}/results/alignments --mergeContext
+        MethylDackel extract {input.genome} {input.alignments} -o {params.pipeline_path}/results/alignments --mergeContext
         """
 
 
 rule compute_meth_observations:
     input:
-        chr21="resources/chr21.fasta",
-        chr21_index="resources/chr21.fasta.fai",
+        genome="resources/example_new/genome.fasta",
+        genome_index="resources/example_new/genome.fasta.fai",
         alignments=aligned_bam_reads_sorted,
         alignments_index=aligned_bam_reads_index,
-        candidates="resources/candidates.bcf",
+        candidates="resources/example_new/candidates_{scatteritem}.bcf"
+        # candidates="resources/example_new/candidates.bcf",
     output:
-        "results/normal.bcf",
+        "results/normal_{scatteritem}.bcf",
+        # "results/normal.bcf",
     log:
-        "logs/copute.log",
+        "logs/compute_{scatteritem}.log",
     conda:
         "envs/varlociraptor.yaml"
     params:
@@ -302,34 +293,36 @@ rule compute_meth_observations:
     shell:
         """ 
         cd {params.varlo_path}
-        cargo run --release -- preprocess variants {params.pipeline_path}{input.chr21} --candidates {params.pipeline_path}{input.candidates} --bam {params.pipeline_path}{input.alignments} --read-type {params.read_type} > {params.pipeline_path}{output}
+        cargo run  --release -- preprocess variants {params.pipeline_path}{input.genome} --candidates {params.pipeline_path}{input.candidates} --bam {params.pipeline_path}{input.alignments} --read-type {params.read_type} > {params.pipeline_path}{output}
         """
 
 # Unused
 rule observations_to_vcf:
     input:
-        "results/normal.bcf",
+        "results/normal_{scatteritem}.bcf",
+        # "results/normal.bcf",
     output:
-        "results/normal.vcf",
+        "results/normal_{scatteritem}.vcf",
+        # "results/normal.vcf",
     conda:
         "envs/samtools.yaml"
     log:
-        "logs/convert_to_vcf.log",
-    threads: 10
+        "logs/convert_to_vcf_{scatteritem}.log",
     shell:
         """
-        bcftools view --threads {threads} {input} > {output}
+        bcftools view {input} > {output}
         """
-
 
 rule call_methylation:
     input:
-        preprocess_obs="results/normal.bcf",
-        scenario="resources/scenario.yaml",
+        preprocess_obs="results/normal_{scatteritem}.bcf",
+        # preprocess_obs="results/normal.bcf",
+        scenario="resources/example_new/scenario.yaml",
     output:
-        "results/calls.bcf",
+        "results/calls_{scatteritem}.bcf",
+        # "results/calls.bcf",
     log:
-        "logs/copute.log",
+        "logs/compute_{scatteritem}.log",
     conda:
         "envs/varlociraptor.yaml"
     params:
@@ -345,82 +338,39 @@ rule call_methylation:
 
 rule calls_to_vcf:
     input:
-        "results/calls.bcf",
+        "results/calls_{scatteritem}.bcf",
+        # "results/calls.bcf",
     output:
-        "results/calls.vcf",
+        "results/calls_{scatteritem}.vcf",
+        # "results/calls.vcf",
     conda:
         "envs/samtools.yaml"
     log:
-        "logs/convert_to_vcf.log",
-    threads: 10
+        "logs/convert_to_vcf_{scatteritem}.log",
     shell:
         """
-        bcftools --threads {threads} view {input} -o {output}
+        bcftools view {input} -o {output}
         """
-
-rule download_bedGraphs:
-    output:
-        "resources/HG002/{bedGraph}.bedGraph.gz",
-    log:
-        "logs/download_bedGraphs{bedGraph}.log",
-    params:
-        pipeline_path=config["pipeline_path"],
-        bedGraphs = config["bedGraphs_HG002"]
-    script:
-        "scripts/get_bedGraph_data.py"
-
-
-ruleorder: process_data > filter_bedGraphs
-
-rule process_data:
+        
+rule gather_candidates:
     input:
-        "resources/HG002/{bedGraph}.bedGraph.gz"
+        gather.split_candidates("results/calls_{scatteritem}.vcf")
     output:
-        "resources/HG002/{bedGraph}.bedGraph"
-    log:
-        "logs/process_data{bedGraph}.log",
+        "results/calls.vcf"
     shell:
-        "gunzip -c {input} > {output}"
-
-rule filter_bedGraphs:
-    input:
-        "resources/HG002/{bedGraph}.bedGraph"
-    output:
-        "resources/HG002/{bedGraph}_filtered.bedGraph"
-    log:
-        "logs/filter_bedGraphs{bedGraph}.log",
-    shell:
-        """
-        awk '$1 == "chr21" {print}' {input} > {output}
-        """
-
-rule compute_avg_bedGraph:
-    input:
-        # expand("resources/HG002/bedGraph/{bed}.bedGraph", bed=bedGraphs),
-        expand("resources/HG002/{bedGraph}_filtered.bedGraph", bedGraph=config["bedGraphs_HG002"])
-
-    output:
-        "resources/bed_avg.bedGraph",
-    log:
-        "logs/compute_avg_bedGraph.log",
-    params:
-        chromosome=chromosome_conf["chromosome"],
-    script:
-        "scripts/compute_avg_bedGraph.py"
-
+        "cat {input} > {output}"
 
 rule plot_results:
     input:
         bedGraph="results/alignments_CpG.bedGraph",
         calls="results/calls.vcf",
-        true_meth="resources/bed_avg.bedGraph"
+        # true_meth="resources/example_new/genome_se_f150r150_dir.ch3"
+        true_meth="resources/example_new/genome_pe_f150r150_dir.ch3"
     output:
         dv="results/scatter_plot_dv.png",
         tv="results/scatter_plot_tv.png",
         td="results/scatter_plot_td.png"
     conda:
         "envs/plot.yaml"
-    log:
-        "logs/plot_results.log",
     script:
         "scripts/scatter_plot.py"
