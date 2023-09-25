@@ -109,7 +109,7 @@ rule split_candidates:
     input:
         "resources/example_new/candidates.bcf",
     output:
-        scatter.split_candidates("resources/example_new/candidates_{scatteritem}.bcf")
+        temp(scatter.split_candidates("resources/example_new/candidates_{scatteritem}.bcf"))
     log:
         "logs/split_candidates.log",
     conda:
@@ -138,67 +138,69 @@ rule fake_meth_data_methylFASTQ:
         python {params.methylFastQ_path}src/methylFASTQ.py -i {input} -o {params.pipeline_path}resources/example_new --seq paired_end --chh 0.0 --chg 0.0 --cg 0.5 --snp 0.0 --error 0.0 --coverage 50
         """
 
-# rule split_reads1:
-#     input:
-#         "resources/example_new/genome_pe_f150r150_dir_R1.fastq",
-#     output:
-#         scatter.split_reads("resources/example_new/read1_{scatteritem}.fastq"),
-#     log:
-#         "logs/split_reads1.log",
-#     conda:
-#         "envs/rbt.yaml"
-#     shell:
-#         """
-#         rbt fastq-split {output} < {input}
-#         """
+rule split_reads1:
+    input:
+        "resources/example_new/genome_pe_f150r150_dir_R1.fastq",
+    output:
+        temp(scatter.split_reads("resources/example_new/read1_{scatteritem}.fastq")),
+    log:
+        "logs/split_reads1.log",
+    conda:
+        "envs/rbt.yaml"
+    shell:
+        """
+        rbt fastq-split {output} < {input}
+        """
 
-# rule split_reads2:
-#     input:
-#         "resources/example_new/genome_pe_f150r150_dir_R2.fastq",
-#     output:
-#         scatter.split_reads("resources/example_new/read2_{scatteritem}.fastq"),
-#     log:
-#         "logs/split_reads2.log",
-#     conda:
-#         "envs/rbt.yaml"
-#     shell:
-#         """
-#         rbt fastq-split {output} < {input}
-#         """
+rule split_reads2:
+    input:
+        "resources/example_new/genome_pe_f150r150_dir_R2.fastq",
+    output:
+        temp(scatter.split_reads("resources/example_new/read2_{scatteritem}.fastq")),
+    log:
+        "logs/split_reads2.log",
+    conda:
+        "envs/rbt.yaml"
+    shell:
+        """
+        rbt fastq-split {output} < {input}
+        """
 
 
 rule align_reads:
     input:
         fasta="resources/example_new/genome.fasta",
-        # reads1="resources/example_new/read1_{scatteritem}.fastq",
-        # reads2="resources/example_new/read2_{scatteritem}.fastq",
-        reads1="resources/example_new/genome_pe_f150r150_dir_R1.fastq",
-        reads2="resources/example_new/genome_pe_f150r150_dir_R2.fastq",
+        reads1="resources/example_new/read1_{scatteritem}.fastq",
+        reads2="resources/example_new/read2_{scatteritem}.fastq",
+        # reads1="resources/example_new/genome_pe_f150r150_dir_R1.fastq",
+        # reads2="resources/example_new/genome_pe_f150r150_dir_R2.fastq",
     output:
-        # "resources/example_new/aligned-reads-{scatteritem}.bam"
-        aligned_bam_reads
+        temp("resources/example_new/aligned-reads-{scatteritem}.bam")
+        # aligned_bam_reads
     conda:
         "envs/bwa-meth.yaml"
     log:
-        # "logs/align_reads_{scatteritem}.log",
-        "logs/align_reads.log",
+        "logs/align_reads_{scatteritem}.log",
+        # "logs/align_reads.log",
     shell:
         """
         bwameth.py index-mem2 {input.fasta}
         bwameth.py --threads 10 --reference {input.fasta} {input.reads1} {input.reads2}  | samtools view -S -b - > {output}
         """
 
-# rule gather_alignment:
-#     input:
-#         gather.split_reads("resources/example_new/aligned-reads-{scatteritem}.bam")
-#     output:
-#         aligned_bam_reads
-#     shell:
-#         "cat {input} > {output}"
+rule gather_alignment:
+    input:
+        gather.split_reads("resources/example_new/aligned-reads-{scatteritem}.bam")
+    output:
+        aligned_bam_reads
+    conda:
+        "envs/samtools.yaml"
+    shell:
+        "samtools merge  {output} {input}"
 
 
 
-
+# Unused
 rule aligned_reads_sorted_sam:
     input:
         aligned_bam_reads,
@@ -219,8 +221,8 @@ rule aligned_reads_sorted_sam:
 
 rule sort_aligned_reads:
     input:
-        aligned_sam_reads_sorted
-        # aligned_bam_reads,
+        # aligned_sam_reads_sorted
+        aligned_bam_reads,
     output:
         aligned_bam_reads_sorted,
     log:
@@ -231,10 +233,10 @@ rule sort_aligned_reads:
         pipeline_path=config["pipeline_path"],
     shell:
         """
-        samtools view -bS {params.pipeline_path}{input} > {params.pipeline_path}/{output}    
 
+        samtools sort {input} -o {output}    
         """
-        # samtools sort {input} -o {output}    
+        # samtools view -bS {params.pipeline_path}{input} > {params.pipeline_path}/{output}    
 
 rule aligned_reads_index:
     input:
@@ -280,7 +282,7 @@ rule compute_meth_observations:
         candidates="resources/example_new/candidates_{scatteritem}.bcf"
         # candidates="resources/example_new/candidates.bcf",
     output:
-        "results/normal_{scatteritem}.bcf",
+        temp("results/normal_{scatteritem}.bcf"),
         # "results/normal.bcf",
     log:
         "logs/compute_{scatteritem}.log",
@@ -302,7 +304,7 @@ rule observations_to_vcf:
         "results/normal_{scatteritem}.bcf",
         # "results/normal.bcf",
     output:
-        "results/normal_{scatteritem}.vcf",
+        temp("results/normal_{scatteritem}.vcf"),
         # "results/normal.vcf",
     conda:
         "envs/samtools.yaml"
@@ -319,7 +321,7 @@ rule call_methylation:
         # preprocess_obs="results/normal.bcf",
         scenario="resources/example_new/scenario.yaml",
     output:
-        "results/calls_{scatteritem}.bcf",
+        temp("results/calls_{scatteritem}.bcf"),
         # "results/calls.bcf",
     log:
         "logs/compute_{scatteritem}.log",
@@ -341,7 +343,7 @@ rule calls_to_vcf:
         "results/calls_{scatteritem}.bcf",
         # "results/calls.bcf",
     output:
-        "results/calls_{scatteritem}.vcf",
+        temp("results/calls_{scatteritem}.vcf"),
         # "results/calls.vcf",
     conda:
         "envs/samtools.yaml"

@@ -7,7 +7,8 @@
 configfile: "config/config.yaml"
 
 scattergather:
-    split_candidates=10
+    split_candidates=10,
+    split_reads=10
 
 read_type = config["read_type"]
 chromosome_conf = config["sample"]
@@ -158,9 +159,9 @@ rule split_candidates:
     input:
         "resources/candidates.bcf",
     output:
-        scatter.split_candidates("resources/candidates_{scatteritem}.bcf")
+        temp(scatter.split_candidates("resources/candidates_{scatteritem}.bcf"))
     log:
-        "logs/split_candidates_{scatteritem}.log",
+        "logs/split_candidates.log",
     conda:
         "envs/rbt.yaml"
     shell:
@@ -183,23 +184,65 @@ rule get_fastq_pe:
         "v2.6.0/bio/sra-tools/fasterq-dump"
 
 
+rule split_reads1:
+    input:
+       "resources/{accession}_1.fastq",
+    output:
+        temp(scatter.split_reads("resources/example_new/read1_{scatteritem}.fastq")),
+    log:
+        "logs/split_reads1.log",
+    conda:
+        "envs/rbt.yaml"
+    shell:
+        """
+        rbt fastq-split {output} < {input}
+        """
+
+rule split_reads2:
+    input:
+        "resources/{accession}_2.fastq",
+    output:
+        temp(scatter.split_reads("resources/example_new/read2_{scatteritem}.fastq")),
+    log:
+        "logs/split_reads2.log",
+    conda:
+        "envs/rbt.yaml"
+    shell:
+        """
+        rbt fastq-split {output} < {input}
+        """
+
+
+
 rule align_reads:
     input:
         fasta="resources/genome.fasta",
-        reads1=expand("resources/{accession}_1.fastq", accession=accession),
-        reads2=expand("resources/{accession}_2.fastq", accession=accession),
+        reads1="resources/example_new/read1_{scatteritem}.fastq",
+        reads2="resources/example_new/read2_{scatteritem}.fastq",
     output:
-        aligned_bam_reads
+        temp("resources/example_new/aligned-reads-{scatteritem}.bam")
+        # aligned_bam_reads
     conda:
         "envs/bwa-meth.yaml"
     log:
-        "logs/align_reads.log",
+        "logs/align_reads_{scatteritem}.log",
+        # "logs/align_reads.log",
     threads: 20
     shell:
         """
         bwameth.py index-mem2 {input.fasta}
         bwameth.py --threads {threads} --reference {input.fasta} {input.reads1} {input.reads2}  | samtools view -S -b - > {output}
         """
+
+rule gather_alignment:
+    input:
+        gather.split_reads("resources/example_new/aligned-reads-{scatteritem}.bam")
+    output:
+        aligned_bam_reads
+    conda:
+        "envs/samtools.yaml"
+    shell:
+        "samtools merge  {output} {input}"
 
 
 
@@ -262,7 +305,7 @@ rule filter_aligned_reads:
         bam=aligned_bam_reads_sorted,
         index=aligned_bam_reads_index,
     output:
-        "resources/aligment_focused.bam"
+        "resources/alignment_focused.bam"
     log:
         "logs/chr21_index.log",
     conda:
@@ -277,9 +320,9 @@ rule filter_aligned_reads:
 
 rule aligned_reads_filtered_index:
     input:
-        "resources/aligment_focused.bam"
+        "resources/alignment_focused.bam"
     output:
-        "resources/aligment_focused.bam.bai"
+        "resources/alignment_focused.bam.bai"
     log:
         "logs/aligned_reads_to_bam.log",
     conda:
@@ -295,8 +338,8 @@ rule aligned_reads_filtered_index:
 rule methylDackel:
     input:
         chr21="resources/chr21.fasta",
-        alignment="resources/aligment_focused.bam",
-        alignment_index="resources/aligment_focused.bam.bai"
+        alignment="resources/alignment_focused.bam",
+        alignment_index="resources/alignment_focused.bam.bai"
     output:
         "results/alignments_CpG.bedGraph",
     conda:
@@ -319,7 +362,7 @@ rule compute_meth_observations:
         candidates="resources/candidates_{scatteritem}.bcf"
         # candidates="resources/candidates.bcf",
     output:
-        "results/normal_{scatteritem}.bcf",
+        temp("results/normal_{scatteritem}.bcf"),
         # "results/normal.bcf",
     log:
         "logs/compute_{scatteritem}.log",
@@ -341,7 +384,7 @@ rule observations_to_vcf:
         "results/normal_{scatteritem}.bcf",
         # "results/normal.bcf",
     output:
-        "results/normal_{scatteritem}.vcf",
+        temp("results/normal_{scatteritem}.vcf"),
         # "results/normal.vcf",
     conda:
         "envs/samtools.yaml"
@@ -360,7 +403,7 @@ rule call_methylation:
         # preprocess_obs="results/normal.bcf",
         scenario="resources/scenario.yaml",
     output:
-        "results/calls_{scatteritem}.bcf",
+        temp("results/calls_{scatteritem}.bcf"),
         # "results/calls.bcf",
     log:
         "logs/compute_{scatteritem}.log",
@@ -382,7 +425,7 @@ rule calls_to_vcf:
         "results/calls_{scatteritem}.bcf",
         # "results/calls.bcf",
     output:
-        "results/calls_{scatteritem}.vcf",
+        temp("results/calls_{scatteritem}.vcf"),
         # "results/calls.vcf",
     conda:
         "envs/samtools.yaml"
