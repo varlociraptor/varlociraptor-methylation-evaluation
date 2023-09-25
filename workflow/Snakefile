@@ -7,7 +7,7 @@
 configfile: "config/config.yaml"
 
 scattergather:
-    split=8
+    split_candidates=10
 
 read_type = config["read_type"]
 chromosome_conf = config["sample"]
@@ -47,7 +47,9 @@ aligned_sam_reads_sorted = (
 
 rule all:
     input:
+        dv="results/scatter_plot_dv.png",
         tv="results/scatter_plot_tv.png",
+        td="results/scatter_plot_td.png"
 
 
 rule get_genome:
@@ -110,10 +112,9 @@ rule chr21_index:
         "envs/samtools.yaml"
     params:
         pipeline_path=config["pipeline_path"],
-    threads: 10
     shell:
         """ 
-        samtools faidx -@ {threads} {params.pipeline_path}{input}
+        samtools faidx {params.pipeline_path}{input}
         """
 
 
@@ -155,6 +156,7 @@ rule candidates_to_vcf:
 
 
 
+
 rule get_fastq_pe:
     output:
         # the wildcard name must be accession, pointing to an SRA number
@@ -177,7 +179,7 @@ rule align_reads:
         reads1=expand("resources/{accession}_1.fastq", accession=accession),
         reads2=expand("resources/{accession}_2.fastq", accession=accession),
     output:
-        "resources/genome_aligned"
+        "resources/genome_aligned.bam"
     conda:
         "envs/bwa-meth.yaml"
     log:
@@ -191,7 +193,7 @@ rule align_reads:
 
 rule filter_aligned_reads:
     input:
-        "resources/genome_aligned"
+        "resources/genome_aligned.bam"
     output:
         aligned_bam_reads
     log:
@@ -207,7 +209,7 @@ rule filter_aligned_reads:
         """
 
 
-
+# Unused
 rule aligned_reads_sorted_sam:
     input:
         aligned_bam_reads,
@@ -263,7 +265,7 @@ rule aligned_reads_index:
 
 rule methylDackel:
     input:
-        chr21="resources/example_new/chr21.fasta",
+        chr21="resources/chr21.fasta",
         alignment=aligned_bam_reads_sorted,
         alignment_index=aligned_bam_reads_index
     output:
@@ -368,6 +370,8 @@ rule download_bedGraphs:
         "scripts/get_bedGraph_data.py"
 
 
+ruleorder: process_data > filter_bedGraphs
+
 rule process_data:
     input:
         "resources/HG002/{bedGraph}.bedGraph.gz"
@@ -378,11 +382,22 @@ rule process_data:
     shell:
         "gunzip -c {input} > {output}"
 
+rule filter_bedGraphs:
+    input:
+        "resources/HG002/{bedGraph}.bedGraph"
+    output:
+        "resources/HG002/{bedGraph}_filtered.bedGraph"
+    log:
+        "logs/filter_bedGraphs{bedGraph}.log",
+    shell:
+        """
+        awk '$1 == "chr21" {print}' {input} > {output}
+        """
 
 rule compute_avg_bedGraph:
     input:
         # expand("resources/HG002/bedGraph/{bed}.bedGraph", bed=bedGraphs),
-        expand("resources/HG002/{bedGraph}.bedGraph", bedGraph=config["bedGraphs_HG002"])
+        expand("resources/HG002/{bedGraph}_filtered.bedGraph", bedGraph=config["bedGraphs_HG002"])
 
     output:
         "resources/bed_avg.bedGraph",
@@ -400,7 +415,9 @@ rule plot_results:
         calls="results/calls.vcf",
         true_meth="resources/bed_avg.bedGraph"
     output:
+        dv="results/scatter_plot_dv.png",
         tv="results/scatter_plot_tv.png",
+        td="results/scatter_plot_td.png"
     conda:
         "envs/plot.yaml"
     log:

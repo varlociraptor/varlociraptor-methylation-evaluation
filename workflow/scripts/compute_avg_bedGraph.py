@@ -17,7 +17,7 @@ for file_path in bedGraph_files:
         for line in file:
             parts = line.strip().split("\t")
             chrom, start, end, methylation, meth_reads, unmeth_reads = parts
-            if chrom == snakemake.params[chromosome]:
+            if chrom == snakemake.params["chromosome"]:
                 methylation = float(methylation)
                 meth_reads = int(meth_reads)
                 unmeth_reads = int(unmeth_reads)
