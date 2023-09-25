@@ -16,7 +16,7 @@ methylFastQ_path: "~/Documents/Promotion/MethylFASTQ/"
 # methylFastQ_path: "/projects/koesterlab/benchmark-methylation/MethylFASTQ/"
 
 # varlo_path: "/local/work/aprinz/varlociraptor/"
-# pipeline_path: "/local/work/aprinz/varlociraptor-methylation-evaluation/"
+# pipeline_path: "/local/work/aprinz/temp/varlociraptor-methylation-evaluation/"
 # methylFastQ_path: "/local/work/aprinz/MethylFASTQ/"
 
 
@@ -26,7 +26,7 @@ read_type: "Illumina"
 accession: "SRR13051058"
 
 # Das hier ist das, was ich eigentlich nutzen moechte: SRR13051058
-# accession: "SRR13051250"
+
 
 
 bedGraphs_HG002:
