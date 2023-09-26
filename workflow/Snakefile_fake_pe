@@ -109,7 +109,7 @@ rule split_candidates:
     input:
         "resources/example_new/candidates.bcf",
     output:
-        temp(scatter.split_candidates("resources/example_new/candidates_{scatteritem}.bcf"))
+        scatter.split_candidates("resources/example_new/candidates_{scatteritem}.bcf")
     log:
         "logs/split_candidates.log",
     conda:
@@ -117,6 +117,19 @@ rule split_candidates:
     shell:
         "rbt vcf-split {input} {output}"
 
+rule splitted_candidates_to_vcf:
+    input:
+        "resources/example_new/candidates_{scatteritem}.bcf",
+    output:
+        "resources/example_new/candidates_{scatteritem}.vcf",
+    conda:
+        "envs/samtools.yaml"
+    log:
+        "logs/convert_splitted_to_vcf_{scatteritem}.log",
+    shell:
+        """
+        bcftools view {input} > {output}
+        """
 
 
 rule fake_meth_data_methylFASTQ:
@@ -150,8 +163,8 @@ rule align_reads:
     conda:
         "envs/bwa-meth.yaml"
     log:
-        "logs/align_reads_{scatteritem}.log",
-        # "logs/align_reads.log",
+        # "logs/align_reads_{scatteritem}.log",
+        "logs/align_reads.log",
     shell:
         """
         bwameth.py index-mem2 {input.fasta}
@@ -336,4 +349,4 @@ rule plot_results:
     conda:
         "envs/plot.yaml"
     script:
-        "scripts/scatter_plot.py"
+        "scripts/scatter_plot_fake.py"

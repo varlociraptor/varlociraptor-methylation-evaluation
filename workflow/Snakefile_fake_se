@@ -295,7 +295,7 @@ rule plot_results:
     conda:
         "envs/plot.yaml"
     script:
-        "scripts/scatter_plot.py"
+        "scripts/scatter_plot_fake.py"
 
 rule delete:
     shell:
