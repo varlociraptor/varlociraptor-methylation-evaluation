@@ -7,60 +7,62 @@ sample:
   release: "110"
   chromosome: "21"
 
-varlo_path: "~/Documents/Promotion/varlociraptor/"
-pipeline_path: "~/Documents/Promotion/varlociraptor-methylation-evaluation/"
-methylFastQ_path: "~/Documents/Promotion/MethylFASTQ/"
+# varlo_path: "~/Documents/Promotion/varlociraptor/"
+# pipeline_path: "~/Documents/Promotion/varlociraptor-methylation-evaluation/"
+# methylFastQ_path: "~/Documents/Promotion/MethylFASTQ/"
 
 # varlo_path: "/projects/koesterlab/benchmark-methylation/varlociraptor/"
 # pipeline_path: "/projects/koesterlab/benchmark-methylation/varlociraptor-methylation-evaluation/"
 # methylFastQ_path: "/projects/koesterlab/benchmark-methylation/MethylFASTQ/"
 
-# varlo_path: "/local/work/aprinz/varlociraptor/"
-# pipeline_path: "/local/work/aprinz/temp/varlociraptor-methylation-evaluation/"
-# methylFastQ_path: "/local/work/aprinz/MethylFASTQ/"
+varlo_path: "/local/work/aprinz/varlociraptor/"
+pipeline_path: "/local/work/aprinz/temp/varlociraptor-methylation-evaluation/"
+methylFastQ_path: "/local/work/aprinz/MethylFASTQ/"
 
 
 
 
 read_type: "Illumina"
-accession: "SRR13051058"
+accession:
+  - "SRR13050995"
+  - "SRR13050996"
+  - "SRR13050998"
 
+# SRR13051103
 # Das hier ist das, was ich eigentlich nutzen moechte: SRR13051058
 
-
+# bedGraphs_HG002:
+#   - TruSeq_HG002_LAB01_REP02
+#   - TruSeq_HG002_LAB01_REP01
+#   - SPLAT_HG002_LAB01_REP02
+#   - SPLAT_HG002_LAB01_REP01
+#   - MethylSeq_HG002_LAB01_REP02
+#   - MethylSeq_HG002_LAB01_REP01
+#   - EMSeq_HG002_LAB02_REP02
+#   - EMSeq_HG002_LAB02_REP01
+#   - EMSeq_HG002_LAB01_REP02
+#   - EMSeq_HG002_LAB01_REP01
+#   - TrueMethylOX_HG002_LAB01_REP02
+#   - TrueMethylOX_HG002_LAB01_REP01
+#   - TrueMethylBS_HG002_LAB01_REP02
+#   - TrueMethylBS_HG002_LAB01_REP01
+#   - EPIC_HG002_LAB01_REP02
+#   - EPIC_HG002_LAB01_REP01
 
 bedGraphs_HG002:
-  - TruSeq_HG002_LAB01_REP02
-  - TruSeq_HG002_LAB01_REP01
-  - SPLAT_HG002_LAB01_REP02
-  - SPLAT_HG002_LAB01_REP01
-  - MethylSeq_HG002_LAB01_REP02
-  - MethylSeq_HG002_LAB01_REP01
-  - EMSeq_HG002_LAB02_REP02
-  - EMSeq_HG002_LAB02_REP01
-  - EMSeq_HG002_LAB01_REP02
-  - EMSeq_HG002_LAB01_REP01
-  - TrueMethylOX_HG002_LAB01_REP02
-  - TrueMethylOX_HG002_LAB01_REP01
-  - TrueMethylBS_HG002_LAB01_REP02
-  - TrueMethylBS_HG002_LAB01_REP01
-  - EPIC_HG002_LAB01_REP02
-  - EPIC_HG002_LAB01_REP01
-
-  # bedGraphs_HG002:
-  # - GSM5649436_TruSeq_HG002_LAB01_REP02
-  # - GSM5649437_TruSeq_HG002_LAB01_REP01
-  # - GSM5649458_SPLAT_HG002_LAB01_REP02
-  # - GSM5649459_SPLAT_HG002_LAB01_REP01
-  # - GSM5649479_MethylSeq_HG002_LAB01_REP02
-  # - GSM5649480_MethylSeq_HG002_LAB01_REP01
-  # - GSM5649515_EMSeq_HG002_LAB02_REP02
-  # - GSM5649517_EMSeq_HG002_LAB02_REP01
-  # - GSM5649518_EMSeq_HG002_LAB01_REP02
-  # - GSM5649520_EMSeq_HG002_LAB01_REP01
-  # - GSM5649543_TrueMethylOX_HG002_LAB01_REP02
-  # - GSM5649545_TrueMethylOX_HG002_LAB01_REP01
-  # - GSM5649565_TrueMethylBS_HG002_LAB01_REP02
-  # - GSM5649567_TrueMethylBS_HG002_LAB01_REP01
-  # - GSM5649568_EPIC_HG002_LAB01_REP02
-  # - GSM5649573_EPIC_HG002_LAB01_REP01
+  - GSM5649436_TruSeq_HG002_LAB01_REP02
+  - GSM5649437_TruSeq_HG002_LAB01_REP01
+  - GSM5649458_SPLAT_HG002_LAB01_REP02
+  - GSM5649459_SPLAT_HG002_LAB01_REP01
+  - GSM5649479_MethylSeq_HG002_LAB01_REP02
+  - GSM5649480_MethylSeq_HG002_LAB01_REP01
+  - GSM5649515_EMSeq_HG002_LAB02_REP02
+  - GSM5649517_EMSeq_HG002_LAB02_REP01
+  - GSM5649518_EMSeq_HG002_LAB01_REP02
+  - GSM5649520_EMSeq_HG002_LAB01_REP01
+  - GSM5649543_TrueMethylOX_HG002_LAB01_REP02
+  - GSM5649545_TrueMethylOX_HG002_LAB01_REP01
+  - GSM5649565_TrueMethylBS_HG002_LAB01_REP02
+  - GSM5649567_TrueMethylBS_HG002_LAB01_REP01
+  - GSM5649568_EPIC_HG002_LAB01_REP02
+  - GSM5649573_EPIC_HG002_LAB01_REP01
