@@ -6,6 +6,11 @@
 
 configfile: "config/config.yaml"
 
+include: "rules/get_data.smk"
+include: "rules/align_reads.smk"
+include: "rules/get_reference_begraph.smk"
+include: "rules/human_readable.smk"
+
 scattergather:
     split_candidates=10,
 
@@ -14,117 +19,27 @@ chromosome_conf = config["sample"]
 accession = config["accession"]
 
 
-aligned_bam_reads = (
-    "resources/aligned-reads-pacbio.bam"
-    if read_type == "PacBio"
-    else "resources/aligned-reads-illumina.bam"
-)
-
-aligned_bam_reads_index = (
-    "resources/aligned-reads-pacbio-sorted.bam.bai"
-    if read_type == "PacBio"
-    else "resources/aligned-reads-illumina-sorted.bam.bai"
-)
-
-aligned_sam_reads = (
-    "resources/aligned-reads-pacbio.sam"
-    if read_type == "PacBio"
-    else "resources/aligned-reads-illumina.sam"
-)
-
-aligned_bam_reads_sorted = (
-    "resources/aligned-reads-pacbio-sorted.bam"
-    if read_type == "PacBio"
-    else "resources/aligned-reads-illumina-sorted.bam"
-)
-
-aligned_sam_reads_sorted = (
-    "resources/aligned-reads-pacbio-sorted.sam"
-    if read_type == "PacBio"
-    else "resources/aligned-reads-illumina-sorted.sam"
-)
 
 
 rule all:
     input:
-        dv="results/scatter_plot_dv.png",
-        tv="results/scatter_plot_tv.png",
-        td="results/scatter_plot_td.png"
+        dv=expand("results/{SRA}/scatter_plot_dv.png", SRA=accession),
+        tv=expand("results/{SRA}/scatter_plot_tv.png", SRA=accession),
+        td=expand("results/{SRA}/scatter_plot_td.png", SRA=accession),
 
-
-rule get_genome:
+rule test:
     output:
-        "resources/genome.fasta",
-    params:
-        species=chromosome_conf["species"],
-        datatype=chromosome_conf["datatype"],
-        build=chromosome_conf["build"],
-        release=chromosome_conf["release"],
-    log:
-        "logs/get_chromosome.log",
-    cache: "omit-software"  # save space and time with between workflow caching (see docs)
-    wrapper:
-        "v2.3.2/bio/reference/ensembl-sequence"
-
-
-rule get_chromosome:
-    output:
-        "resources/chrom.fasta",
-    params:
-        species=chromosome_conf["species"],
-        datatype=chromosome_conf["datatype"],
-        build=chromosome_conf["build"],
-        release=chromosome_conf["release"],
-        chromosome=chromosome_conf["chromosome"],
-    log:
-        "logs/get_chromosome.log",
-    cache: "omit-software"  # save space and time with between workflow caching (see docs)
-    wrapper:
-        "v2.3.2/bio/reference/ensembl-sequence"
-
-
-rule filter_genome:
-    input:
-        "resources/genome.fasta",
-    output:
-        "resources/chromosome.fasta",
-    log:
-        "logs/filter_genome.log",
-    conda:
-        "envs/samtools.yaml"
-    params:
-        chromosome=chromosome_conf["chromosome"],
-    threads: 10
-    shell:
-        """ 
-        samtools faidx {input} {params.chromosome} > {output}
-        """
-
-
-rule chromosome_index:
-    input:
-        "resources/chromosome.fasta",
-    output:
-        "resources/chromosome.fasta.fai",
-    log:
-        "logs/chromosome_index.log",
-    conda:
-        "envs/samtools.yaml"
-    params:
-        pipeline_path=config["pipeline_path"],
-    shell:
-        """ 
-        samtools faidx {params.pipeline_path}{input}
-        """
-
+        "resources/test.csv"
+    shell: 
+        "touch {output}"
 
 rule find_candidates:
     input:
-        "resources/chromosome.fasta",
+        "resources/{SRA}/chromosome.fasta"
     output:
-        "resources/candidates.bcf",
+        "resources/{SRA}/candidates.bcf",
     log:
-        "logs/find_candidates.log",
+        "logs/find_candidates{SRA}.log",
     conda:
         "envs/varlociraptor.yaml"
     params:
@@ -137,217 +52,50 @@ rule find_candidates:
         """
 
 
-
-# Unused
-rule candidates_to_vcf:
-    input:
-        "resources/candidates.bcf",
-    output:
-        "resources/candidates.vcf",
-    conda:
-        "envs/samtools.yaml"
-    log:
-        "logs/convert_to_vcf.log",
-    threads: 10
-    shell:
-        """
-        bcftools view --threads {threads} {input} > {output}
-        """
-
 rule split_candidates:
     input:
-        "resources/candidates.bcf",
+        "resources/{SRA}/candidates.bcf",
     output:
-        temp(scatter.split_candidates("resources/candidates_{scatteritem}.bcf"))
+        temp(scatter.split_candidates("resources/{{SRA}}/candidates_{scatteritem}.bcf"))
     log:
-        "logs/split_candidates.log",
+        "logs/split_candidates{SRA}.log",
     conda:
         "envs/rbt.yaml"
     shell:
         "rbt vcf-split {input} {output}"
 
 
-rule get_fastq_pe:
-    output:
-        # the wildcard name must be accession, pointing to an SRA number
-        "resources/{accession}_1.fastq",
-        "resources/{accession}_2.fastq",
-    log:
-        "logs/pe/{accession}.log"
-    params:
-        extra="--skip-technical"
-    threads: 6  # defaults to 6
-    conda:
-        "envs/fastq-wrapper.yaml"
-    wrapper:
-        "v2.6.0/bio/sra-tools/fasterq-dump"
-
-# prefetch SRR13051058
-# fasterq-dump SRR13051058 --split-files --skip-technical
-
-
-
-
-rule align_reads:
-    input:
-        fasta="resources/genome.fasta",
-        reads1=expand("resources/{accession}_1.fastq", accession=accession),
-        reads2=expand("resources/{accession}_2.fastq", accession=accession),
-    output:
-        aligned_bam_reads
-    conda:
-        "envs/bwa-meth.yaml"
-    log:
-        # "logs/align_reads_{scatteritem}.log",
-        "logs/align_reads.log",
-    threads: 50
-    shell:
-        """
-        bwameth.py index-mem2 {input.fasta}
-        bwameth.py --threads {threads} --reference {input.fasta} {input.reads1} {input.reads2}  | samtools view -S -b - > {output}
-        """
-
-
-# Unused
-rule aligned_reads_sorted_sam:
-    input:
-        aligned_bam_reads,
-    output:
-        sam_reads=aligned_sam_reads,
-        sam_sorted=aligned_sam_reads_sorted,
-    log:
-        "logs/aligned_reads_sorted_sam.log",
-    conda:
-        "envs/samtools.yaml"
-    params:
-        pipeline_path=config["pipeline_path"],
-    threads: 10
-    shell:
-        """ 
-        samtools view -@ {threads} -bS {params.pipeline_path}{input} > {params.pipeline_path}/{output.sam_reads}    
-        samtools sort -@ {threads} {output.sam_reads} -o {output.sam_sorted}    
-        """
-
-rule sort_aligned_reads:
-    input:
-        aligned_bam_reads,
-    output:
-        aligned_bam_reads_sorted,
-    log:
-        "logs/sort_aligned_reads.log",
-    conda:
-        "envs/samtools.yaml"
-    params:
-        pipeline_path=config["pipeline_path"],
-    threads: 10
-    shell:
-        """
-        samtools sort -@ {threads}  {input} -o {output}    
-        """
-
-rule aligned_reads_index:
-    input:
-        aligned_bam_reads_sorted,
-    output:
-        aligned_bam_reads_index,
-    log:
-        "logs/aligned_reads_to_bam.log",
-    conda:
-        "envs/samtools.yaml"
-    params:
-        pipeline_path=config["pipeline_path"],
-    threads: 10
-    shell:
-        """
-        samtools index -@ {threads} {params.pipeline_path}/{input}
-        """
-
-rule filter_aligned_reads:
-    input:
-        bam=aligned_bam_reads_sorted,
-        index=aligned_bam_reads_index,
-    output:
-        "resources/alignment_focused.bam"
-    log:
-        "logs/chromosome_index.log",
-    conda:
-        "envs/samtools.yaml"
-    params:
-        pipeline_path=config["pipeline_path"],
-        chromosome=chromosome_conf["chromosome"],
-    threads: 10
-    shell:
-        """ 
-        samtools view -b -o {output} {input.bam} {params.chromosome}
-        """
-
-
-# Unused
-rule aligned_reads_filtered_sam:
-    input:
-        "resources/alignment_focused.bam",
-    output:
-        "resources/alignment_focused.sam",
-    log:
-        "logs/aligned_reads_filtered_sam.log",
-    conda:
-        "envs/samtools.yaml"
-    params:
-        pipeline_path=config["pipeline_path"],
-    threads: 10
-    shell:
-        """ 
-        samtools view -@ {threads} -h  -o {params.pipeline_path}/{output}  {params.pipeline_path}{input}   
-        """
-
-rule aligned_reads_filtered_index:
-    input:
-        "resources/alignment_focused.bam"
-    output:
-        "resources/alignment_focused.bam.bai"
-    log:
-        "logs/aligned_reads_to_bam.log",
-    conda:
-        "envs/samtools.yaml"
-    params:
-        pipeline_path=config["pipeline_path"],
-    threads: 10
-    shell:
-        """
-        samtools index -@ {threads} {params.pipeline_path}/{input}
-        """
-
 rule methylDackel:
     input:
-        genome="resources/genome.fasta",
-        alignment="resources/alignment_focused.bam",
-        alignment_index="resources/alignment_focused.bam.bai"
+        genome="resources/{SRA}/genome.fasta",
+        alignment="resources/{SRA}/alignment_focused.bam",
+        alignment_index="resources/{SRA}/alignment_focused.bam.bai"
     output:
-        "results/alignments_CpG.bedGraph",
+        "results/{SRA}/alignments_CpG.bedGraph",
     conda:
         "envs/methylDackel.yaml"
     log:
-        "logs/methylDackel.log",
+        "logs/methylDackel{SRA}.log",
     params:
         pipeline_path=config["pipeline_path"],
     shell:
         """
-        MethylDackel extract {input.genome} {input.alignment} -o {params.pipeline_path}/results/alignments --mergeContext
+        MethylDackel extract {input.genome} {input.alignment} -o {params.pipeline_path}/results/{wildcards.SRA}/alignments --mergeContext
         """
 
 rule compute_meth_observations:
     input:
-        genome="resources/genome.fasta",
-        genome_index="resources/genome.fasta.fai",
+        genome="resources/{SRA}/genome.fasta",
+        genome_index="resources/{SRA}/genome.fasta.fai",
         alignments=aligned_bam_reads_sorted,
         alignments_index=aligned_bam_reads_index,
-        candidates="resources/candidates_{scatteritem}.bcf"
-        # candidates="resources/candidates.bcf",
+        candidates="resources/{SRA}/candidates_{scatteritem}.bcf"
+        # candidates="resources/{SRA}/candidates.bcf",
     output:
-        temp("results/normal_{scatteritem}.bcf"),
-        # "results/normal.bcf",
+        temp("results/{SRA}/normal_{scatteritem}.bcf"),
+        # "results/{SRA}/normal.bcf",
     log:
-        "logs/compute_{scatteritem}.log",
+        "logs/compute_{scatteritem}{SRA}.log",
     conda:
         "envs/varlociraptor.yaml"
     params:
@@ -360,35 +108,17 @@ rule compute_meth_observations:
         cargo run --release -- preprocess variants {params.pipeline_path}{input.genome} --candidates {params.pipeline_path}{input.candidates} --bam {params.pipeline_path}{input.alignments} --read-type {params.read_type} > {params.pipeline_path}{output}
         """
 
-# Unused
-rule observations_to_vcf:
-    input:
-        "results/normal_{scatteritem}.bcf",
-        # "results/normal.bcf",
-    output:
-        temp("results/normal_{scatteritem}.vcf"),
-        # "results/normal.vcf",
-    conda:
-        "envs/samtools.yaml"
-    log:
-        "logs/convert_to_vcf_{scatteritem}.log",
-    threads: 10
-    shell:
-        """
-        bcftools view --threads {threads} {input} > {output}
-        """
-
 
 rule call_methylation:
     input:
-        preprocess_obs="results/normal_{scatteritem}.bcf",
-        # preprocess_obs="results/normal.bcf",
+        preprocess_obs="results/{SRA}/normal_{scatteritem}.bcf",
+        # preprocess_obs="results/{SRA}/normal.bcf",
         scenario="resources/scenario.yaml",
     output:
-        temp("results/calls_{scatteritem}.bcf"),
-        # "results/calls.bcf",
+        temp("results/{SRA}/calls_{scatteritem}.bcf"),
+        # "results/{SRA}/calls.bcf",
     log:
-        "logs/compute_{scatteritem}.log",
+        "logs/compute_{scatteritem}{SRA}.log",
     conda:
         "envs/varlociraptor.yaml"
     params:
@@ -404,15 +134,15 @@ rule call_methylation:
 
 rule calls_to_vcf:
     input:
-        "results/calls_{scatteritem}.bcf",
-        # "results/calls.bcf",
+        "results/{SRA}/calls_{scatteritem}.bcf",
+        # "results/{SRA}/calls.bcf",
     output:
-        temp("results/calls_{scatteritem}.vcf"),
-        # "results/calls.vcf",
+        temp("results/{SRA}/calls_{scatteritem}.vcf"),
+        # "results/{SRA}/calls.vcf",
     conda:
         "envs/samtools.yaml"
     log:
-        "logs/convert_to_vcf_{scatteritem}.log",
+        "logs/convert_to_vcf_{scatteritem}{SRA}.log",
     threads: 10
     shell:
         """
@@ -423,78 +153,26 @@ rule calls_to_vcf:
 
 rule gather_calls:
     input:
-        gather.split_candidates("results/calls_{scatteritem}.vcf")
+        gather.split_candidates("results/{{SRA}}/calls_{scatteritem}.vcf")
     output:
-        "results/calls.vcf"
+        "results/{SRA}/calls.vcf"
     shell:
         "cat {input} > {output}"
 
 
 
-rule download_bedGraphs:
-    output:
-        "resources/HG002/{bedGraph}.bedGraph.gz",
-    log:
-        "logs/download_bedGraphs{bedGraph}.log",
-    params:
-        pipeline_path=config["pipeline_path"],
-        bedGraphs = config["bedGraphs_HG002"]
-    script:
-        "scripts/get_bedGraph_data.py"
-
-ruleorder: filter_bedGraphs > process_data
-
-rule process_data:
-    input:
-        "resources/HG002/{bedGraph}.bedGraph.gz"
-    output:
-        "resources/HG002/{bedGraph}.bedGraph"
-    log:
-        "logs/process_data{bedGraph}.log",
-    shell:
-        "gunzip -c {input} > {output}"
-
-rule filter_bedGraphs:
-    input:
-        "resources/HG002/{bedGraph}.bedGraph"
-    output:
-        "resources/HG002/{bedGraph}_filtered.bedGraph"
-    log:
-        "logs/filter_bedGraphs{bedGraph}.log",
-    params:
-        chromosome="chr" + chromosome_conf["chromosome"]
-    shell:
-        """
-        awk '$1 == "{params.chromosome}" {{print}}' {input} > {output}
-        """
-
-rule compute_avg_bedGraph:
-    input:
-        # expand("resources/HG002/bedGraph/{bed}.bedGraph", bed=bedGraphs),
-        expand("resources/HG002/{bedGraph}_filtered.bedGraph", bedGraph=config["bedGraphs_HG002"])
-
-    output:
-        "resources/bed_avg.bedGraph",
-    log:
-        "logs/compute_avg_bedGraph.log",
-    params:
-        chromosome="chr" + chromosome_conf["chromosome"],
-    script:
-        "scripts/compute_avg_bedGraph.py"
-
-
 rule plot_results:
     input:
-        bedGraph="results/alignments_CpG.bedGraph",
-        calls="results/calls.vcf",
+        bedGraph="results/{SRA}/alignments_CpG.bedGraph",
+        calls="results/{SRA}/calls.vcf",
         true_meth="resources/bed_avg.bedGraph"
     output:
-        dv="results/scatter_plot_dv.png",
-        tv="results/scatter_plot_tv.png",
-        td="results/scatter_plot_td.png"
+        dv="results/{SRA}/scatter_plot_dv.png",
+        tv="results/{SRA}/scatter_plot_tv.png",
+        td="results/{SRA}/scatter_plot_td.png"
     conda:
         "envs/plot.yaml"
     log:
-        "logs/plot_results.log",
+        "logs/plot_results{SRA}.log",
     script:
         "scripts/scatter_plot_real.py"
