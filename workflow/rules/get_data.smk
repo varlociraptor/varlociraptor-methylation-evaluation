@@ -2,14 +2,14 @@ chromosome_conf = config["sample"]
 
 rule get_genome:
     output:
-        "resources/{SRA}/genome.fasta",
+        "resources/genome.fasta",
     params:
         species=chromosome_conf["species"],
         datatype=chromosome_conf["datatype"],
         build=chromosome_conf["build"],
         release=chromosome_conf["release"],
     log:
-        "logs/get_chromosome{SRA}.log",
+        "logs/get_chromosome.log",
     cache: "omit-software"  # save space and time with between workflow caching (see docs)
     wrapper:
         "v2.3.2/bio/reference/ensembl-sequence"
@@ -17,7 +17,7 @@ rule get_genome:
 
 rule get_chromosome:
     output:
-        "resources/{SRA}/chrom.fasta",
+        "resources/chrom.fasta",
     params:
         species=chromosome_conf["species"],
         datatype=chromosome_conf["datatype"],
@@ -25,7 +25,7 @@ rule get_chromosome:
         release=chromosome_conf["release"],
         chromosome=chromosome_conf["chromosome"],
     log:
-        "logs/get_chromosome{SRA}.log",
+        "logs/get_chromosome.log",
     cache: "omit-software"  # save space and time with between workflow caching (see docs)
     wrapper:
         "v2.3.2/bio/reference/ensembl-sequence"
@@ -33,11 +33,11 @@ rule get_chromosome:
 
 rule filter_genome:
     input:
-        "resources/{SRA}/genome.fasta",
+        "resources/genome.fasta",
     output:
-        "resources/{SRA}/chromosome.fasta",
+        "resources/chromosome.fasta",
     log:
-        "logs/filter_genome{SRA}.log",
+        "logs/filter_genome.log",
     conda:
         "../envs/samtools.yaml"
     params:
@@ -50,11 +50,11 @@ rule filter_genome:
 
 rule genome_index:
     input:
-        "resources/{SRA}/genome.fasta",
+        "resources/genome.fasta",
     output:
-        "resources/{SRA}/genome.fasta.fai",
+        "resources/genome.fasta.fai",
     log:
-        "logs/chromosome_index{SRA}.log",
+        "logs/chromosome_index.log",
     conda:
         "../envs/samtools.yaml"
     params:

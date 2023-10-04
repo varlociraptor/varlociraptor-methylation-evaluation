@@ -11,25 +11,37 @@ sample:
 # pipeline_path: "~/Documents/Promotion/varlociraptor-methylation-evaluation/"
 # methylFastQ_path: "~/Documents/Promotion/MethylFASTQ/"
 
-# varlo_path: "/projects/koesterlab/benchmark-methylation/varlociraptor/"
-# pipeline_path: "/projects/koesterlab/benchmark-methylation/varlociraptor-methylation-evaluation/"
-# methylFastQ_path: "/projects/koesterlab/benchmark-methylation/MethylFASTQ/"
+varlo_path: "/projects/koesterlab/benchmark-methylation/varlociraptor/"
+pipeline_path: "/projects/koesterlab/benchmark-methylation/varlociraptor-methylation-evaluation/"
+methylFastQ_path: "/projects/koesterlab/benchmark-methylation/MethylFASTQ/"
 
-varlo_path: "/local/work/aprinz/varlociraptor/"
-pipeline_path: "/local/work/aprinz/temp/varlociraptor-methylation-evaluation/"
-methylFastQ_path: "/local/work/aprinz/MethylFASTQ/"
+# varlo_path: "/local/work/aprinz/varlociraptor/"
+# pipeline_path: "/local/work/aprinz/temp/varlociraptor-methylation-evaluation/"
+# methylFastQ_path: "/local/work/aprinz/MethylFASTQ/"
 
 
 
 
 read_type: "Illumina"
-accession:
-  - "SRR13050995"
-  - "SRR13050996"
-  - "SRR13050998"
 
-# SRR13051103
-# Das hier ist das, was ich eigentlich nutzen moechte: SRR13051058
+
+# https://www.ncbi.nlm.nih.gov/Traces/study/?query_key=3&WebEnv=MCID_65154b004300ad48fb739997&f=assay_type_s%3An%3Abisulfite-seq%3Ac%3Bassemblyname_s%3An%3Bavgspotlen_l%3An%3Bbasecaller_version_run_s%3An%3Bbases_l%3An%3Bbiomaterial_provider_sam_ss%3An%3Bbioproject_s%3An%3Bbytes_l%3An%3Bfamily_id_sam_ss%3An%3Bfamily_role_sam_s%3An%3Bisolate_sam_ss%3An%3Blibrarylayout_s%3An%3Blibraryselection_s%3An%3Blibrarysource_s%3An%3Bmovie_name__run_s%3An%3Bnist_id_sam_s%3An%3Bnist_rm_sam_s%3An%3Bnotes_run_s%3An%3Bpgp_id_sam_s%3An%3Bplatform_s%3An%3Bprimary_nist_catalogue_number_sam_s%3An%3Bpublic_profiles_sam_s%3An&o=sample_name_s%3Aa
+accession:
+# TruSeq_HG002_LAB01_REP01
+  - SRR13050995
+  - SRR13050996
+  - SRR13050998
+  # SPLAT_HG002_LAB01_REP01
+  # - SRR13051056
+  # - SRR13051057
+  # - SRR13051058
+  # MethylSeq_HG002_LAB01_REP02 
+    # WorkflowError:
+    # SLURM job submission failed. The error message was sbatch: error: Memory specification can not be satisfied
+    # sbatch: error: Batch job submission failed: Requested node configuration is not available
+  # - SRR13051101
+  # - SRR13051102
+  # - SRR13051103
 
 # bedGraphs_HG002:
 #   - TruSeq_HG002_LAB01_REP02
