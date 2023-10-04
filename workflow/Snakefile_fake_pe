@@ -109,7 +109,7 @@ rule split_candidates:
     input:
         "resources/example_new/candidates.bcf",
     output:
-        scatter.split_candidates("resources/example_new/candidates_{scatteritem}.bcf")
+        temp(scatter.split_candidates("resources/example_new/candidates_{scatteritem}.bcf"))
     log:
         "logs/split_candidates.log",
     conda:

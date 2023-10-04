@@ -1,12 +1,12 @@
 rule candidates_to_vcf:
     input:
-        "resources/{SRA}/candidates.bcf",
+        "resources/candidates.bcf",
     output:
-        "resources/{SRA}/candidates.vcf",
+        "resources/candidates.vcf",
     conda:
         "../envs/samtools.yaml"
     log:
-        "logs/convert_to_vcf{SRA}.log",
+        "logs/convert_to_vcf.log",
     threads: 10
     shell:
         """

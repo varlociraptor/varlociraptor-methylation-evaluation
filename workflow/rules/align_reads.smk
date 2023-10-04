@@ -36,7 +36,7 @@ aligned_sam_reads_sorted = (
 
 rule align_reads:
     input:
-        fasta="resources/{SRA}/genome.fasta",
+        fasta="resources/genome.fasta",
         reads1="resources/{SRA}/{SRA}_1.fastq",
         reads2="resources/{SRA}/{SRA}_2.fastq",
     output:
