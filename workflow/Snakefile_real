@@ -1,0 +1,174 @@
+# Main entrypoint of the workflow.
+# Please follow the best practices:
+# https://snakemake.readthedocs.io/en/stable/snakefiles/best_practices.html,
+# in particular regarding the standardized folder structure mentioned there.
+
+
+configfile: "config/config.yaml"
+
+include: "rules/get_data.smk"
+include: "rules/align_reads.smk"
+include: "rules/get_reference_begraph.smk"
+include: "rules/human_readable.smk"
+
+scattergather:
+    split_candidates=5,
+
+read_type = config["read_type"]
+chromosome_conf = config["sample"]
+accession = config["accession"]
+
+
+
+
+rule all:
+    input:
+        dv=expand("results/{SRA}/scatter_plot_dv.png", SRA=accession),
+        tv=expand("results/{SRA}/scatter_plot_tv.png", SRA=accession),
+        td=expand("results/{SRA}/scatter_plot_td.png", SRA=accession),
+
+
+rule find_candidates:
+    input:
+        "resources/chromosome.fasta"
+    output:
+        "resources/candidates.bcf",
+    log:
+        "logs/find_candidates.log",
+    conda:
+        "envs/varlociraptor.yaml"
+    params:
+        varlo_path=config["varlo_path"],
+        pipeline_path=config["pipeline_path"],
+    shell:
+        """ 
+        cd {params.varlo_path}
+        cargo run -- methylation-candidates {params.pipeline_path}{input} {params.pipeline_path}{output}
+        """
+
+
+rule split_candidates:
+    input:
+        "resources/candidates.bcf",
+    output:
+        temp(scatter.split_candidates("resources/candidates_{scatteritem}.bcf"))
+    log:
+        "logs/split_candidates.log",
+    conda:
+        "envs/rbt.yaml"
+    shell:
+        "rbt vcf-split {input} {output}"
+
+
+rule methylDackel:
+    input:
+        genome="resources/genome.fasta",
+        alignment="resources/{SRA}/alignment_focused.bam",
+        alignment_index="resources/{SRA}/alignment_focused.bam.bai"
+    output:
+        "results/{SRA}/alignments_CpG.bedGraph",
+    conda:
+        "envs/methylDackel.yaml"
+    log:
+        "logs/methylDackel{SRA}.log",
+    params:
+        pipeline_path=config["pipeline_path"],
+    shell:
+        """
+        MethylDackel extract {input.genome} {input.alignment} -o {params.pipeline_path}/results/{wildcards.SRA}/alignments --mergeContext
+        """
+
+rule compute_meth_observations:
+    input:
+        genome="resources/genome.fasta",
+        genome_index="resources/genome.fasta.fai",
+        alignments=aligned_bam_reads_sorted,
+        alignments_index=aligned_bam_reads_index,
+        candidates="resources/candidates_{scatteritem}.bcf"
+        # candidates="resources/{SRA}/candidates.bcf",
+    output:
+        temp("results/{SRA}/normal_{scatteritem}.bcf"),
+        # "results/{SRA}/normal.bcf",
+    log:
+        "logs/compute_{scatteritem}{SRA}.log",
+    conda:
+        "envs/varlociraptor.yaml"
+    params:
+        varlo_path=config["varlo_path"],
+        pipeline_path=config["pipeline_path"],
+        read_type=config["read_type"],
+    shell:
+        """ 
+        cd {params.varlo_path}
+        cargo run --release -- preprocess variants {params.pipeline_path}{input.genome} --candidates {params.pipeline_path}{input.candidates} --bam {params.pipeline_path}{input.alignments} --read-type {params.read_type} > {params.pipeline_path}{output}
+        """
+
+
+rule call_methylation:
+    input:
+        preprocess_obs="results/{SRA}/normal_{scatteritem}.bcf",
+        # preprocess_obs="results/{SRA}/normal.bcf",
+        scenario="resources/scenario.yaml",
+    output:
+        temp("results/{SRA}/calls_{scatteritem}.bcf"),
+        # "results/{SRA}/calls.bcf",
+    log:
+        "logs/compute_{scatteritem}{SRA}.log",
+    conda:
+        "envs/varlociraptor.yaml"
+    params:
+        varlo_path=config["varlo_path"],
+        pipeline_path=config["pipeline_path"],
+        read_type=config["read_type"],
+    shell:
+        """ 
+        cd {params.varlo_path}
+        cargo run --release -- call variants --omit-strand-bias generic --scenario {params.pipeline_path}{input.scenario} --obs normal={params.pipeline_path}{input.preprocess_obs} > {params.pipeline_path}/{output}
+        """
+
+
+rule calls_to_vcf:
+    input:
+        "results/{SRA}/calls_{scatteritem}.bcf",
+        # "results/{SRA}/calls.bcf",
+    output:
+        temp("results/{SRA}/calls_{scatteritem}.vcf"),
+        # "results/{SRA}/calls.vcf",
+    conda:
+        "envs/samtools.yaml"
+    log:
+        "logs/convert_to_vcf_{scatteritem}{SRA}.log",
+    threads: 10
+    shell:
+        """
+        bcftools view --threads {threads} {input} -o {output}
+        """
+
+
+
+rule gather_calls:
+    input:
+        gather.split_candidates("results/{{SRA}}/calls_{scatteritem}.vcf")
+    output:
+        "results/{SRA}/calls.vcf"
+    shell:
+        "cat {input} > {output}"
+
+
+
+rule plot_results:
+    input:
+        bedGraph="results/{SRA}/alignments_CpG.bedGraph",
+        calls="results/{SRA}/calls.vcf",
+        true_meth="resources/HG002/GSM5649437_TruSeq_HG002_LAB01_REP01_filtered.bedGraph"
+        # true_meth="resources/bed_avg.bedGraph"
+    output:
+        dv="results/{SRA}/scatter_plot_dv.png",
+        tv="results/{SRA}/scatter_plot_tv.png",
+        td="results/{SRA}/scatter_plot_td.png"
+    conda:
+        "envs/plot.yaml"
+    log:
+        "logs/plot_results{SRA}.log",
+    script:
+        "scripts/scatter_plot_real.py"
