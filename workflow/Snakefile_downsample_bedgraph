@@ -22,8 +22,8 @@ platform = config["platform"]
 
 rule all:
     input:
-        dv=expand("results/{platform}/scatter_plot_dv.png", platform=platform),
-        tv=expand("results/{platform}/scatter_plot_tv.png", platform=platform),
+        # dv=expand("results/{platform}/scatter_plot_dv.png", platform=platform),
+        # tv=expand("results/{platform}/scatter_plot_tv.png", platform=platform),
         td=expand("results/{platform}/scatter_plot_td.png", platform=platform.keys()),
 
 
@@ -62,20 +62,24 @@ rule split_candidates:
 rule methylDackel:
     input:
         genome="resources/genome.fasta",
-        alignment="resources/{platform}/alignment_focused_downsampled_dedup.bam",
-        alignment_index="resources/{platform}/alignment_focused_downsampled_dedup.bam.bai"
+        alignment="resources/{platform}/{SRA}/alignment_focused_dedup.bam",
+        alignment_index="resources/{platform}/{SRA}/alignment_focused_dedup.bam.bai",
+        # alignment="resources/{platform}/alignment_focused_downsampled_dedup.bam",
+        # alignment_index="resources/{platform}/alignment_focused_downsampled_dedup.bam.bai"
     output:
-        "results/{platform}/alignments_CpG.bedGraph",
+        # "results/{platform}/alignments_CpG.bedGraph",
+        "resources/{platform}/{SRA}/alignments_CpG.bedGraph",
     conda:
         "envs/methylDackel.yaml"
     log:
-        "logs/methylDackel_{platform}.log",
+        "logs/methylDackel_{platform}{SRA}.log",
     params:
         pipeline_path=config["pipeline_path"],
     shell:
         """
-        MethylDackel extract {input.genome} {input.alignment} -o {params.pipeline_path}/results/{wildcards.platform}/alignments --mergeContext
+        MethylDackel extract {input.genome} {input.alignment} -o {params.pipeline_path}/resources/{wildcards.platform}/{wildcards.SRA}/alignments --mergeContext
         """
+        # MethylDackel extract {input.genome} {input.alignment} -o {params.pipeline_path}/results/{wildcards.platform}/alignments --mergeContext
 
 
 def get_platform_sras(wildcards):
@@ -83,32 +87,32 @@ def get_platform_sras(wildcards):
     accession_numbers = config["platform"][platform]
     return ["resources/" + platform + "/" + SRA + "/alignments_CpG.bedGraph" for SRA in accession_numbers]
 
-# rule combineReplicates:
-#     input:
-#         get_platform_sras
-#     output:
-#         "resources/{platform}/alignments_CpG.bedGraph",
-#     log:
-#         "logs/combineReplicates{platform}.log",
-#     params:
-#         pipeline_path=config["pipeline_path"],
-#     script:
-#         "scripts/combineReplicates.py"
+rule combineReplicates:
+    input:
+        get_platform_sras
+    output:
+        "resources/{platform}/alignments_CpG.bedGraph",
+    log:
+        "logs/combineReplicates{platform}.log",
+    params:
+        pipeline_path=config["pipeline_path"],
+    script:
+        "scripts/combineReplicates.py"
 
-# rule downsample:
-#     input:
-#         "resources/{platform}/alignments_CpG.bedGraph",
-#     output:
-#         "results/{platform}/alignments_CpG_downsampled.bedGraph",
-#     log:
-#         "logs/downsample{platform}.log",
-#     params:
-#         pipeline_path=config["pipeline_path"],
-#         methylationTools=config["methylationTools_path"],
-#     shell:
-#         """
-#         cat {params.pipeline_path}{input} | grep -v track | {params.methylationTools}downsample_methylKit.py --fraction 0.99 --bedGraph > {params.pipeline_path}{output}
-#         """
+rule downsample:
+    input:
+        "resources/{platform}/alignments_CpG.bedGraph",
+    output:
+        "results/{platform}/alignments_CpG_downsampled.bedGraph",
+    log:
+        "logs/downsample{platform}.log",
+    params:
+        pipeline_path=config["pipeline_path"],
+        methylationTools=config["methylationTools_path"],
+    shell:
+        """
+        cat {params.pipeline_path}{input} | grep -v track | {params.methylationTools}downsample_methylKit.py --fraction 0.99 --bedGraph > {params.pipeline_path}{output}
+        """
 
 
 # rule build_varlo:
@@ -184,6 +188,8 @@ rule filter_calls:
         "results/{platform}/calls_{scatteritem}.bcf",
     output:
         temp("results/{platform}/calls_{scatteritem}.filtered.bcf"),
+
+        # "results/{platform}/calls.bcf",
     log:
         "logs/filter_calls_{scatteritem}{platform}.log",
     conda:
@@ -202,9 +208,14 @@ rule filter_calls:
 
 rule calls_to_vcf:
     input:
+        # "results/{platform}/calls_{scatteritem}.bcf",
         "results/{platform}/calls_{scatteritem}.filtered.bcf",
+
+        # "results/{platform}/calls_{scatteritem}.bcf",
+        # "results/{platform}/calls.bcf",
     output:
         temp("results/{platform}/calls_{scatteritem}.vcf"),
+        # "results/{platform}/calls.vcf",
     conda:
         "envs/samtools.yaml"
     log:
@@ -231,17 +242,19 @@ rule gather_calls:
 
 rule plot_results:
     input:
-        bedGraph="results/{platform}/alignments_CpG.bedGraph",        
+        # bedGraph="results/{platform}/alignments_CpG.bedGraph",
+        bedGraph="results/{platform}/alignments_CpG_downsampled.bedGraph",
+        
         calls="results/{platform}/calls.vcf",
-        # true_meth="resources/HG002/GSM5649437_TruSeq_HG002_LAB01_REP01_filtered.bedGraph"
-        true_meth="resources/bed_avg.bedGraph"
+        true_meth="resources/HG002/GSM5649437_TruSeq_HG002_LAB01_REP01_filtered.bedGraph"
+        # true_meth="resources/bed_avg.bedGraph"
     output:
-        dv="results/{platform}/scatter_plot_dv.png",
+        # dv="results/{platform}/scatter_plot_dv.png",
         td="results/{platform}/scatter_plot_td.png",
-        tv="results/{platform}/scatter_plot_tv.png",
+        # tv="results/{platform}/scatter_plot_tv.png",
     conda:
         "envs/plot.yaml"
     log:
         "logs/plot_results{platform}.log",
     script:
-        "scripts/scatter_plot_real.py"
+        "scripts/scatter_plot_real_downsample_bedgraph.py"

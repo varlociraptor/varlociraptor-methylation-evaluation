@@ -13,6 +13,36 @@ rule candidates_to_vcf:
         bcftools view --threads {threads} {input} > {output}
         """
 
+rule candidate_splits_to_vcf:
+    input:
+        "resources/candidates_{scatteritem}.bcf"
+    output:
+        temp("resources/candidates_{scatteritem}.vcf"),
+    conda:
+        "../envs/samtools.yaml"
+    log:
+        "logs/convert_splits_to_vcf_{scatteritem}.log",
+    shell:
+        """
+        bcftools view {input} > {output}
+        """
+
+rule aligned_reads_sorted_sam:
+    input:
+        "resources/{SRA}/aligned-reads-illumina-sorted.bam",
+    output:
+        "resources/{SRA}/aligned-reads-illumina-sorted.sam",
+    log:
+        "logs/aligned_reads_sorted_sam{SRA}.log",
+    conda:
+        "../envs/samtools.yaml"
+    params:
+        pipeline_path=config["pipeline_path"],
+    threads: 10
+    shell:
+        """ 
+        samtools view -@ {threads} -h  -o {params.pipeline_path}/{output}  {params.pipeline_path}{input}   
+        """
 
 rule aligned_reads_filtered_sam:
     input:
@@ -47,4 +77,21 @@ rule observations_to_vcf:
     shell:
         """
         bcftools view --threads {threads} {input} > {output}
+        """
+
+rule aligned_reads_complete_sam:
+    input:
+        "resources/{protocol}/alignment_focused_downsampled_dedup.bam",
+    output:
+        "resources/{protocol}/alignment_focused_downsampled_dedup.sam",
+    log:
+        "logs/aligned_reads_sorted_sam{protocol}.log",
+    conda:
+        "../envs/samtools.yaml"
+    params:
+        pipeline_path=config["pipeline_path"],
+    threads: 10
+    shell:
+        """ 
+        samtools view -@ {threads} -h  -o {params.pipeline_path}/{output}  {params.pipeline_path}{input}   
         """

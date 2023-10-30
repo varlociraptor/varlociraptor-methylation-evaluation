@@ -67,10 +67,10 @@ rule genome_index:
 rule get_fastq_pe:
     output:
         # the wildcard name must be accession, pointing to an SRA number
-        "resources/{SRA}/{accession}_1.fastq",
-        "resources/{SRA}/{accession}_2.fastq",
+        "resources/{platform}/{SRA}/{accession}_1.fastq",
+        "resources/{platform}/{SRA}/{accession}_2.fastq",
     log:
-        "logs/pe/{accession}{SRA}.log"
+        "logs/pe/{accession}{platform}{SRA}.log"
     params:
         extra="--skip-technical"
     threads: 6  # defaults to 6
@@ -78,3 +78,25 @@ rule get_fastq_pe:
         "../envs/fastq-wrapper.yaml"
     wrapper:
         "v2.6.0/bio/sra-tools/fasterq-dump"
+
+
+rule trim_fastq_pe:
+    input:
+        first="resources/{platform}/{SRA}/{accession}_1.fastq",
+        second="resources/{platform}/{SRA}/{accession}_2.fastq",
+    output:
+        first="resources/{platform}/{SRA}/{accession}_1_trimmed.fastq",
+        second="resources/{platform}/{SRA}/{accession}_2_trimmed.fastq",
+    log:
+        "logs/trim_fastq_pe_{platform}{SRA}_{accession}.log",
+    conda:
+        "../envs/fastp.yaml"
+    params:
+        pipeline_path=config["pipeline_path"],
+    shell:
+        """ 
+        fastp --in1 {input.first} --in2 {input.second} --out1 {output.first} --out2 {output.second} --length_required 2 --disable_quality_filtering -z 4 --trim_poly_g --overrepresentation_analysis
+        """
+
+
+  
