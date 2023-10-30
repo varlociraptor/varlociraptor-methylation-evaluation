@@ -1,3 +1,5 @@
+chr_chromosome = "chr" + chromosome_conf["chromosome"]
+
 
 rule download_bedGraphs:
     output:
@@ -10,9 +12,9 @@ rule download_bedGraphs:
     script:
         "scripts/get_bedGraph_data.py"
 
-ruleorder: filter_bedGraphs > process_data
+ruleorder: filter_bedGraphs > extract_data
 
-rule process_data:
+rule extract_data:
     input:
         "resources/HG002/{bedGraph}.bedGraph.gz"
     output:
@@ -46,6 +48,20 @@ rule compute_avg_bedGraph:
     log:
         "logs/compute_avg_bedGraph.log",
     params:
-        chromosome="chr" + chromosome_conf["chromosome"],
+        chromosome=chr_chromosome,
     script:
         "../scripts/compute_avg_bedGraph.py"
+
+rule plot_avg_bedGraph:
+    input:
+        candidates="resources/candidates.vcf",
+        bedgraphs=expand("resources/HG002/{bedGraph}_filtered.bedGraph", bedGraph=config["bedGraphs_HG002"])
+    output:
+        cov="resources/bed_avg_cov.png",
+        meth="resources/bed_avg_meth.png",
+    conda:
+        "../envs/plot.yaml"
+    log:
+        "logs/plot_avg_bedGraph.log",
+    script:
+        "../scripts/plot_avg_bedGraph.py"

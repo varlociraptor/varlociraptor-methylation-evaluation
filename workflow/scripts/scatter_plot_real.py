@@ -1,9 +1,11 @@
 import altair as alt
 import pandas as pd
+import numpy as np
 
 import heapq
 
-
+def euclidian_distance(x1, y1, x2, y2):
+    return np.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
 
 dackel_dict = {}
 vcf_dict = {}
@@ -36,24 +38,37 @@ with open(snakemake.input["calls"], 'r') as vcf_file, open(snakemake.input["bedG
             true_dict[(chrom, position)] = methylation_value
 
 
+# dackel_dict = {key: value for key, value in dackel_dict.items() if value > 30}
+# vcf_dict = {key: value for key, value in vcf_dict.items() if value > 0.3}
+
+
 bedgraph_positions = [key for key in dackel_dict if key in vcf_dict and key in true_dict]
 bedgraph_meth_values = [dackel_dict[key] for key in bedgraph_positions]
 
 vcf_positions = [key for key in vcf_dict if key in dackel_dict and key in true_dict]
 vcf_af_values = [vcf_dict[key] * 100 for key in vcf_positions]
 
+
 true_dict = dict(sorted(true_dict.items(), key=lambda item: item[0][1]))
 true_positions = [key for key in true_dict if key in dackel_dict and key in vcf_dict]
 true_meth_values = [true_dict[key] for key in true_positions]
+
 
 missing_positions1 = [key for key in dackel_dict if key not in vcf_dict and key not in true_dict]
 missing_positions2 = [key for key in vcf_dict if key not in dackel_dict and key not in true_dict]
 missing_positions3 = [key for key in true_dict if key not in dackel_dict and key not in vcf_dict]
 
 
-
-
+# with open(snakemake.output["test"], "w") as datei:
+#     for i, el in enumerate(true_meth_values):
+#         if abs(el - vcf_af_values[i]) > 20: 
+#             datei.write(str(true_positions[i]) + "\t" + str(el) + "\n")
+#             datei.write("Bedgraph_value:" + str(bedgraph_meth_values[i]) + "\t Callsvcf:  " + str(vcf_af_values[i]) + "\n\n")
+def euclidian_distance(x1, y1, x2, y2):
+    return np.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
 ############################################################################################################################################################
+
+
 
 
 line = alt.Chart(pd.DataFrame({'x': [1, 100], 'y': [1, 100]})).mark_line(color='red').encode(
@@ -61,8 +76,38 @@ line = alt.Chart(pd.DataFrame({'x': [1, 100], 'y': [1, 100]})).mark_line(color='
     y='y:Q'
 )
 
+# Die Datenpunkte
+x_values = np.linspace(0, 100, num=101)
+y_values = np.linspace(0, 100, num=101)
+
+
+
+
+
 # Plot TrueMeth vs Varlociraptor
-deviation = sum(abs(x - y) for x, y in zip(true_meth_values, vcf_af_values))
+distances = [euclidian_distance(x, y, x, x) for x, y in zip(true_meth_values, vcf_af_values)]
+sorted_list = sorted(distances, reverse=True)
+print("Max dist: ", sorted_list[:4])
+deviation = sum(distances)
+
+
+# Debug:
+for i, (x, y) in enumerate(zip(true_meth_values, vcf_af_values)):
+    if euclidian_distance(x, y, x, x) > 54:
+        print(i, x, y)
+        print(vcf_positions[i])
+
+# Extra for plotting distances
+rounded_distances = [int(round(d)) for d in distances]
+data = pd.DataFrame({'Rounded_Distances': rounded_distances})
+chart = alt.Chart(data).mark_bar().encode(
+    x=alt.X('Rounded_Distances:O', axis=alt.Axis(title='Gerundete Distanzen')),
+    y=alt.Y('count():Q', axis=alt.Axis(title='Anzahl'))
+).properties(
+    title='Verteilung der gerundeten Distanzen'
+)
+chart.save("results/TruSeq_HG002_LAB01_REP01/scatter_plot_tv_distances.png", scale_factor=2.0) 
+
 
 data = pd.DataFrame({
     'TrueMeth': true_meth_values,
@@ -84,7 +129,13 @@ final_chart.save(snakemake.output["tv"], scale_factor=2.0)
 
 
 # Plot MethylDackel vs Varlociraptor
-deviation = sum(abs(x - y) for x, y in zip(bedgraph_meth_values, vcf_af_values))
+distances = [euclidian_distance(x, y, x, x) for x, y in zip(bedgraph_meth_values, vcf_af_values)]
+sorted_list = sorted(distances, reverse=True)
+print("Max dist: ", sorted_list[:4])
+deviation = sum(distances)
+
+
+
 
 
 data = pd.DataFrame({
@@ -106,7 +157,26 @@ final_chart.save(snakemake.output["dv"], scale_factor=2.0)
 
 
 # Plot TrueMeth vs MethylDackel
-deviation = sum(abs(x - y) for x, y in zip(true_meth_values, bedgraph_meth_values))
+distances = [euclidian_distance(x, y, x, x) for x, y in zip(bedgraph_meth_values, true_meth_values)]
+sorted_list = sorted(distances, reverse=True)
+print("Max dist: ", sorted_list[:4])
+deviation = sum(distances)
+# Runde die Kommazahlen auf ganze Zahlen
+rounded_distances = [int(round(d)) for d in distances]
+
+# Erzeuge ein Pandas DataFrame
+data = pd.DataFrame({'Rounded_Distances': rounded_distances})
+
+# Erzeuge das Altair-Plot
+chart = alt.Chart(data).mark_bar().encode(
+    x=alt.X('Rounded_Distances:O', axis=alt.Axis(title='Gerundete Distanzen')),
+    y=alt.Y('count():Q', axis=alt.Axis(title='Anzahl'))
+).properties(
+    title='Verteilung der gerundeten Distanzen'
+)
+
+chart.save("results/TruSeq_HG002_LAB01_REP01/scatter_plot_dv_distances.png", scale_factor=2.0) 
+
 
 data = pd.DataFrame({
     'TrueMeth': true_meth_values,
@@ -124,5 +194,8 @@ final_chart = (scatter + line).properties(
     title=f'TrueMeth vs. MethylDackel (Deviation: {deviation})'
 )
 final_chart.save(snakemake.output["td"], scale_factor=2.0) 
+
+
+
 
 
