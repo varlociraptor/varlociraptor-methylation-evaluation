@@ -7,14 +7,14 @@ sample:
   release: "110"
   chromosome: "21"
 
-# varlo_path: "~/Documents/Promotion/varlociraptor/"
-# pipeline_path: "~/Documents/Promotion/varlociraptor-methylation-evaluation/"
-# methylFastQ_path: "~/Documents/Promotion/MethylFASTQ/"
+varlo_path: "~/Documents/Promotion/varlociraptor/"
+pipeline_path: "~/Documents/Promotion/varlociraptor-methylation-evaluation/"
+methylFastQ_path: "~/Documents/Promotion/MethylFASTQ/"
 
-varlo_path: "/projects/koesterlab/benchmark-methylation/varlociraptor/"
-pipeline_path: "/projects/koesterlab/benchmark-methylation/varlociraptor-methylation-evaluation/"
-methylFastQ_path: "/projects/koesterlab/benchmark-methylation/MethylFASTQ/"
-methylationTools_path: "/projects/koesterlab/benchmark-methylation/methylation_tools/"
+# varlo_path: "/projects/koesterlab/benchmark-methylation/varlociraptor/"
+# pipeline_path: "/projects/koesterlab/benchmark-methylation/varlociraptor-methylation-evaluation/"
+# methylFastQ_path: "/projects/koesterlab/benchmark-methylation/MethylFASTQ/"
+# methylationTools_path: "/projects/koesterlab/benchmark-methylation/methylation_tools/"
 
 
 
