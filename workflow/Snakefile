@@ -17,6 +17,8 @@ scattergather:
 read_type = config["read_type"]
 chromosome_conf = config["sample"]
 platform = config["platform"]
+candidate = config["candidate"]
+
 
 
 
@@ -25,6 +27,27 @@ rule all:
         dv=expand("results/{platform}/scatter_plot_dv.png", platform=platform),
         tv=expand("results/{platform}/scatter_plot_tv.png", platform=platform),
         td=expand("results/{platform}/scatter_plot_td.png", platform=platform.keys()),
+
+# Just for debugging reasons
+rule get_candidate_neighborhood:
+    input:
+        genome="resources/genome.fasta"
+    output:
+        "resources/candidate_neighborhood.txt"
+    params:
+        pipeline_path=config["pipeline_path"],
+        chrom=21,
+        candidate=candidate,
+        left_border=candidate-150,
+        right_border=candidate+150,
+        candidate_left=candidate-1,
+        candidate_right=candidate+1,
+    conda:
+        "envs/samtools.yaml"
+    shell:
+        """
+        samtools faidx resources/genome.fasta "{params.chrom}:{params.left_border}-{params.candidate_left}" && samtools faidx resources/genome.fasta "{params.chrom}:{params.candidate}-{params.candidate}" && samtools faidx resources/genome.fasta "{params.chrom}:{params.candidate_right}-{params.right_border}"
+        """
 
 
 rule find_candidates:
@@ -76,6 +99,7 @@ rule methylDackel:
         """
         MethylDackel extract {input.genome} {input.alignment} -o {params.pipeline_path}/results/{wildcards.platform}/alignments --mergeContext
         """
+
 
 
 def get_platform_sras(wildcards):
@@ -135,10 +159,12 @@ rule compute_meth_observations:
         genome="resources/genome.fasta",
         genome_index="resources/genome.fasta.fai",
         alignments="resources/{platform}/alignment_focused_downsampled_dedup.bam",
-        alignments_index="resources/{platform}/alignment_focused_downsampled_dedup.bam.bai",
+        alignment_index="resources/{platform}/alignment_focused_downsampled_dedup.bam.bai",
+        # alignments="resources/{platform}/alignment_focused_downsampled_dedup_reduced_excert.bam",
+        # alignments_index="resources/{platform}/alignment_focused_downsampled_dedup_reduced_excert.bam.bai",
         candidates="resources/candidates_{scatteritem}.bcf"
     output:
-        temp("results/{platform}/normal_{scatteritem}.bcf"),
+        "results/{platform}/normal_{scatteritem}.bcf",
         # "results/{SRA}/normal.bcf",
     log:
         "logs/compute_meth_observations_{platform}_{scatteritem}.log",
@@ -153,6 +179,9 @@ rule compute_meth_observations:
         cd {params.varlo_path}
         cargo run --release -- preprocess variants {params.pipeline_path}{input.genome} --candidates {params.pipeline_path}{input.candidates} --bam {params.pipeline_path}{input.alignments} --read-type {params.read_type} > {params.pipeline_path}{output}
         """
+
+
+
 
 
 rule call_methylation:
@@ -239,6 +268,8 @@ rule plot_results:
         dv="results/{platform}/scatter_plot_dv.png",
         td="results/{platform}/scatter_plot_td.png",
         tv="results/{platform}/scatter_plot_tv.png",
+        dist_td="results/{platform}/scatter_plot_dv_distances.png",
+        dist_tv="results/{platform}/scatter_plot_tv_distances.png",
     conda:
         "envs/plot.yaml"
     log:

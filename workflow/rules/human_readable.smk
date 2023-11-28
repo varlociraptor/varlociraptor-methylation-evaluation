@@ -95,3 +95,57 @@ rule aligned_reads_complete_sam:
         """ 
         samtools view -@ {threads} -h  -o {params.pipeline_path}/{output}  {params.pipeline_path}{input}   
         """
+
+# Create normal.vcf
+
+scattergather:
+    split_candidates=20,
+
+
+rule bcf_indices:
+    input:
+        "results/{platform}/normal_{scatteritem}.bcf",
+    output:
+        "results/{platform}/normal_{scatteritem}.bcf.csi",
+
+    conda:
+        "../envs/samtools.yaml"
+    params:
+        pipeline_path=config["pipeline_path"],
+    shell:
+        """
+        bcftools index  {params.pipeline_path}{input}
+        """
+
+
+rule single_bcf:
+    input:
+        bcf=gather.split_candidates("results/{{platform}}/normal_{scatteritem}.bcf"),
+        indices=gather.split_candidates("results/{{platform}}/normal_{scatteritem}.bcf.csi"),
+    output:
+        "results/{platform}/normal.bcf"
+    log:
+        "logs/create_single_bcf{platform}.log",
+    conda:
+        "../envs/samtools.yaml"
+    params:
+        pipeline_path=config["pipeline_path"],
+    shell:
+        """
+        bcftools merge -o {params.pipeline_path}{output} {params.pipeline_path}{input.bcf}
+        """
+
+rule normal_to_vcf:
+    input:
+        "results/{platform}/normal.bcf"
+    output:
+        "results/{platform}/normal.vcf"
+    conda:
+        "../envs/samtools.yaml"
+    log:
+        "logs/convert_to_vcf{platform}.log",
+    threads: 10
+    shell:
+        """
+        bcftools view --threads {threads} {input} > {output}
+        """
