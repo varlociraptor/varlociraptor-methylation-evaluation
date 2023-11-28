@@ -64,6 +64,14 @@ rule genome_index:
         samtools faidx {params.pipeline_path}{input}
         """
 
+rule get_pacbio_data:
+    output:
+        "resources/pacbio/HG002.GRCh38.haplotagged.bam",
+    log:
+        "logs/get_pacbio_data.log",
+    script:
+        "../scripts/get_pacbio_data.py"
+
 rule get_fastq_pe:
     output:
         # the wildcard name must be accession, pointing to an SRA number
