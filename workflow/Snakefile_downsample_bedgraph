@@ -246,8 +246,8 @@ rule plot_results:
         bedGraph="results/{platform}/alignments_CpG_downsampled.bedGraph",
         
         calls="results/{platform}/calls.vcf",
-        true_meth="resources/HG002/GSM5649437_TruSeq_HG002_LAB01_REP01_filtered.bedGraph"
-        # true_meth="resources/bed_avg.bedGraph"
+        # true_meth="resources/HG002/GSM5649437_TruSeq_HG002_LAB01_REP01_filtered.bedGraph"
+        true_meth="resources/bed_avg.bedGraph"
     output:
         # dv="results/{platform}/scatter_plot_dv.png",
         td="results/{platform}/scatter_plot_td.png",

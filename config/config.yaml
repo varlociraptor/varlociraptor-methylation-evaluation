@@ -18,10 +18,11 @@ methylFastQ_path: "~/Documents/Promotion/MethylFASTQ/"
 
 
 
-read_type: "Illumina"
+read_type: "PacBio"
 
 platform:
-  TruSeq_HG002_LAB01_REP01: [SRR13050995, SRR13050996, SRR13050998]
+  pacbio: [SRR8858444] # https://www.ncbi.nlm.nih.gov/Traces/study/?acc=SRX5327410&o=acc_s%3Aa&s=SRR8858444
+  # TruSeq_HG002_LAB01_REP01: [SRR13050995, SRR13050996, SRR13050998]
   # TruSeq_HG002_LAB01_REP02: [SRR13050992, SRR13050993, SRR13050994]   SLURM job submission failed. The error message was sbatch: error: Memory specification can not be satisfied
   # SPLAT_HG002_LAB01_REP02_4:  [SRR13051050, SRR13051051, SRR130510s52, SRR13051054]
   # SPLAT_HG002_LAB01_REP01_4: [SRR13051055, SRR13051056, SRR13051057, SRR13051058] SLURM job submission failed. The error message was sbatch: error: Memory specification can not be satisfied
