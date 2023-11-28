@@ -40,25 +40,26 @@ rule align_reads:
         reads1="resources/{platform}/{SRA}/{SRA}_1_trimmed.fastq",
         reads2="resources/{platform}/{SRA}/{SRA}_2_trimmed.fastq",
     output:
-        aligned_bam_reads
+        "resources/{platform}/{SRA}/aligned-reads-illumina.bam"
     conda:
         "../envs/bwa-meth.yaml"
     log:
         # "logs/align_reads_{scatteritem}{SRA}.log",
         "logs/align_reads{SRA}{platform}.log",
     threads: 30
+    resources:
+        mem_mb=4096,
     shell:
         """
         bwameth.py index-mem2 {input.fasta}
         bwameth.py --threads {threads} --reference {input.fasta} {input.reads1} {input.reads2}  | samtools view -S -b - > {output}
         """
 
-
 rule sort_aligned_reads:
     input:
-        aligned_bam_reads,
+        "resources/{platform}/{SRA}/aligned-reads-illumina.bam"
     output:
-        aligned_bam_reads_sorted,
+        "resources/{platform}/{SRA}/alignment_sorted.bam"
     log:
         "logs/sort_aligned_reads{SRA}{platform}.log",
     conda:
@@ -73,11 +74,11 @@ rule sort_aligned_reads:
 
 rule aligned_reads_index:
     input:
-        aligned_bam_reads_sorted,
+        "resources/{platform}/{SRA}/alignment_sorted.bam"
     output:
-        aligned_bam_reads_index,
+        "resources/{platform}/{SRA}/alignment_sorted.bam.bai",
     log:
-        "logs/aligned_reads_to_bam{SRA}{platform}.log",
+        "logs/aligned_reads_to_bam{platform}{SRA}.log",
     conda:
         "../envs/samtools.yaml"
     params:
@@ -86,14 +87,14 @@ rule aligned_reads_index:
     shell:
         """
         samtools index -@ {threads} {params.pipeline_path}{input}
-        """
+      """
 
-rule filter_aligned_reads:
+rule focus_aligned_reads_chrom:
     input:
-        bam=aligned_bam_reads_sorted,
-        index=aligned_bam_reads_index,
+        bam="resources/{platform}/{SRA}/alignment_sorted.bam",
+        index="resources/{platform}/{SRA}/alignment_sorted.bam.bai",
     output:
-        "resources/{platform}/{SRA}/alignment_focused.bam"
+        bam="resources/{platform}/{SRA}/alignment_focused.bam"
     log:
         "logs/chromosome_index{SRA}{platform}.log",
     conda:
@@ -104,13 +105,32 @@ rule filter_aligned_reads:
     threads: 10
     shell:
         """ 
-        samtools view -b -o {output} {input.bam} {params.chromosome}
+        samtools view -b -o {output.bam} {input} {params.chromosome}
         """
+
+rule filter_mapping_quality:
+    input:
+        "resources/{platform}/{SRA}/alignment_focused.bam"
+    output:
+        "resources/{platform}/{SRA}/alignment_focused_filtered.bam"
+    log:
+        "logs/filter_mappingq{platform}{SRA}.log",
+    conda:
+        "../envs/samtools.yaml"
+    params:
+        pipeline_path=config["pipeline_path"],
+        min_quality=10
+    threads: 10
+    shell:
+        """
+        samtools view -q {params.min_quality} -b -o {output} {input}
+        """
+
 
 
 rule markduplicates_bam:
     input:
-        bams="resources/{platform}/{SRA}/alignment_focused.bam"
+        bams="resources/{platform}/{SRA}/alignment_focused_filtered.bam"
     # optional to specify a list of BAMs; this has the same effect
     # of marking duplicates on separate read groups for a sample
     # and then merging
@@ -131,22 +151,22 @@ rule markduplicates_bam:
         "v2.6.0/bio/picard/markduplicates"
 
 
-rule aligned_reads_dedup_index:
-    input:
-        bam="resources/{platform}/{SRA}/alignment_focused_dedup.bam",
-    output:
-        bam="resources/{platform}/{SRA}/alignment_focused_dedup.bam.bai",
-    log:
-        "logs/aligned_reads_to_bam{platform}{SRA}.log",
-    conda:
-        "../envs/samtools.yaml"
-    params:
-        pipeline_path=config["pipeline_path"],
-    threads: 10
-    shell:
-        """
-        samtools index -@ {threads} {params.pipeline_path}{input}
-        """
+# rule aligned_reads_dedup_index:
+#     input:
+#         bam="resources/{platform}/{SRA}/alignment_focused_dedup.bam",
+#     output:
+#         bam="resources/{platform}/{SRA}/alignment_focused_dedup.bam.bai",
+#     log:
+#         "logs/aligned_reads_to_bam{platform}{SRA}.log",
+#     conda:
+#         "../envs/samtools.yaml"
+#     params:
+#         pipeline_path=config["pipeline_path"],
+#     threads: 10
+#     shell:
+#         """
+#         samtools index -@ {threads} {params.pipeline_path}{input}
+#         """
 
 
 
@@ -190,6 +210,7 @@ rule downsample_bams:
         """
         samtools view -s 0.99 -b -o {output} {input}
         """
+
 
 rule aligned_downsampled_reads_dedup_index:
     input:

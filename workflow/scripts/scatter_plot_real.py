@@ -93,20 +93,20 @@ deviation = sum(distances)
 
 # Debug:
 for i, (x, y) in enumerate(zip(true_meth_values, vcf_af_values)):
-    if euclidian_distance(x, y, x, x) > 54:
-        print(i, x, y)
+    if euclidian_distance(x, y, x, x) < 1 and x < 90:
+        print(euclidian_distance(x, y, x, x), x, y)
         print(vcf_positions[i])
 
 # Extra for plotting distances
 rounded_distances = [int(round(d)) for d in distances]
 data = pd.DataFrame({'Rounded_Distances': rounded_distances})
 chart = alt.Chart(data).mark_bar().encode(
-    x=alt.X('Rounded_Distances:O', axis=alt.Axis(title='Gerundete Distanzen')),
-    y=alt.Y('count():Q', axis=alt.Axis(title='Anzahl'))
+    x=alt.X('Rounded_Distances:O', axis=alt.Axis(title='distance')),
+    y=alt.Y('count():Q', axis=alt.Axis(title='number'))
 ).properties(
-    title='Verteilung der gerundeten Distanzen'
+    title='Distance distribution Varlociraptor'
 )
-chart.save("results/TruSeq_HG002_LAB01_REP01/scatter_plot_tv_distances.png", scale_factor=2.0) 
+chart.save(snakemake.output["dist_tv"], scale_factor=2.0) 
 
 
 data = pd.DataFrame({
@@ -115,8 +115,8 @@ data = pd.DataFrame({
 })
 
 scatter = alt.Chart(data).mark_circle(opacity=0.5).encode(
-    x='TrueMeth:Q',
-    y='Varlociraptor:Q'
+    x='TrueMeth',
+    y='Varlociraptor'
 )
 
 final_chart = (scatter + line).properties(
@@ -144,8 +144,8 @@ data = pd.DataFrame({
 })
 
 scatter = alt.Chart(data).mark_circle(opacity=0.5).encode(
-    x='MethylDackel:Q',
-    y='Varlociraptor:Q'
+    x='MethylDackel',
+    y='Varlociraptor'
 )
 
 final_chart = (scatter + line).properties(
@@ -169,13 +169,14 @@ data = pd.DataFrame({'Rounded_Distances': rounded_distances})
 
 # Erzeuge das Altair-Plot
 chart = alt.Chart(data).mark_bar().encode(
-    x=alt.X('Rounded_Distances:O', axis=alt.Axis(title='Gerundete Distanzen')),
-    y=alt.Y('count():Q', axis=alt.Axis(title='Anzahl'))
+    x=alt.X('Rounded_Distances:O', axis=alt.Axis(title='distance')),
+    y=alt.Y('count():Q', axis=alt.Axis(title='number'))
 ).properties(
-    title='Verteilung der gerundeten Distanzen'
+    title='Distance distribution MethylDackel'
 )
 
-chart.save("results/TruSeq_HG002_LAB01_REP01/scatter_plot_dv_distances.png", scale_factor=2.0) 
+chart.save(snakemake.output["dist_td"], scale_factor=2.0) 
+
 
 
 data = pd.DataFrame({
@@ -184,8 +185,8 @@ data = pd.DataFrame({
 })
 
 scatter = alt.Chart(data).mark_circle(opacity=0.5).encode(
-    x='TrueMeth:Q',
-    y='MethylDackel:Q'
+    x='TrueMeth',
+    y='MethylDackel'
 )
 
 final_chart = (scatter + line).properties(

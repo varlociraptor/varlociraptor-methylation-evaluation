@@ -77,7 +77,7 @@ rule get_fastq_pe:
     conda:
         "../envs/fastq-wrapper.yaml"
     wrapper:
-        "v2.6.0/bio/sra-tools/fasterq-dump"
+        "v2.6.0/bio/sra-tools/fasterq-dump" 
 
 
 rule trim_fastq_pe:
