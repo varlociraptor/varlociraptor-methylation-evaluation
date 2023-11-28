@@ -10,7 +10,7 @@ rule download_bedGraphs:
         pipeline_path=config["pipeline_path"],
         bedGraphs = config["bedGraphs_HG002"]
     script:
-        "scripts/get_bedGraph_data.py"
+        "../scripts/get_bedGraph_data.py"
 
 ruleorder: filter_bedGraphs > extract_data
 

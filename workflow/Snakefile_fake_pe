@@ -7,43 +7,42 @@
 configfile: "config/config.yaml"
 
 scattergather:
-    split_candidates=10,
-    split_reads=10,
+    split_candidates=1,
 
 read_type = config["read_type"]
 genome_config = config["sample"]
-accession = config["accession"]
+
 
 
 
 aligned_bam_reads = (
-    "resources/example_new/aligned-reads-pacbio.bam"
+    "resources/example_paired/aligned-reads-pacbio.bam"
     if read_type == "PacBio"
-    else "resources/example_new/aligned-reads-illumina.bam"
+    else "resources/example_paired/aligned-reads-illumina.bam"
 )
 
 aligned_bam_reads_index = (
-    "resources/example_new/aligned-reads-pacbio-sorted.bam.bai"
+    "resources/example_paired/aligned-reads-pacbio-sorted.bam.bai"
     if read_type == "PacBio"
-    else "resources/example_new/aligned-reads-illumina-sorted.bam.bai"
+    else "resources/example_paired/aligned-reads-illumina-sorted.bam.bai"
 )
 
 aligned_sam_reads = (
-    "resources/example_new/aligned-reads-pacbio.sam"
+    "resources/example_paired/aligned-reads-pacbio.sam"
     if read_type == "PacBio"
-    else "resources/example_new/aligned-reads-illumina.sam"
+    else "resources/example_paired/aligned-reads-illumina.sam"
 )
 
 aligned_bam_reads_sorted = (
-    "resources/example_new/aligned-reads-pacbio-sorted.bam"
+    "resources/example_paired/aligned-reads-pacbio-sorted.bam"
     if read_type == "PacBio"
-    else "resources/example_new/aligned-reads-illumina-sorted.bam"
+    else "resources/example_paired/aligned-reads-illumina-sorted.bam"
 )
 
 aligned_sam_reads_sorted = (
-    "resources/example_new/aligned-reads-pacbio-sorted.sam"
+    "resources/example_paired/aligned-reads-pacbio-sorted.sam"
     if read_type == "PacBio"
-    else "resources/example_new/aligned-reads-illumina-sorted.sam"
+    else "resources/example_paired/aligned-reads-illumina-sorted.sam"
 )
 
 
@@ -57,9 +56,9 @@ rule all:
 
 rule genome_index:
     input:
-        "resources/example_new/genome.fasta",
+        "resources/example_paired/genome.fasta",
     output:
-        "resources/example_new/genome.fasta.fai",
+        "resources/example_paired/genome.fasta.fai",
     log:
         "logs/genome_index.log",
     conda:
@@ -71,12 +70,25 @@ rule genome_index:
         samtools faidx {params.pipeline_path}{input}
         """
 
+# Just for debugging reasons
+rule get_candidate_neighborhood:
+    input:
+        genome="resources/chromosome.fasta"
+    output:
+        "resources/candidate_neighborhood.txt"
+    params:
+        pipeline_path=config["pipeline_path"],
+        candidate=25914260
+    script:
+        "scripts/candidate_neighborhood.py"
+
+
 
 rule find_candidates:
     input:
-        "resources/example_new/genome.fasta",
+        "resources/example_paired/genome.fasta",
     output:
-        "resources/example_new/candidates.bcf",
+        "resources/example_paired/candidates.bcf",
     log:
         "logs/find_candidates.log",
     conda:
@@ -93,9 +105,9 @@ rule find_candidates:
 # Unused
 rule candidates_to_vcf:
     input:
-        "resources/example_new/candidates.bcf",
+        "resources/example_paired/candidates.bcf",
     output:
-        "resources/example_new/candidates.vcf",
+        "resources/example_paired/candidates.vcf",
     conda:
         "envs/samtools.yaml"
     log:
@@ -107,9 +119,9 @@ rule candidates_to_vcf:
         
 rule split_candidates:
     input:
-        "resources/example_new/candidates.bcf",
+        "resources/example_paired/candidates.bcf",
     output:
-        temp(scatter.split_candidates("resources/example_new/candidates_{scatteritem}.bcf"))
+        temp(scatter.split_candidates("resources/example_paired/candidates_{scatteritem}.bcf"))
     log:
         "logs/split_candidates.log",
     conda:
@@ -119,9 +131,9 @@ rule split_candidates:
 
 rule splitted_candidates_to_vcf:
     input:
-        "resources/example_new/candidates_{scatteritem}.bcf",
+        "resources/example_paired/candidates_{scatteritem}.bcf",
     output:
-        "resources/example_new/candidates_{scatteritem}.vcf",
+        "resources/example_paired/candidates_{scatteritem}.vcf",
     conda:
         "envs/samtools.yaml"
     log:
@@ -134,11 +146,11 @@ rule splitted_candidates_to_vcf:
 
 rule fake_meth_data_methylFASTQ:
     input:
-        fasta="resources/example_new/genome.fasta",
+        fasta="resources/example_paired/genome.fasta",
     output:
-        "resources/example_new/genome_pe_f150r150_dir_R1.fastq",
-        "resources/example_new/genome_pe_f150r150_dir_R2.fastq",
-        "resources/example_new/genome_pe_f150r150_dir.ch3"
+        "resources/example_paired/genome_pe_f150r150_dir_R1.fastq",
+        "resources/example_paired/genome_pe_f150r150_dir_R2.fastq",
+        "resources/example_paired/genome_pe_f150r150_dir.ch3"
     log:
         "logs/fake_meth_data.log",
     params:
@@ -148,16 +160,16 @@ rule fake_meth_data_methylFASTQ:
         "envs/methylFastQ.yaml"
     shell:
         """
-        python {params.methylFastQ_path}src/methylFASTQ.py -i {input} -o {params.pipeline_path}resources/example_new --seq paired_end --chh 0.0 --chg 0.0 --cg 0.5 --snp 0.0 --error 0.0 --coverage 50
+        python {params.methylFastQ_path}src/methylFASTQ.py -i {input} -o {params.pipeline_path}resources/example_paired --seq paired_end --chh 1.0 --chg 1.0 --cg 0 --snp 0.0 --error 0.0 --coverage 4 
         """
 
 
 
 rule align_reads:
     input:
-        fasta="resources/example_new/genome.fasta",
-        reads1="resources/example_new/genome_pe_f150r150_dir_R1.fastq",
-        reads2="resources/example_new/genome_pe_f150r150_dir_R2.fastq",
+        fasta="resources/example_paired/genome.fasta",
+        reads1="resources/example_paired/genome_pe_f150r150_dir_R1.fastq",
+        reads2="resources/example_paired/genome_pe_f150r150_dir_R2.fastq",
     output:
         aligned_bam_reads
     conda:
@@ -230,7 +242,7 @@ rule aligned_reads_index:
 
 rule methylDackel:
     input:
-        genome="resources/example_new/genome.fasta",
+        genome="resources/example_paired/genome.fasta",
         alignments=aligned_bam_reads_sorted,
         alignment_index=aligned_bam_reads_index
     output:
@@ -249,14 +261,14 @@ rule methylDackel:
 
 rule compute_meth_observations:
     input:
-        genome="resources/example_new/genome.fasta",
-        genome_index="resources/example_new/genome.fasta.fai",
+        genome="resources/example_paired/genome.fasta",
+        genome_index="resources/example_paired/genome.fasta.fai",
         alignments=aligned_bam_reads_sorted,
         alignments_index=aligned_bam_reads_index,
-        candidates="resources/example_new/candidates_{scatteritem}.bcf"
-        # candidates="resources/example_new/candidates.bcf",
+        candidates="resources/example_paired/candidates_{scatteritem}.bcf"
+        # candidates="resources/example_paired/candidates.bcf",
     output:
-        temp("results/normal_{scatteritem}.bcf"),
+        "results/normal_{scatteritem}.bcf",
         # "results/normal.bcf",
     log:
         "logs/compute_{scatteritem}.log",
@@ -293,7 +305,7 @@ rule call_methylation:
     input:
         preprocess_obs="results/normal_{scatteritem}.bcf",
         # preprocess_obs="results/normal.bcf",
-        scenario="resources/example_new/scenario.yaml",
+        scenario="resources/example_paired/scenario.yaml",
     output:
         temp("results/calls_{scatteritem}.bcf"),
         # "results/calls.bcf",
@@ -340,8 +352,8 @@ rule plot_results:
     input:
         bedGraph="results/alignments_CpG.bedGraph",
         calls="results/calls.vcf",
-        # true_meth="resources/example_new/genome_se_f150r150_dir.ch3"
-        true_meth="resources/example_new/genome_pe_f150r150_dir.ch3"
+        # true_meth="resources/example_paired/genome_se_f150r150_dir.ch3"
+        true_meth="resources/example_paired/genome_pe_f150r150_dir.ch3"
     output:
         dv="results/scatter_plot_dv.png",
         tv="results/scatter_plot_tv.png",

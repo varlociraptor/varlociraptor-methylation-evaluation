@@ -7,19 +7,19 @@ sample:
   release: "110"
   chromosome: "21"
 
-# varlo_path: "~/Documents/Promotion/varlociraptor/"
-# pipeline_path: "~/Documents/Promotion/varlociraptor-methylation-evaluation/"
-# methylFastQ_path: "~/Documents/Promotion/MethylFASTQ/"
+varlo_path: "~/Documents/Promotion/varlociraptor/"
+pipeline_path: "~/Documents/Promotion/varlociraptor-methylation-evaluation/"
+methylFastQ_path: "~/Documents/Promotion/MethylFASTQ/"
 
-varlo_path: "/projects/koesterlab/benchmark-methylation/varlociraptor/"
-pipeline_path: "/projects/koesterlab/benchmark-methylation/varlociraptor-methylation-evaluation/"
-methylFastQ_path: "/projects/koesterlab/benchmark-methylation/MethylFASTQ/"
-methylationTools_path: "/projects/koesterlab/benchmark-methylation/methylation_tools/"
+# varlo_path: "/projects/koesterlab/benchmark-methylation/varlociraptor/"
+# pipeline_path: "/projects/koesterlab/benchmark-methylation/varlociraptor-methylation-evaluation/"
+# methylFastQ_path: "/projects/koesterlab/benchmark-methylation/MethylFASTQ/"
+# methylationTools_path: "/projects/koesterlab/benchmark-methylation/methylation_tools/"
 
 candidate: 40437798
 
 
-read_type: "Illumina"
+read_type: "PacBio"
 
 platform:
   TruSeq_HG002_LAB01_REP01: [SRR13050995, SRR13050996, SRR13050998]
@@ -37,7 +37,6 @@ platform:
   TrueMethylOX_HG002_LAB01_REP01: [SRR13051231, SRR13051232]
   TrueMethylBS_HG002_LAB01_REP02: [SRR13051250, SRR13051251] #2023-10-25T12:57:27 fasterq-dump.3.0.6 err: storage exhausted while writing file within file system module - system bad file descriptor error fd='4'
   TrueMethylBS_HG002_LAB01_REP01: [SRR13051253] #2023-10-25T12:57:27 fasterq-dump.3.0.6 err: storage exhausted while writing file within file system module - system bad file descriptor error fd='4'
-
 
 
 
