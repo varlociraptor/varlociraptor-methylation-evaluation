@@ -1,7 +1,7 @@
 import requests
 
 url = "https://downloads.pacbcloud.com/public/dataset/HG002-CpG-methylation-202202/HG002.GRCh38.haplotagged.bam"
-target_file_path = "/home/adrian/Documents/Promotion/varlociraptor-methylation-evaluation/resources/pacbio/HG002.GRCh38.haplotagged.bam"
+target_file_path = "/projects/koesterlab/benchmark-methylation/varlociraptor-methylation-evaluation/resources/pacbio/HG002.GRCh38.haplotagged.bam"
 
 # Download the file
 response = requests.get(url)
