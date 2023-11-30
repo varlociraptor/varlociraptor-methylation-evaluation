@@ -16,6 +16,7 @@ scattergather:
 
 read_type = config["read_type"]
 chromosome_conf = config["sample"]
+
 platform = config["platform"]
 candidate = config["candidate"]
 
@@ -26,7 +27,7 @@ rule all:
     input:
         dv=expand("results/{platform}/scatter_plot_dv.png", platform=platform),
         tv=expand("results/{platform}/scatter_plot_tv.png", platform=platform),
-        td=expand("results/{platform}/scatter_plot_td.png", platform=platform.keys()),
+        td=expand("results/{platform}/scatter_plot_td.png", platform=platform),
 
 # Just for debugging reasons
 rule get_candidate_neighborhood:
@@ -107,51 +108,7 @@ def get_platform_sras(wildcards):
     accession_numbers = config["platform"][platform]
     return ["resources/" + platform + "/" + SRA + "/alignments_CpG.bedGraph" for SRA in accession_numbers]
 
-# rule combineReplicates:
-#     input:
-#         get_platform_sras
-#     output:
-#         "resources/{platform}/alignments_CpG.bedGraph",
-#     log:
-#         "logs/combineReplicates{platform}.log",
-#     params:
-#         pipeline_path=config["pipeline_path"],
-#     script:
-#         "scripts/combineReplicates.py"
 
-# rule downsample:
-#     input:
-#         "resources/{platform}/alignments_CpG.bedGraph",
-#     output:
-#         "results/{platform}/alignments_CpG_downsampled.bedGraph",
-#     log:
-#         "logs/downsample{platform}.log",
-#     params:
-#         pipeline_path=config["pipeline_path"],
-#         methylationTools=config["methylationTools_path"],
-#     shell:
-#         """
-#         cat {params.pipeline_path}{input} | grep -v track | {params.methylationTools}downsample_methylKit.py --fraction 0.99 --bedGraph > {params.pipeline_path}{output}
-#         """
-
-
-# rule build_varlo:
-#     output:
-#         temp("resources/{SRA}/build_varlo.txt"),
-#     log:
-#         "logs/build_varlo{SRA}.log",
-#     conda:
-#         "envs/varlociraptor.yaml"
-#     params:
-#         varlo_path=config["varlo_path"],
-#         pipeline_path=config["pipeline_path"],
-#         read_type=config["read_type"],
-#     shell:
-#         """ 
-#         cd {params.varlo_path}
-#         cargo build
-#         touch {params.pipeline_path}{output}
-#         """
 
 rule compute_meth_observations:
     input:
