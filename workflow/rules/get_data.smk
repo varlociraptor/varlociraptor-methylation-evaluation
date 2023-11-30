@@ -66,37 +66,38 @@ rule genome_index:
 
 rule get_pacbio_data:
     output:
-        "resources/pacbio/HG002.GRCh38.haplotagged.bam",
-    log:
-        "logs/get_pacbio_data.log",
+        "resources/PacBio/{protocol}/{SRA}/alignment.bam"
+    params:
+        url=lambda wildcards: config[str(wildcards.SRA)]
     script:
         "../scripts/get_pacbio_data.py"
 
 rule get_fastq_pe:
     output:
         # the wildcard name must be accession, pointing to an SRA number
-        "resources/{platform}/{SRA}/{accession}_1.fastq",
-        "resources/{platform}/{SRA}/{accession}_2.fastq",
+        "resources/Illumina/{protocol}/{SRA}/{accession}_1.fastq",
+        "resources/Illumina/{protocol}/{SRA}/{accession}_2.fastq",
     log:
-        "logs/pe/{accession}{platform}{SRA}.log"
+        "logs/pe/{accession}{protocol}{SRA}.log"
     params:
         extra="--skip-technical"
     threads: 6  # defaults to 6
-    conda:
-        "../envs/fastq-wrapper.yaml"
+    # conda:
+    #     "../envs/fastq-wrapper.yaml"
     wrapper:
-        "v2.6.0/bio/sra-tools/fasterq-dump" 
+        "v3.0.2/bio/sra-tools/fasterq-dump"
+
 
 
 rule trim_fastq_pe:
     input:
-        first="resources/{platform}/{SRA}/{accession}_1.fastq",
-        second="resources/{platform}/{SRA}/{accession}_2.fastq",
+        first="resources/Illumina/{protocol}/{SRA}/{accession}_1.fastq",
+        second="resources/Illumina/{protocol}/{SRA}/{accession}_2.fastq",
     output:
-        first="resources/{platform}/{SRA}/{accession}_1_trimmed.fastq",
-        second="resources/{platform}/{SRA}/{accession}_2_trimmed.fastq",
+        first="resources/Illumina/{protocol}/{SRA}/{accession}_1_trimmed.fastq",
+        second="resources/Illumina/{protocol}/{SRA}/{accession}_2_trimmed.fastq",
     log:
-        "logs/trim_fastq_pe_{platform}{SRA}_{accession}.log",
+        "logs/trim_fastq_pe_{protocol}{SRA}_{accession}.log",
     conda:
         "../envs/fastp.yaml"
     params:
