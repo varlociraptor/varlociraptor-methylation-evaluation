@@ -81,11 +81,11 @@ rule observations_to_vcf:
 
 rule aligned_reads_complete_sam:
     input:
-        "resources/{protocol}/alignment_focused_downsampled_dedup.bam",
+        "resources/{platform}/{protocol}/alignment_focused_downsampled_dedup.bam",
     output:
-        "resources/{protocol}/alignment_focused_downsampled_dedup.sam",
+        "resources/{platform}/{protocol}/alignment_focused_downsampled_dedup.sam",
     log:
-        "logs/aligned_reads_sorted_sam{protocol}.log",
+        "logs/aligned_reads_sorted_sam{platform}{protocol}.log",
     conda:
         "../envs/samtools.yaml"
     params:
@@ -104,9 +104,9 @@ scattergather:
 
 rule bcf_indices:
     input:
-        "results/{platform}/normal_{scatteritem}.bcf",
+        "results/{platform}/{protocol}/normal_{scatteritem}.bcf",
     output:
-        "results/{platform}/normal_{scatteritem}.bcf.csi",
+        "results/{platform}/{protocol}/normal_{scatteritem}.bcf.csi",
 
     conda:
         "../envs/samtools.yaml"
@@ -120,12 +120,12 @@ rule bcf_indices:
 
 rule single_bcf:
     input:
-        bcf=gather.split_candidates("results/{{platform}}/normal_{scatteritem}.bcf"),
-        indices=gather.split_candidates("results/{{platform}}/normal_{scatteritem}.bcf.csi"),
+        bcf=gather.split_candidates("results/{{platform}}/{{protocol}}/normal_{scatteritem}.bcf"),
+        indices=gather.split_candidates("results/{{platform}}/{{protocol}}/normal_{scatteritem}.bcf.csi"),
     output:
-        "results/{platform}/normal.bcf"
+        "results/{platform}/{protocol}/normal.bcf"
     log:
-        "logs/create_single_bcf{platform}.log",
+        "logs/create_single_bcf{platform}{protocol}.log",
     conda:
         "../envs/samtools.yaml"
     params:
@@ -137,13 +137,13 @@ rule single_bcf:
 
 rule normal_to_vcf:
     input:
-        "results/{platform}/normal.bcf"
+        "results/{platform}/{protocol}/normal.bcf"
     output:
-        "results/{platform}/normal.vcf"
+        "results/{platform}/{protocol}/normal.vcf"
     conda:
         "../envs/samtools.yaml"
     log:
-        "logs/convert_to_vcf{platform}.log",
+        "logs/convert_to_vcf{platform}{protocol}.log",
     threads: 10
     shell:
         """

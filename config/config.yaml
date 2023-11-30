@@ -18,28 +18,27 @@ methylFastQ_path: "~/Documents/Promotion/MethylFASTQ/"
 
 candidate: 40437798
 
+data:
+  Illumina:
+    # TruSeq_HG002_LAB01_REP01: [SRR13050996, SRR13050998]
+  #   TruSeq_HG002_LAB01_REP02: [SRR13050992, SRR13050993, SRR13050994]   
+  #   SPLAT_HG002_LAB01_REP01_4: [SRR13051055, SRR13051056, SRR13051057, SRR13051058]
+  #   SPLAT_HG002_LAB01_REP02_4:  [SRR13051050, SRR13051051, SRR13051052, SRR13051054]
+  #   MethylSeq_HG002_LAB01_REP01: [SRR13051104, SRR13051105, SRR13051106]
+  #   MethylSeq_HG002_LAB01_REP02: [SRR13051101, SRR13051102, SRR13051103]
+  # # EMSeq, TrueMethylOX und TrueMEthylBS gibt es je immer nur ein SRR zu 
+  #   EMSeq_HG002_LAB02_REP02: [SRR13051139]
+  #   EMSeq_HG002_LAB02_REP01: [SRR13051140]
+  #   EMSeq_HG002_LAB01_REP02: [SRR13051141]
+  #   EMSeq_HG002_LAB01_REP01: [SRR13051142]
+  #   TrueMethylOX_HG002_LAB01_REP02: [SRR13051230]
+  #   TrueMethylOX_HG002_LAB01_REP01: [SRR13051231, SRR13051232]
+  #   TrueMethylBS_HG002_LAB01_REP02: [SRR13051250, SRR13051251] #2023-10-25T12:57:27 fasterq-dump.3.0.6 err: storage exhausted while writing file within file system module - system bad file descriptor error fd='4'
+  #   TrueMethylBS_HG002_LAB01_REP01: [SRR13051253] #2023-10-25T12:57:27 fasterq-dump.3.0.6 err: storage exhausted while writing file within file system module - system bad file descriptor error fd='4'
+  PacBio:
+    data1: [dummySRA1]
 
-read_type: "PacBio"
-
-
-
-platform:
-  TruSeq_HG002_LAB01_REP01: [SRR13050995, SRR13050996, SRR13050998]
-  TruSeq_HG002_LAB01_REP02: [SRR13050992, SRR13050993, SRR13050994]   
-  SPLAT_HG002_LAB01_REP01_4: [SRR13051055, SRR13051056, SRR13051057, SRR13051058]
-  SPLAT_HG002_LAB01_REP02_4:  [SRR13051050, SRR13051051, SRR13051052, SRR13051054]
-  MethylSeq_HG002_LAB01_REP01: [SRR13051104, SRR13051105, SRR13051106]
-  MethylSeq_HG002_LAB01_REP02: [SRR13051101, SRR13051102, SRR13051103]
-# EMSeq, TrueMethylOX und TrueMEthylBS gibt es je immer nur ein SRR zu 
-  EMSeq_HG002_LAB02_REP02: [SRR13051139]
-  EMSeq_HG002_LAB02_REP01: [SRR13051140]
-  EMSeq_HG002_LAB01_REP02: [SRR13051141]
-  EMSeq_HG002_LAB01_REP01: [SRR13051142]
-  TrueMethylOX_HG002_LAB01_REP02: [SRR13051230]
-  TrueMethylOX_HG002_LAB01_REP01: [SRR13051231, SRR13051232]
-  TrueMethylBS_HG002_LAB01_REP02: [SRR13051250, SRR13051251] #2023-10-25T12:57:27 fasterq-dump.3.0.6 err: storage exhausted while writing file within file system module - system bad file descriptor error fd='4'
-  TrueMethylBS_HG002_LAB01_REP01: [SRR13051253] #2023-10-25T12:57:27 fasterq-dump.3.0.6 err: storage exhausted while writing file within file system module - system bad file descriptor error fd='4'
-
+dummySRA1: "https://downloads.pacbcloud.com/public/dataset/HG002-CpG-methylation-202202/HG002.GRCh38.haplotagged.bam"
 
 
 bedGraphs_HG002:
