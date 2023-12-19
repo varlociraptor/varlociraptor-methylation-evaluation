@@ -79,22 +79,6 @@ rule observations_to_vcf:
         bcftools view --threads {threads} {input} > {output}
         """
 
-rule aligned_reads_complete_sam:
-    input:
-        "resources/{platform}/{protocol}/alignment_focused_downsampled_dedup.bam",
-    output:
-        "resources/{platform}/{protocol}/alignment_focused_downsampled_dedup.sam",
-    log:
-        "logs/aligned_reads_sorted_sam{platform}{protocol}.log",
-    conda:
-        "../envs/samtools.yaml"
-    params:
-        pipeline_path=config["pipeline_path"],
-    threads: 10
-    shell:
-        """ 
-        samtools view -@ {threads} -h  -o {params.pipeline_path}/{output}  {params.pipeline_path}{input}   
-        """
 
 # Create normal.vcf
 

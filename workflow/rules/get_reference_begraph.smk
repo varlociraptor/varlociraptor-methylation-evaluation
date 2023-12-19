@@ -32,7 +32,7 @@ rule filter_bedGraphs:
     log:
         "logs/filter_bedGraphs{bedGraph}.log",
     params:
-        chromosome="chr" + chromosome_conf["chromosome"]
+        chromosome=chr_chromosome
     shell:
         """
         awk '$1 == "{params.chromosome}" {{print}}' {input} > {output}

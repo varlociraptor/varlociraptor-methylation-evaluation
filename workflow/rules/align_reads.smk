@@ -63,6 +63,8 @@ rule aligned_reads_index:
         samtools index -@ {threads} {params.pipeline_path}{input}
       """
 
+
+# params.chromosome muss mak 21 und mal chr21 sein (Illumina 21, PacBio chr21)
 rule focus_aligned_reads_chrom:
     input:
         bam="resources/{platform}/{protocol}/{SRA}/alignment_sorted.bam",
@@ -75,7 +77,7 @@ rule focus_aligned_reads_chrom:
         "../envs/samtools.yaml"
     params:
         pipeline_path=config["pipeline_path"],
-        chromosome=chromosome_conf["chromosome"],
+        chromosome=lambda wildcards: "chr" + chromosome_conf["chromosome"] if wildcards.platform == "PacBio" else chromosome_conf["chromosome"]
     threads: 10
     shell:
         """ 
@@ -188,12 +190,54 @@ rule downsample_bams:
         samtools view -s 0.99 -b -o {output} {input}
         """
 
-
-rule aligned_downsampled_reads_dedup_index:
+rule bam_to_sam:
     input:
         "resources/{platform}/{protocol}/alignment_focused_downsampled_dedup.bam"
     output:
-        "resources/{platform}/{protocol}/alignment_focused_downsampled_dedup.bam.bai"
+        "resources/{platform}/{protocol}/alignment_focused_downsampled_dedup.sam"
+    conda:
+        "../envs/samtools.yaml"
+    params:
+        pipeline_path=config["pipeline_path"],
+    threads:
+        10
+    shell:
+        """
+        samtools view -@ {threads} -h  -o {params.pipeline_path}/{output}  {params.pipeline_path}{input}   
+
+        """
+
+
+rule rename_chromosomes_in_sam:
+    input:
+        bam="resources/{platform}/{protocol}/alignment_focused_downsampled_dedup.sam"
+    output:
+        renamed="resources/{platform}/{protocol}/alignment_focused_downsampled_dedup_renamed.sam"
+    script:
+        "../scripts/rename_chromosomes.py"
+
+rule sam_to_bam:
+    input:
+        "resources/{platform}/{protocol}/alignment_focused_downsampled_dedup_renamed.sam"
+    output:
+        "resources/{platform}/{protocol}/alignment_focused_downsampled_dedup_renamed.bam"
+    conda:
+        "../envs/samtools.yaml"
+    threads:
+        10
+    params:
+        pipeline_path=config["pipeline_path"],
+    shell:
+        """
+        samtools view -bS {params.pipeline_path}/{input} > {params.pipeline_path}{output}   
+        """
+
+
+rule aligned_downsampled_reads_dedup_index:
+    input:
+        "resources/{platform}/{protocol}/alignment_focused_downsampled_dedup_renamed.bam"
+    output:
+        "resources/{platform}/{protocol}/alignment_focused_downsampled_dedup_renamed.bam.bai"
     log:
         "logs/aligned_reads_to_bam{platform}/{protocol}.log",
     conda:
