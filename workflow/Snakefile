@@ -92,8 +92,8 @@ rule split_candidates:
 rule methylDackel:
     input:
         genome="resources/genome.fasta",
-        alignment="resources/Illumina/{protocol}/alignment_focused_downsampled_dedup.bam",
-        alignment_index="resources/Illumina/{protocol}/alignment_focused_downsampled_dedup.bam.bai"
+        alignment="resources/Illumina/{protocol}/alignment_focused_downsampled_dedup_renamed.bam",
+        alignment_index="resources/Illumina/{protocol}/alignment_focused_downsampled_dedup_renamed.bam.bai"
     output:
         "results/Illumina/{protocol}/alignments_CpG.bedGraph",
     conda:
@@ -113,8 +113,8 @@ rule compute_meth_observations:
         # varlo_build ="resources/{SRA}/build_varlo.txt",
         genome="resources/genome.fasta",
         genome_index="resources/genome.fasta.fai",
-        alignments="resources/{platform}/{protocol}/alignment_focused_downsampled_dedup.bam",
-        alignment_index="resources/{platform}/{protocol}/alignment_focused_downsampled_dedup.bam.bai",
+        alignments="resources/{platform}/{protocol}/alignment_focused_downsampled_dedup_renamed.bam",
+        alignment_index="resources/{platform}/{protocol}/alignment_focused_downsampled_dedup_renamed.bam.bai",
         # alignments="resources/{platform}/{protocol}/alignment_focused_downsampled_dedup_reduced_excert.bam",
         # alignments_index="resources/{platform}/{protocol}/alignment_focused_downsampled_dedup_reduced_excert.bam.bai",
         candidates="resources/candidates_{scatteritem}.bcf"
