@@ -7,20 +7,20 @@ sample:
   release: "110"
   chromosome: "21"
 
-varlo_path: "~/Documents/Promotion/varlociraptor/"
-pipeline_path: "~/Documents/Promotion/varlociraptor-methylation-evaluation/"
-methylFastQ_path: "~/Documents/Promotion/MethylFASTQ/"
+# varlo_path: "~/Documents/Promotion/varlociraptor/"
+# pipeline_path: "~/Documents/Promotion/varlociraptor-methylation-evaluation/"
+# methylFastQ_path: "~/Documents/Promotion/MethylFASTQ/"
 
-# varlo_path: "/projects/koesterlab/benchmark-methylation/varlociraptor/"
-# pipeline_path: "/projects/koesterlab/benchmark-methylation/varlociraptor-methylation-evaluation/"
-# methylFastQ_path: "/projects/koesterlab/benchmark-methylation/MethylFASTQ/"
-# methylationTools_path: "/projects/koesterlab/benchmark-methylation/methylation_tools/"
+varlo_path: "/projects/koesterlab/benchmark-methylation/varlociraptor/"
+pipeline_path: "/projects/koesterlab/benchmark-methylation/varlociraptor-methylation-evaluation/"
+methylFastQ_path: "/projects/koesterlab/benchmark-methylation/MethylFASTQ/"
+methylationTools_path: "/projects/koesterlab/benchmark-methylation/methylation_tools/"
 
 candidate: 40437798
 
 data:
-  Illumina:
-    # TruSeq_HG002_LAB01_REP01: [SRR13050996, SRR13050998]
+  # Illumina:
+  #   TruSeq_HG002_LAB01_REP01: [SRR13050995, SRR13050996, SRR13050998]
   #   TruSeq_HG002_LAB01_REP02: [SRR13050992, SRR13050993, SRR13050994]   
   #   SPLAT_HG002_LAB01_REP01_4: [SRR13051055, SRR13051056, SRR13051057, SRR13051058]
   #   SPLAT_HG002_LAB01_REP02_4:  [SRR13051050, SRR13051051, SRR13051052, SRR13051054]
@@ -36,10 +36,12 @@ data:
   #   TrueMethylBS_HG002_LAB01_REP02: [SRR13051250, SRR13051251] #2023-10-25T12:57:27 fasterq-dump.3.0.6 err: storage exhausted while writing file within file system module - system bad file descriptor error fd='4'
   #   TrueMethylBS_HG002_LAB01_REP01: [SRR13051253] #2023-10-25T12:57:27 fasterq-dump.3.0.6 err: storage exhausted while writing file within file system module - system bad file descriptor error fd='4'
   PacBio:
-    data1: [dummySRA1]
+    data1: [dummySRA_pacBio]
+  Nanopore:
+    data1: [dummySRA_nanopore]
 
-dummySRA1: "https://downloads.pacbcloud.com/public/dataset/HG002-CpG-methylation-202202/HG002.GRCh38.haplotagged.bam"
-
+dummySRA_pacBio: "https://downloads.pacbcloud.com/public/dataset/HG002-CpG-methylation-202202/HG002.GRCh38.haplotagged.bam"
+dummySRA_nanopore: "https://ont-open-data.s3.amazonaws.com/gm24385_mod_2021.09/extra_analysis/all.bam"
 
 bedGraphs_HG002:
   - GSM5649436_TruSeq_HG002_LAB01_REP02

@@ -1,40 +1,16 @@
-
-
-
-# aligned_bam_reads = (
-#     "resources/{platform}/{protocol}/{SRA}/aligned-reads-pacbio.bam"
-#     if read_type == "PacBio"
-#     else "resources/{platform}/{protocol}/{SRA}/aligned-reads-illumina.bam"
-# )
-
-# aligned_bam_reads_index = (
-#     "resources/{platform}/{protocol}/{SRA}/aligned-reads-pacbio-sorted.bam.bai"
-#     if read_type == "PacBio"
-#     else "resources/{platform}/{protocol}/{SRA}/aligned-reads-illumina-sorted.bam.bai"
-# )
-
-# aligned_sam_reads = (
-#     "resources/{platform}/{protocol}/{SRA}/aligned-reads-pacbio.sam"
-#     if read_type == "PacBio"
-#     else "resources/{platform}/{protocol}/{SRA}/aligned-reads-illumina.sam"
-# )
-
-# aligned_bam_reads_sorted = (
-#     "resources/{platform}/{protocol}/{SRA}/aligned-reads-pacbio-sorted.bam"
-#     if read_type == "PacBio"
-#     else "resources/{platform}/{protocol}/{SRA}/aligned-reads-illumina-sorted.bam"
-# )
-
-# aligned_sam_reads_sorted = (
-#     "resources/{platform}/{protocol}/{SRA}/aligned-reads-pacbio-sorted.sam"
-#     if read_type == "PacBio"
-#     else "resources/{platform}/{protocol}/{SRA}/aligned-reads-illumina-sorted.sam"
-# )
-
-
+rule index_genome:
+    input:
+        "resources/genome.fasta"
+    output:
+        "resources/genome.fasta.bwameth.c2t"
+    conda:
+        "../envs/bwa-meth.yaml"
+    shell:
+        "bwameth.py index-mem2 {input}"
 
 rule align_reads:
     input:
+        fasta_index="resources/genome.fasta.bwameth.c2t",
         fasta="resources/genome.fasta",
         reads1="resources/Illumina/{protocol}/{SRA}/{SRA}_1_trimmed.fastq",
         reads2="resources/Illumina/{protocol}/{SRA}/{SRA}_2_trimmed.fastq",
@@ -50,7 +26,6 @@ rule align_reads:
         mem_mb=512,
     shell:
         """
-        bwameth.py index-mem2 {input.fasta}
         bwameth.py --threads {threads} --reference {input.fasta} {input.reads1} {input.reads2}  | samtools view -S -b - > {output}
         """
 
@@ -170,6 +145,7 @@ rule markduplicates_bam:
 
 
 def get_protocol_sra(wildcards):
+    
     platform = wildcards.platform
     protocol = wildcards.protocol
     accession_numbers = config["data"][platform][protocol]
@@ -181,7 +157,7 @@ rule merge_bams:
     input:
         get_protocol_sra
     output:
-        "resources/{platform}/{protocol}/alignment_focused_dedup.bam"
+        "resources/{platform, [^/]+}/{protocol, [^/]+}/alignment_focused_dedup.bam"
     log:
         "logs/aligned_reads_to_bam{platform}/{protocol}.log",
     conda:
@@ -191,6 +167,7 @@ rule merge_bams:
     threads: 10
     shell:
         """
+        echo {input}
         samtools merge {output} {input}
         """
 

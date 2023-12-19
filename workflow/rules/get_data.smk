@@ -66,11 +66,66 @@ rule genome_index:
 
 rule get_pacbio_data:
     output:
-        "resources/PacBio/{protocol}/{SRA}/alignment.bam"
+        alignment="resources/PacBio/{protocol}/{SRA}/alignment.bam"
     params:
         url=lambda wildcards: config[str(wildcards.SRA)]
+    resources: mem_mb=4096
     script:
         "../scripts/get_pacbio_data.py"
+
+rule nanopore_bam_index:
+    output:
+        alignment="resources/Nanopore/{protocol}/{SRA}/alignment.bam.bai"
+    params:
+        pipeline_path=config["pipeline_path"],
+        url=lambda wildcards: config[str(wildcards.SRA)]
+    resources: mem_mb=4096
+    conda: 
+        "../envs/samtools.yaml"
+    shell:
+        """
+        samtools view -b https://ont-open-data.s3.amazonaws.com/gm24385_mod_2021.09/extra_analysis/all.bam | samtools index - {params.pipeline_path}{output}
+	    """
+
+# Body runterladen klappt manuell genau mit diesem Befehl, aber in Snakemake schlaegt es fehl...
+rule get_nanopore_data:
+    output:
+        header="resources/Nanopore/{protocol}/{SRA}/header.sam",
+        body="resources/Nanopore/{protocol}/{SRA}/body.sam",
+    params:
+        pipeline_path=config["pipeline_path"],
+        url=lambda wildcards: config[str(wildcards.SRA)]
+    resources: mem_mb=4096
+    conda: 
+        "../envs/samtools.yaml"
+    shell:
+        """
+        mkdir -p $(dirname {params.pipeline_path}{output.header})
+        samtools view -H {params.url} > {params.pipeline_path}{output.header}
+        samtools view {params.url} | head -n 1000 > {params.pipeline_path}{output.body}
+	    """
+
+rule combine_nanopore_data:
+    input:
+        header="resources/Nanopore/{protocol}/{SRA}/header.sam",
+        body="resources/Nanopore/{protocol}/{SRA}/body.sam",
+    output:
+        comb="resources/Nanopore/{protocol}/{SRA}/combined.sam",
+        alignment="resources/Nanopore/{protocol}/{SRA}/alignment.bam"
+    params:
+        pipeline_path=config["pipeline_path"],
+        url=lambda wildcards: config[str(wildcards.SRA)]
+    resources: mem_mb=4096
+    conda: 
+        "../envs/samtools.yaml"
+    shell:
+        """
+        cat {params.pipeline_path}{input.header} {params.pipeline_path}{input.body} > {params.pipeline_path}{output.comb}
+        samtools view -b {params.pipeline_path}{output.comb} > {params.pipeline_path}{output.alignment}
+	    """
+        # samtools view {params.url} | head -n 10000 | samtools view -b > {params.pipeline_path}{output.alignment}
+        # samtools view -h {params.url} chr21 -O bam > {params.pipeline_path}{output}
+
 
 rule get_fastq_pe:
     output:
