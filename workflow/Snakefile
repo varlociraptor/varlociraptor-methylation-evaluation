@@ -234,9 +234,10 @@ rule plot_results_PacBio:
         # true_meth="resources/HG002/GSM5649437_TruSeq_HG002_LAB01_REP01_filtered.bedGraph"
         true_meth="resources/bed_avg.bedGraph"
     output:
-        td="results/PacBio/{protocol}/scatter_plot_td.png",
+        # td="results/PacBio/{protocol}/scatter_plot_td.png",
         tv="results/PacBio/{protocol}/scatter_plot_tv.png",
         dist_tv="results/PacBio/{protocol}/scatter_plot_tv_distances.png",
+        # test="results/PacBio/{protocol}/biggest_dist.txt",
     conda:
         "envs/plot.yaml"
     log:
@@ -252,7 +253,7 @@ rule plot_results_Nanopore:
         # true_meth="resources/HG002/GSM5649437_TruSeq_HG002_LAB01_REP01_filtered.bedGraph"
         true_meth="resources/bed_avg.bedGraph"
     output:
-        td="results/Nanopore/{protocol}/scatter_plot_td.png",
+        # td="results/Nanopore/{protocol}/scatter_plot_td.png",
         tv="results/Nanopore/{protocol}/scatter_plot_tv.png",
         dist_tv="results/Nanopore/{protocol}/scatter_plot_tv_distances.png",
     conda:

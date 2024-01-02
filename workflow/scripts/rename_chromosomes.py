@@ -8,14 +8,15 @@ def rename_chromosomes(input_file, output_file):
         for line in infile:
                 print(line)
                 if line.startswith('@'):  # Header line
-                    outfile.write(line.replace('chr21', '21'))
+                    outfile.write(line.replace('chr', ''))
                 else:
                     fields = line.split('\t')
-                    if fields[2] == 'chr21':
-                        fields[2] = '21'
-                    if fields[6] == 'chr21':
-                        fields[6] = '21'
-                    outfile.write('\t'.join(fields))
+                    if fields[2].startswith('chr'):
+                        fields[2] = fields[2].removeprefix('chr')
+                    if fields[6].startswith('chr'):
+                        fields[6] = fields[6].removeprefix('chr')
+                    if fields[9] != "*":
+                        outfile.write('\t'.join(fields))
 
 if __name__ == "__main__":
     input_file = snakemake.input.bam

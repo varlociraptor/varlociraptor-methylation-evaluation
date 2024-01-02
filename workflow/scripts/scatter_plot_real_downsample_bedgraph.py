@@ -121,7 +121,7 @@ line = alt.Chart(pd.DataFrame({'x': [1, 100], 'y': [1, 100]})).mark_line(color='
 
 
 # Plot TrueMeth vs MethylDackel
-deviation = sum(abs(x - y) for x, y in zip(true_meth_values, bedgraph_meth_values))
+deviation = (sum(abs(x - y) for x, y in zip(true_meth_values, bedgraph_meth_values)))/ len(true_meth_values)
 
 data = pd.DataFrame({
     'TrueMeth': true_meth_values,
