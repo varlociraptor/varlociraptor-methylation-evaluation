@@ -28,9 +28,11 @@ rule filter_bedGraphs:
     input:
         "resources/HG002/{bedGraph}.bedGraph"
     output:
-        "resources/HG002/{bedGraph}_filtered.bedGraph"
+        "resources/HG002/{bedGraph}-{chromosome}.bedGraph"
+    wildcard_constraints:
+        chromosome="[^_]+"
     log:
-        "logs/filter_bedGraphs{bedGraph}.log",
+        "logs/filter_bedGraphs{bedGraph}{chromosome}.log",
     params:
         chromosome=chr_chromosome
     shell:
@@ -41,12 +43,14 @@ rule filter_bedGraphs:
 rule compute_avg_bedGraph:
     input:
         # expand("resources/{SRA}/HG002/bedGraph/{bed}.bedGraph", bed=bedGraphs),
-        expand("resources/HG002/{bedGraph}_filtered.bedGraph", bedGraph=config["bedGraphs_HG002"])
+        expand("resources/HG002/{bedGraph}-{chromosome}.bedGraph", bedGraph=config["bedGraphs_HG002"], chromosome=chr_chromosome)
 
     output:
         "resources/bed_avg.bedGraph",
     log:
         "logs/compute_avg_bedGraph.log",
+    wildcard_constraints:
+        chromosome="[^_]+"
     params:
         chromosome=chr_chromosome,
     script:
@@ -55,12 +59,14 @@ rule compute_avg_bedGraph:
 rule plot_avg_bedGraph:
     input:
         candidates="resources/candidates.vcf",
-        bedgraphs=expand("resources/HG002/{bedGraph}_filtered.bedGraph", bedGraph=config["bedGraphs_HG002"])
+        bedgraphs=expand("resources/HG002/{bedGraph}-{chromosome}.bedGraph", bedGraph=config["bedGraphs_HG002"], chromosome=chr_chromosome)
     output:
         cov="resources/bed_avg_cov.png",
         meth="resources/bed_avg_meth.png",
     conda:
         "../envs/plot.yaml"
+    wildcard_constraints:
+        chromosome="[^_]+"
     log:
         "logs/plot_avg_bedGraph.log",
     script:

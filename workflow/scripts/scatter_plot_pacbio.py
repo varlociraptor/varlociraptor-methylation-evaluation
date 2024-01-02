@@ -35,7 +35,7 @@ with open(snakemake.input["calls"], 'r') as vcf_file, open(snakemake.input["true
 
 
 
-vcf_positions = [key for key in vcf_dict  key in true_dict]
+vcf_positions = [key for key in vcf_dict if key in true_dict]
 vcf_af_values = [vcf_dict[key] * 100 for key in vcf_positions]
 
 
@@ -53,6 +53,8 @@ missing_positions3 = [key for key in true_dict if key not in vcf_dict]
 #         if abs(el - vcf_af_values[i]) > 20: 
 #             datei.write(str(true_positions[i]) + "\t" + str(el) + "\n")
 #             datei.write("Bedgraph_value:" + str(bedgraph_meth_values[i]) + "\t Callsvcf:  " + str(vcf_af_values[i]) + "\n\n")
+
+
 def euclidian_distance(x1, y1, x2, y2):
     return np.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
 ############################################################################################################################################################
@@ -76,15 +78,15 @@ y_values = np.linspace(0, 100, num=101)
 # Plot TrueMeth vs Varlociraptor
 distances = [euclidian_distance(x, y, x, x) for x, y in zip(true_meth_values, vcf_af_values)]
 sorted_list = sorted(distances, reverse=True)
-print("Max dist: ", sorted_list[:4])
-deviation = sum(distances)
+# print("Max dist: ", sorted_list[:4])
+deviation = sum(distances) / len(true_meth_values)
 
 
-# Debug:
-for i, (x, y) in enumerate(zip(true_meth_values, vcf_af_values)):
-    if euclidian_distance(x, y, x, x) < 1 and x < 90:
-        print(euclidian_distance(x, y, x, x), x, y)
-        print(vcf_positions[i])
+# # Debug:
+# for i, (x, y) in enumerate(zip(true_meth_values, vcf_af_values)):
+#     if euclidian_distance(x, y, x, x) < 1 and x < 90:
+#         print(euclidian_distance(x, y, x, x), x, y)
+#         print(vcf_positions[i])
 
 # Extra for plotting distances
 rounded_distances = [int(round(d)) for d in distances]
@@ -97,6 +99,11 @@ chart = alt.Chart(data).mark_bar().encode(
 )
 chart.save(snakemake.output["dist_tv"], scale_factor=2.0) 
 
+for i, (x, y) in enumerate(zip(true_meth_values, vcf_af_values)):
+    if abs(x - y) > 90:
+        print(x, y, true_positions[i])
+
+# print(true_positions)
 
 data = pd.DataFrame({
     'TrueMeth': true_meth_values,

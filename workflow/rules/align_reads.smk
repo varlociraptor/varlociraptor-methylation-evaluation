@@ -77,7 +77,7 @@ rule focus_aligned_reads_chrom:
         "../envs/samtools.yaml"
     params:
         pipeline_path=config["pipeline_path"],
-        chromosome=lambda wildcards: "chr" + chromosome_conf["chromosome"] if wildcards.platform == "PacBio" else chromosome_conf["chromosome"]
+        chromosome=lambda wildcards: "chr" + chromosome_conf["chromosome"] if wildcards.platform == "PacBio" or wildcards.platform == "Nanopore" else chromosome_conf["chromosome"]
     threads: 10
     shell:
         """ 
@@ -216,6 +216,7 @@ rule rename_chromosomes_in_sam:
     script:
         "../scripts/rename_chromosomes.py"
 
+# Funktioniert nicht mit snakemake aber manuell...
 rule sam_to_bam:
     input:
         "resources/{platform}/{protocol}/alignment_focused_downsampled_dedup_renamed.sam"
