@@ -29,7 +29,7 @@ rule all:
     input: 
         expand_scatter_plots("PacBio"),
         # expand_scatter_plots("Nanopore"),
-        # expand_scatter_plots("Illumina"),
+        expand_scatter_plots("Illumina"),
 
 
 

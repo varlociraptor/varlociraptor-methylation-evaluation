@@ -9,7 +9,7 @@ configfile: "config/config.yaml"
 scattergather:
     split_candidates=1,
 
-read_type = config["read_type"]
+read_type = "Illumina"
 genome_config = config["sample"]
 
 
@@ -73,12 +73,11 @@ rule genome_index:
 # Just for debugging reasons
 rule get_candidate_neighborhood:
     input:
-        genome="resources/chromosome.fasta"
+        genome="resources/chromosome_{params.chromosome}.fasta"
     output:
         "resources/candidate_neighborhood.txt"
     params:
         pipeline_path=config["pipeline_path"],
-        candidate=25914260
     script:
         "scripts/candidate_neighborhood.py"
 

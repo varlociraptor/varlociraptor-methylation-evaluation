@@ -100,7 +100,7 @@ chart = alt.Chart(data).mark_bar().encode(
 chart.save(snakemake.output["dist_tv"], scale_factor=2.0) 
 
 for i, (x, y) in enumerate(zip(true_meth_values, vcf_af_values)):
-    if abs(x - y) > 90:
+    if abs(x - y) > 80:
         print(x, y, true_positions[i])
 
 # print(true_positions)

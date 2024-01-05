@@ -88,7 +88,7 @@ y_values = np.linspace(0, 100, num=101)
 distances = [euclidian_distance(x, y, x, x) for x, y in zip(true_meth_values, vcf_af_values)]
 sorted_list = sorted(distances, reverse=True)
 print("Max dist: ", sorted_list[:4])
-deviation = sum(distances)
+deviation = sum(distances) / len(true_meth_values)
 
 
 # Debug:
@@ -132,7 +132,7 @@ final_chart.save(snakemake.output["tv"], scale_factor=2.0)
 distances = [euclidian_distance(x, y, x, x) for x, y in zip(bedgraph_meth_values, vcf_af_values)]
 sorted_list = sorted(distances, reverse=True)
 print("Max dist: ", sorted_list[:4])
-deviation = sum(distances)
+deviation = sum(distances) / len(bedgraph_meth_values)
 
 
 
@@ -160,7 +160,7 @@ final_chart.save(snakemake.output["dv"], scale_factor=2.0)
 distances = [euclidian_distance(x, y, x, x) for x, y in zip(bedgraph_meth_values, true_meth_values)]
 sorted_list = sorted(distances, reverse=True)
 print("Max dist: ", sorted_list[:4])
-deviation = sum(distances)
+deviation = sum(distances) / len(bedgraph_meth_values)
 # Runde die Kommazahlen auf ganze Zahlen
 rounded_distances = [int(round(d)) for d in distances]
 
