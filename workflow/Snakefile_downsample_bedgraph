@@ -29,7 +29,7 @@ rule all:
 
 rule find_candidates:
     input:
-        "resources/chromosome.fasta"
+        "resources/chromosome_{params.chromosome}.fasta"
     output:
         "resources/candidates.bcf",
     log:
@@ -39,6 +39,7 @@ rule find_candidates:
     params:
         varlo_path=config["varlo_path"],
         pipeline_path=config["pipeline_path"],
+        chromosome=chromosome_conf["chromosome"],
     shell:
         """ 
         cd {params.varlo_path}
