@@ -3,24 +3,25 @@ rule index_genome:
         "resources/genome.fasta"
     output:
         "resources/genome.fasta.bwameth.c2t"
+    log:
+        "logs/index_genome.log"
     conda:
         "../envs/bwa-meth.yaml"
     shell:
         "bwameth.py index-mem2 {input}"
 
-rule align_reads:
+rule align_reads_pe:
     input:
         fasta_index="resources/genome.fasta.bwameth.c2t",
         fasta="resources/genome.fasta",
-        reads1="resources/Illumina/{protocol}/{SRA}/{SRA}_1_trimmed.fastq",
-        reads2="resources/Illumina/{protocol}/{SRA}/{SRA}_2_trimmed.fastq",
+        reads1="resources/Illumina_pe/{protocol}/{SRA}/{SRA}_1_trimmed.fastq",
+        reads2="resources/Illumina_pe/{protocol}/{SRA}/{SRA}_2_trimmed.fastq",
     output:
-        "resources/Illumina/{protocol}/{SRA}/alignment.bam"
+        "resources/Illumina_pe/{protocol}/{SRA}/alignment.bam"
     conda:
         "../envs/bwa-meth.yaml"
     log:
-        # "logs/align_reads_{scatteritem}{SRA}.log",
-        "logs/align_reads{SRA}Illumina/{protocol}.log",
+        "logs/align_reads_pe_{protocol}_{SRA}.log",
     threads: 30
     resources:
         mem_mb=512,
@@ -29,13 +30,34 @@ rule align_reads:
         bwameth.py --threads {threads} --reference {input.fasta} {input.reads1} {input.reads2}  | samtools view -S -b - > {output}
         """
 
+rule align_reads_se:
+    input:
+        fasta_index="resources/genome.fasta.bwameth.c2t",
+        fasta="resources/genome.fasta",
+        reads1="resources/Illumina_se/{protocol}/{SRA}/{SRA}_trimmed.fastq",
+    output:
+        "resources/Illumina_se/{protocol}/{SRA}/alignment.bam"
+    conda:
+        "../envs/bwa-meth.yaml"
+    log:
+        "logs/align_reads_se_{protocol}_{SRA}.log",
+    threads: 30
+    resources:
+        mem_mb=512,
+    shell:
+        """
+        bwameth.py --threads {threads} --reference {input.fasta} | samtools view -S -b - > {output}
+        """
+
+
+
 rule sort_aligned_reads:
     input:
         "resources/{platform}/{protocol}/{SRA}/alignment.bam"
     output:
         "resources/{platform}/{protocol}/{SRA}/alignment_sorted.bam"
     log:
-        "logs/sort_aligned_reads{SRA}{platform}/{protocol}.log",
+        "logs/sort_aligned_reads_{platform}_{protocol}_{SRA}.log",
     conda:
         "../envs/samtools.yaml"
     params:
@@ -52,7 +74,7 @@ rule aligned_reads_index:
     output:
         "resources/{platform}/{protocol}/{SRA}/alignment_sorted.bam.bai",
     log:
-        "logs/aligned_reads_to_bam{platform}/{protocol}{SRA}.log",
+        "logs/aligned_reads_index_{platform}_{protocol}{SRA}.log",
     conda:
         "../envs/samtools.yaml"
     params:
@@ -72,12 +94,13 @@ rule focus_aligned_reads_chrom:
     output:
         bam="resources/{platform}/{protocol}/{SRA}/alignment_focused.bam"
     log:
-        "logs/chromosome_index{SRA}{platform}/{protocol}.log",
+        "logs/focus_aligned_reads_chrom_{platform}_{protocol}_{SRA}.log",
     conda:
         "../envs/samtools.yaml"
     params:
         pipeline_path=config["pipeline_path"],
-        chromosome=lambda wildcards: "chr" + chromosome_conf["chromosome"] if wildcards.platform == "PacBio" or wildcards.platform == "Nanopore" else chromosome_conf["chromosome"]
+        chromosome=lambda wildcards: f"chr{chromosome_conf['chromosome']}" if wildcards.platform == "PacBio" or wildcards.platform == "Nanopore" else chromosome_conf["chromosome"]
+
     threads: 10
     shell:
         """ 
@@ -90,7 +113,7 @@ rule filter_mapping_quality:
     output:
         "resources/{platform}/{protocol}/{SRA}/alignment_focused_filtered.bam"
     log:
-        "logs/filter_mappingq{platform}/{protocol}{SRA}.log",
+        "logs/filter_mapping_quality_{platform}_{protocol}_{SRA}.log",
     conda:
         "../envs/samtools.yaml"
     params:
@@ -107,51 +130,24 @@ rule filter_mapping_quality:
 rule markduplicates_bam:
     input:
         bams="resources/{platform}/{protocol}/{SRA}/alignment_focused_filtered.bam"
-    # optional to specify a list of BAMs; this has the same effect
-    # of marking duplicates on separate read groups for a sample
-    # and then merging
     output:
         bam="resources/{platform}/{protocol}/{SRA}/alignment_focused_dedup.bam",
         metrics="resources/{platform}/{protocol}/{SRA}/alignment_focused_dedup.metrics.txt"
     log:
-        "logs/dedup_bam/{SRA}{platform}/{protocol}.log",
+        "logs/markduplicates_bam__{platform}_{protocol}_{SRA}.log",
     params:
         extra="--REMOVE_DUPLICATES true",
-    # optional specification of memory usage of the JVM that snakemake will respect with global
-    # resource restrictions (https://snakemake.readthedocs.io/en/latest/snakefiles/rules.html#resources)
-    # and which can be used to request RAM during cluster job submission as `{resources.mem_mb}`:
-    # https://snakemake.readthedocs.io/en/latest/executing/cluster.html#job-properties
     resources:
         mem_mb=1024,
     wrapper:
         "v2.6.0/bio/picard/markduplicates"
 
 
-# rule aligned_reads_dedup_index:
-#     input:
-#         bam="resources/{platform}/{protocol}/{SRA}/alignment_focused_dedup.bam",
-#     output:
-#         bam="resources/{platform}/{protocol}/{SRA}/alignment_focused_dedup.bam.bai",
-#     log:
-#         "logs/aligned_reads_to_bam{platform}/{protocol}{SRA}.log",
-#     conda:
-#         "../envs/samtools.yaml"
-#     params:
-#         pipeline_path=config["pipeline_path"],
-#     threads: 10
-#     shell:
-#         """
-#         samtools index -@ {threads} {params.pipeline_path}{input}
-#         """
-
-
 
 def get_protocol_sra(wildcards):
-    
-    platform = wildcards.platform
-    protocol = wildcards.protocol
+    base_path = Path("resources") / wildcards.platform / wildcards.protocol
     accession_numbers = config["data"][platform][protocol]
-    return ["resources/" + platform + "/" + protocol + "/" + SRA + "/alignment_focused_dedup.bam" for SRA in accession_numbers]
+    return [str(base_path / SRA / "alignment_focused_dedup.bam") for SRA in accession_numbers]
 
 
 
@@ -161,7 +157,7 @@ rule merge_bams:
     output:
         "resources/{platform, [^/]+}/{protocol, [^/]+}/alignment_focused_dedup.bam"
     log:
-        "logs/aligned_reads_to_bam{platform}/{protocol}.log",
+        "logs/merge_bams_{platform}_{protocol}.log",
     conda:
         "../envs/samtools.yaml"
     params:
@@ -179,7 +175,7 @@ rule downsample_bams:
     output:
         "resources/{platform}/{protocol}/alignment_focused_downsampled_dedup.bam"
     log:
-        "logs/downsample_bams{platform}/{protocol}.log",
+        "logs/downsample_bams_{platform}_{protocol}.log",
     conda:
         "../envs/samtools.yaml"
     params:
@@ -195,6 +191,8 @@ rule bam_to_sam:
         "resources/{platform}/{protocol}/alignment_focused_downsampled_dedup.bam"
     output:
         "resources/{platform}/{protocol}/alignment_focused_downsampled_dedup.sam"
+    log:
+        "logs/bam_to_sam_{platform}_{protocol}.log",
     conda:
         "../envs/samtools.yaml"
     params:
@@ -213,6 +211,8 @@ rule rename_chromosomes_in_sam:
         bam="resources/{platform}/{protocol}/alignment_focused_downsampled_dedup.sam"
     output:
         renamed="resources/{platform}/{protocol}/alignment_focused_downsampled_dedup_renamed.sam"
+    log:
+        "logs/rename_chromosomes_in_sam_{platform}_{protocol}.log",
     script:
         "../scripts/rename_chromosomes.py"
 
@@ -222,6 +222,8 @@ rule sam_to_bam:
         "resources/{platform}/{protocol}/alignment_focused_downsampled_dedup_renamed.sam"
     output:
         "resources/{platform}/{protocol}/alignment_focused_downsampled_dedup_renamed.bam"
+    log:
+        "logs/sam_to_bam_{platform}_{protocol}.log",
     conda:
         "../envs/samtools.yaml"
     threads:
@@ -240,7 +242,7 @@ rule aligned_downsampled_reads_dedup_index:
     output:
         "resources/{platform}/{protocol}/alignment_focused_downsampled_dedup_renamed.bam.bai"
     log:
-        "logs/aligned_reads_to_bam{platform}/{protocol}.log",
+        "logs/aligned_downsampled_reads_dedup_index_{platform}_{protocol}.log",
     conda:
         "../envs/samtools.yaml"
     params:

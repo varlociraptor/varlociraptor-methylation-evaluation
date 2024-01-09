@@ -5,7 +5,7 @@ rule download_bedGraphs:
     output:
         "resources/HG002/{bedGraph}.bedGraph.gz",
     log:
-        "logs/download_bedGraphs{bedGraph}.log",
+        "logs/download_bedGraphs_{bedGraph}.log",
     params:
         pipeline_path=config["pipeline_path"],
         bedGraphs = config["bedGraphs_HG002"]
@@ -20,7 +20,7 @@ rule extract_data:
     output:
         "resources/HG002/{bedGraph}.bedGraph"
     log:
-        "logs/process_data{bedGraph}.log",
+        "logs/extract_data_{bedGraph}.log",
     shell:
         "gunzip -c {input} > {output}"
 
@@ -32,7 +32,7 @@ rule filter_bedGraphs:
     wildcard_constraints:
         chromosome="[^_]+"
     log:
-        "logs/filter_bedGraphs{bedGraph}{chromosome}.log",
+        "logs/filter_bedGraphs_{bedGraph}_{chromosome}.log",
     params:
         chromosome=chr_chromosome
     shell:
@@ -44,13 +44,12 @@ rule compute_avg_bedGraph:
     input:
         # expand("resources/{SRA}/HG002/bedGraph/{bed}.bedGraph", bed=bedGraphs),
         expand("resources/HG002/{bedGraph}-{chromosome}.bedGraph", bedGraph=config["bedGraphs_HG002"], chromosome=chr_chromosome)
-
     output:
-        "resources/bed_avg.bedGraph",
-    log:
-        "logs/compute_avg_bedGraph.log",
+        "resources/bed_avg_{chromosome}.bedGraph",
     wildcard_constraints:
         chromosome="[^_]+"
+    log:
+        "logs/compute_avg_bedGraph_{chromosome}.log",
     params:
         chromosome=chr_chromosome,
     script:

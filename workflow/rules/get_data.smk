@@ -9,7 +9,7 @@ rule get_genome:
         build=chromosome_conf["build"],
         release=chromosome_conf["release"],
     log:
-        "logs/get_chromosome.log",
+        "logs/get_genome.log",
     cache: "omit-software"  # save space and time with between workflow caching (see docs)
     wrapper:
         "v2.3.2/bio/reference/ensembl-sequence"
@@ -31,13 +31,13 @@ rule get_chromosome:
         "v2.3.2/bio/reference/ensembl-sequence"
 
 
-rule filter_genome:
+rule get_chromosome_from_genome:
     input:
         "resources/genome.fasta",
     output:
-        "resources/chromosome.fasta",
+        "resources/chromosome_{chromosome}.fasta",
     log:
-        "logs/filter_genome.log",
+        "logs/get_chromosome_from_genome_{chromosome}.log",
     conda:
         "../envs/samtools.yaml"
     params:
@@ -54,7 +54,7 @@ rule genome_index:
     output:
         "resources/genome.fasta.fai",
     log:
-        "logs/chromosome_index.log",
+        "logs/genome_index.log",
     conda:
         "../envs/samtools.yaml"
     params:
@@ -69,6 +69,8 @@ rule get_pacbio_data:
         alignment="resources/PacBio/{protocol}/{SRA}/alignment.bam"
     params:
         url=lambda wildcards: config[str(wildcards.SRA)]
+    log:
+        "logs/get_pacbio_data_{protocol}_{SRA}.log",
     resources: mem_mb=4096
     script:
         "../scripts/get_pacbio_data.py"
@@ -80,6 +82,8 @@ rule get_nanopore_header:
         pipeline_path=config["pipeline_path"],
         url=lambda wildcards: config[str(wildcards.SRA)]
     resources: mem_mb=4096
+    log:
+        "logs/get_nanopore_header_{protocol}_{SRA}.log",
     conda: 
         "../envs/samtools.yaml"
     shell:
@@ -96,6 +100,8 @@ rule get_nanopore_body:
         pipeline_path=config["pipeline_path"],
         url=lambda wildcards: config[str(wildcards.SRA)]
     resources: mem_mb=4096
+    log:
+        "logs/get_nanopore_body_{protocol}_{SRA}.log",
     conda: 
         "../envs/samtools.yaml"
     shell:
@@ -114,6 +120,8 @@ rule combine_nanopore_data:
         pipeline_path=config["pipeline_path"],
         url=lambda wildcards: config[str(wildcards.SRA)]
     resources: mem_mb=4096
+    log:
+        "logs/combine_nanopore_data_{protocol}_{SRA}.log",
     conda: 
         "../envs/samtools.yaml"
     shell:
@@ -145,10 +153,10 @@ rule combine_nanopore_data:
 rule get_fastq_pe:
     output:
         # the wildcard name must be accession, pointing to an SRA number
-        "resources/Illumina/{protocol}/{SRA}/{accession}_1.fastq",
-        "resources/Illumina/{protocol}/{SRA}/{accession}_2.fastq",
+        "resources/Illumina_pe/{protocol}/{SRA}/{accession}_1.fastq",
+        "resources/Illumina_pe/{protocol}/{SRA}/{accession}_2.fastq",
     log:
-        "logs/pe/{accession}{protocol}{SRA}.log"
+        "logs/get_fastq_pe_{protocol}_{SRA}_{accession}.log"
     params:
         extra="--skip-technical"
     threads: 6  # defaults to 6
@@ -158,16 +166,28 @@ rule get_fastq_pe:
         "v3.0.2/bio/sra-tools/fasterq-dump"
 
 
+rule get_fastq_se:
+    output:
+        "resources/Illumina_se/{protocol}/{SRA}/{accession}.fastq",
+    log:
+        "logs/get_fastq_se_{protocol}_{SRA}_{accession}.log"
+    params:
+        extra="--skip-technical"
+    threads: 6
+    wrapper:
+        "v3.3.3/bio/sra-tools/fasterq-dump"
+
+
 
 rule trim_fastq_pe:
     input:
-        first="resources/Illumina/{protocol}/{SRA}/{accession}_1.fastq",
-        second="resources/Illumina/{protocol}/{SRA}/{accession}_2.fastq",
+        first="resources/Illumina_pe/{protocol}/{SRA}/{accession}_1.fastq",
+        second="resources/Illumina_pe/{protocol}/{SRA}/{accession}_2.fastq",
     output:
-        first="resources/Illumina/{protocol}/{SRA}/{accession}_1_trimmed.fastq",
-        second="resources/Illumina/{protocol}/{SRA}/{accession}_2_trimmed.fastq",
+        first="resources/Illumina_pe/{protocol}/{SRA}/{accession}_1_trimmed.fastq",
+        second="resources/Illumina_pe/{protocol}/{SRA}/{accession}_2_trimmed.fastq",
     log:
-        "logs/trim_fastq_pe_{protocol}{SRA}_{accession}.log",
+        "logs/trim_fastq_pe_{protocol}_{SRA}_{accession}.log",
     conda:
         "../envs/fastp.yaml"
     params:
@@ -178,4 +198,19 @@ rule trim_fastq_pe:
         """
 
 
+rule trim_fastq_se:
+    input:
+        first="resources/Illumina_se/{protocol}/{SRA}/{accession}.fastq",
+    output:
+        first="resources/Illumina_se/{protocol}/{SRA}/{accession}_trimmed.fastq",
+    log:
+        "logs/trim_fastq_se_{protocol}_{SRA}_{accession}.log",
+    conda:
+        "../envs/fastp.yaml"
+    params:
+        pipeline_path=config["pipeline_path"],
+    shell:
+        """ 
+        fastp --in1 {input.first} --out1 {output.first} --length_required 2 --disable_quality_filtering -z 4 --trim_poly_g --overrepresentation_analysis
+        """
   
