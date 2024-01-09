@@ -6,7 +6,7 @@ rule candidates_to_vcf:
     conda:
         "../envs/samtools.yaml"
     log:
-        "logs/convert_to_vcf.log",
+        "logs/candidates_to_vcf.log",
     threads: 10
     shell:
         """
@@ -21,7 +21,7 @@ rule candidate_splits_to_vcf:
     conda:
         "../envs/samtools.yaml"
     log:
-        "logs/convert_splits_to_vcf_{scatteritem}.log",
+        "logs/candidate_splits_to_vcf_{scatteritem}.log",
     shell:
         """
         bcftools view {input} > {output}
@@ -33,7 +33,7 @@ rule aligned_reads_sorted_sam:
     output:
         "resources/{SRA}/aligned-reads-illumina-sorted.sam",
     log:
-        "logs/aligned_reads_sorted_sam{SRA}.log",
+        "logs/aligned_reads_sorted_sam_{SRA}.log",
     conda:
         "../envs/samtools.yaml"
     params:
@@ -50,7 +50,7 @@ rule aligned_reads_filtered_sam:
     output:
         "resources/{SRA}/alignment_focused.sam",
     log:
-        "logs/aligned_reads_filtered_sam{SRA}.log",
+        "logs/aligned_reads_filtered_sam_{SRA}.log",
     conda:
         "../envs/samtools.yaml"
     params:
@@ -65,14 +65,12 @@ rule aligned_reads_filtered_sam:
 rule observations_to_vcf:
     input:
         "results/{SRA}/normal_{scatteritem}.bcf",
-        # "results/{SRA}/normal.bcf",
     output:
         temp("results/{SRA}/normal_{scatteritem}.vcf"),
-        # "results/{SRA}/normal.vcf",
     conda:
         "../envs/samtools.yaml"
     log:
-        "logs/convert_to_vcf_{scatteritem}{SRA}.log",
+        "logs/observations_to_vcf_{SRA}_{scatteritem}.log",
     threads: 10
     shell:
         """
@@ -91,7 +89,8 @@ rule bcf_indices:
         "results/{platform}/{protocol}/normal_{scatteritem}.bcf",
     output:
         "results/{platform}/{protocol}/normal_{scatteritem}.bcf.csi",
-
+    log:
+        "logs/split_candidates{platform}_{protocol}_{scatteritem}.log",
     conda:
         "../envs/samtools.yaml"
     params:
@@ -109,7 +108,7 @@ rule single_bcf:
     output:
         "results/{platform}/{protocol}/normal.bcf"
     log:
-        "logs/create_single_bcf{platform}{protocol}.log",
+        "logs/single_bcf_{platform}_{protocol}.log",
     conda:
         "../envs/samtools.yaml"
     params:
@@ -127,7 +126,7 @@ rule normal_to_vcf:
     conda:
         "../envs/samtools.yaml"
     log:
-        "logs/convert_to_vcf{platform}{protocol}.log",
+        "logs/normal_to_vcf_{platform}_{protocol}.log",
     threads: 10
     shell:
         """

@@ -12,7 +12,7 @@ vcf_dict = {}
 true_dict = {}
 
 # Create dictionaries for Bedgraph and VCF
-with open(snakemake.input["calls"], 'r') as vcf_file, open(snakemake.input["bedGraph"], 'r') as dackel_file, open(snakemake.input["true_meth"], 'r') as truth_file:
+with open(snakemake.input["calls"], 'r') as vcf_file, open(snakemake.input["bedGraph"], 'r') as dackel_file, open(snakemake.input["true_meth"][0], 'r') as truth_file:
 
     for line in dackel_file:
         if not line.startswith("track"):
@@ -87,15 +87,15 @@ y_values = np.linspace(0, 100, num=101)
 # Plot TrueMeth vs Varlociraptor
 distances = [euclidian_distance(x, y, x, x) for x, y in zip(true_meth_values, vcf_af_values)]
 sorted_list = sorted(distances, reverse=True)
-print("Max dist: ", sorted_list[:4])
+# print("Max dist: ", sorted_list[:4])
 deviation = sum(distances) / len(true_meth_values)
 
 
 # Debug:
-for i, (x, y) in enumerate(zip(true_meth_values, vcf_af_values)):
-    if euclidian_distance(x, y, x, x) < 1 and x < 90:
-        print(euclidian_distance(x, y, x, x), x, y)
-        print(vcf_positions[i])
+# for i, (x, y) in enumerate(zip(true_meth_values, vcf_af_values)):
+#     if euclidian_distance(x, y, x, x) > 40 and x > 90:
+#         print(euclidian_distance(x, y, x, x), x, y)
+#         print(vcf_positions[i])
 
 # Extra for plotting distances
 rounded_distances = [int(round(d)) for d in distances]
@@ -131,11 +131,13 @@ final_chart.save(snakemake.output["tv"], scale_factor=2.0)
 # Plot MethylDackel vs Varlociraptor
 distances = [euclidian_distance(x, y, x, x) for x, y in zip(bedgraph_meth_values, vcf_af_values)]
 sorted_list = sorted(distances, reverse=True)
-print("Max dist: ", sorted_list[:4])
 deviation = sum(distances) / len(bedgraph_meth_values)
 
 
-
+for i, (x, y) in enumerate(zip(bedgraph_meth_values, vcf_af_values)):
+    if euclidian_distance(x, y, x, x) > 60 and x > 90:
+        print(euclidian_distance(x, y, x, x), x, y)
+        print(vcf_positions[i])
 
 
 data = pd.DataFrame({
@@ -159,7 +161,6 @@ final_chart.save(snakemake.output["dv"], scale_factor=2.0)
 # Plot TrueMeth vs MethylDackel
 distances = [euclidian_distance(x, y, x, x) for x, y in zip(bedgraph_meth_values, true_meth_values)]
 sorted_list = sorted(distances, reverse=True)
-print("Max dist: ", sorted_list[:4])
 deviation = sum(distances) / len(bedgraph_meth_values)
 # Runde die Kommazahlen auf ganze Zahlen
 rounded_distances = [int(round(d)) for d in distances]

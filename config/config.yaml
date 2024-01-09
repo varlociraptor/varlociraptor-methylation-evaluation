@@ -19,7 +19,7 @@ methylationTools_path: "/projects/koesterlab/benchmark-methylation/methylation_t
 candidate: 40437798
 
 data:
-  Illumina:
+  Illumina_pe:
     TruSeq_HG002_LAB01_REP01: [SRR13050995, SRR13050996, SRR13050998]
   #   TruSeq_HG002_LAB01_REP02: [SRR13050992, SRR13050993, SRR13050994]   
   #   SPLAT_HG002_LAB01_REP01_4: [SRR13051055, SRR13051056, SRR13051057, SRR13051058]
@@ -35,6 +35,8 @@ data:
   #   TrueMethylOX_HG002_LAB01_REP01: [SRR13051231, SRR13051232]
   #   TrueMethylBS_HG002_LAB01_REP02: [SRR13051250, SRR13051251] #2023-10-25T12:57:27 fasterq-dump.3.0.6 err: storage exhausted while writing file within file system module - system bad file descriptor error fd='4'
   #   TrueMethylBS_HG002_LAB01_REP01: [SRR13051253] #2023-10-25T12:57:27 fasterq-dump.3.0.6 err: storage exhausted while writing file within file system module - system bad file descriptor error fd='4'
+  Illumina_se:
+    # No example data found
   PacBio:
     data1: [dummySRA_pacBio]
   Nanopore:

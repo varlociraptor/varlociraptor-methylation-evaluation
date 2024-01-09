@@ -3,6 +3,7 @@
 # https://snakemake.readthedocs.io/en/stable/snakefiles/best_practices.html,
 # in particular regarding the standardized folder structure mentioned there.
 
+from pathlib import Path
 
 configfile: "config/config.yaml"
 
@@ -23,16 +24,16 @@ candidate = config["candidate"]
 
 
 def expand_scatter_plots(platform):
-    return expand("results/" + platform + "/{protocol}/scatter_plot_tv.png", protocol=list(config["data"][platform].keys()))
+    base_path = Path("results") / platform
+    protocols = list(config["data"][platform].keys())
+    return [str(base_path / protocol / "scatter_plot_tv.png") for protocol in protocols]
+
 
 rule all:
     input: 
-        expand_scatter_plots("PacBio"),
+        # expand_scatter_plots("PacBio"),
         # expand_scatter_plots("Nanopore"),
-        expand_scatter_plots("Illumina"),
-
-
-
+        expand_scatter_plots("Illumina_pe"),
 
     
 # Just for debugging reasons
@@ -49,6 +50,8 @@ rule get_candidate_neighborhood:
         right_border=candidate+150,
         candidate_left=candidate-1,
         candidate_right=candidate+1,
+    log:
+        "logs/get_candidate_neighborhood.log",
     conda:
         "envs/samtools.yaml"
     shell:
@@ -59,7 +62,7 @@ rule get_candidate_neighborhood:
 
 rule find_candidates:
     input:
-        "resources/chromosome.fasta"
+        expand("resources/chromosome_{chromosome}.fasta", chromosome=chromosome_conf["chromosome"])
     output:
         "resources/candidates.bcf",
     log:
@@ -92,37 +95,34 @@ rule split_candidates:
 rule methylDackel:
     input:
         genome="resources/genome.fasta",
-        alignment="resources/Illumina/{protocol}/alignment_focused_downsampled_dedup_renamed.bam",
-        alignment_index="resources/Illumina/{protocol}/alignment_focused_downsampled_dedup_renamed.bam.bai"
+        alignment="resources/Illumina_{read_type}/{protocol}/alignment_focused_downsampled_dedup_renamed.bam",
+        alignment_index="resources/Illumina_{read_type}/{protocol}/alignment_focused_downsampled_dedup_renamed.bam.bai",
     output:
-        "results/Illumina/{protocol}/alignments_CpG.bedGraph",
+        "results/Illumina_{read_type}/{protocol}/alignments_CpG.bedGraph",
     conda:
         "envs/methylDackel.yaml"
     log:
-        "logs/methylDackel_{protocol}.log",
+        "logs/methylDackel_{read_type}_{protocol}.log",
     params:
         pipeline_path=config["pipeline_path"],
     shell:
         """
-        MethylDackel extract {input.genome} {input.alignment} -o {params.pipeline_path}/results/Illumina/{wildcards.protocol}/alignments --mergeContext
+        MethylDackel extract {input.genome} {input.alignment} -o {params.pipeline_path}/results/Illumina_{wildcards.read_type}/{wildcards.protocol}/alignments --mergeContext
         """
+
 
 
 rule compute_meth_observations:
     input:
-        # varlo_build ="resources/{SRA}/build_varlo.txt",
         genome="resources/genome.fasta",
         genome_index="resources/genome.fasta.fai",
         alignments="resources/{platform}/{protocol}/alignment_focused_downsampled_dedup_renamed.bam",
         alignment_index="resources/{platform}/{protocol}/alignment_focused_downsampled_dedup_renamed.bam.bai",
-        # alignments="resources/{platform}/{protocol}/alignment_focused_downsampled_dedup_reduced_excert.bam",
-        # alignments_index="resources/{platform}/{protocol}/alignment_focused_downsampled_dedup_reduced_excert.bam.bai",
         candidates="resources/candidates_{scatteritem}.bcf"
     output:
         "results/{platform}/{protocol}/normal_{scatteritem}.bcf",
-        # "results/{SRA}/normal.bcf",
     log:
-        "logs/compute_meth_observations_{platform}{protocol}_{scatteritem}.log",
+        "logs/compute_meth_observations_{platform}_{protocol}_{scatteritem}.log",
     conda:
         "envs/varlociraptor.yaml"
     params:
@@ -131,7 +131,12 @@ rule compute_meth_observations:
     shell:
         """ 
         cd {params.varlo_path}
-        cargo run --release -- preprocess variants {params.pipeline_path}{input.genome} --candidates {params.pipeline_path}{input.candidates} --bam {params.pipeline_path}{input.alignments} --read-type {wildcards.platform} > {params.pipeline_path}{output}
+        if [[ "{wildcards.platform}" == "Illumina_pe" || "{wildcards.platform}" == "Illumina_se" ]]; then
+            PLATFORM="Illumina"
+        else
+            PLATFORM="{wildcards.platform}"
+        fi
+        cargo run --release -- preprocess variants {params.pipeline_path}{input.genome} --candidates {params.pipeline_path}{input.candidates} --bam {params.pipeline_path}{input.alignments} --read-type $PLATFORM > {params.pipeline_path}{output}
         """
 
 
@@ -147,7 +152,7 @@ rule call_methylation:
         temp("results/{platform}/{protocol}/calls_{scatteritem}.bcf"),
         # "results/{SRA}/calls.bcf",
     log:
-        "logs/compute_{platform}{scatteritem}{protocol}.log",
+        "logs/call_methylation_{platform}_{protocol}_{scatteritem}.log",
     conda:
         "envs/varlociraptor.yaml"
     params:
@@ -167,7 +172,7 @@ rule filter_calls:
     output:
         temp("results/{platform}/{protocol}/calls_{scatteritem}.filtered.bcf"),
     log:
-        "logs/filter_calls_{platform}{scatteritem}{protocol}.log",
+        "logs/filter_calls_{platform}_{protocol}_{scatteritem}.log",
     conda:
         "envs/varlociraptor.yaml"
     params:
@@ -189,7 +194,7 @@ rule calls_to_vcf:
     conda:
         "envs/samtools.yaml"
     log:
-        "logs/convert_to_vcf_{platform}{scatteritem}{protocol}.log",
+        "logs/convert_to_vcf_{platform}_{protocol}_{scatteritem}.log",
     threads: 10
     shell:
         """
@@ -203,27 +208,27 @@ rule gather_calls:
     output:
         "results/{platform}/{protocol}/calls.vcf"
     log:
-        "logs/gather_calls_{platform}/{protocol}.log",
+        "logs/gather_calls_{platform}_{protocol}.log",
     shell:
         "cat {input} > {output}"
 
 
 rule plot_results_Illumina:
     input:
-        bedGraph="results/Illumina/{protocol}/alignments_CpG.bedGraph",        
-        calls="results/Illumina/{protocol}/calls.vcf",
+        bedGraph="results/Illumina_{read_type}/{protocol}/alignments_CpG.bedGraph",        
+        calls="results/Illumina_{read_type}/{protocol}/calls.vcf",
         # true_meth="resources/HG002/GSM5649437_TruSeq_HG002_LAB01_REP01_filtered.bedGraph"
-        true_meth="resources/bed_avg.bedGraph"
+        true_meth=expand("resources/bed_avg_{chromosome}.bedGraph", chromosome=chromosome_conf["chromosome"])        
     output:
-        dv="results/Illumina/{protocol}/scatter_plot_dv.png",
-        td="results/Illumina/{protocol}/scatter_plot_td.png",
-        tv="results/Illumina/{protocol}/scatter_plot_tv.png",
-        dist_td="results/Illumina/{protocol}/scatter_plot_dv_distances.png",
-        dist_tv="results/Illumina/{protocol}/scatter_plot_tv_distances.png",
+        dv="results/Illumina_{read_type}/{protocol}/scatter_plot_dv.png",
+        td="results/Illumina_{read_type}/{protocol}/scatter_plot_td.png",
+        tv="results/Illumina_{read_type}/{protocol}/scatter_plot_tv.png",
+        dist_td="results/Illumina_{read_type}/{protocol}/scatter_plot_dv_distances.png",
+        dist_tv="results/Illumina_{read_type}/{protocol}/scatter_plot_tv_distances.png",
     conda:
         "envs/plot.yaml"
     log:
-        "logs/plot_results{protocol}.log",
+        "logs/plot_results_Illumina_{read_type}_{protocol}.log",
     script:
         "scripts/scatter_plot_illumina.py"
 
@@ -232,7 +237,7 @@ rule plot_results_PacBio:
     input:
         calls="results/PacBio/{protocol}/calls.vcf",
         # true_meth="resources/HG002/GSM5649437_TruSeq_HG002_LAB01_REP01_filtered.bedGraph"
-        true_meth="resources/bed_avg.bedGraph"
+        true_meth=expand("resources/bed_avg_{chromosome}.bedGraph", chromosome=chromosome_conf["chromosome"])
     output:
         # td="results/PacBio/{protocol}/scatter_plot_td.png",
         tv="results/PacBio/{protocol}/scatter_plot_tv.png",
@@ -241,7 +246,7 @@ rule plot_results_PacBio:
     conda:
         "envs/plot.yaml"
     log:
-        "logs/plot_results{protocol}.log",
+        "logs/plot_results_PacBio_{protocol}.log",
     script:
         "scripts/scatter_plot_pacbio.py"
 
@@ -251,7 +256,7 @@ rule plot_results_Nanopore:
     input:
         calls="results/Nanopore/{protocol}/calls.vcf",
         # true_meth="resources/HG002/GSM5649437_TruSeq_HG002_LAB01_REP01_filtered.bedGraph"
-        true_meth="resources/bed_avg.bedGraph"
+        true_meth=expand("resources/bed_avg_{chromosome}.bedGraph", chromosome=chromosome_conf["chromosome"])        
     output:
         # td="results/Nanopore/{protocol}/scatter_plot_td.png",
         tv="results/Nanopore/{protocol}/scatter_plot_tv.png",
@@ -259,6 +264,6 @@ rule plot_results_Nanopore:
     conda:
         "envs/plot.yaml"
     log:
-        "logs/plot_results{protocol}.log",
+        "logs/plot_results_Nanopore_{protocol}.log",
     script:
         "scripts/scatter_plot_pacbio.py"
