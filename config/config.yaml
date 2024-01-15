@@ -10,7 +10,7 @@ sample:
 # varlo_path: "~/Documents/Promotion/varlociraptor/"
 # pipeline_path: "~/Documents/Promotion/varlociraptor-methylation-evaluation/"
 # methylFastQ_path: "~/Documents/Promotion/MethylFASTQ/"
-
+base_dir: "/projects/koesterlab/benchmark-methylation/"
 varlo_path: "/projects/koesterlab/benchmark-methylation/varlociraptor/"
 pipeline_path: "/projects/koesterlab/benchmark-methylation/varlociraptor-methylation-evaluation/"
 methylFastQ_path: "/projects/koesterlab/benchmark-methylation/MethylFASTQ/"

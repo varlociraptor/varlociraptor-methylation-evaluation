@@ -1,0 +1,4 @@
+channels:
+  - conda-forge
+dependencies:
+  - nanopolish=0.14.0
