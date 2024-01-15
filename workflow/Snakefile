@@ -31,7 +31,7 @@ def expand_scatter_plots(platform):
 
 rule all:
     input: 
-        # expand_scatter_plots("PacBio"),
+        expand_scatter_plots("PacBio"),
         # expand_scatter_plots("Nanopore"),
         expand_scatter_plots("Illumina_pe"),
 
@@ -110,7 +110,103 @@ rule methylDackel:
         MethylDackel extract {input.genome} {input.alignment} -o {params.pipeline_path}/results/Illumina_{wildcards.read_type}/{wildcards.protocol}/alignments --mergeContext
         """
 
+################### PacBio Methylation Start ##################################################
 
+
+rule download_pb_CpG_tools:
+    output:
+        directory("../pb-CpG-tools-v2.3.1-x86_64-unknown-linux-gnu"),
+    log:
+        "logs/download_pb-CpG-tools.log",
+    params:
+        base_dir=config["base_dir"],
+    shell:
+        """
+        cd {params.base_dir}
+        wget https://github.com/PacificBiosciences/pb-CpG-tools/releases/download/v2.3.1/pb-CpG-tools-v2.3.1-x86_64-unknown-linux-gnu.tar.gz
+        tar -xzf pb-CpG-tools-v2.3.1-x86_64-unknown-linux-gnu.tar.gz
+        """
+
+rule pb_CpG_tools:
+    input:
+        pb_tools_dir=directory("../pb-CpG-tools-v2.3.1-x86_64-unknown-linux-gnu"),
+        alignment="resources/PacBio/{protocol}/alignment_focused_downsampled_dedup_renamed.bam",
+        alignment_index="resources/PacBio/{protocol}/alignment_focused_downsampled_dedup_renamed.bam.bai",
+    output:
+        "results/PacBio/{protocol}/alignments_CpG.combined.bed"
+    log:
+        "logs/pb_CpG_tools_{protocol}.log",
+    params:
+        base_dir=config["base_dir"],
+        prefix="results/PacBio/{protocol}/alignments_CpG"
+    shell:
+        """
+        
+        {params.base_dir}pb-CpG-tools-v2.3.1-x86_64-unknown-linux-gnu/bin/aligned_bam_to_cpg_scores \
+        --bam {input.alignment} \
+        --output-prefix {params.prefix} \
+        --model {params.base_dir}pb-CpG-tools-v2.3.1-x86_64-unknown-linux-gnu/models/pileup_calling_model.v1.tflite \
+        --threads 8
+        """
+
+
+##################### PacBio Methylation End #####################################
+
+##################### Nanopore Methylation Start #####################################
+rule nanopore_bam_to_fastq:
+    input:
+        "resources/Nanopore/{protocol}/alignment_focused_downsampled_dedup_renamed.bam",
+    output:
+        fastq1="resources/Nanopore/{protocol}_R1.fastq",
+        fastq2="resources/Nanopore/{protocol}_R2.fastq",
+    log:
+        "logs/picard/sam_to_fastq/{protocol}.log",
+    params:
+        extra="",  # optional: Extra arguments for picard.
+    # optional specification of memory usage of the JVM that snakemake will respect with global
+    # resource restrictions (https://snakemake.readthedocs.io/en/latest/snakefiles/rules.html#resources)
+    # and which can be used to request RAM during cluster job submission as `{resources.mem_mb}`:
+    # https://snakemake.readthedocs.io/en/latest/executing/cluster.html#job-properties
+    resources:
+        mem_mb=1024,
+    wrapper:
+        "v3.3.3/bio/picard/samtofastq"
+
+
+rule combine_nanopore_fastqs:
+    input:        
+        fastq1="resources/Nanopore/{protocol}_R1.fastq",
+        fastq2="resources/Nanopore/{protocol}_R2.fastq",
+    output:
+        "resources/Nanopore/{protocol}_combined.fastq",
+    log:
+        "logs/combine_nanopore_fastqs_{protocol}"
+    shell:
+        "cat {input.fastq1} {input.fastq2} > {output}"
+    
+rule call_nanopolish:
+    input:
+        fastq="resources/Nanopore/{protocol}_combined.fastq",
+        alignment="resources/Nanopore/{protocol}/alignment_focused_downsampled_dedup_renamed.bam",
+        genome="resources/chromosome.fasta"
+    output:
+        "results/Nanopore/{protocol}/alignments_CpG.tsv"
+    conda:
+        "envs/nanopolish.yaml"
+    log:
+        "logs/call_nanopolish_{protocol}.log"
+    params:
+        threads=8,
+        chr=chromosome_conf["chromosome"],
+    shell:
+        """
+        nanopolish call-methylation -t 8 -r {input.fastq} -b {input.alignment} -g {input.genome} -w "{params.chr}" > {output}
+        """
+
+        # nanopolish index -d [Pfad_zu_den_Nanopore-Rohdaten] resources/Nanopore/data1_combined.fastq
+
+
+##################### Nanopore Methylation End #####################################
 
 rule compute_meth_observations:
     input:
@@ -235,14 +331,17 @@ rule plot_results_Illumina:
 
 rule plot_results_PacBio:
     input:
+        bedGraph="results/PacBio/{protocol}/alignments_CpG.combined.bed",        
+
         calls="results/PacBio/{protocol}/calls.vcf",
         # true_meth="resources/HG002/GSM5649437_TruSeq_HG002_LAB01_REP01_filtered.bedGraph"
         true_meth=expand("resources/bed_avg_{chromosome}.bedGraph", chromosome=chromosome_conf["chromosome"])
     output:
-        # td="results/PacBio/{protocol}/scatter_plot_td.png",
+        dv="results/PacBio/{protocol}/scatter_plot_dv.png",
+        td="results/PacBio/{protocol}/scatter_plot_td.png",
         tv="results/PacBio/{protocol}/scatter_plot_tv.png",
+        dist_td="results/PacBio/{protocol}/scatter_plot_dv_distances.png",
         dist_tv="results/PacBio/{protocol}/scatter_plot_tv_distances.png",
-        # test="results/PacBio/{protocol}/biggest_dist.txt",
     conda:
         "envs/plot.yaml"
     log:
@@ -266,4 +365,4 @@ rule plot_results_Nanopore:
     log:
         "logs/plot_results_Nanopore_{protocol}.log",
     script:
-        "scripts/scatter_plot_pacbio.py"
+        "scripts/scatter_plot_nanopore.py"
