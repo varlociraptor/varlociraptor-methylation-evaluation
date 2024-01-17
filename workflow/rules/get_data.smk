@@ -48,6 +48,16 @@ rule get_chromosome_from_genome:
         samtools faidx {input} {params.chromosome} > {output}
         """
 
+
+rule remove_chr_from_fasta:
+    input:
+        expand("resources/chromosome_{chromosome}.fasta", chromosome=chromosome_conf["chromosome"])
+    output:
+        "resources/no_chr_chromosome_{chromosome}.fasta"
+    script:
+        "../scripts/rename_chromosome.py"
+
+
 rule genome_index:
     input:
         "resources/genome.fasta",
@@ -63,92 +73,6 @@ rule genome_index:
         """ 
         samtools faidx {params.pipeline_path}{input}
         """
-
-rule get_pacbio_data:
-    output:
-        alignment="resources/PacBio/{protocol}/{SRA}/alignment.bam"
-    params:
-        url=lambda wildcards: config[str(wildcards.SRA)]
-    log:
-        "logs/get_pacbio_data_{protocol}_{SRA}.log",
-    resources: mem_mb=4096
-    script:
-        "../scripts/get_pacbio_data.py"
-
-rule get_nanopore_header:
-    output:
-        header="resources/Nanopore/{protocol}/{SRA}/header.sam",
-    params:
-        pipeline_path=config["pipeline_path"],
-        url=lambda wildcards: config[str(wildcards.SRA)]
-    resources: mem_mb=4096
-    log:
-        "logs/get_nanopore_header_{protocol}_{SRA}.log",
-    conda: 
-        "../envs/samtools.yaml"
-    shell:
-        """
-        mkdir -p $(dirname {params.pipeline_path}{output.header})
-        samtools view -H {params.url} > {params.pipeline_path}{output.header}
-	    """
-
-# Body runterladen klappt manuell genau mit diesem Befehl, aber in Snakemake schlaegt es fehl...
-rule get_nanopore_body:
-    output:
-        body="resources/Nanopore/{protocol}/{SRA}/body.sam",
-    params:
-        pipeline_path=config["pipeline_path"],
-        url=lambda wildcards: config[str(wildcards.SRA)]
-    resources: mem_mb=4096
-    log:
-        "logs/get_nanopore_body_{protocol}_{SRA}.log",
-    conda: 
-        "../envs/samtools.yaml"
-    shell:
-        """
-        samtools view {params.url} | head -n 1000 > {params.pipeline_path}{output.body}
-	    """
-
-rule combine_nanopore_data:
-    input:
-        header="resources/Nanopore/{protocol}/{SRA}/header.sam",
-        body="resources/Nanopore/{protocol}/{SRA}/body.sam",
-    output:
-        comb="resources/Nanopore/{protocol}/{SRA}/alignment.sam",
-        alignment="resources/Nanopore/{protocol}/{SRA}/alignment.bam"
-    params:
-        pipeline_path=config["pipeline_path"],
-        url=lambda wildcards: config[str(wildcards.SRA)]
-    resources: mem_mb=4096
-    log:
-        "logs/combine_nanopore_data_{protocol}_{SRA}.log",
-    conda: 
-        "../envs/samtools.yaml"
-    shell:
-        """
-        cat {params.pipeline_path}{input.header} {params.pipeline_path}{input.body} > {params.pipeline_path}{output.comb}
-        samtools view -b {params.pipeline_path}{output.comb} > {params.pipeline_path}{output.alignment}
-	    """
-        # samtools view {params.url} | head -n 10000 | samtools view -b > {params.pipeline_path}{output.alignment}
-        # samtools view -h {params.url} chr21 -O bam > {params.pipeline_path}{output}
-
-
-
-
-# rule nanopore_bam_index:
-#     output:
-#         alignment="resources/Nanopore/{protocol}/{SRA}/alignment.bam.bai"
-#     params:
-#         pipeline_path=config["pipeline_path"],
-#         url=lambda wildcards: config[str(wildcards.SRA)]
-#     resources: mem_mb=4096
-#     conda: 
-#         "../envs/samtools.yaml"
-#     shell:
-#         """
-#         samtools view -b https://ont-open-data.s3.amazonaws.com/gm24385_mod_2021.09/extra_analysis/all.bam | samtools index - {params.pipeline_path}{output}
-# 	    """
-
 
 rule get_fastq_pe:
     output:
@@ -213,4 +137,92 @@ rule trim_fastq_se:
         """ 
         fastp --in1 {input.first} --out1 {output.first} --length_required 2 --disable_quality_filtering -z 4 --trim_poly_g --overrepresentation_analysis
         """
-  
+
+
+rule get_pacbio_data:
+    output:
+        alignment="resources/PacBio/{protocol}/{SRA}/alignment.bam"
+    params:
+        url=lambda wildcards: config[str(wildcards.SRA)]
+    log:
+        "logs/get_pacbio_data_{protocol}_{SRA}.log",
+    resources: mem_mb=4096
+    script:
+        "../scripts/get_pacbio_data.py"
+
+
+rule get_nanopore_header:
+    output:
+        header="resources/Nanopore/{protocol}/{SRA}/header.sam",
+    params:
+        pipeline_path=config["pipeline_path"],
+        url=lambda wildcards: config[str(wildcards.SRA)]
+    resources: mem_mb=4096
+    log:
+        "logs/get_nanopore_header_{protocol}_{SRA}.log",
+    conda: 
+        "../envs/samtools.yaml"
+    shell:
+        """
+        mkdir -p $(dirname {params.pipeline_path}{output.header})
+        samtools view -H {params.url} > {params.pipeline_path}{output.header}
+	    """
+
+# Body runterladen klappt manuell genau mit diesem Befehl, aber in Snakemake schlaegt es fehl...
+rule get_nanopore_body:
+    output:
+        body="resources/Nanopore/{protocol}/{SRA}/body.sam",
+    params:
+        pipeline_path=config["pipeline_path"],
+        url=lambda wildcards: config[str(wildcards.SRA)]
+    resources: mem_mb=4096
+    log:
+        "logs/get_nanopore_body_{protocol}_{SRA}.log",
+    conda: 
+        "../envs/samtools.yaml"
+    shell:
+        """
+        samtools view {params.url} | head -n 1000 > {params.pipeline_path}{output.body}
+	    """
+
+rule combine_nanopore_data:
+    input:
+        header="resources/Nanopore/{protocol}/{SRA}/header.sam",
+        body="resources/Nanopore/{protocol}/{SRA}/body.sam",
+    output:
+        comb="resources/Nanopore/{protocol}/{SRA}/alignment.sam",
+        alignment="resources/Nanopore/{protocol}/{SRA}/alignment.bam"
+    params:
+        pipeline_path=config["pipeline_path"],
+        url=lambda wildcards: config[str(wildcards.SRA)]
+    resources: mem_mb=4096
+    log:
+        "logs/combine_nanopore_data_{protocol}_{SRA}.log",
+    conda: 
+        "../envs/samtools.yaml"
+    shell:
+        """
+        cat {params.pipeline_path}{input.header} {params.pipeline_path}{input.body} > {params.pipeline_path}{output.comb}
+        samtools view -b {params.pipeline_path}{output.comb} > {params.pipeline_path}{output.alignment}
+	    """
+        # samtools view {params.url} | head -n 10000 | samtools view -b > {params.pipeline_path}{output.alignment}
+        # samtools view -h {params.url} chr21 -O bam > {params.pipeline_path}{output}
+
+
+
+
+rule nanopore_bam_index:
+    output:
+        alignment="resources/Nanopore/{protocol}/{SRA}/alignment.bam.bai"
+    params:
+        pipeline_path=config["pipeline_path"],
+        url=lambda wildcards: config[str(wildcards.SRA)]
+    resources: mem_mb=4096
+    conda: 
+        "../envs/samtools.yaml"
+    shell:
+        """
+        samtools view -b https://ont-open-data.s3.amazonaws.com/gm24385_mod_2021.09/extra_analysis/all.bam | samtools index - {params.pipeline_path}{output}
+	    """
+
+
