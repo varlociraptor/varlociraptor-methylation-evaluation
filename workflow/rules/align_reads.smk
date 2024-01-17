@@ -146,7 +146,7 @@ rule markduplicates_bam:
 
 def get_protocol_sra(wildcards):
     base_path = Path("resources") / wildcards.platform / wildcards.protocol
-    accession_numbers = config["data"][platform][protocol]
+    accession_numbers = config["data"][wildcards.platform][wildcards.protocol]
     return [str(base_path / SRA / "alignment_focused_dedup.bam") for SRA in accession_numbers]
 
 
@@ -186,6 +186,7 @@ rule downsample_bams:
         samtools view -s 0.99 -b -o {output} {input}
         """
 
+# Die Regel funktioniert nur ausserhalb von Snakemake?
 rule bam_to_sam:
     input:
         "resources/{platform}/{protocol}/alignment_focused_downsampled_dedup.bam"
@@ -208,13 +209,13 @@ rule bam_to_sam:
 
 rule rename_chromosomes_in_sam:
     input:
-        bam="resources/{platform}/{protocol}/alignment_focused_downsampled_dedup.sam"
+        sam="resources/{platform}/{protocol}/alignment_focused_downsampled_dedup.sam"
     output:
         renamed="resources/{platform}/{protocol}/alignment_focused_downsampled_dedup_renamed.sam"
     log:
         "logs/rename_chromosomes_in_sam_{platform}_{protocol}.log",
     script:
-        "../scripts/rename_chromosomes.py"
+        "../scripts/rename_alignment.py"
 
 # Funktioniert nicht mit snakemake aber manuell...
 rule sam_to_bam:
@@ -232,7 +233,7 @@ rule sam_to_bam:
         pipeline_path=config["pipeline_path"],
     shell:
         """
-        samtools view -bS {params.pipeline_path}/{input} > {params.pipeline_path}{output}   
+        samtools view -bS {params.pipeline_path}{input} > {params.pipeline_path}{output}   
         """
 
 

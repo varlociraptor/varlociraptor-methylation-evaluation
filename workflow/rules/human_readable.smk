@@ -1,3 +1,6 @@
+scattergather:
+    split_candidates=20,
+
 rule candidates_to_vcf:
     input:
         "resources/candidates.bcf",
@@ -76,12 +79,6 @@ rule observations_to_vcf:
         """
         bcftools view --threads {threads} {input} > {output}
         """
-
-
-# Create normal.vcf
-
-scattergather:
-    split_candidates=20,
 
 
 rule bcf_indices:

@@ -1,0 +1,14 @@
+channels:
+  - conda-forge
+  - bioconda
+  - nodefaults
+dependencies:
+  - cmake=3.25.1
+  - curl=7.87.0
+  - gcc=12.2.0
+  - gsl=2.7
+  - make=4.3
+  - mason=2.0.9
+  - perl=5.32.1
+  - pkg-config=0.29.2
+  - rust=1.75.0
