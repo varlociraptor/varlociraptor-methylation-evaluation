@@ -7,6 +7,9 @@ output_file = snakemake.output[0]
 # Öffnen und Bearbeiten der Datei
 with open(input_file, 'r') as infile, open(output_file, 'w') as outfile:
     for line in infile:
-        # Entfernen von 'chr' aus jeder Zeile
-        modified_line = line.replace('chr', '')
-        outfile.write(modified_line)
+        if line.startswith('>'):
+            chrom_number = line[1:].strip()
+            modified_line = f'>chr{chrom_number}\n'
+            outfile.write(modified_line)
+        else:
+            outfile.write(line)

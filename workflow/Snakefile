@@ -5,8 +5,11 @@
 
 from pathlib import Path
 
+
 configfile: "config/config.yaml"
 
+
+include: "rules/common.smk"
 include: "rules/install_software.smk"
 include: "rules/get_data.smk"
 include: "rules/align_reads.smk"
@@ -14,39 +17,35 @@ include: "rules/reference_meth_status.smk"
 include: "rules/get_reference_begraph.smk"
 include: "rules/human_readable.smk"
 
+
 scattergather:
     split_candidates=20,
 
-chromosome_conf = config["sample"]
 
+chromosome_conf = config["sample"]
 platform = config["data"]
 candidate = config["candidate"]
 
 
-
-
-def expand_scatter_plots(platform):
-    base_path = Path("results") / platform
-    protocols = list(config["data"][platform].keys())
-    return [str(base_path / protocol / "scatter_plot_tv.png") for protocol in protocols]
-
-
 rule all:
-    input: 
-        # expand_scatter_plots("PacBio"),
-        expand_scatter_plots("Nanopore"),
+    input:
+        expand_scatter_plots("PacBio"),
+        # expand_scatter_plots("Nanopore"),
         # expand_scatter_plots("Illumina_pe"),
 
 
 rule find_candidates:
     input:
-        expand("resources/chromosome_{chromosome}.fasta", chromosome=chromosome_conf["chromosome"])
+        expand(
+            "resources/chromosome_{chromosome}.fasta",
+            chromosome=chromosome_conf["chromosome"],
+        ),
     output:
         "resources/candidates.bcf",
     log:
         "logs/find_candidates.log",
     benchmark:
-        "benchmarks/find_candidates.log",
+        "benchmarks/find_candidates.log"
     conda:
         "envs/varlociraptor.yaml"
     params:
@@ -63,7 +62,7 @@ rule split_candidates:
     input:
         "resources/candidates.bcf",
     output:
-        scatter.split_candidates("resources/candidates_{scatteritem}.bcf")
+        scatter.split_candidates("resources/candidates_{scatteritem}.bcf"),
     log:
         "logs/split_candidates.log",
     conda:
@@ -71,13 +70,20 @@ rule split_candidates:
     shell:
         "rbt vcf-split {input} {output}"
 
+
 rule compute_meth_observations:
     input:
-        chromosome=expand("resources/chromosome_{chromosome}.fasta", chromosome=chromosome_conf["chromosome"]),
-        genome_index=expand("resources/chromosoeme_{chromosome}.fasta.fai", chromosome=chromosome_conf["chromosome"]),
+        chromosome=expand(
+            "resources/chromosome_{chromosome}.fasta",
+            chromosome=chromosome_conf["chromosome"],
+        ),
+        genome_index=expand(
+            "resources/chromosoeme_{chromosome}.fasta.fai",
+            chromosome=chromosome_conf["chromosome"],
+        ),
         alignments="resources/{platform}/{protocol}/alignment_focused_downsampled_dedup_renamed.bam",
         alignment_index="resources/{platform}/{protocol}/alignment_focused_downsampled_dedup_renamed.bam.bai",
-        candidates="resources/candidates_{scatteritem}.bcf"
+        candidates="resources/candidates_{scatteritem}.bcf",
     output:
         "results/{platform}/{protocol}/normal_{scatteritem}.bcf",
     log:
@@ -98,14 +104,13 @@ rule compute_meth_observations:
         cargo run --release -- preprocess variants {params.pipeline_path}{input.chromosome} --candidates {params.pipeline_path}{input.candidates} --bam {params.pipeline_path}{input.alignments} --read-type $PLATFORM > {params.pipeline_path}{output}
         """
 
+
 rule call_methylation:
     input:
         preprocess_obs="results/{platform}/{protocol}/normal_{scatteritem}.bcf",
-        # preprocess_obs="results/{SRA}/normal.bcf",
         scenario="resources/scenario.yaml",
     output:
         temp("results/{platform}/{protocol}/calls_{scatteritem}.bcf"),
-        # "results/{SRA}/calls.bcf",
     log:
         "logs/call_methylation_{platform}_{protocol}_{scatteritem}.log",
     conda:
@@ -120,7 +125,6 @@ rule call_methylation:
         """
 
 
-
 rule filter_calls:
     input:
         "results/{platform}/{protocol}/calls_{scatteritem}.bcf",
@@ -133,7 +137,7 @@ rule filter_calls:
     params:
         varlo_path=config["varlo_path"],
         pipeline_path=config["pipeline_path"],
-        event="PRESENT"
+        event="PRESENT",
     shell:
         """ 
         cd {params.varlo_path}
@@ -159,110 +163,36 @@ rule calls_to_vcf:
 
 rule gather_calls:
     input:
-        gather.split_candidates("results/{{platform}}/{{protocol}}/calls_{scatteritem}.vcf")
+        gather.split_candidates(
+            "results/{{platform}}/{{protocol}}/calls_{scatteritem}.vcf"
+        ),
     output:
-        "results/{platform}/{protocol}/calls.vcf"
+        "results/{platform}/{protocol}/calls.vcf",
     log:
         "logs/gather_calls_{platform}_{protocol}.log",
+    conda:
+        "envs/cat.yaml"
     shell:
         "cat {input} > {output}"
 
 
-# def get_bedGraph_path(seq_type, protocol):
-#     if seq_type in ["PacBio", "Nanopore"]:
-#         return f"results/{seq_type}/{protocol}/alignments_CpG.combined.bed"
-#     elif seq_type == "Illumina":
-#         # Pfad für Illumina-spezifische Daten
-#         return f"results/{seq_type}/{protocol}//alignments_CpG.bedGraph"
-#     else:
-#         raise ValueError("Invalid sequencing type")
-
-# def get_script_path(seq_type):
-#     if seq_type == "PacBio":
-#         return f"scripts/scatter_plot_pacbio.py"
-#     elif seq_type == "Illumina":
-#         return f"scripts/scatter_plot_illumina.py"
-#     elif seq_type == "Nanopore":
-#         return f"scripts/scatter_plot_nanopore.py"
-#     else:
-#         raise ValueError("Invalid sequencing type")
-
-
-# rule plot_results:
-#     input:
-#         bedGraph="results/{seq_type}/{protocol}/alignments_CpG.combined.bed",
-#         calls="results/{seq_type}/{protocol}/calls.vcf",
-#         true_meth=expand("resources/bed_avg_{chromosome}.bedGraph", chromosome=chromosome_conf["chromosome"])
-#     output:
-#         dv="results/{seq_type}/{protocol}/scatter_plot_dv.png",
-#         td="results/{seq_type}/{protocol}/scatter_plot_td.png",
-#         tv="results/{seq_type}/{protocol}/scatter_plot_tv.png",
-#         dist_td="results/{seq_type}/{protocol}/scatter_plot_dv_distances.png",
-#         dist_tv="results/{seq_type}/{protocol}/scatter_plot_tv_distances.png",
-#     conda:
-#         "envs/plot.yaml"
-#     log:
-#         "logs/plot_results_{seq_type}_{protocol}.log",
-#     script:
-#         "scripts/scatter_plot_{seq_type}.py"
-
-
-rule plot_results_Illumina:
+rule plot_results:
     input:
-        bedGraph="results/Illumina_{read_type}/{protocol}/alignments_CpG.bedGraph",        
-        calls="results/Illumina_{read_type}/{protocol}/calls.vcf",
-        # true_meth="resources/HG002/GSM5649437_TruSeq_HG002_LAB01_REP01_filtered.bedGraph"
-        true_meth=expand("resources/bed_avg_{chromosome}.bedGraph", chromosome=chromosome_conf["chromosome"])        
+        bedGraph="results/{platform}/{protocol}/alignments_CpG.combined.bed",
+        calls="results/{platform}/{protocol}/calls.vcf",
+        true_meth=expand(
+            "resources/bed_avg_{chromosome}.bedGraph",
+            chromosome=chromosome_conf["chromosome"],
+        ),
     output:
-        dv="results/Illumina_{read_type}/{protocol}/scatter_plot_dv.png",
-        td="results/Illumina_{read_type}/{protocol}/scatter_plot_td.png",
-        tv="results/Illumina_{read_type}/{protocol}/scatter_plot_tv.png",
-        dist_td="results/Illumina_{read_type}/{protocol}/scatter_plot_dv_distances.png",
-        dist_tv="results/Illumina_{read_type}/{protocol}/scatter_plot_tv_distances.png",
+        dv="results/{platform}/{protocol}/scatter_plot_dv.png",
+        td="results/{platform}/{protocol}/scatter_plot_td.png",
+        tv="results/{platform}/{protocol}/scatter_plot_tv.png",
+        dist_td="results/{platform}/{protocol}/scatter_plot_dv_distances.png",
+        dist_tv="results/{platform}/{protocol}/scatter_plot_tv_distances.png",
     conda:
         "envs/plot.yaml"
     log:
-        "logs/plot_results_Illumina_{read_type}_{protocol}.log",
+        "logs/plot_results_{platform}_{protocol}.log",
     script:
-        "scripts/scatter_plot_illumina.py"
-
-
-rule plot_results_PacBio:
-    input:
-        bedGraph="results/PacBio/{protocol}/alignments_CpG.combined.bed",        
-
-        calls="results/PacBio/{protocol}/calls.vcf",
-        # true_meth="resources/HG002/GSM5649437_TruSeq_HG002_LAB01_REP01_filtered.bedGraph"
-        true_meth=expand("resources/bed_avg_{chromosome}.bedGraph", chromosome=chromosome_conf["chromosome"])
-    output:
-        dv="results/PacBio/{protocol}/scatter_plot_dv.png",
-        td="results/PacBio/{protocol}/scatter_plot_td.png",
-        tv="results/PacBio/{protocol}/scatter_plot_tv.png",
-        dist_td="results/PacBio/{protocol}/scatter_plot_dv_distances.png",
-        dist_tv="results/PacBio/{protocol}/scatter_plot_tv_distances.png",
-    conda:
-        "envs/plot.yaml"
-    log:
-        "logs/plot_results_PacBio_{protocol}.log",
-    script:
-        "scripts/scatter_plot_pacbio.py"
-
-rule plot_results_Nanopore:
-    input:
-        bedGraph="results/Nanopore/{protocol}/alignments_CpG.combined.bed",        
-
-        calls="results/Nanopore/{protocol}/calls.vcf",
-        # true_meth="resources/HG002/GSM5649437_TruSeq_HG002_LAB01_REP01_filtered.bedGraph"
-        true_meth=expand("resources/bed_avg_{chromosome}.bedGraph", chromosome=chromosome_conf["chromosome"])
-    output:
-        dv="results/Nanopore/{protocol}/scatter_plot_dv.png",
-        td="results/Nanopore/{protocol}/scatter_plot_td.png",
-        tv="results/Nanopore/{protocol}/scatter_plot_tv.png",
-        dist_td="results/Nanopore/{protocol}/scatter_plot_dv_distances.png",
-        dist_tv="results/Nanopore/{protocol}/scatter_plot_tv_distances.png",
-    conda:
-        "envs/plot.yaml"
-    log:
-        "logs/plot_results_PacBio_{protocol}.log",
-    script:
-        "scripts/scatter_plot_nanopore.py"
+        "scripts/scatter_plot.py"
