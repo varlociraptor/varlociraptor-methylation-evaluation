@@ -1,6 +1,7 @@
 scattergather:
     split_candidates=20,
 
+
 rule candidates_to_vcf:
     input:
         "resources/candidates.bcf",
@@ -16,9 +17,10 @@ rule candidates_to_vcf:
         bcftools view --threads {threads} {input} > {output}
         """
 
+
 rule candidate_splits_to_vcf:
     input:
-        "resources/candidates_{scatteritem}.bcf"
+        "resources/candidates_{scatteritem}.bcf",
     output:
         temp("resources/candidates_{scatteritem}.vcf"),
     conda:
@@ -29,6 +31,7 @@ rule candidate_splits_to_vcf:
         """
         bcftools view {input} > {output}
         """
+
 
 rule aligned_reads_sorted_sam:
     input:
@@ -46,6 +49,7 @@ rule aligned_reads_sorted_sam:
         """ 
         samtools view -@ {threads} -h  -o {params.pipeline_path}/{output}  {params.pipeline_path}{input}   
         """
+
 
 rule aligned_reads_filtered_sam:
     input:
@@ -100,10 +104,14 @@ rule bcf_indices:
 
 rule single_bcf:
     input:
-        bcf=gather.split_candidates("results/{{platform}}/{{protocol}}/normal_{scatteritem}.bcf"),
-        indices=gather.split_candidates("results/{{platform}}/{{protocol}}/normal_{scatteritem}.bcf.csi"),
+        bcf=gather.split_candidates(
+            "results/{{platform}}/{{protocol}}/normal_{scatteritem}.bcf"
+        ),
+        indices=gather.split_candidates(
+            "results/{{platform}}/{{protocol}}/normal_{scatteritem}.bcf.csi"
+        ),
     output:
-        "results/{platform}/{protocol}/normal.bcf"
+        "results/{platform}/{protocol}/normal.bcf",
     log:
         "logs/single_bcf_{platform}_{protocol}.log",
     conda:
@@ -115,11 +123,12 @@ rule single_bcf:
         bcftools merge -o {params.pipeline_path}{output} {params.pipeline_path}{input.bcf}
         """
 
+
 rule normal_to_vcf:
     input:
-        "results/{platform}/{protocol}/normal.bcf"
+        "results/{platform}/{protocol}/normal.bcf",
     output:
-        "results/{platform}/{protocol}/normal.vcf"
+        "results/{platform}/{protocol}/normal.vcf",
     conda:
         "../envs/samtools.yaml"
     log:

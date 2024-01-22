@@ -1,6 +1,5 @@
 channels:
-  - bioconda
   - conda-forge
 dependencies:
-  - samtools
-  - bcftools
+  - wget=1.21.4
+  - tar=1.34
