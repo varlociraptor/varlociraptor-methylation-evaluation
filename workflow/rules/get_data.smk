@@ -50,6 +50,23 @@ rule get_chromosome_from_genome:
         """
 
 
+rule chromosome_index:
+    input:
+        "resources/chromosome_{chromosome}.fasta",
+    output:
+        "resources/chromosome_{chromosome}.fasta.fai",
+    log:
+        "logs/chromosome_index_{chromosome}.log",
+    conda:
+        "../envs/samtools.yaml"
+    params:
+        pipeline_path=config["pipeline_path"],
+    shell:
+        """ 
+        samtools faidx {params.pipeline_path}{input}
+        """
+
+
 rule add_chr_to_fasta:
     input:
         expand(

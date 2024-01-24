@@ -74,7 +74,9 @@ rule compute_avg_bedGraph:
 
 rule plot_avg_bedGraph:
     input:
-        candidates="resources/candidates.vcf",
+        candidates=expand(
+            "resources/{chro}/candidates.vcf", chro=chromosome_conf["chromosome"]
+        ),
         bedgraphs=expand(
             "resources/HG002/{bedGraph}-{chromosome}.bedGraph",
             bedGraph=config["bedGraphs_HG002"],

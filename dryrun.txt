@@ -443,7 +443,7 @@ rule sort_aligned_reads:
 rule find_candidates:
     input: resources/chromosome.fasta
     output: resources/candidates.bcf
-    log: logs/find_candidates.log
+    log: logs/{chro}/find_candidates.log
     jobid: 38
     reason: Missing output files: resources/candidates.bcf; Input files updated by another job: resources/chromosome.fasta
     resources: tmpdir=/local/tmp

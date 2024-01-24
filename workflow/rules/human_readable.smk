@@ -2,35 +2,35 @@ scattergather:
     split_candidates=20,
 
 
-rule candidates_to_vcf:
-    input:
-        "resources/candidates.bcf",
-    output:
-        "resources/candidates.vcf",
-    conda:
-        "../envs/samtools.yaml"
-    log:
-        "logs/candidates_to_vcf.log",
-    threads: 10
-    shell:
-        """
-        bcftools view --threads {threads} {input} > {output}
-        """
+# rule candidates_to_vcf:
+#     input:
+#         "resources/{chro}/candidates.bcf",
+#     output:
+#         "resources/{chro}/candidates.vcf",
+#     conda:
+#         "../envs/samtools.yaml"
+#     log:
+#         "logs/{chro}/candidates_to_vcf.log",
+#     threads: 10
+#     shell:
+#         """
+#         bcftools view --threads {threads} {input} > {output}
+#         """
 
 
-rule candidate_splits_to_vcf:
-    input:
-        "resources/candidates_{scatteritem}.bcf",
-    output:
-        temp("resources/candidates_{scatteritem}.vcf"),
-    conda:
-        "../envs/samtools.yaml"
-    log:
-        "logs/candidate_splits_to_vcf_{scatteritem}.log",
-    shell:
-        """
-        bcftools view {input} > {output}
-        """
+# rule candidate_splits_to_vcf:
+#     input:
+#         "resources/{chro}/candidates_{scatteritem}.bcf",
+#     output:
+#         temp("resources/{chro}/candidates_{scatteritem}.vcf"),
+#     conda:
+#         "../envs/samtools.yaml"
+#     log:
+#         "logs/{chro}/candidate_splits_to_vcf_{scatteritem}.log",
+#     shell:
+#         """
+#         bcftools view {input} > {output}
+#         """
 
 
 rule aligned_reads_sorted_sam:

@@ -136,10 +136,12 @@ data = pd.DataFrame({
     'Varlociraptor': vcf_af_values
 })
 
-scatter = alt.Chart(data).mark_circle(opacity=0.5).encode(
+# Create a scatter plot with points colored by density
+scatter = alt.Chart(data).mark_circle(opacity=0.2).encode(
     x='TrueMeth',
     y='Varlociraptor'
 )
+
 
 final_chart = (scatter + line).properties(
     width=400,
@@ -157,7 +159,7 @@ deviation = sum(distances) / len(bedgraph_meth_values)
 
 
 for i, (x, y) in enumerate(zip(bedgraph_meth_values, vcf_af_values)):
-    if euclidian_distance(x, y, x, x) > 60 and x > 90:
+    if euclidian_distance(x, y, x, x) > 50:
         print(euclidian_distance(x, y, x, x), x, y)
         print(vcf_positions[i])
 
@@ -167,7 +169,7 @@ data = pd.DataFrame({
     'Varlociraptor': vcf_af_values
 })
 
-scatter = alt.Chart(data).mark_circle(opacity=0.5).encode(
+scatter = alt.Chart(data).mark_circle(opacity=0.2).encode(
     x='RefMethod',
     y='Varlociraptor'
 )
@@ -207,7 +209,7 @@ data = pd.DataFrame({
     'RefMethod': bedgraph_meth_values
 })
 
-scatter = alt.Chart(data).mark_circle(opacity=0.5).encode(
+scatter = alt.Chart(data).mark_circle(opacity=0.2).encode(
     x='TrueMeth',
     y='RefMethod'
 )
