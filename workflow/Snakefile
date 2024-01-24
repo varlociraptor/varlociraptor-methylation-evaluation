@@ -38,14 +38,12 @@ rule find_candidates:
     input:
         expand(
             "resources/chromosome_{chromosome}.fasta",
-            chromosome=chromosome_conf["chromosome"],
+            chromosome=chr_chromosome,
         ),
     output:
-        "resources/candidates.bcf",
+        "resources/{chromosome}/candidates.bcf",
     log:
-        "logs/find_candidates.log",
-    benchmark:
-        "benchmarks/find_candidates.log"
+        "logs/{chromosome}/find_candidates.log",
     conda:
         "envs/varlociraptor.yaml"
     params:
@@ -60,11 +58,14 @@ rule find_candidates:
 
 rule split_candidates:
     input:
-        "resources/candidates.bcf",
+        expand(
+            "resources/{chro}/candidates.bcf",
+            chro=chromosome_conf["chromosome"],
+        ),
     output:
-        scatter.split_candidates("resources/candidates_{scatteritem}.bcf"),
+        scatter.split_candidates("resources/{{chro}}/candidates_{scatteritem}.bcf"),
     log:
-        "logs/split_candidates.log",
+        "logs/{chro}split_candidates.log",
     conda:
         "envs/rbt.yaml"
     shell:
@@ -78,12 +79,15 @@ rule compute_meth_observations:
             chromosome=chromosome_conf["chromosome"],
         ),
         genome_index=expand(
-            "resources/chromosoeme_{chromosome}.fasta.fai",
+            "resources/chromosome_{chromosome}.fasta.fai",
             chromosome=chromosome_conf["chromosome"],
         ),
         alignments="resources/{platform}/{protocol}/alignment_focused_downsampled_dedup_renamed.bam",
         alignment_index="resources/{platform}/{protocol}/alignment_focused_downsampled_dedup_renamed.bam.bai",
-        candidates="resources/candidates_{scatteritem}.bcf",
+        candidates=expand(
+            "resources/{chro}/candidates_{{scatteritem}}.bcf",
+            chro=chromosome_conf["chromosome"],
+        ),
     output:
         "results/{platform}/{protocol}/normal_{scatteritem}.bcf",
     log:
