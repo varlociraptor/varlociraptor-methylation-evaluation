@@ -12,7 +12,7 @@ configfile: "config/config.yaml"
 include: "rules/common.smk"
 include: "rules/install_software.smk"
 include: "rules/get_data.smk"
-include: "rules/align_reads.smk"
+include: "rules/get_alignments.smk"
 include: "rules/reference_meth_status.smk"
 include: "rules/get_reference_begraph.smk"
 include: "rules/human_readable.smk"
@@ -27,10 +27,13 @@ platform = config["data"]
 candidate = config["candidate"]
 
 
+report: "report/workflow.rst"
+
+
 rule all:
     input:
-        expand_scatter_plots("PacBio"),
-        # expand_scatter_plots("Nanopore"),
+        # expand_scatter_plots("PacBio"),
+        expand_scatter_plots("Nanopore"),
         # expand_scatter_plots("Illumina_pe"),
 
 
@@ -82,11 +85,13 @@ rule compute_meth_observations:
             "resources/chromosome_{chromosome}.fasta.fai",
             chromosome=chromosome_conf["chromosome"],
         ),
-        alignments="resources/{platform}/{protocol}/alignment_focused_downsampled_dedup_renamed.bam",
-        alignment_index="resources/{platform}/{protocol}/alignment_focused_downsampled_dedup_renamed.bam.bai",
+        # alignments="resources/{platform}/{protocol}/alignment_focused_downsampled_dedup_renamed.bam",
+        alignments="resources/{platform}/{protocol}/candidate_specific/alignment_valid_{scatteritem}.bam",
+        # alignment_index="resources/{platform}/{protocol}/alignment_focused_downsampled_dedup_renamed.bam.bai",
+        alignment_index="resources/{platform}/{protocol}/candidate_specific/alignment_valid_{scatteritem}.bam.bai",
         candidates=expand(
-            "resources/{chro}/candidates_{{scatteritem}}.bcf",
-            chro=chromosome_conf["chromosome"],
+            "resources/{chrom}/candidates_{{scatteritem}}.bcf",
+            chrom=chromosome_conf["chromosome"],
         ),
     output:
         "results/{platform}/{protocol}/normal_{scatteritem}.bcf",
@@ -189,10 +194,11 @@ rule plot_results:
             chromosome=chromosome_conf["chromosome"],
         ),
     output:
-        dv="results/{platform}/{protocol}/scatter_plot_dv.png",
-        td="results/{platform}/{protocol}/scatter_plot_td.png",
+        rt="results/{platform}/{protocol}/scatter_plot_rt.png",
+        rv="results/{platform}/{protocol}/scatter_plot_rv.png",
         tv="results/{platform}/{protocol}/scatter_plot_tv.png",
-        dist_td="results/{platform}/{protocol}/scatter_plot_dv_distances.png",
+        dist_rt="results/{platform}/{protocol}/scatter_plot_rt_distances.png",
+        dist_rv="results/{platform}/{protocol}/scatter_plot_rv_distances.png",
         dist_tv="results/{platform}/{protocol}/scatter_plot_tv_distances.png",
     conda:
         "envs/plot.yaml"

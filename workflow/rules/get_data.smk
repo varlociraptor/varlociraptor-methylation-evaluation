@@ -213,7 +213,7 @@ rule get_nanopore_body:
         "../envs/samtools.yaml"
     shell:
         """
-        samtools view {params.url} | head -n 1000 > {params.pipeline_path}{output.body}
+        samtools view {params.url} | head -n 10000 > {params.pipeline_path}{output.body}
         """
 
 

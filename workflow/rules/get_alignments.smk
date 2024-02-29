@@ -1,3 +1,5 @@
+
+
 rule index_genome:
     input:
         "resources/genome.fasta",
@@ -183,6 +185,24 @@ rule downsample_bams:
         """
 
 
+rule aligned_downsampled_index:
+    input:
+        "resources/{platform}/{protocol}/alignment_focused_downsampled_dedup.bam",
+    output:
+        "resources/{platform}/{protocol}/alignment_focused_downsampled_dedup.bam.bai",
+    log:
+        "logs/aligned_downsampled_index_{platform}_{protocol}.log",
+    conda:
+        "../envs/samtools.yaml"
+    params:
+        pipeline_path=config["pipeline_path"],
+    threads: 10
+    shell:
+        """
+        samtools index -@ {threads} {params.pipeline_path}{input}
+        """
+
+
 # Die Regel funktioniert nur ausserhalb von Snakemake?
 rule bam_to_sam:
     input:
@@ -242,6 +262,70 @@ rule aligned_downsampled_reads_dedup_index:
         "resources/{platform}/{protocol}/alignment_focused_downsampled_dedup_renamed.bam.bai",
     log:
         "logs/aligned_downsampled_reads_dedup_index_{platform}_{protocol}.log",
+    conda:
+        "../envs/samtools.yaml"
+    params:
+        pipeline_path=config["pipeline_path"],
+    threads: 10
+    shell:
+        """
+        samtools index -@ {threads} {params.pipeline_path}{input}
+        """
+
+
+rule aligned_reads_candidates_region:
+    input:
+        alignment="resources/{platform}/{protocol}/alignment_focused_downsampled_dedup_renamed.bam",
+        candidate=expand(
+            "resources/{chrom}/candidates_{{scatteritem}}.bcf",
+            chrom=chromosome_conf["chromosome"],
+        ),
+    output:
+        "resources/{platform}/{protocol}/candidate_specific/alignment_{scatteritem}.bam",
+    log:
+        "logs/aligned_reads_candidates_region_{platform}_{protocol}_{scatteritem}.log",
+    conda:
+        "../envs/samtools.yaml"
+    params:
+        window_size=config["max_read_length"],
+        chromosome=config["sample"]["chromosome"],
+    shell:
+        """
+        set +o pipefail;
+        start=$(bcftools query -f '%POS\\n' {input.candidate} | head -n 1)
+        end=$(bcftools query -f '%POS\\n' {input.candidate} | tail -n 1)
+        end=$((end + {params.window_size}))
+        samtools view -b {input.alignment} "{params.chromosome}:$start-$end" > {output}
+        """
+
+
+# TODO: Diese Regel ist eigentlich unnoetig und verbraucht viel Zeit. Das Problem ist, dass Varlociraptor nicht auf Bam Dateien arbeitet, die keine Reads haben. Durch den vorherigen Schritt kann es passieren, dass alle Kandidaten ausserhalb der Reads liegen und die bam Datei somit keine Reads hat. Daher fuegen wir einfach fuer jede Bamdatei den letzten Read der originalen Bam Datei ein.
+rule aligned_reads_candidates_region_valid:
+    input:
+        alignment_orig="resources/{platform}/{protocol}/alignment_focused_downsampled_dedup_renamed.sam",
+        alignment_specific="resources/{platform}/{protocol}/candidate_specific/alignment_{scatteritem}.bam",
+    output:
+        sam="resources/{platform}/{protocol}/candidate_specific/alignment_valid_{scatteritem}.sam",
+        bam="resources/{platform}/{protocol}/candidate_specific/alignment_valid_{scatteritem}.bam",
+    log:
+        "logs/aligned_reads_candidates_region_valid_{platform}_{protocol}_{scatteritem}.log",
+    conda:
+        "../envs/samtools.yaml"
+    shell:
+        """
+        samtools view -h -o {output.sam} {input.alignment_specific}
+        tail -n 1 {input.alignment_orig} >> {output.sam}
+        samtools view -bS -o {output.bam} {output.sam}
+        """
+
+
+rule aligned_reads_candidates_region_index:
+    input:
+        "resources/{platform}/{protocol}/candidate_specific/alignment_valid_{scatteritem}.bam",
+    output:
+        "resources/{platform}/{protocol}/candidate_specific/alignment_valid_{scatteritem}.bam.bai",
+    log:
+        "logs/aligned_reads_candidates_region_index_{platform}_{protocol}_{scatteritem}.log",
     conda:
         "../envs/samtools.yaml"
     params:
