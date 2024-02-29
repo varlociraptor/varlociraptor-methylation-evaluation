@@ -157,6 +157,22 @@ distances = [euclidian_distance(x, y, x, x)
 sorted_list = sorted(distances, reverse=True)
 deviation = sum(distances) / len(bedgraph_meth_values)
 
+# Runde die Kommazahlen auf ganze Zahlen
+rounded_distances = [int(round(d)) for d in distances]
+
+# Erzeuge ein Pandas DataFrame
+data = pd.DataFrame({'Rounded_Distances': rounded_distances})
+
+# Erzeuge das Altair-Plot
+chart = alt.Chart(data).mark_bar().encode(
+    x=alt.X('Rounded_Distances:O', axis=alt.Axis(title='distance')),
+    y=alt.Y('count():Q', axis=alt.Axis(title='number'))
+).properties(
+    title='Distance distribution RefMethod'
+)
+
+chart.save(snakemake.output["dist_rv"], scale_factor=2.0)
+
 
 for i, (x, y) in enumerate(zip(bedgraph_meth_values, vcf_af_values)):
     if euclidian_distance(x, y, x, x) > 50:
@@ -179,7 +195,7 @@ final_chart = (scatter + line).properties(
     height=400,
     title=f'RefMethod vs. Varlociraptor (Deviation: {deviation})'
 )
-final_chart.save(snakemake.output["dv"], scale_factor=2.0)
+final_chart.save(snakemake.output["rv"], scale_factor=2.0)
 
 
 # Plot TrueMeth vs RefMethod
@@ -201,7 +217,7 @@ chart = alt.Chart(data).mark_bar().encode(
     title='Distance distribution RefMethod'
 )
 
-chart.save(snakemake.output["dist_td"], scale_factor=2.0)
+chart.save(snakemake.output["dist_rt"], scale_factor=2.0)
 
 
 data = pd.DataFrame({
@@ -219,4 +235,4 @@ final_chart = (scatter + line).properties(
     height=400,
     title=f'TrueMeth vs. RefMethod (Deviation: {deviation})'
 )
-final_chart.save(snakemake.output["td"], scale_factor=2.0)
+final_chart.save(snakemake.output["rt"], scale_factor=2.0)

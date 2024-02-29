@@ -683,3 +683,298 @@
 [src/command_utils.rs::121][2024-01-23 11:35:30][DEBUG] estimated pass threshold 0.6933594 for primary sequence base C
 [src/pileup/subcommand.rs::626][2024-01-23 11:35:30][WARN] Threshold of 0.6933594 for base C is low. Consider increasing the filter-percentile or specifying a higher threshold.
 [src/pileup/subcommand.rs::794][2024-01-23 11:35:41][INFO] Done, processed 0 rows. Processed ~0 reads and skipped zero reads.
+[src/logging.rs::52][2024-01-25 14:58:22][DEBUG] command line: modkit pileup resources/Nanopore/data1/alignment_focused_downsampled_dedup.bam results/Nanopore/data1/alignments_CpG.combined.bed --cpg --ref resources/chr_chromosome_1.fasta --force-allow-implicit --combine-strands --log-filepath log_modkit.txt
+[src/bin/main.rs::20][2024-01-25 14:58:22][ERROR] Error! unable to open SAM/BAM/CRAM index for resources/Nanopore/data1/alignment_focused_downsampled_dedup.bam; please create an index
+[src/logging.rs::52][2024-01-25 15:53:40][DEBUG] command line: modkit pileup resources/Nanopore/data1/alignment_focused_downsampled_dedup.bam results/Nanopore/data1/alignments_CpG.combined.bed --cpg --ref resources/chr_chromosome_1.fasta --force-allow-implicit --combine-strands --log-filepath log_modkit.txt
+[src/bin/main.rs::20][2024-01-25 15:53:41][ERROR] Error! unable to open SAM/BAM/CRAM index for resources/Nanopore/data1/alignment_focused_downsampled_dedup.bam; please create an index
+[src/logging.rs::52][2024-01-25 16:25:48][DEBUG] command line: modkit pileup resources/Nanopore/data1/alignment_focused_downsampled_dedup.bam results/Nanopore/data1/alignments_CpG.combined.bed --cpg --ref resources/chr_chromosome_1.fasta --force-allow-implicit --combine-strands --log-filepath log_modkit.txt
+[src/pileup/subcommand.rs::417][2024-01-25 16:25:48][INFO] calculated chunk size: 6, interval size 100000, processing 600000 positions concurrently
+[src/pileup/subcommand.rs::483][2024-01-25 16:25:48][INFO] filtering to only CpG motifs
+[src/pileup/subcommand.rs::544][2024-01-25 16:25:48][DEBUG] combining + and - strand counts
+[src/motif_bed.rs::565][2024-01-25 16:25:54][DEBUG] motif CG,0 has 4750318 positions in tid 0, took 0.8750s (284.52162514285715 kb/msec)
+[src/command_utils.rs::100][2024-01-25 16:25:54][INFO] attempting to sample 10042 reads
+[src/reads_sampler/mod.rs::41][2024-01-25 16:25:54][DEBUG] found BAM index, sampling reads in 1000000 base pair chunks
+[src/reads_sampler/sampling_schedule.rs::123][2024-01-25 16:25:54][DEBUG] derived sampling schedule, sampling total 178 reads from 1 contig, 0 unmapped reads
+[src/reads_sampler/sampling_schedule.rs::136][2024-01-25 16:25:54][DEBUG] schedule: SQ: 0, 178 reads 
+[src/reads_sampler/mod.rs::116][2024-01-25 16:25:54][DEBUG] sampled 1 records
+[src/command_utils.rs::121][2024-01-25 16:25:54][DEBUG] estimated pass threshold 0.8691406 for primary sequence base C
+[src/pileup/subcommand.rs::631][2024-01-25 16:25:54][INFO] Using filter threshold 0.8691406 for C.
+[src/pileup/subcommand.rs::794][2024-01-25 16:26:47][INFO] Done, processed 945 rows. Processed ~135 reads and skipped zero reads.
+[src/logging.rs::52][2024-01-25 16:55:19][DEBUG] command line: modkit pileup resources/Nanopore/data1/alignment_focused_downsampled_dedup.bam results/Nanopore/data1/alignments_CpG.combined.bed --cpg --ref resources/chr_chromosome_1.fasta --force-allow-implicit --combine-strands --log-filepath log_modkit.txt
+[src/pileup/subcommand.rs::417][2024-01-25 16:55:19][INFO] calculated chunk size: 6, interval size 100000, processing 600000 positions concurrently
+[src/pileup/subcommand.rs::483][2024-01-25 16:55:19][INFO] filtering to only CpG motifs
+[src/pileup/subcommand.rs::544][2024-01-25 16:55:19][DEBUG] combining + and - strand counts
+[src/motif_bed.rs::565][2024-01-25 16:55:22][DEBUG] motif CG,0 has 4750318 positions in tid 0, took 0.9080s (274.1810814977974 kb/msec)
+[src/command_utils.rs::100][2024-01-25 16:55:22][INFO] attempting to sample 10042 reads
+[src/reads_sampler/mod.rs::41][2024-01-25 16:55:22][DEBUG] found BAM index, sampling reads in 1000000 base pair chunks
+[src/reads_sampler/sampling_schedule.rs::123][2024-01-25 16:55:22][DEBUG] derived sampling schedule, sampling total 10042 reads from 1 contig, 0 unmapped reads
+[src/reads_sampler/sampling_schedule.rs::136][2024-01-25 16:55:22][DEBUG] schedule: SQ: 0, 10042 reads 
+[src/reads_sampler/mod.rs::116][2024-01-25 16:55:26][DEBUG] sampled 738 records
+[src/command_utils.rs::121][2024-01-25 16:55:26][DEBUG] estimated pass threshold 0.6933594 for primary sequence base C
+[src/pileup/subcommand.rs::626][2024-01-25 16:55:26][WARN] Threshold of 0.6933594 for base C is low. Consider increasing the filter-percentile or specifying a higher threshold.
+[src/read_cache.rs::371][2024-01-25 16:55:30][DEBUG] read 0a2926eb-2f44-4a05-9fdf-a215bd85bc11, Skipped: record 0a2926eb-2f44-4a05-9fdf-a215bd85bc11 has no mod calls
+[src/read_cache.rs::371][2024-01-25 16:55:31][DEBUG] read 26e00e8e-b524-4ab6-a9c9-180d057d4351, Skipped: record 26e00e8e-b524-4ab6-a9c9-180d057d4351 has no mod calls
+[src/read_cache.rs::371][2024-01-25 16:55:31][DEBUG] read 41528106-6b4a-4939-8420-a14887df9f7b, Skipped: record 41528106-6b4a-4939-8420-a14887df9f7b has no mod calls
+[src/read_cache.rs::371][2024-01-25 16:55:41][DEBUG] read 0fea7578-dfac-4ff3-8105-cb22cf8aaf23, Skipped: record 0fea7578-dfac-4ff3-8105-cb22cf8aaf23 has no mod calls
+[src/read_cache.rs::371][2024-01-25 16:55:44][DEBUG] read ef7be74a-52d1-47de-a722-7d740c0dd87f, Skipped: record ef7be74a-52d1-47de-a722-7d740c0dd87f has no mod calls
+[src/read_cache.rs::371][2024-01-25 16:55:47][DEBUG] read e75838e5-3525-4ea9-ad4c-267fdb8ee0c9, Skipped: record e75838e5-3525-4ea9-ad4c-267fdb8ee0c9 has no mod calls
+[src/read_cache.rs::371][2024-01-25 16:55:52][DEBUG] read 3a843010-12d5-495a-ad96-556da5b79490, Skipped: record 3a843010-12d5-495a-ad96-556da5b79490 has no mod calls
+[src/read_cache.rs::371][2024-01-25 16:55:52][DEBUG] read c1c4e0f5-e2e9-4b09-9414-699d14cbf042, Skipped: record c1c4e0f5-e2e9-4b09-9414-699d14cbf042 has no mod calls
+[src/read_cache.rs::371][2024-01-25 16:55:55][DEBUG] read 6bce3e49-d6e2-4b92-a252-b9f8808a7b1f, Skipped: record 6bce3e49-d6e2-4b92-a252-b9f8808a7b1f has no mod calls
+[src/read_cache.rs::371][2024-01-25 16:55:55][DEBUG] read 96284764-c440-482b-b07e-d40304776473, Skipped: record 96284764-c440-482b-b07e-d40304776473 has no mod calls
+[src/read_cache.rs::371][2024-01-25 16:55:56][DEBUG] read 96284764-c440-482b-b07e-d40304776473, Skipped: record 96284764-c440-482b-b07e-d40304776473 has no mod calls
+[src/read_cache.rs::371][2024-01-25 16:55:58][DEBUG] read 34c7ccd3-a5ca-4710-8f2d-712f82d8a72f, Skipped: record 34c7ccd3-a5ca-4710-8f2d-712f82d8a72f has no mod calls
+[src/read_cache.rs::371][2024-01-25 16:55:59][DEBUG] read 6fea3ec3-9936-4988-9d45-867225a69623, Skipped: record 6fea3ec3-9936-4988-9d45-867225a69623 has no mod calls
+[src/read_cache.rs::371][2024-01-25 16:56:01][DEBUG] read f80eaa57-a99a-4133-b0bb-75ff019b1f50, Skipped: record f80eaa57-a99a-4133-b0bb-75ff019b1f50 has no mod calls
+[src/read_cache.rs::371][2024-01-25 16:56:02][DEBUG] read 066bc4f3-a42e-4f35-b8cf-a3863317f661, Skipped: record 066bc4f3-a42e-4f35-b8cf-a3863317f661 has no mod calls
+[src/read_cache.rs::371][2024-01-25 16:56:02][DEBUG] read 4132786d-bde6-4a8d-8784-c7c56040db63, Skipped: record 4132786d-bde6-4a8d-8784-c7c56040db63 has no mod calls
+[src/read_cache.rs::371][2024-01-25 16:56:03][DEBUG] read 9cf295ae-e90f-4d3f-9d65-d9faa3734290, Skipped: record 9cf295ae-e90f-4d3f-9d65-d9faa3734290 has no mod calls
+[src/read_cache.rs::371][2024-01-25 16:56:05][DEBUG] read 3f398a27-dcf5-40de-b140-8b6239ca5ae3, Skipped: record 3f398a27-dcf5-40de-b140-8b6239ca5ae3 has no mod calls
+[src/read_cache.rs::371][2024-01-25 16:56:05][DEBUG] read 148d661e-876a-4bdd-a8cb-d0b91c414a81, Skipped: record 148d661e-876a-4bdd-a8cb-d0b91c414a81 has no mod calls
+[src/read_cache.rs::371][2024-01-25 16:56:07][DEBUG] read 6f15b719-e92e-4d1f-a2b7-0ba447654898, Skipped: record 6f15b719-e92e-4d1f-a2b7-0ba447654898 has no mod calls
+[src/read_cache.rs::371][2024-01-25 16:56:12][DEBUG] read cc45c7f9-789b-4bbe-a637-45bf7d43930e, Skipped: record cc45c7f9-789b-4bbe-a637-45bf7d43930e has no mod calls
+[src/read_cache.rs::371][2024-01-25 16:56:16][DEBUG] read 52e76d81-d7c9-4514-a0a8-4ab6d2c8dc40, Skipped: record 52e76d81-d7c9-4514-a0a8-4ab6d2c8dc40 has no mod calls
+[src/read_cache.rs::371][2024-01-25 16:56:21][DEBUG] read c7c10d08-6663-44a2-b20b-fb7bb19e6abf, Skipped: record c7c10d08-6663-44a2-b20b-fb7bb19e6abf has no mod calls
+[src/read_cache.rs::371][2024-01-25 16:56:22][DEBUG] read 8a0154ed-12ae-4be1-aa26-757299ec5952, Skipped: record 8a0154ed-12ae-4be1-aa26-757299ec5952 has no mod calls
+[src/read_cache.rs::371][2024-01-25 16:56:25][DEBUG] read e39ebbbf-78bb-41f2-8854-38858b56baa0, Skipped: record e39ebbbf-78bb-41f2-8854-38858b56baa0 has no mod calls
+[src/read_cache.rs::371][2024-01-25 16:56:27][DEBUG] read ab883c92-c60e-4d57-a023-9158d7729ddb, Skipped: record ab883c92-c60e-4d57-a023-9158d7729ddb has no mod calls
+[src/read_cache.rs::371][2024-01-25 16:56:27][DEBUG] read f69d7f49-a2c8-41de-b416-f8ae24ef42d7, Skipped: record f69d7f49-a2c8-41de-b416-f8ae24ef42d7 has no mod calls
+[src/read_cache.rs::371][2024-01-25 16:56:27][DEBUG] read 81edc99b-8fd9-4f03-9a68-508caee8e708, Skipped: record 81edc99b-8fd9-4f03-9a68-508caee8e708 has no mod calls
+[src/read_cache.rs::371][2024-01-25 16:56:32][DEBUG] read f28cbacf-95d4-40a6-8889-1b6758e37290, Skipped: record f28cbacf-95d4-40a6-8889-1b6758e37290 has no mod calls
+[src/read_cache.rs::371][2024-01-25 16:56:32][DEBUG] read 8bf9ed81-eb93-4b5b-8af6-23d37b938ca3, Skipped: record 8bf9ed81-eb93-4b5b-8af6-23d37b938ca3 has no mod calls
+[src/read_cache.rs::371][2024-01-25 16:56:38][DEBUG] read 5c51bad6-97f2-40e5-a2cb-c9e566912d58, Skipped: record 5c51bad6-97f2-40e5-a2cb-c9e566912d58 has no mod calls
+[src/read_cache.rs::371][2024-01-25 16:56:39][DEBUG] read 18dae0cd-39fd-4d5e-8bbd-a1077bfcf309, Skipped: record 18dae0cd-39fd-4d5e-8bbd-a1077bfcf309 has no mod calls
+[src/read_cache.rs::371][2024-01-25 16:56:50][DEBUG] read a97e6c27-c1a2-493e-8742-f41084d21cd2, Skipped: record a97e6c27-c1a2-493e-8742-f41084d21cd2 has no mod calls
+[src/read_cache.rs::371][2024-01-25 16:56:50][DEBUG] read 3593ef22-01a0-4902-a5b2-f44f52c5997f, Skipped: record 3593ef22-01a0-4902-a5b2-f44f52c5997f has no mod calls
+[src/read_cache.rs::371][2024-01-25 16:56:53][DEBUG] read 3e51d94d-d12a-43aa-8317-cab2edf44851, Skipped: record 3e51d94d-d12a-43aa-8317-cab2edf44851 has no mod calls
+[src/read_cache.rs::371][2024-01-25 16:56:53][DEBUG] read 0a0c43f1-2e69-469b-89e5-815ca81d63b5, Skipped: record 0a0c43f1-2e69-469b-89e5-815ca81d63b5 has no mod calls
+[src/read_cache.rs::371][2024-01-25 16:56:53][DEBUG] read 2ecca965-057f-4b11-8c90-7b4b1d9c1266, Skipped: record 2ecca965-057f-4b11-8c90-7b4b1d9c1266 has no mod calls
+[src/read_cache.rs::371][2024-01-25 16:56:54][DEBUG] read cb44f8d7-5c69-42a0-a159-5d3513edee42, Skipped: record cb44f8d7-5c69-42a0-a159-5d3513edee42 has no mod calls
+[src/read_cache.rs::371][2024-01-25 16:56:55][DEBUG] read 3b64f52a-85f4-4c5f-8126-8300ccb60563, Skipped: record 3b64f52a-85f4-4c5f-8126-8300ccb60563 has no mod calls
+[src/read_cache.rs::371][2024-01-25 16:56:55][DEBUG] read 6545ee54-1a27-4628-9f02-afd39d10bdaf, Skipped: record 6545ee54-1a27-4628-9f02-afd39d10bdaf has no mod calls
+[src/read_cache.rs::371][2024-01-25 16:56:55][DEBUG] read ecd62305-48f8-45e8-9985-e697f45effc3, Skipped: record ecd62305-48f8-45e8-9985-e697f45effc3 has no mod calls
+[src/read_cache.rs::371][2024-01-25 16:56:56][DEBUG] read db9a790e-2c6c-4f1f-a269-a2d5a8c9a185, Skipped: record db9a790e-2c6c-4f1f-a269-a2d5a8c9a185 has no mod calls
+[src/read_cache.rs::371][2024-01-25 16:56:56][DEBUG] read 556655b1-20d4-4899-bc34-b1fe169be0c0, Skipped: record 556655b1-20d4-4899-bc34-b1fe169be0c0 has no mod calls
+[src/read_cache.rs::371][2024-01-25 16:57:00][DEBUG] read 89ecd302-9bf9-4c66-8207-7c0d6168e017, Skipped: record 89ecd302-9bf9-4c66-8207-7c0d6168e017 has no mod calls
+[src/read_cache.rs::371][2024-01-25 16:57:00][DEBUG] read 274dbee0-e48b-499e-9f47-40b1254cff39, Skipped: record 274dbee0-e48b-499e-9f47-40b1254cff39 has no mod calls
+[src/read_cache.rs::371][2024-01-25 16:57:01][DEBUG] read 7180fd9d-3ae9-438a-9ff4-ee3f5e14f48e, Skipped: record 7180fd9d-3ae9-438a-9ff4-ee3f5e14f48e has no mod calls
+[src/read_cache.rs::371][2024-01-25 16:57:01][DEBUG] read d295a484-3fb8-404b-ba8d-acb14f28d73b, Skipped: record d295a484-3fb8-404b-ba8d-acb14f28d73b has no mod calls
+[src/read_cache.rs::371][2024-01-25 16:57:02][DEBUG] read 0dea1905-fe06-4c85-9d07-272dc3e7224c, Skipped: record 0dea1905-fe06-4c85-9d07-272dc3e7224c has no mod calls
+[src/read_cache.rs::371][2024-01-25 16:57:02][DEBUG] read ac490fc6-da27-412f-be79-370b91cc2291, Skipped: record ac490fc6-da27-412f-be79-370b91cc2291 has no mod calls
+[src/read_cache.rs::371][2024-01-25 16:57:04][DEBUG] read fbfd94e8-0ae6-4d6d-b6f3-cb84b0babff9, Skipped: record fbfd94e8-0ae6-4d6d-b6f3-cb84b0babff9 has no mod calls
+[src/read_cache.rs::371][2024-01-25 16:57:05][DEBUG] read 5ecb7030-136e-4204-95e8-e66ca851ccb8, Skipped: record 5ecb7030-136e-4204-95e8-e66ca851ccb8 has no mod calls
+[src/read_cache.rs::371][2024-01-25 16:57:05][DEBUG] read 20b52dc5-8843-40e5-803f-28b393d084fa, Skipped: record 20b52dc5-8843-40e5-803f-28b393d084fa has no mod calls
+[src/read_cache.rs::371][2024-01-25 16:57:07][DEBUG] read de748224-4f50-44be-af9a-35f9e3f60a0e, Skipped: record de748224-4f50-44be-af9a-35f9e3f60a0e has no mod calls
+[src/read_cache.rs::371][2024-01-25 16:57:07][DEBUG] read ab018b20-9d92-4be6-bb65-fda6195ad22d, Skipped: record ab018b20-9d92-4be6-bb65-fda6195ad22d has no mod calls
+[src/read_cache.rs::371][2024-01-25 16:57:09][DEBUG] read 62feb239-dab2-45f5-bd68-6818065759f2, Skipped: record 62feb239-dab2-45f5-bd68-6818065759f2 has no mod calls
+[src/read_cache.rs::371][2024-01-25 16:57:15][DEBUG] read ac1c9ea6-efe0-4673-be1b-fee63fdd6f1e, Skipped: record ac1c9ea6-efe0-4673-be1b-fee63fdd6f1e has no mod calls
+[src/read_cache.rs::371][2024-01-25 16:57:16][DEBUG] read a4c1b4f9-3843-4e54-8d75-321f9a4f2694, Skipped: record a4c1b4f9-3843-4e54-8d75-321f9a4f2694 has no mod calls
+[src/read_cache.rs::371][2024-01-25 16:57:18][DEBUG] read 19957065-7687-4531-85eb-0a957c138ea9, Skipped: record 19957065-7687-4531-85eb-0a957c138ea9 has no mod calls
+[src/read_cache.rs::371][2024-01-25 16:57:19][DEBUG] read 303ab337-ac14-49e6-99db-116925ab4285, Skipped: record 303ab337-ac14-49e6-99db-116925ab4285 has no mod calls
+[src/read_cache.rs::371][2024-01-25 16:57:20][DEBUG] read 605c4d52-4694-4500-998a-780a854c8752, Skipped: record 605c4d52-4694-4500-998a-780a854c8752 has no mod calls
+[src/read_cache.rs::371][2024-01-25 16:57:21][DEBUG] read a256981c-64eb-4068-8914-6db5e0cdae39, Skipped: record a256981c-64eb-4068-8914-6db5e0cdae39 has no mod calls
+[src/pileup/subcommand.rs::794][2024-01-25 16:58:34][INFO] Done, processed 325934 rows. Processed ~84474 reads and skipped ~61 reads.
+[src/logging.rs::52][2024-02-09 01:24:27][DEBUG] command line: modkit pileup resources/Nanopore/data1/alignment_focused_downsampled_dedup.bam results/Nanopore/data1/alignments_CpG.combined.bed --cpg --ref resources/chr_chromosome_1.fasta --force-allow-implicit --combine-strands --log-filepath log_modkit.txt
+[src/pileup/subcommand.rs::417][2024-02-09 01:24:27][INFO] calculated chunk size: 6, interval size 100000, processing 600000 positions concurrently
+[src/pileup/subcommand.rs::483][2024-02-09 01:24:27][INFO] filtering to only CpG motifs
+[src/pileup/subcommand.rs::544][2024-02-09 01:24:27][DEBUG] combining + and - strand counts
+[src/motif_bed.rs::565][2024-02-09 01:24:33][DEBUG] motif CG,0 has 4750318 positions in tid 0, took 0.8870s (280.6724036076663 kb/msec)
+[src/command_utils.rs::100][2024-02-09 01:24:33][INFO] attempting to sample 10042 reads
+[src/reads_sampler/mod.rs::41][2024-02-09 01:24:33][DEBUG] found BAM index, sampling reads in 1000000 base pair chunks
+[src/reads_sampler/sampling_schedule.rs::123][2024-02-09 01:24:33][DEBUG] derived sampling schedule, sampling total 10042 reads from 1 contig, 0 unmapped reads
+[src/reads_sampler/sampling_schedule.rs::136][2024-02-09 01:24:33][DEBUG] schedule: SQ: 0, 10042 reads 
+[src/reads_sampler/mod.rs::116][2024-02-09 01:24:39][DEBUG] sampled 738 records
+[src/command_utils.rs::121][2024-02-09 01:24:40][DEBUG] estimated pass threshold 0.6933594 for primary sequence base C
+[src/pileup/subcommand.rs::626][2024-02-09 01:24:40][WARN] Threshold of 0.6933594 for base C is low. Consider increasing the filter-percentile or specifying a higher threshold.
+[src/read_cache.rs::371][2024-02-09 01:24:44][DEBUG] read 0a2926eb-2f44-4a05-9fdf-a215bd85bc11, Skipped: record 0a2926eb-2f44-4a05-9fdf-a215bd85bc11 has no mod calls
+[src/read_cache.rs::371][2024-02-09 01:24:46][DEBUG] read 26e00e8e-b524-4ab6-a9c9-180d057d4351, Skipped: record 26e00e8e-b524-4ab6-a9c9-180d057d4351 has no mod calls
+[src/read_cache.rs::371][2024-02-09 01:24:46][DEBUG] read 41528106-6b4a-4939-8420-a14887df9f7b, Skipped: record 41528106-6b4a-4939-8420-a14887df9f7b has no mod calls
+[src/read_cache.rs::371][2024-02-09 01:24:58][DEBUG] read 0fea7578-dfac-4ff3-8105-cb22cf8aaf23, Skipped: record 0fea7578-dfac-4ff3-8105-cb22cf8aaf23 has no mod calls
+[src/read_cache.rs::371][2024-02-09 01:25:02][DEBUG] read ef7be74a-52d1-47de-a722-7d740c0dd87f, Skipped: record ef7be74a-52d1-47de-a722-7d740c0dd87f has no mod calls
+[src/read_cache.rs::371][2024-02-09 01:25:06][DEBUG] read e75838e5-3525-4ea9-ad4c-267fdb8ee0c9, Skipped: record e75838e5-3525-4ea9-ad4c-267fdb8ee0c9 has no mod calls
+[src/read_cache.rs::371][2024-02-09 01:25:11][DEBUG] read 3a843010-12d5-495a-ad96-556da5b79490, Skipped: record 3a843010-12d5-495a-ad96-556da5b79490 has no mod calls
+[src/read_cache.rs::371][2024-02-09 01:25:13][DEBUG] read c1c4e0f5-e2e9-4b09-9414-699d14cbf042, Skipped: record c1c4e0f5-e2e9-4b09-9414-699d14cbf042 has no mod calls
+[src/read_cache.rs::371][2024-02-09 01:25:16][DEBUG] read 6bce3e49-d6e2-4b92-a252-b9f8808a7b1f, Skipped: record 6bce3e49-d6e2-4b92-a252-b9f8808a7b1f has no mod calls
+[src/read_cache.rs::371][2024-02-09 01:25:17][DEBUG] read 96284764-c440-482b-b07e-d40304776473, Skipped: record 96284764-c440-482b-b07e-d40304776473 has no mod calls
+[src/read_cache.rs::371][2024-02-09 01:25:17][DEBUG] read 96284764-c440-482b-b07e-d40304776473, Skipped: record 96284764-c440-482b-b07e-d40304776473 has no mod calls
+[src/read_cache.rs::371][2024-02-09 01:25:19][DEBUG] read 6fea3ec3-9936-4988-9d45-867225a69623, Skipped: record 6fea3ec3-9936-4988-9d45-867225a69623 has no mod calls
+[src/read_cache.rs::371][2024-02-09 01:25:23][DEBUG] read 34c7ccd3-a5ca-4710-8f2d-712f82d8a72f, Skipped: record 34c7ccd3-a5ca-4710-8f2d-712f82d8a72f has no mod calls
+[src/read_cache.rs::371][2024-02-09 01:25:25][DEBUG] read 9cf295ae-e90f-4d3f-9d65-d9faa3734290, Skipped: record 9cf295ae-e90f-4d3f-9d65-d9faa3734290 has no mod calls
+[src/read_cache.rs::371][2024-02-09 01:25:25][DEBUG] read f80eaa57-a99a-4133-b0bb-75ff019b1f50, Skipped: record f80eaa57-a99a-4133-b0bb-75ff019b1f50 has no mod calls
+[src/read_cache.rs::371][2024-02-09 01:25:28][DEBUG] read 066bc4f3-a42e-4f35-b8cf-a3863317f661, Skipped: record 066bc4f3-a42e-4f35-b8cf-a3863317f661 has no mod calls
+[src/read_cache.rs::371][2024-02-09 01:25:28][DEBUG] read 4132786d-bde6-4a8d-8784-c7c56040db63, Skipped: record 4132786d-bde6-4a8d-8784-c7c56040db63 has no mod calls
+[src/read_cache.rs::371][2024-02-09 01:25:31][DEBUG] read 3f398a27-dcf5-40de-b140-8b6239ca5ae3, Skipped: record 3f398a27-dcf5-40de-b140-8b6239ca5ae3 has no mod calls
+[src/read_cache.rs::371][2024-02-09 01:25:31][DEBUG] read 148d661e-876a-4bdd-a8cb-d0b91c414a81, Skipped: record 148d661e-876a-4bdd-a8cb-d0b91c414a81 has no mod calls
+[src/read_cache.rs::371][2024-02-09 01:25:33][DEBUG] read 6f15b719-e92e-4d1f-a2b7-0ba447654898, Skipped: record 6f15b719-e92e-4d1f-a2b7-0ba447654898 has no mod calls
+[src/read_cache.rs::371][2024-02-09 01:25:37][DEBUG] read cc45c7f9-789b-4bbe-a637-45bf7d43930e, Skipped: record cc45c7f9-789b-4bbe-a637-45bf7d43930e has no mod calls
+[src/read_cache.rs::371][2024-02-09 01:25:42][DEBUG] read 52e76d81-d7c9-4514-a0a8-4ab6d2c8dc40, Skipped: record 52e76d81-d7c9-4514-a0a8-4ab6d2c8dc40 has no mod calls
+[src/read_cache.rs::371][2024-02-09 01:25:50][DEBUG] read c7c10d08-6663-44a2-b20b-fb7bb19e6abf, Skipped: record c7c10d08-6663-44a2-b20b-fb7bb19e6abf has no mod calls
+[src/read_cache.rs::371][2024-02-09 01:25:53][DEBUG] read 8a0154ed-12ae-4be1-aa26-757299ec5952, Skipped: record 8a0154ed-12ae-4be1-aa26-757299ec5952 has no mod calls
+[src/read_cache.rs::371][2024-02-09 01:25:56][DEBUG] read e39ebbbf-78bb-41f2-8854-38858b56baa0, Skipped: record e39ebbbf-78bb-41f2-8854-38858b56baa0 has no mod calls
+[src/read_cache.rs::371][2024-02-09 01:25:59][DEBUG] read ab883c92-c60e-4d57-a023-9158d7729ddb, Skipped: record ab883c92-c60e-4d57-a023-9158d7729ddb has no mod calls
+[src/read_cache.rs::371][2024-02-09 01:25:59][DEBUG] read f69d7f49-a2c8-41de-b416-f8ae24ef42d7, Skipped: record f69d7f49-a2c8-41de-b416-f8ae24ef42d7 has no mod calls
+[src/read_cache.rs::371][2024-02-09 01:25:59][DEBUG] read 81edc99b-8fd9-4f03-9a68-508caee8e708, Skipped: record 81edc99b-8fd9-4f03-9a68-508caee8e708 has no mod calls
+[src/read_cache.rs::371][2024-02-09 01:26:04][DEBUG] read f28cbacf-95d4-40a6-8889-1b6758e37290, Skipped: record f28cbacf-95d4-40a6-8889-1b6758e37290 has no mod calls
+[src/read_cache.rs::371][2024-02-09 01:26:04][DEBUG] read 8bf9ed81-eb93-4b5b-8af6-23d37b938ca3, Skipped: record 8bf9ed81-eb93-4b5b-8af6-23d37b938ca3 has no mod calls
+[src/read_cache.rs::371][2024-02-09 01:26:13][DEBUG] read 5c51bad6-97f2-40e5-a2cb-c9e566912d58, Skipped: record 5c51bad6-97f2-40e5-a2cb-c9e566912d58 has no mod calls
+[src/read_cache.rs::371][2024-02-09 01:26:14][DEBUG] read 18dae0cd-39fd-4d5e-8bbd-a1077bfcf309, Skipped: record 18dae0cd-39fd-4d5e-8bbd-a1077bfcf309 has no mod calls
+[src/read_cache.rs::371][2024-02-09 01:26:30][DEBUG] read a97e6c27-c1a2-493e-8742-f41084d21cd2, Skipped: record a97e6c27-c1a2-493e-8742-f41084d21cd2 has no mod calls
+[src/read_cache.rs::371][2024-02-09 01:26:30][DEBUG] read 3593ef22-01a0-4902-a5b2-f44f52c5997f, Skipped: record 3593ef22-01a0-4902-a5b2-f44f52c5997f has no mod calls
+[src/read_cache.rs::371][2024-02-09 01:26:34][DEBUG] read 3e51d94d-d12a-43aa-8317-cab2edf44851, Skipped: record 3e51d94d-d12a-43aa-8317-cab2edf44851 has no mod calls
+[src/read_cache.rs::371][2024-02-09 01:26:34][DEBUG] read 0a0c43f1-2e69-469b-89e5-815ca81d63b5, Skipped: record 0a0c43f1-2e69-469b-89e5-815ca81d63b5 has no mod calls
+[src/read_cache.rs::371][2024-02-09 01:26:34][DEBUG] read 2ecca965-057f-4b11-8c90-7b4b1d9c1266, Skipped: record 2ecca965-057f-4b11-8c90-7b4b1d9c1266 has no mod calls
+[src/read_cache.rs::371][2024-02-09 01:26:35][DEBUG] read cb44f8d7-5c69-42a0-a159-5d3513edee42, Skipped: record cb44f8d7-5c69-42a0-a159-5d3513edee42 has no mod calls
+[src/read_cache.rs::371][2024-02-09 01:26:35][DEBUG] read 3b64f52a-85f4-4c5f-8126-8300ccb60563, Skipped: record 3b64f52a-85f4-4c5f-8126-8300ccb60563 has no mod calls
+[src/read_cache.rs::371][2024-02-09 01:26:35][DEBUG] read 6545ee54-1a27-4628-9f02-afd39d10bdaf, Skipped: record 6545ee54-1a27-4628-9f02-afd39d10bdaf has no mod calls
+[src/read_cache.rs::371][2024-02-09 01:26:37][DEBUG] read ecd62305-48f8-45e8-9985-e697f45effc3, Skipped: record ecd62305-48f8-45e8-9985-e697f45effc3 has no mod calls
+[src/read_cache.rs::371][2024-02-09 01:26:38][DEBUG] read 556655b1-20d4-4899-bc34-b1fe169be0c0, Skipped: record 556655b1-20d4-4899-bc34-b1fe169be0c0 has no mod calls
+[src/read_cache.rs::371][2024-02-09 01:26:38][DEBUG] read db9a790e-2c6c-4f1f-a269-a2d5a8c9a185, Skipped: record db9a790e-2c6c-4f1f-a269-a2d5a8c9a185 has no mod calls
+[src/read_cache.rs::371][2024-02-09 01:26:43][DEBUG] read ac490fc6-da27-412f-be79-370b91cc2291, Skipped: record ac490fc6-da27-412f-be79-370b91cc2291 has no mod calls
+[src/read_cache.rs::371][2024-02-09 01:26:43][DEBUG] read 89ecd302-9bf9-4c66-8207-7c0d6168e017, Skipped: record 89ecd302-9bf9-4c66-8207-7c0d6168e017 has no mod calls
+[src/read_cache.rs::371][2024-02-09 01:26:44][DEBUG] read d295a484-3fb8-404b-ba8d-acb14f28d73b, Skipped: record d295a484-3fb8-404b-ba8d-acb14f28d73b has no mod calls
+[src/read_cache.rs::371][2024-02-09 01:26:45][DEBUG] read 0dea1905-fe06-4c85-9d07-272dc3e7224c, Skipped: record 0dea1905-fe06-4c85-9d07-272dc3e7224c has no mod calls
+[src/read_cache.rs::371][2024-02-09 01:26:45][DEBUG] read 274dbee0-e48b-499e-9f47-40b1254cff39, Skipped: record 274dbee0-e48b-499e-9f47-40b1254cff39 has no mod calls
+[src/read_cache.rs::371][2024-02-09 01:26:45][DEBUG] read 7180fd9d-3ae9-438a-9ff4-ee3f5e14f48e, Skipped: record 7180fd9d-3ae9-438a-9ff4-ee3f5e14f48e has no mod calls
+[src/read_cache.rs::371][2024-02-09 01:26:47][DEBUG] read 20b52dc5-8843-40e5-803f-28b393d084fa, Skipped: record 20b52dc5-8843-40e5-803f-28b393d084fa has no mod calls
+[src/read_cache.rs::371][2024-02-09 01:26:48][DEBUG] read fbfd94e8-0ae6-4d6d-b6f3-cb84b0babff9, Skipped: record fbfd94e8-0ae6-4d6d-b6f3-cb84b0babff9 has no mod calls
+[src/read_cache.rs::371][2024-02-09 01:26:49][DEBUG] read 5ecb7030-136e-4204-95e8-e66ca851ccb8, Skipped: record 5ecb7030-136e-4204-95e8-e66ca851ccb8 has no mod calls
+[src/read_cache.rs::371][2024-02-09 01:26:54][DEBUG] read 62feb239-dab2-45f5-bd68-6818065759f2, Skipped: record 62feb239-dab2-45f5-bd68-6818065759f2 has no mod calls
+[src/read_cache.rs::371][2024-02-09 01:26:54][DEBUG] read de748224-4f50-44be-af9a-35f9e3f60a0e, Skipped: record de748224-4f50-44be-af9a-35f9e3f60a0e has no mod calls
+[src/read_cache.rs::371][2024-02-09 01:26:54][DEBUG] read ab018b20-9d92-4be6-bb65-fda6195ad22d, Skipped: record ab018b20-9d92-4be6-bb65-fda6195ad22d has no mod calls
+[src/read_cache.rs::371][2024-02-09 01:27:02][DEBUG] read ac1c9ea6-efe0-4673-be1b-fee63fdd6f1e, Skipped: record ac1c9ea6-efe0-4673-be1b-fee63fdd6f1e has no mod calls
+[src/read_cache.rs::371][2024-02-09 01:27:03][DEBUG] read a4c1b4f9-3843-4e54-8d75-321f9a4f2694, Skipped: record a4c1b4f9-3843-4e54-8d75-321f9a4f2694 has no mod calls
+[src/read_cache.rs::371][2024-02-09 01:27:05][DEBUG] read 19957065-7687-4531-85eb-0a957c138ea9, Skipped: record 19957065-7687-4531-85eb-0a957c138ea9 has no mod calls
+[src/read_cache.rs::371][2024-02-09 01:27:06][DEBUG] read 303ab337-ac14-49e6-99db-116925ab4285, Skipped: record 303ab337-ac14-49e6-99db-116925ab4285 has no mod calls
+[src/read_cache.rs::371][2024-02-09 01:27:07][DEBUG] read 605c4d52-4694-4500-998a-780a854c8752, Skipped: record 605c4d52-4694-4500-998a-780a854c8752 has no mod calls
+[src/read_cache.rs::371][2024-02-09 01:27:11][DEBUG] read a256981c-64eb-4068-8914-6db5e0cdae39, Skipped: record a256981c-64eb-4068-8914-6db5e0cdae39 has no mod calls
+[src/pileup/subcommand.rs::794][2024-02-09 01:29:05][INFO] Done, processed 325934 rows. Processed ~84474 reads and skipped ~61 reads.
+[src/logging.rs::52][2024-02-28 23:32:26][DEBUG] command line: modkit pileup resources/Nanopore/data1/alignment_focused_downsampled_dedup.bam results/Nanopore/data1/alignments_CpG.combined.bed --cpg --ref resources/chr_chromosome_1.fasta --force-allow-implicit --combine-strands --log-filepath log_modkit.txt
+[src/pileup/subcommand.rs::417][2024-02-28 23:32:29][INFO] calculated chunk size: 6, interval size 100000, processing 600000 positions concurrently
+[src/pileup/subcommand.rs::483][2024-02-28 23:32:29][INFO] filtering to only CpG motifs
+[src/pileup/subcommand.rs::544][2024-02-28 23:32:29][DEBUG] combining + and - strand counts
+[src/motif_bed.rs::565][2024-02-28 23:32:57][DEBUG] motif CG,0 has 4750318 positions in tid 0, took 0.8400s (296.37669285714287 kb/msec)
+[src/command_utils.rs::100][2024-02-28 23:32:57][INFO] attempting to sample 10042 reads
+[src/reads_sampler/mod.rs::41][2024-02-28 23:32:59][DEBUG] found BAM index, sampling reads in 1000000 base pair chunks
+[src/reads_sampler/sampling_schedule.rs::123][2024-02-28 23:32:59][DEBUG] derived sampling schedule, sampling total 10042 reads from 1 contig, 0 unmapped reads
+[src/reads_sampler/sampling_schedule.rs::136][2024-02-28 23:32:59][DEBUG] schedule: SQ: 0, 10042 reads 
+[src/reads_sampler/mod.rs::116][2024-02-28 23:36:41][DEBUG] sampled 738 records
+[src/command_utils.rs::121][2024-02-28 23:36:41][DEBUG] estimated pass threshold 0.6933594 for primary sequence base C
+[src/pileup/subcommand.rs::626][2024-02-28 23:36:41][WARN] Threshold of 0.6933594 for base C is low. Consider increasing the filter-percentile or specifying a higher threshold.
+[src/read_cache.rs::371][2024-02-28 23:37:02][DEBUG] read 0a2926eb-2f44-4a05-9fdf-a215bd85bc11, Skipped: record 0a2926eb-2f44-4a05-9fdf-a215bd85bc11 has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:37:03][DEBUG] read 26e00e8e-b524-4ab6-a9c9-180d057d4351, Skipped: record 26e00e8e-b524-4ab6-a9c9-180d057d4351 has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:37:03][DEBUG] read 41528106-6b4a-4939-8420-a14887df9f7b, Skipped: record 41528106-6b4a-4939-8420-a14887df9f7b has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:37:44][DEBUG] read 0fea7578-dfac-4ff3-8105-cb22cf8aaf23, Skipped: record 0fea7578-dfac-4ff3-8105-cb22cf8aaf23 has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:37:54][DEBUG] read ef7be74a-52d1-47de-a722-7d740c0dd87f, Skipped: record ef7be74a-52d1-47de-a722-7d740c0dd87f has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:38:00][DEBUG] read e75838e5-3525-4ea9-ad4c-267fdb8ee0c9, Skipped: record e75838e5-3525-4ea9-ad4c-267fdb8ee0c9 has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:38:17][DEBUG] read c1c4e0f5-e2e9-4b09-9414-699d14cbf042, Skipped: record c1c4e0f5-e2e9-4b09-9414-699d14cbf042 has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:38:17][DEBUG] read 3a843010-12d5-495a-ad96-556da5b79490, Skipped: record 3a843010-12d5-495a-ad96-556da5b79490 has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:38:27][DEBUG] read 6bce3e49-d6e2-4b92-a252-b9f8808a7b1f, Skipped: record 6bce3e49-d6e2-4b92-a252-b9f8808a7b1f has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:38:32][DEBUG] read 96284764-c440-482b-b07e-d40304776473, Skipped: record 96284764-c440-482b-b07e-d40304776473 has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:38:32][DEBUG] read 96284764-c440-482b-b07e-d40304776473, Skipped: record 96284764-c440-482b-b07e-d40304776473 has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:38:41][DEBUG] read 6fea3ec3-9936-4988-9d45-867225a69623, Skipped: record 6fea3ec3-9936-4988-9d45-867225a69623 has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:38:42][DEBUG] read 34c7ccd3-a5ca-4710-8f2d-712f82d8a72f, Skipped: record 34c7ccd3-a5ca-4710-8f2d-712f82d8a72f has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:38:46][DEBUG] read f80eaa57-a99a-4133-b0bb-75ff019b1f50, Skipped: record f80eaa57-a99a-4133-b0bb-75ff019b1f50 has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:38:51][DEBUG] read 066bc4f3-a42e-4f35-b8cf-a3863317f661, Skipped: record 066bc4f3-a42e-4f35-b8cf-a3863317f661 has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:38:51][DEBUG] read 9cf295ae-e90f-4d3f-9d65-d9faa3734290, Skipped: record 9cf295ae-e90f-4d3f-9d65-d9faa3734290 has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:38:51][DEBUG] read 4132786d-bde6-4a8d-8784-c7c56040db63, Skipped: record 4132786d-bde6-4a8d-8784-c7c56040db63 has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:38:56][DEBUG] read 3f398a27-dcf5-40de-b140-8b6239ca5ae3, Skipped: record 3f398a27-dcf5-40de-b140-8b6239ca5ae3 has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:38:59][DEBUG] read 6f15b719-e92e-4d1f-a2b7-0ba447654898, Skipped: record 6f15b719-e92e-4d1f-a2b7-0ba447654898 has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:39:00][DEBUG] read 148d661e-876a-4bdd-a8cb-d0b91c414a81, Skipped: record 148d661e-876a-4bdd-a8cb-d0b91c414a81 has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:39:19][DEBUG] read cc45c7f9-789b-4bbe-a637-45bf7d43930e, Skipped: record cc45c7f9-789b-4bbe-a637-45bf7d43930e has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:39:25][DEBUG] read 52e76d81-d7c9-4514-a0a8-4ab6d2c8dc40, Skipped: record 52e76d81-d7c9-4514-a0a8-4ab6d2c8dc40 has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:39:55][DEBUG] read c7c10d08-6663-44a2-b20b-fb7bb19e6abf, Skipped: record c7c10d08-6663-44a2-b20b-fb7bb19e6abf has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:40:09][DEBUG] read 8a0154ed-12ae-4be1-aa26-757299ec5952, Skipped: record 8a0154ed-12ae-4be1-aa26-757299ec5952 has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:40:14][DEBUG] read e39ebbbf-78bb-41f2-8854-38858b56baa0, Skipped: record e39ebbbf-78bb-41f2-8854-38858b56baa0 has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:40:24][DEBUG] read ab883c92-c60e-4d57-a023-9158d7729ddb, Skipped: record ab883c92-c60e-4d57-a023-9158d7729ddb has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:40:24][DEBUG] read f69d7f49-a2c8-41de-b416-f8ae24ef42d7, Skipped: record f69d7f49-a2c8-41de-b416-f8ae24ef42d7 has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:40:24][DEBUG] read 81edc99b-8fd9-4f03-9a68-508caee8e708, Skipped: record 81edc99b-8fd9-4f03-9a68-508caee8e708 has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:40:35][DEBUG] read f28cbacf-95d4-40a6-8889-1b6758e37290, Skipped: record f28cbacf-95d4-40a6-8889-1b6758e37290 has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:40:36][DEBUG] read 8bf9ed81-eb93-4b5b-8af6-23d37b938ca3, Skipped: record 8bf9ed81-eb93-4b5b-8af6-23d37b938ca3 has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:41:07][DEBUG] read 5c51bad6-97f2-40e5-a2cb-c9e566912d58, Skipped: record 5c51bad6-97f2-40e5-a2cb-c9e566912d58 has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:41:15][DEBUG] read 18dae0cd-39fd-4d5e-8bbd-a1077bfcf309, Skipped: record 18dae0cd-39fd-4d5e-8bbd-a1077bfcf309 has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:42:03][DEBUG] read 3593ef22-01a0-4902-a5b2-f44f52c5997f, Skipped: record 3593ef22-01a0-4902-a5b2-f44f52c5997f has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:42:07][DEBUG] read a97e6c27-c1a2-493e-8742-f41084d21cd2, Skipped: record a97e6c27-c1a2-493e-8742-f41084d21cd2 has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:42:20][DEBUG] read 3e51d94d-d12a-43aa-8317-cab2edf44851, Skipped: record 3e51d94d-d12a-43aa-8317-cab2edf44851 has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:42:20][DEBUG] read 0a0c43f1-2e69-469b-89e5-815ca81d63b5, Skipped: record 0a0c43f1-2e69-469b-89e5-815ca81d63b5 has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:42:24][DEBUG] read 2ecca965-057f-4b11-8c90-7b4b1d9c1266, Skipped: record 2ecca965-057f-4b11-8c90-7b4b1d9c1266 has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:42:29][DEBUG] read cb44f8d7-5c69-42a0-a159-5d3513edee42, Skipped: record cb44f8d7-5c69-42a0-a159-5d3513edee42 has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:42:29][DEBUG] read 3b64f52a-85f4-4c5f-8126-8300ccb60563, Skipped: record 3b64f52a-85f4-4c5f-8126-8300ccb60563 has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:42:29][DEBUG] read 6545ee54-1a27-4628-9f02-afd39d10bdaf, Skipped: record 6545ee54-1a27-4628-9f02-afd39d10bdaf has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:42:29][DEBUG] read ecd62305-48f8-45e8-9985-e697f45effc3, Skipped: record ecd62305-48f8-45e8-9985-e697f45effc3 has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:42:39][DEBUG] read 556655b1-20d4-4899-bc34-b1fe169be0c0, Skipped: record 556655b1-20d4-4899-bc34-b1fe169be0c0 has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:42:48][DEBUG] read db9a790e-2c6c-4f1f-a269-a2d5a8c9a185, Skipped: record db9a790e-2c6c-4f1f-a269-a2d5a8c9a185 has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:42:53][DEBUG] read ac490fc6-da27-412f-be79-370b91cc2291, Skipped: record ac490fc6-da27-412f-be79-370b91cc2291 has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:42:54][DEBUG] read d295a484-3fb8-404b-ba8d-acb14f28d73b, Skipped: record d295a484-3fb8-404b-ba8d-acb14f28d73b has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:42:58][DEBUG] read 89ecd302-9bf9-4c66-8207-7c0d6168e017, Skipped: record 89ecd302-9bf9-4c66-8207-7c0d6168e017 has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:42:59][DEBUG] read 0dea1905-fe06-4c85-9d07-272dc3e7224c, Skipped: record 0dea1905-fe06-4c85-9d07-272dc3e7224c has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:42:59][DEBUG] read 274dbee0-e48b-499e-9f47-40b1254cff39, Skipped: record 274dbee0-e48b-499e-9f47-40b1254cff39 has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:42:59][DEBUG] read 7180fd9d-3ae9-438a-9ff4-ee3f5e14f48e, Skipped: record 7180fd9d-3ae9-438a-9ff4-ee3f5e14f48e has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:43:07][DEBUG] read 20b52dc5-8843-40e5-803f-28b393d084fa, Skipped: record 20b52dc5-8843-40e5-803f-28b393d084fa has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:43:08][DEBUG] read fbfd94e8-0ae6-4d6d-b6f3-cb84b0babff9, Skipped: record fbfd94e8-0ae6-4d6d-b6f3-cb84b0babff9 has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:43:12][DEBUG] read 5ecb7030-136e-4204-95e8-e66ca851ccb8, Skipped: record 5ecb7030-136e-4204-95e8-e66ca851ccb8 has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:43:18][DEBUG] read 62feb239-dab2-45f5-bd68-6818065759f2, Skipped: record 62feb239-dab2-45f5-bd68-6818065759f2 has no mod calls
+                                                                                                              [src/read_cache.rs::371][2024-02-28 23:43:34][DEBUG] read de748224-4f50-44be-af9a-35f9e3f60a0e, Skipped: record de748224-4f50-44be-af9a-35f9e3f60a0e has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:43:34][DEBUG] read ab018b20-9d92-4be6-bb65-fda6195ad22d, Skipped: record ab018b20-9d92-4be6-bb65-fda6195ad22d has no mod calls
+                                            [src/read_cache.rs::371][2024-02-28 23:43:56][DEBUG] read ac1c9ea6-efe0-4673-be1b-fee63fdd6f1e, Skipped: record ac1c9ea6-efe0-4673-be1b-fee63fdd6f1e has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:44:00][DEBUG] read a4c1b4f9-3843-4e54-8d75-321f9a4f2694, Skipped: record a4c1b4f9-3843-4e54-8d75-321f9a4f2694 has no mod calls
+                                                                                                                                                                      [src/read_cache.rs::371][2024-02-28 23:44:10][DEBUG] read 303ab337-ac14-49e6-99db-116925ab4285, Skipped: record 303ab337-ac14-49e6-99db-116925ab4285 has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:44:14][DEBUG] read 19957065-7687-4531-85eb-0a957c138ea9, Skipped: record 19957065-7687-4531-85eb-0a957c138ea9 has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:44:15][DEBUG] read 605c4d52-4694-4500-998a-780a854c8752, Skipped: record 605c4d52-4694-4500-998a-780a854c8752 has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:44:35][DEBUG] read ef7be74a-52d1-47de-a722-7d740c0dd87f, Skipped: record ef7be74a-52d1-47de-a722-7d740c0dd87f has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:44:40][DEBUG] read e75838e5-3525-4ea9-ad4c-267fdb8ee0c9, Skipped: record e75838e5-3525-4ea9-ad4c-267fdb8ee0c9 has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:44:49][DEBUG] read c1c4e0f5-e2e9-4b09-9414-699d14cbf042, Skipped: record c1c4e0f5-e2e9-4b09-9414-699d14cbf042 has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:44:58][DEBUG] read 3a843010-12d5-495a-ad96-556da5b79490, Skipped: record 3a843010-12d5-495a-ad96-556da5b79490 has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:45:04][DEBUG] read 6bce3e49-d6e2-4b92-a252-b9f8808a7b1f, Skipped: record 6bce3e49-d6e2-4b92-a252-b9f8808a7b1f has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:45:08][DEBUG] read 96284764-c440-482b-b07e-d40304776473, Skipped: record 96284764-c440-482b-b07e-d40304776473 has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:45:09][DEBUG] read 96284764-c440-482b-b07e-d40304776473, Skipped: record 96284764-c440-482b-b07e-d40304776473 has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:45:14][DEBUG] read 34c7ccd3-a5ca-4710-8f2d-712f82d8a72f, Skipped: record 34c7ccd3-a5ca-4710-8f2d-712f82d8a72f has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:45:17][DEBUG] read 6fea3ec3-9936-4988-9d45-867225a69623, Skipped: record 6fea3ec3-9936-4988-9d45-867225a69623 has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:45:22][DEBUG] read 9cf295ae-e90f-4d3f-9d65-d9faa3734290, Skipped: record 9cf295ae-e90f-4d3f-9d65-d9faa3734290 has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:45:22][DEBUG] read f80eaa57-a99a-4133-b0bb-75ff019b1f50, Skipped: record f80eaa57-a99a-4133-b0bb-75ff019b1f50 has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:45:27][DEBUG] read 066bc4f3-a42e-4f35-b8cf-a3863317f661, Skipped: record 066bc4f3-a42e-4f35-b8cf-a3863317f661 has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:45:27][DEBUG] read 4132786d-bde6-4a8d-8784-c7c56040db63, Skipped: record 4132786d-bde6-4a8d-8784-c7c56040db63 has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:45:31][DEBUG] read 3f398a27-dcf5-40de-b140-8b6239ca5ae3, Skipped: record 3f398a27-dcf5-40de-b140-8b6239ca5ae3 has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:45:36][DEBUG] read 148d661e-876a-4bdd-a8cb-d0b91c414a81, Skipped: record 148d661e-876a-4bdd-a8cb-d0b91c414a81 has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:45:45][DEBUG] read 6f15b719-e92e-4d1f-a2b7-0ba447654898, Skipped: record 6f15b719-e92e-4d1f-a2b7-0ba447654898 has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:45:58][DEBUG] read cc45c7f9-789b-4bbe-a637-45bf7d43930e, Skipped: record cc45c7f9-789b-4bbe-a637-45bf7d43930e has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:46:03][DEBUG] read 52e76d81-d7c9-4514-a0a8-4ab6d2c8dc40, Skipped: record 52e76d81-d7c9-4514-a0a8-4ab6d2c8dc40 has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:46:24][DEBUG] read c7c10d08-6663-44a2-b20b-fb7bb19e6abf, Skipped: record c7c10d08-6663-44a2-b20b-fb7bb19e6abf has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:46:39][DEBUG] read 8a0154ed-12ae-4be1-aa26-757299ec5952, Skipped: record 8a0154ed-12ae-4be1-aa26-757299ec5952 has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:46:39][DEBUG] read e39ebbbf-78bb-41f2-8854-38858b56baa0, Skipped: record e39ebbbf-78bb-41f2-8854-38858b56baa0 has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:46:45][DEBUG] read f69d7f49-a2c8-41de-b416-f8ae24ef42d7, Skipped: record f69d7f49-a2c8-41de-b416-f8ae24ef42d7 has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:46:45][DEBUG] read 81edc99b-8fd9-4f03-9a68-508caee8e708, Skipped: record 81edc99b-8fd9-4f03-9a68-508caee8e708 has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:46:50][DEBUG] read ab883c92-c60e-4d57-a023-9158d7729ddb, Skipped: record ab883c92-c60e-4d57-a023-9158d7729ddb has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:47:00][DEBUG] read f28cbacf-95d4-40a6-8889-1b6758e37290, Skipped: record f28cbacf-95d4-40a6-8889-1b6758e37290 has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:47:00][DEBUG] read 8bf9ed81-eb93-4b5b-8af6-23d37b938ca3, Skipped: record 8bf9ed81-eb93-4b5b-8af6-23d37b938ca3 has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:50:17][DEBUG] read 5c51bad6-97f2-40e5-a2cb-c9e566912d58, Skipped: record 5c51bad6-97f2-40e5-a2cb-c9e566912d58 has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:50:22][DEBUG] read 18dae0cd-39fd-4d5e-8bbd-a1077bfcf309, Skipped: record 18dae0cd-39fd-4d5e-8bbd-a1077bfcf309 has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:51:07][DEBUG] read a97e6c27-c1a2-493e-8742-f41084d21cd2, Skipped: record a97e6c27-c1a2-493e-8742-f41084d21cd2 has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:51:08][DEBUG] read 3593ef22-01a0-4902-a5b2-f44f52c5997f, Skipped: record 3593ef22-01a0-4902-a5b2-f44f52c5997f has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:51:18][DEBUG] read 3e51d94d-d12a-43aa-8317-cab2edf44851, Skipped: record 3e51d94d-d12a-43aa-8317-cab2edf44851 has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:51:18][DEBUG] read 0a0c43f1-2e69-469b-89e5-815ca81d63b5, Skipped: record 0a0c43f1-2e69-469b-89e5-815ca81d63b5 has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:51:18][DEBUG] read 2ecca965-057f-4b11-8c90-7b4b1d9c1266, Skipped: record 2ecca965-057f-4b11-8c90-7b4b1d9c1266 has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:51:22][DEBUG] read cb44f8d7-5c69-42a0-a159-5d3513edee42, Skipped: record cb44f8d7-5c69-42a0-a159-5d3513edee42 has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:51:23][DEBUG] read 3b64f52a-85f4-4c5f-8126-8300ccb60563, Skipped: record 3b64f52a-85f4-4c5f-8126-8300ccb60563 has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:51:23][DEBUG] read 6545ee54-1a27-4628-9f02-afd39d10bdaf, Skipped: record 6545ee54-1a27-4628-9f02-afd39d10bdaf has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:51:27][DEBUG] read ecd62305-48f8-45e8-9985-e697f45effc3, Skipped: record ecd62305-48f8-45e8-9985-e697f45effc3 has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:51:33][DEBUG] read db9a790e-2c6c-4f1f-a269-a2d5a8c9a185, Skipped: record db9a790e-2c6c-4f1f-a269-a2d5a8c9a185 has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:51:38][DEBUG] read 556655b1-20d4-4899-bc34-b1fe169be0c0, Skipped: record 556655b1-20d4-4899-bc34-b1fe169be0c0 has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:51:47][DEBUG] read 89ecd302-9bf9-4c66-8207-7c0d6168e017, Skipped: record 89ecd302-9bf9-4c66-8207-7c0d6168e017 has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:51:47][DEBUG] read 274dbee0-e48b-499e-9f47-40b1254cff39, Skipped: record 274dbee0-e48b-499e-9f47-40b1254cff39 has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:51:47][DEBUG] read 7180fd9d-3ae9-438a-9ff4-ee3f5e14f48e, Skipped: record 7180fd9d-3ae9-438a-9ff4-ee3f5e14f48e has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:51:48][DEBUG] read d295a484-3fb8-404b-ba8d-acb14f28d73b, Skipped: record d295a484-3fb8-404b-ba8d-acb14f28d73b has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:51:52][DEBUG] read 0dea1905-fe06-4c85-9d07-272dc3e7224c, Skipped: record 0dea1905-fe06-4c85-9d07-272dc3e7224c has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:51:52][DEBUG] read ac490fc6-da27-412f-be79-370b91cc2291, Skipped: record ac490fc6-da27-412f-be79-370b91cc2291 has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:52:03][DEBUG] read 5ecb7030-136e-4204-95e8-e66ca851ccb8, Skipped: record 5ecb7030-136e-4204-95e8-e66ca851ccb8 has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:52:04][DEBUG] read fbfd94e8-0ae6-4d6d-b6f3-cb84b0babff9, Skipped: record fbfd94e8-0ae6-4d6d-b6f3-cb84b0babff9 has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:52:08][DEBUG] read 20b52dc5-8843-40e5-803f-28b393d084fa, Skipped: record 20b52dc5-8843-40e5-803f-28b393d084fa has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:52:13][DEBUG] read 62feb239-dab2-45f5-bd68-6818065759f2, Skipped: record 62feb239-dab2-45f5-bd68-6818065759f2 has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:52:22][DEBUG] read de748224-4f50-44be-af9a-35f9e3f60a0e, Skipped: record de748224-4f50-44be-af9a-35f9e3f60a0e has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:52:22][DEBUG] read ab018b20-9d92-4be6-bb65-fda6195ad22d, Skipped: record ab018b20-9d92-4be6-bb65-fda6195ad22d has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:52:44][DEBUG] read ac1c9ea6-efe0-4673-be1b-fee63fdd6f1e, Skipped: record ac1c9ea6-efe0-4673-be1b-fee63fdd6f1e has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:52:48][DEBUG] read a4c1b4f9-3843-4e54-8d75-321f9a4f2694, Skipped: record a4c1b4f9-3843-4e54-8d75-321f9a4f2694 has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:52:53][DEBUG] read 303ab337-ac14-49e6-99db-116925ab4285, Skipped: record 303ab337-ac14-49e6-99db-116925ab4285 has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:52:57][DEBUG] read 19957065-7687-4531-85eb-0a957c138ea9, Skipped: record 19957065-7687-4531-85eb-0a957c138ea9 has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:52:58][DEBUG] read 605c4d52-4694-4500-998a-780a854c8752, Skipped: record 605c4d52-4694-4500-998a-780a854c8752 has no mod calls
+[src/read_cache.rs::371][2024-02-28 23:53:07][DEBUG] read a256981c-64eb-4068-8914-6db5e0cdae39, Skipped: record a256981c-64eb-4068-8914-6db5e0cdae39 has no mod calls
+[src/pileup/subcommand.rs::794][2024-02-28 23:58:04][INFO] Done, processed 325934 rows. Processed ~84474 reads and skipped ~61 reads.

@@ -26,6 +26,10 @@ rule pb_CpG_tools:
         pb_tools_dir=directory("../pb-CpG-tools-v2.3.1-x86_64-unknown-linux-gnu"),
         alignment="resources/PacBio/{protocol}/alignment_focused_downsampled_dedup_renamed.bam",
         alignment_index="resources/PacBio/{protocol}/alignment_focused_downsampled_dedup_renamed.bam.bai",
+         chromosome=expand(
+            "resources/chromosome_{chromosome}.fasta",
+            chromosome=chromosome_conf["chromosome"],
+        ),
     output:
         "results/PacBio/{protocol}/alignments_CpG.combined.bed",
     log:
@@ -39,16 +43,21 @@ rule pb_CpG_tools:
         """
         {params.base_dir}pb-CpG-tools-v2.3.1-x86_64-unknown-linux-gnu/bin/aligned_bam_to_cpg_scores \
         --bam {input.alignment} \
+        --modsites-mode reference \
+        --ref {input.chromosome} \
         --output-prefix {params.prefix} \
-        --pileup-mode count
-        --modsites-mode reference
+        --pileup-mode count \
         --threads 8
         """
+        # """
         # {params.base_dir}pb-CpG-tools-v2.3.1-x86_64-unknown-linux-gnu/bin/aligned_bam_to_cpg_scores \
         # --bam {input.alignment} \
         # --output-prefix {params.prefix} \
         # --model {params.base_dir}pb-CpG-tools-v2.3.1-x86_64-unknown-linux-gnu/models/pileup_calling_model.v1.tflite \
         # --threads 8
+        #         --modsites-mode reference \
+        # --ref {input.chromosome} \
+        # """
 
 
 # Needs a fasta with >chr1 instead of >1
@@ -56,6 +65,7 @@ rule modkit:
     input:
         installed="modkit_installed.flag",
         alignment="resources/Nanopore/{protocol}/alignment_focused_downsampled_dedup.bam",
+        alignment_index="resources/Nanopore/{protocol}/alignment_focused_downsampled_dedup.bam.bai",
         chromosome=expand(
             "resources/chr_chromosome_{chromosome}.fasta",
             chromosome=chromosome_conf["chromosome"],

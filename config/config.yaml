@@ -5,7 +5,7 @@ sample:
   datatype: "dna"
   build: "GRCh38"
   release: "110"
-  chromosome: "21"
+  chromosome: "1"
 
 # varlo_path: "~/Documents/Promotion/varlociraptor/"
 # pipeline_path: "~/Documents/Promotion/varlociraptor-methylation-evaluation/"
@@ -17,6 +17,7 @@ methylFastQ_path: "/projects/koesterlab/benchmark-methylation/MethylFASTQ/"
 methylationTools_path: "/projects/koesterlab/benchmark-methylation/methylation_tools/"
 
 candidate: 40437798
+max_read_length: 100000
 
 data:
   Illumina_pe:
