@@ -26,7 +26,7 @@ rule pb_CpG_tools:
         pb_tools_dir=directory("../pb-CpG-tools-v2.3.1-x86_64-unknown-linux-gnu"),
         alignment="resources/PacBio/{protocol}/alignment_focused_downsampled_dedup_renamed.bam",
         alignment_index="resources/PacBio/{protocol}/alignment_focused_downsampled_dedup_renamed.bam.bai",
-         chromosome=expand(
+        chromosome=expand(
             "resources/chromosome_{chromosome}.fasta",
             chromosome=chromosome_conf["chromosome"],
         ),
@@ -81,4 +81,7 @@ rule modkit:
         export PATH=$PATH:~/.cargo/bin
         export PATH=$PATH:/homes/aprinz/.cargo/bin
         modkit pileup {input.alignment} {output} --cpg --ref {input.chromosome} --force-allow-implicit --combine-strands --log-filepath log_modkit.txt
+        echo modkit pileup {input.alignment} {output} --cpg --ref {input.chromosome} --force-allow-implicit --combine-strands --log-filepath log_modkit.txt
+
         """
+        # cargo install --git https://github.com/nanoporetech/modkit.git
