@@ -9,7 +9,7 @@ rule install_modkit:
         """
         export PATH=$PATH:~/.cargo/bin
         export PATH=$PATH:/homes/aprinz/.cargo/bin
-        cargo install --git https://github.com/nanoporetech/modkit.git
+        cargo install --git https://github.com/nanoporetech/modkit.git --tag v0.2.4
         touch {output}
         """
 

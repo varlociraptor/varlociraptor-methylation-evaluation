@@ -236,7 +236,6 @@ rule rename_chromosomes_in_sam:
         "../scripts/rename_alignment.py"
 
 
-# Funktioniert nicht mit snakemake aber manuell...
 rule sam_to_bam:
     input:
         "resources/{platform}/{protocol}/alignment_focused_downsampled_dedup_renamed.sam",
@@ -276,6 +275,7 @@ rule aligned_downsampled_reads_dedup_index:
 rule aligned_reads_candidates_region:
     input:
         alignment="resources/{platform}/{protocol}/alignment_focused_downsampled_dedup_renamed.bam",
+        index="resources/{platform}/{protocol}/alignment_focused_downsampled_dedup_renamed.bam.bai",
         candidate=expand(
             "resources/{chrom}/candidates_{{scatteritem}}.bcf",
             chrom=chromosome_conf["chromosome"],

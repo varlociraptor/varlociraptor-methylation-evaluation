@@ -11,6 +11,7 @@ true_dict = {}
 
 ref_method = snakemake.wildcards.platform
 # Create dictionaries for Bedgraph and VCF
+# with open(snakemake.input["bedGraph"], 'r') as ref_file, open(snakemake.input["true_meth"][0], 'r') as truth_file:
 with open(snakemake.input["calls"], 'r') as vcf_file, open(snakemake.input["bedGraph"], 'r') as ref_file, open(snakemake.input["true_meth"][0], 'r') as truth_file:
 
     match ref_method:
@@ -63,7 +64,7 @@ print("True data points: ", len(true_dict))
 
 
 bedgraph_positions = [
-    key for key in ref_dict if key in vcf_dict and key in true_dict]
+    key for key in ref_dict if key in true_dict and key in vcf_dict]
 bedgraph_meth_values = [ref_dict[key] for key in bedgraph_positions]
 
 vcf_positions = [
@@ -78,7 +79,7 @@ true_meth_values = [true_dict[key] for key in true_positions]
 
 
 missing_positions1 = [
-    key for key in ref_dict if key not in vcf_dict and key not in true_dict]
+    key for key in ref_dict if key not in true_dict and key not in vcf_dict]
 missing_positions2 = [
     key for key in vcf_dict if key not in ref_dict and key not in true_dict]
 missing_positions3 = [

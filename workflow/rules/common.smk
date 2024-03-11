@@ -1,7 +1,7 @@
 def expand_scatter_plots(platform):
     base_path = Path("results") / platform
     protocols = list(config["data"][platform].keys())
-    return [str(base_path / protocol / "scatter_plot_tv.png") for protocol in protocols]
+    return [str(base_path / protocol / "scatter_plot_rt.png") for protocol in protocols]
 
 
 def get_protocol_sra(wildcards):
