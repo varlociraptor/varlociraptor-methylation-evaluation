@@ -10,12 +10,15 @@ configfile: "config/config.yaml"
 
 
 include: "rules/common.smk"
-include: "rules/install_software.smk"
 include: "rules/get_data.smk"
 include: "rules/get_alignments.smk"
-include: "rules/reference_meth_status.smk"
 include: "rules/get_reference_begraph.smk"
 include: "rules/human_readable.smk"
+include: "rules/bismark.smk"
+include: "rules/bisSnp.smk"
+include: "rules/methylDackel.smk"
+include: "rules/modkit.smk"
+include: "rules/pbCpgTools.smk"
 
 
 scattergather:
