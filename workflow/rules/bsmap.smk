@@ -4,7 +4,7 @@ rule bsmap:
         alignment="resources/Illumina_pe/{protocol}/alignment_focused_downsampled_dedup.bam",
         alignment_index="resources/Illumina_pe/{protocol}/alignment_focused_downsampled_dedup.bam.bai",
     output:
-        "results/ref_tools/bsMapz/{protocol}/out.sam",
+        "results/ref_tools/bsMap/{protocol}/out.sam",
     conda:
         "../envs/bsmap.yaml"
     log:
@@ -12,16 +12,17 @@ rule bsmap:
     threads: 8
     shell:
         """
-        bsmap -a {input.alignment} -b {input.alignment} -d {input.genome} -o {output} -p {threads} -w 100  -v 0.07 -m 50 -x 300
+        bsmap -a {input.alignment} -b {input.alignment} -d {input.genome} -o out.sam -p {threads} -w 100  -v 0.07 -m 50 -x 300
+        cp out.sam {output}
         """
 
 
 rule extract_methylation:
     input:
         genome="resources/genome.fasta",
-        bsmap_sam="results/ref_tools/bsMapz/{protocol}/out.sam",
+        bsmap_sam="results/ref_tools/bsMap/{protocol}/out.sam",
     output:
-        "results/ref_tools/bsMapz/{protocol}/methylation_rations.txt",
+        "results/ref_tools/bsMap/{protocol}/methylation_ratios.txt",
     conda:
         "../envs/bsmap.yaml"
     log:
@@ -30,7 +31,7 @@ rule extract_methylation:
         chromosome=chromosome_conf["chromosome"],
     shell:
         """
-        python ~/Downloads/methratio.py --chr={params.chromosome} --ref={input.genome} --out=methratio.txt out.sam -g -x CG
+        python ~/Downloads/methratio.py --chr={params.chromosome} --ref={input.genome} --out={output} out.sam -g -x CG
         """
 
 
