@@ -7,14 +7,17 @@ sample:
   release: "110"
   chromosome: "1"
 
-# varlo_path: "~/Documents/Promotion/varlociraptor/"
-# pipeline_path: "~/Documents/Promotion/varlociraptor-methylation-evaluation/"
-# methylFastQ_path: "~/Documents/Promotion/MethylFASTQ/"
-base_dir: "/projects/koesterlab/benchmark-methylation/"
-varlo_path: "/projects/koesterlab/benchmark-methylation/varlociraptor/"
-pipeline_path: "/projects/koesterlab/benchmark-methylation/varlociraptor-methylation-evaluation/"
-methylFastQ_path: "/projects/koesterlab/benchmark-methylation/MethylFASTQ/"
-methylationTools_path: "/projects/koesterlab/benchmark-methylation/methylation_tools/"
+base_dir: "~/Documents/Promotion/"
+varlo_path: "~/Documents/Promotion/varlociraptor/"
+pipeline_path: "~/Documents/Promotion/varlociraptor-methylation-evaluation/"
+methylFastQ_path: "~/Documents/Promotion/MethylFASTQ/"
+
+
+
+# base_dir: "/projects/koesterlab/benchmark-methylation/"
+# varlo_path: "/projects/koesterlab/benchmark-methylation/varlociraptor/"
+# pipeline_path: "/projects/koesterlab/benchmark-methylation/varlociraptor-methylation-evaluation/"
+# methylFastQ_path: "/projects/koesterlab/benchmark-methylation/MethylFASTQ/"
 
 candidate: 40437798
 max_read_length: 100000

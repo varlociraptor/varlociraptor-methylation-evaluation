@@ -19,6 +19,7 @@ include: "rules/bisSnp.smk"
 include: "rules/methylDackel.smk"
 include: "rules/modkit.smk"
 include: "rules/pbCpgTools.smk"
+include: "rules/bsmap.smk"
 
 
 scattergather:

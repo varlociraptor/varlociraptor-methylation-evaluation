@@ -5,12 +5,12 @@
 #         reads2="resources/Illumina_pe/{protocol}/{SRA}/{SRA}_2_trimmed.fastq",
 #     output:
 #         "results/ref_tools/bismark/{protocol}/{SRA}_trimmed_bismark_bt2_pe.deduplicated.bedGraph",
-#         "resources/bismark/results/{protocol}/{SRA}_trimmed_bismark_bt2_pe.deduplicated.bedGraph",
+#         "resources/ref_tools/bismark/results/{protocol}/{SRA}_trimmed_bismark_bt2_pe.deduplicated.bedGraph",
 # conda:
 #     "../envs/bismark.yaml"
 #     params:
-#         bismark_dir="~/Documents/Promotion/varlociraptor-methylation-evaluation/resources/bismark",
-#         # bismark_dir=config["pipeline_path"] + "resources/bismark",
+#         bismark_dir="~/Documents/Promotion/varlociraptor-methylation-evaluation/resources/ref_tools/bismark",
+#         # bismark_dir=config["pipeline_path"] + "resources/ref_tools/bismark",
 #     threads: 6
 #     shell:
 #         """
@@ -30,9 +30,9 @@ rule bismark_prepare:
     input:
         "resources/genome.fasta",
     output:
-        directory("resources/bismark/Bisulfite_Genome"),
+        directory("resources/ref_tools/bismark/Bisulfite_Genome"),
     params:
-        bismark_dir="~/Documents/Promotion/varlociraptor-methylation-evaluation/resources/bismark",
+        bismark_dir=config["pipeline_path"] + "resources/ref_tools/bismark",
     conda:
         "../envs/bismark.yaml"
     shell:
@@ -45,13 +45,14 @@ rule bismark_prepare:
 
 rule bismark_align:
     input:
-        "resources/bismark/Bisulfite_Genome",
+        "resources/ref_tools/bismark/Bisulfite_Genome",
         reads1="resources/Illumina_pe/{protocol}/{SRA}/{SRA}_1_trimmed.fastq",
         reads2="resources/Illumina_pe/{protocol}/{SRA}/{SRA}_2_trimmed.fastq",
     output:
-        "resources/bismark/alignment/{protocol}/{SRA}_1_trimmed_bismark_bt2_pe.bam",
+        "resources/ref_tools/bismark/alignment/{protocol}/{SRA}_1_trimmed_bismark_bt2_pe.bam",
     params:
-        bismark_dir="~/Documents/Promotion/varlociraptor-methylation-evaluation/resources/bismark",
+        bismark_dir=config["pipeline_path"] + "resources/ref_tools/bismark",
+        # bismark_dir="~/Documents/Promotion/varlociraptor-methylation-evaluation/resources/ref_tools/bismark",
     conda:
         "../envs/bismark.yaml"
     threads: 6
@@ -64,11 +65,12 @@ rule bismark_align:
 
 rule bismark_deduplicate:
     input:
-        "resources/bismark/alignment/{protocol}/{SRA}_1_trimmed_bismark_bt2_pe.bam",
+        "resources/ref_tools/bismark/alignment/{protocol}/{SRA}_1_trimmed_bismark_bt2_pe.bam",
     output:
-        "resources/bismark/alignment/{protocol}/{SRA}_1_trimmed_bismark_bt2_pe.deduplicated.bam",
+        "resources/ref_tools/bismark/alignment/{protocol}/{SRA}_1_trimmed_bismark_bt2_pe.deduplicated.bam",
     params:
-        bismark_dir="~/Documents/Promotion/varlociraptor-methylation-evaluation/resources/bismark",
+        bismark_dir=config["pipeline_path"] + "resources/ref_tools/bismark",
+        # bismark_dir="~/Documents/Promotion/varlociraptor-methylation-evaluation/resources/ref_tools/bismark",
     conda:
         "../envs/bismark.yaml"
     shell:
@@ -79,11 +81,12 @@ rule bismark_deduplicate:
 
 rule bismark_extract_results:
     input:
-        "resources/bismark/alignment/{protocol}/{SRA}_1_trimmed_bismark_bt2_pe.deduplicated.bam",
+        "resources/ref_tools/bismark/alignment/{protocol}/{SRA}_1_trimmed_bismark_bt2_pe.deduplicated.bam",
     output:
         "results/ref_tools/bismark/{protocol}/{SRA}_1_trimmed_bismark_bt2_pe.deduplicated.bedGraph",
     params:
-        bismark_dir="~/Documents/Promotion/varlociraptor-methylation-evaluation/resources/bismark",
+        bismark_dir=config["pipeline_path"] + "resources/ref_tools/bismark",
+        # bismark_dir="~/Documents/Promotion/varlociraptor-methylation-evaluation/resources/ref_tools/bismark",
     conda:
         "../envs/bismark.yaml"
     shell:
