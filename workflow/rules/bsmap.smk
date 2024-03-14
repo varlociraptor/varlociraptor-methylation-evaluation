@@ -1,3 +1,21 @@
+# We need the newer methylation extractor from bsmapz, since the original one is outdated
+rule meth_extractor:
+    output:
+        "resources/ref_tools/bsMap/methratio.py",
+    log:
+        "../logs/meth_extractor.log",
+    params:
+        pipeline_path=config["pipeline_path"],
+    conda:
+        "../envs/install_program.yaml"
+    shell:
+        """
+        mkdir -p mkdir -p $(dirname {output})
+        cd $(dirname {output})
+        wget https://raw.githubusercontent.com/zyndagj/BSMAPz/master/methratio.py
+        """
+
+
 rule bsmap:
     input:
         genome="resources/genome.fasta",
@@ -21,17 +39,18 @@ rule extract_methylation:
     input:
         genome="resources/genome.fasta",
         bsmap_sam="results/ref_tools/bsMap/{protocol}/out.sam",
+        meth_extractor="resources/ref_tools/bsMap/methratio.py",
     output:
         "results/ref_tools/bsMap/{protocol}/methylation_ratios.txt",
     conda:
         "../envs/bsmap.yaml"
     log:
-        "logs/bsmapz_{protocol}.log",
+        "logs/bsmap_{protocol}.log",
     params:
         chromosome=chromosome_conf["chromosome"],
     shell:
         """
-        python ~/Downloads/methratio.py --chr={params.chromosome} --ref={input.genome} --out={output} out.sam -g -x CG
+        python {input.meth_extractor} --chr={params.chromosome} --ref={input.genome} --out={output} out.sam -g -x CG
         """
 
 
