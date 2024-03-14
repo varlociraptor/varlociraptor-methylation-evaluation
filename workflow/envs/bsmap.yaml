@@ -2,3 +2,4 @@ channels:
   - bioconda
 dependencies:
   - bsmap 2.90
+  - pysam
