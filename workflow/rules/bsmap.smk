@@ -16,13 +16,15 @@ rule meth_extractor:
         """
 
 
+# We have to rename the alignment file to make it shorte to not get a buffer error
 rule bsmap:
     input:
         genome="resources/genome.fasta",
         alignment="resources/Illumina_pe/{protocol}/alignment_focused_downsampled_dedup.bam",
-        alignment_index="resources/Illumina_pe/{protocol}/alignment_focused_downsampled_dedup.bam.bai",
+        # alignment_index="resources/Illumina_pe/{protocol}/alignment_focused_downsampled_dedup.bam.bai",
     output:
-        "results/ref_tools/bsMap/{protocol}/out.sam",
+        alignment_renamed=temp("resources/Illumina_pe/{protocol}/bsmap.bam"),
+        out="results/ref_tools/bsMap/{protocol}/out.sam",
     conda:
         "../envs/bsmap.yaml"
     log:
@@ -30,8 +32,9 @@ rule bsmap:
     threads: 8
     shell:
         """
-        bsmap -a {input.alignment} -b {input.alignment} -d {input.genome} -o out.sam -p {threads} -w 100  -v 0.07 -m 50 -x 300
-        cp out.sam {output}
+        cp {input.alignment} {output.alignment_renamed}
+        bsmap -a {output.alignment_renamed} -b {output.alignment_renamed} -d {input.genome} -o out.sam -p {threads} -w 100  -v 0.07 -m 50 -x 300
+        mv out.sam $(dirname {output.out})
         """
 
 
@@ -41,7 +44,7 @@ rule extract_methylation:
         bsmap_sam="results/ref_tools/bsMap/{protocol}/out.sam",
         meth_extractor="resources/ref_tools/bsMap/methratio.py",
     output:
-        "results/ref_tools/bsMap/{protocol}/methylation_ratios.txt",
+        "results/ref_tools/bsMap/{protocol}/methylation_ratios.bed",
     conda:
         "../envs/bsmap.yaml"
     log:
@@ -50,7 +53,7 @@ rule extract_methylation:
         chromosome=chromosome_conf["chromosome"],
     shell:
         """
-        python {input.meth_extractor} --chr={params.chromosome} --ref={input.genome} --out={output} out.sam -g -x CG
+        python {input.meth_extractor} -c={params.chromosome} --ref={input.genome} --out={output} {input.bsmap_sam} -g -x CG
         """
 
 

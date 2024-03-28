@@ -5,27 +5,27 @@ sample:
   datatype: "dna"
   build: "GRCh38"
   release: "110"
-  chromosome: "J02459.1"
+  chromosome: "21"
 
-base_dir: "~/Documents/Promotion/"
-varlo_path: "~/Documents/Promotion/varlociraptor/"
-pipeline_path: "~/Documents/Promotion/varlociraptor-methylation-evaluation/"
-methylFastQ_path: "~/Documents/Promotion/MethylFASTQ/"
+# base_dir: "~/Documents/Promotion/"
+# varlo_path: "~/Documents/Promotion/varlociraptor/"
+# pipeline_path: "~/Documents/Promotion/varlociraptor-methylation-evaluation/"
+# methylFastQ_path: "~/Documents/Promotion/MethylFASTQ/"
 
 
 
-# base_dir: "/projects/koesterlab/benchmark-methylation/"
-# varlo_path: "/projects/koesterlab/benchmark-methylation/varlociraptor/"
-# pipeline_path: "/projects/koesterlab/benchmark-methylation/varlociraptor-methylation-evaluation/"
-# methylFastQ_path: "/projects/koesterlab/benchmark-methylation/MethylFASTQ/"
+base_dir: "/projects/koesterlab/benchmark-methylation/"
+varlo_path: "/projects/koesterlab/benchmark-methylation/varlociraptor/"
+pipeline_path: "/projects/koesterlab/benchmark-methylation/varlociraptor-methylation-evaluation/"
+methylFastQ_path: "/projects/koesterlab/benchmark-methylation/MethylFASTQ/"
 
 candidate: 40437798
 max_read_length: 100000
 
 data:
   Illumina_pe:
-    test: [SRR_test]
-    # TruSeq_HG002_LAB01_REP01: [SRR13050995, SRR13050996, SRR13050998]
+    # test: [SRR_test]
+    TruSeq_HG002_LAB01_REP01: [SRR13050995, SRR13050996, SRR13050998]
   #   TruSeq_HG002_LAB01_REP02: [SRR13050992, SRR13050993, SRR13050994]   
   #   SPLAT_HG002_LAB01_REP01_4: [SRR13051055, SRR13051056, SRR13051057, SRR13051058]
   #   SPLAT_HG002_LAB01_REP02_4:  [SRR13051050, SRR13051051, SRR13051052, SRR13051054]
