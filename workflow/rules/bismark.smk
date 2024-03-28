@@ -96,11 +96,32 @@ rule merge_bismark_bams:
         """
 
 
-rule bismark_extract_results:
+# It is necessary to sort by name
+rule sort_bismark_bams:
     input:
         "resources/ref_tools/bismark/alignment/{protocol}/alignment_bismark.bam",
     output:
-        "results/ref_tools/bismark/{protocol}/alignment_bismark.bedGraph",
+        "resources/ref_tools/bismark/alignment/{protocol}/alignment_bismark_sorted.bam",
+    log:
+        "logs/merge_bams_{protocol}.log",
+    conda:
+        "../envs/samtools.yaml"
+    params:
+        pipeline_path=config["pipeline_path"],
+    threads: 10
+    shell:
+        """
+        echo {input}
+        samtools merge {output} {input}
+        samtools sort -n {input} -o {output}
+        """
+
+
+rule bismark_extract_results:
+    input:
+        "resources/ref_tools/bismark/alignment/{protocol}/alignment_bismark_sorted.bam",
+    output:
+        "results/ref_tools/bismark/{protocol}/alignment_bismark_sorted.bedGraph.gz",
     params:
         bismark_dir=config["pipeline_path"] + "resources/ref_tools/bismark",
     conda:
@@ -108,6 +129,20 @@ rule bismark_extract_results:
     shell:
         """
         mkdir -p $(dirname {output})
-        bismark_methylation_extractor --bedGraph {input} -o $(dirname {output})
-        gunzip {output}.gz
+        bismark_methylation_extractor --bedGraph {input} -o $(dirname {output}) --split_by_chromosome
+        """
+
+
+rule unzip_bismark_results:
+    input:
+        "results/ref_tools/bismark/{protocol}/alignment_bismark_sorted.bedGraph.gz",
+    output:
+        "results/ref_tools/bismark/{protocol}/alignment_bismark_sorted.bedGraph",
+    params:
+        bismark_dir=config["pipeline_path"] + "resources/ref_tools/bismark",
+    conda:
+        "../envs/bismark.yaml"
+    shell:
+        """
+        gunzip {input}
         """

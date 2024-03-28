@@ -37,7 +37,7 @@ report: "report/workflow.rst"
 rule all:
     input:
         # expand_scatter_plots("PacBio"),
-        expand_scatter_plots("Nanopore"),
+        # expand_scatter_plots("Nanopore"),
         # expand_scatter_plots("Illumina_pe"),
         ref_tools_illumina(),
 
@@ -193,9 +193,9 @@ rule gather_calls:
 
 rule ref_tools:
     input:
-        "results/ref_tools/BisSNP/{protocol}/cpg.raw.BisSNP-0.82.2.CG.bed",
-        "results/ref_tools/bsMap/{protocol}/methylation_ratios.txt",
-        "results/ref_tools/bismark/{protocol}/alignment_bismark.bedGraph",
+        "results/ref_tools/BisSNP/{protocol}/cpg.raw.CG.bedgraph",
+        "results/ref_tools/bsMap/{protocol}/methylation_ratios.bed",
+        "results/ref_tools/bismark/{protocol}/alignment_bismark_sorted.bedGraph",
     output:
         "results/Illumina_pe/{protocol}/ref_tools_completed.txt",
     shell:
