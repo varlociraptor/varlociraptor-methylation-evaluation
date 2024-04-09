@@ -1,5 +1,15 @@
 # https://github.com/varlociraptor/varlociraptor-methylation-evaluation
 
+platforms: [Illumina_pe, PacBio]
+
+ref_tools:
+  # Chose from: bismark, bisSNP, methylDackel, bsMap
+  Illumina_pe: [bismark, bisSNP, methylDackel, bsMap]
+  # Chose from: pb_CpG_tools
+  PacBio: [pb_CpG_tools]
+  # Chose from: modkit
+  Nanopore: [modkit]
+
 sample:
   species: "homo_sapiens"
   datatype: "dna"
@@ -46,6 +56,8 @@ data:
     data1: [dummySRA_pacBio]
   Nanopore:
     data1: [dummySRA_nanopore]
+
+
 
 dummySRA_pacBio: "https://downloads.pacbcloud.com/public/dataset/HG002-CpG-methylation-202202/HG002.GRCh38.haplotagged.bam"
 dummySRA_nanopore: "https://ont-open-data.s3.amazonaws.com/gm24385_mod_2021.09/extra_analysis/all.bam"

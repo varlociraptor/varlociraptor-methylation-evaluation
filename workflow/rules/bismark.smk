@@ -146,3 +146,12 @@ rule unzip_bismark_results:
         """
         gunzip {input}
         """
+
+
+rule rename_bismark_output:
+    input:
+        "results/ref_tools/bismark/{protocol}/alignment_bismark_sorted.bedGraph",
+    output:
+        "results/ref_tools/bismark/{protocol}/bismark.bed",
+    shell:
+        "mv {input} {output}"

@@ -1,6 +1,6 @@
 rule download_pb_CpG_tools:
     output:
-        directory("../../tools/pb-CpG-tools-v2.3.1-x86_64-unknown-linux-gnu"),
+        directory("../tools/pb-CpG-tools-v2.3.1-x86_64-unknown-linux-gnu"),
     log:
         "../logs/download_pb-CpG-tools.log",
     params:
@@ -26,7 +26,7 @@ rule pb_CpG_tools:
             chromosome=chromosome_conf["chromosome"],
         ),
     output:
-        "results/PacBio/{protocol}/alignments_CpG.combined.bed",
+        "results/ref_tools/pb_CpG_tools/{protocol}/alignments_CpG.combined.bed",
     log:
         "logs/pb_CpG_tools_{protocol}.log",
     params:
@@ -38,18 +38,27 @@ rule pb_CpG_tools:
         """
         {params.base_dir}pb-CpG-tools-v2.3.1-x86_64-unknown-linux-gnu/bin/aligned_bam_to_cpg_scores \
         --bam {input.alignment} \
-        --modsites-mode reference \
-        --ref {input.chromosome} \
         --output-prefix {params.prefix} \
-        --pileup-mode count \
+        --model {params.base_dir}pb-CpG-tools-v2.3.1-x86_64-unknown-linux-gnu/models/pileup_calling_model.v1.tflite \
         --threads {threads}
         """
         # """
+        # --ref {input.chromosome} \
+        # --modsites-mode reference \
         # {params.base_dir}pb-CpG-tools-v2.3.1-x86_64-unknown-linux-gnu/bin/aligned_bam_to_cpg_scores \
         # --bam {input.alignment} \
-        # --output-prefix {params.prefix} \
-        # --model {params.base_dir}pb-CpG-tools-v2.3.1-x86_64-unknown-linux-gnu/models/pileup_calling_model.v1.tflite \
-        # --threads {threads}
-        #         --modsites-mode reference \
+        # --modsites-mode reference \
         # --ref {input.chromosome} \
+        # --output-prefix {params.prefix} \
+        # --pileup-mode count \
+        # --threads {threads}
         # """
+
+
+rule rename_pb_output:
+    input:
+        "results/ref_tools/pb_CpG_tools/{protocol}/alignments_CpG.combined.bed",
+    output:
+        "results/ref_tools/pb_CpG_tools/{protocol}/pb_CpG_tools.bed",
+    shell:
+        "mv {input} {output}"

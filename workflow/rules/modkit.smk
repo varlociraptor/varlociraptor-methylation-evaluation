@@ -25,7 +25,7 @@ rule modkit:
             chromosome=chromosome_conf["chromosome"],
         ),
     output:
-        "results/Nanopore/{protocol}/alignments_CpG.combined.bed",
+        "results/ref_tools/modkit/{protocol}/alignments_CpG.combined.bed",
     conda:
         "../envs/modkit.yaml"
     log:
@@ -35,5 +35,13 @@ rule modkit:
         export PATH=$PATH:~/.cargo/bin
         export PATH=$PATH:/homes/aprinz/.cargo/bin
         modkit pileup {input.alignment} {output} --cpg --ref {input.chromosome} --force-allow-implicit --combine-strands --log-filepath log_modkit.txt
-        echo modkit pileup {input.alignment} {output} --cpg --ref {input.chromosome} --force-allow-implicit --combine-strands --log-filepath log_modkit.txt
         """
+
+
+rule rename_modkit_output:
+    input:
+        "results/ref_tools/modkit/{protocol}/alignments_CpG.combined.bed",
+    output:
+        "results/ref_tools/modkit/{protocol}/modkit.bed",
+    shell:
+        "mv {input} {output}"

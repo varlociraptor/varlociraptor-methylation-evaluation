@@ -4,7 +4,8 @@ rule methylDackel:
         alignment="resources/Illumina_pe/{protocol}/alignment_focused_downsampled_dedup_renamed.bam",
         alignment_index="resources/Illumina_pe/{protocol}/alignment_focused_downsampled_dedup_renamed.bam.bai",
     output:
-        "results/Illumina_pe/{protocol}/alignments_CpG.combined.bed",
+        "results/ref_tools/methylDackel/{protocol}/alignments_CpG.bedGraph",
+        # "results/Illumina_pe/{protocol}/alignments_CpG.combined.bed",
     conda:
         "../envs/methylDackel.yaml"
     log:
@@ -16,6 +17,15 @@ rule methylDackel:
         ),
     shell:
         """
-        MethylDackel extract {input.genome} {input.alignment} -o {params.pipeline_path}/results/Illumina_pe/{wildcards.protocol}/alignments --mergeContext
-        mv {params.pipeline_path}{params.prefix} {params.pipeline_path}{output}
+        MethylDackel extract {input.genome} {input.alignment} -o {params.pipeline_path}/results/ref_tools/dackel/{wildcards.protocol}/alignments --mergeContext
         """
+        # mv {params.pipeline_path}{params.prefix} {params.pipeline_path}{output}
+
+
+rule rename_dackel_output:
+    input:
+        "results/ref_tools/methylDackel/{protocol}/alignments_CpG.bedGraph",
+    output:
+        "results/ref_tools/methylDackel/{protocol}/methylDackel.bed",
+    shell:
+        "mv {input} {output}"

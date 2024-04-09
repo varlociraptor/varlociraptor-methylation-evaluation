@@ -53,8 +53,8 @@ rule BisSNP_extract:
         alignment="resources/ref_tools/Bis-tools/{protocol}/alignment.bam",
         alignment_index="resources/ref_tools/Bis-tools/{protocol}/alignment.bam.bai",
     output:
-        cpg="results/ref_tools/BisSNP/{protocol}/cpg.raw.vcf",
-        snp="results/ref_tools/BisSNP/{protocol}/snp.raw.vcf",
+        cpg="results/ref_tools/bisSNP/{protocol}/cpg.raw.vcf",
+        snp="results/ref_tools/bisSNP/{protocol}/snp.raw.vcf",
     log:
         "logs/pb_CpG_tools_{protocol}.log",
     conda:
@@ -76,9 +76,9 @@ rule BisSNP_extract:
 rule BisSNP_bedGraph:
     input:
         perl_script="workflow/scripts/bssnp_bedGraph.pl",
-        cpg="results/ref_tools/BisSNP/{protocol}/cpg.raw.vcf",
+        cpg="results/ref_tools/bisSNP/{protocol}/cpg.raw.vcf",
     output:
-        bed="results/ref_tools/BisSNP/{protocol}/cpg.raw.CG.bedgraph",
+        "results/ref_tools/bisSNP/{protocol}/cpg.raw.CG.bedgraph",
     log:
         "logs/BisSNP_beGraph_{protocol}.log",
     conda:
@@ -87,3 +87,12 @@ rule BisSNP_bedGraph:
         """
         perl  {input.perl_script} {input.cpg} CG
         """
+
+
+rule rename_bissnp_output:
+    input:
+        "results/ref_tools/bisSNP/{protocol}/cpg.raw.CG.bedgraph",
+    output:
+        "results/ref_tools/bisSNP/{protocol}/bisSNP.bed",
+    shell:
+        "mv {input} {output}"

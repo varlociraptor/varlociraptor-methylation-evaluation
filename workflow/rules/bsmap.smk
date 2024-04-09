@@ -60,3 +60,12 @@ rule extract_methylation:
 # bsmap -a resources/Illumina_pe/test/alignment_focused_downsampled_dedup.bam -b resources/Illumina_pe/test/alignment_focused_downsampled_dedup.bam -o out.sam -d resources/genome.fasta  -p 1 -w 100  -v 0.07
 #  -m 50 -x 300
 # python ~/Downloads/methratio.py --chr=J02459.1 --ref=resources/example_paired/genome.fasta --out={output} {input.bsmap_sam} -g -x CG
+
+
+rule rename_bsmap_output:
+    input:
+        "results/ref_tools/bsMap/{protocol}/methylation_ratios.bed",
+    output:
+        "results/ref_tools/bsMap/{protocol}/bsMap.bed",
+    shell:
+        "mv {input} {output}"

@@ -1,14 +1,25 @@
-def expand_scatter_plots(platform):
+def compute_results():
+    needed_inputs = []
+    for platform in config["platforms"]:
+        needed_inputs.append(scatter_plots(platform))
+        needed_inputs.append(scatter_plots_ref(platform))
+    return needed_inputs
+
+
+def scatter_plots(platform):
     base_path = Path("results") / platform
     protocols = list(config["data"][platform].keys())
-    return [str(base_path / protocol / "scatter_plot_rt.png") for protocol in protocols]
+    return [str(base_path / protocol / "varlo.png") for protocol in protocols]
 
 
-def ref_tools_illumina():
-    base_path = Path("results/Illumina_pe")
-    protocols = list(config["data"]["Illumina_pe"].keys())
+def scatter_plots_ref(platform):
+    base_path = Path("results") / platform
+    protocols = list(config["data"][platform].keys())
+    ref_methods = config["ref_tools"][platform]
     return [
-        str(base_path / protocol / "ref_tools_completed.txt") for protocol in protocols
+        str(base_path / protocol / (method + ".png"))
+        for protocol in protocols
+        for method in ref_methods
     ]
 
 
@@ -28,4 +39,13 @@ def get_protocol_sra_bismark(wildcards):
     return [
         str(base_path / SRA / (SRA + "_1_trimmed_bismark_bt2_pe.deduplicated.bam"))
         for SRA in accession_numbers
+    ]
+
+
+def get_ref_methods(wildcards):
+    base_path = Path("results") / "ref_tools/"
+    ref_methods = config["ref_tools"][wildcards.platform]
+    return [
+        str(base_path / method / wildcards.protocol / (method + ".bed"))
+        for method in ref_methods
     ]

@@ -20,6 +20,7 @@ include: "rules/methylDackel.smk"
 include: "rules/modkit.smk"
 include: "rules/pbCpgTools.smk"
 include: "rules/bsmap.smk"
+include: "rules/ref_tools.smk"
 
 
 scattergather:
@@ -36,10 +37,7 @@ report: "report/workflow.rst"
 
 rule all:
     input:
-        # expand_scatter_plots("PacBio"),
-        # expand_scatter_plots("Nanopore"),
-        # expand_scatter_plots("Illumina_pe"),
-        ref_tools_illumina(),
+        compute_results(),
 
 
 rule find_candidates:
@@ -99,7 +97,7 @@ rule compute_meth_observations:
             chrom=chromosome_conf["chromosome"],
         ),
     output:
-        "results/{platform}/{protocol}/normal_{scatteritem}.bcf",
+        temp("results/{platform}/{protocol}/normal_{scatteritem}.bcf"),
     log:
         "logs/compute_meth_observations_{platform}_{protocol}_{scatteritem}.log",
     conda:
@@ -124,7 +122,7 @@ rule call_methylation:
         preprocess_obs="results/{platform}/{protocol}/normal_{scatteritem}.bcf",
         scenario="resources/scenario.yaml",
     output:
-        "results/{platform}/{protocol}/calls_{scatteritem}.bcf",
+        temp("results/{platform}/{protocol}/calls_{scatteritem}.bcf"),
     log:
         "logs/call_methylation_{platform}_{protocol}_{scatteritem}.log",
     conda:
@@ -144,7 +142,7 @@ rule filter_calls:
     input:
         "results/{platform}/{protocol}/calls_{scatteritem}.bcf",
     output:
-        "results/{platform}/{protocol}/calls_{scatteritem}.filtered.bcf",
+        temp("results/{platform}/{protocol}/calls_{scatteritem}.filtered.bcf"),
     log:
         "logs/filter_calls_{platform}_{protocol}_{scatteritem}.log",
     conda:
@@ -164,7 +162,7 @@ rule calls_to_vcf:
     input:
         "results/{platform}/{protocol}/calls_{scatteritem}.bcf",
     output:
-        "results/{platform}/{protocol}/calls_{scatteritem}.vcf",
+        temp("results/{platform}/{protocol}/calls_{scatteritem}.vcf"),
     conda:
         "envs/samtools.yaml"
     log:
@@ -191,35 +189,59 @@ rule gather_calls:
         "cat {input} > {output}"
 
 
-rule ref_tools:
-    input:
-        "results/ref_tools/BisSNP/{protocol}/cpg.raw.CG.bedgraph",
-        "results/ref_tools/bsMap/{protocol}/methylation_ratios.bed",
-        "results/ref_tools/bismark/{protocol}/alignment_bismark_sorted.bedGraph",
-    output:
-        "results/Illumina_pe/{protocol}/ref_tools_completed.txt",
-    shell:
-        "touch {output}"
-
-
 rule plot_results:
     input:
-        bedGraph="results/{platform}/{protocol}/alignments_CpG.combined.bed",
         calls="results/{platform}/{protocol}/calls.vcf",
         true_meth=expand(
             "resources/bed_avg_{chromosome}.bedGraph",
             chromosome=chromosome_conf["chromosome"],
         ),
     output:
-        rt="results/{platform}/{protocol}/scatter_plot_rt.png",
-        rv="results/{platform}/{protocol}/scatter_plot_rv.png",
-        tv="results/{platform}/{protocol}/scatter_plot_tv.png",
-        dist_rt="results/{platform}/{protocol}/scatter_plot_rt_distances.png",
-        dist_rv="results/{platform}/{protocol}/scatter_plot_rv_distances.png",
-        dist_tv="results/{platform}/{protocol}/scatter_plot_tv_distances.png",
+        vt=report(
+            "results/{platform}/{protocol}/varlo.png",
+            caption="report/varlo_performance.rst",
+            category="{platform}",
+            subcategory="{protocol}",
+        ),
+        vt_dist=report(
+            "results/{platform}/{protocol}/varlo_dist.png",
+            caption="varlo_distance.rst",
+            category="{platform}",
+            subcategory="{protocol}",
+        ),
+        bias_pos="results/{platform}/{protocol}/bias.txt",
     conda:
         "envs/plot.yaml"
     log:
         "logs/plot_results_{platform}_{protocol}.log",
     script:
         "scripts/scatter_plot.py"
+
+
+rule plot_ref_results:
+    input:
+        ref="results/ref_tools/{method}/{protocol}/{method}.bed",
+        true_meth=expand(
+            "resources/bed_avg_{chromosome}.bedGraph",
+            chromosome=chromosome_conf["chromosome"],
+        ),
+        bias_pos="results/{platform}/{protocol}/bias.txt",
+    output:
+        ref=report(
+            "results/{platform}/{protocol}/{method}.png",
+            caption="ref_performance.rst",
+            category="{platform}",
+            subcategory="{protocol}",
+        ),
+        ref_dist=report(
+            "results/{platform}/{protocol}/{method}_dist.png",
+            caption="report/ref_distance.rst",
+            category="{platform}",
+            subcategory="{protocol}",
+        ),
+    conda:
+        "envs/plot.yaml"
+    log:
+        "logs/plot_ref_results_{platform}_{protocol}_{method}.log",
+    script:
+        "scripts/scatter_plot_ref.py"
