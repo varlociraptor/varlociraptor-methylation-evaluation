@@ -191,19 +191,19 @@ rule gather_calls:
 
 rule plot_results:
     input:
-        calls="results/{platform}/{protocol}/calls.vcf",
+        tool="results/{platform}/{protocol}/calls.vcf",
         true_meth=expand(
             "resources/bed_avg_{chromosome}.bedGraph",
             chromosome=chromosome_conf["chromosome"],
         ),
     output:
-        vt=report(
+        tool=report(
             "results/{platform}/{protocol}/varlo.png",
             caption="report/varlo_performance.rst",
             category="{platform}",
             subcategory="{protocol}",
         ),
-        vt_dist=report(
+        tool_dist=report(
             "results/{platform}/{protocol}/varlo_dist.png",
             caption="varlo_distance.rst",
             category="{platform}",
@@ -220,20 +220,20 @@ rule plot_results:
 
 rule plot_ref_results:
     input:
-        ref="results/ref_tools/{method}/{protocol}/{method}.bed",
+        tool="results/ref_tools/{method}/{protocol}/{method}.bed",
         true_meth=expand(
             "resources/bed_avg_{chromosome}.bedGraph",
             chromosome=chromosome_conf["chromosome"],
         ),
-        bias_pos="results/{platform}/{protocol}/bias.txt",
+        # bias_pos="results/{platform}/{protocol}/bias.txt",
     output:
-        ref=report(
+        tool=report(
             "results/{platform}/{protocol}/{method}.png",
             caption="ref_performance.rst",
             category="{platform}",
             subcategory="{protocol}",
         ),
-        ref_dist=report(
+        tool_dist=report(
             "results/{platform}/{protocol}/{method}_dist.png",
             caption="report/ref_distance.rst",
             category="{platform}",
@@ -244,4 +244,4 @@ rule plot_ref_results:
     log:
         "logs/plot_ref_results_{platform}_{protocol}_{method}.log",
     script:
-        "scripts/scatter_plot_ref.py"
+        "scripts/scatter_plot.py"
