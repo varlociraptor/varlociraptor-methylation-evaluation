@@ -22,7 +22,8 @@ sample:
 # pipeline_path: "~/Documents/Promotion/varlociraptor-methylation-evaluation/"
 # methylFastQ_path: "~/Documents/Promotion/MethylFASTQ/"
 
-
+# Gibt an, auf wie viele scatter plots wir unsere Ergebnisse aufteilen (je nach coverage)
+cov_bins: 5
 
 base_dir: "/projects/koesterlab/benchmark-methylation/"
 varlo_path: "/projects/koesterlab/benchmark-methylation/varlociraptor/"

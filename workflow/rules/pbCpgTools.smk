@@ -21,10 +21,7 @@ rule pb_CpG_tools:
         pb_tools_dir="../tools/pb-CpG-tools-v2.3.1-x86_64-unknown-linux-gnu",
         alignment="resources/PacBio/{protocol}/alignment_focused_downsampled_dedup_renamed.bam",
         alignment_index="resources/PacBio/{protocol}/alignment_focused_downsampled_dedup_renamed.bam.bai",
-        chromosome=expand(
-            "resources/chromosome_{chromosome}.fasta",
-            chromosome=chromosome_conf["chromosome"],
-        ),
+        genome="resources/genome.fasta",
     output:
         "results/ref_tools/pb_CpG_tools/{protocol}/alignments_CpG.combined.bed",
     log:
@@ -34,25 +31,20 @@ rule pb_CpG_tools:
         prefix=lambda wildcards, input, output: os.path.splitext(output[0])[0].replace(
             ".combined", ""
         ),
+    threads: 8
     shell:
         """
         {params.base_dir}pb-CpG-tools-v2.3.1-x86_64-unknown-linux-gnu/bin/aligned_bam_to_cpg_scores \
         --bam {input.alignment} \
         --output-prefix {params.prefix} \
-        --model {params.base_dir}pb-CpG-tools-v2.3.1-x86_64-unknown-linux-gnu/models/pileup_calling_model.v1.tflite \
+        --pileup-mode count \
         --threads {threads}
         """
-        # """
-        # --ref {input.chromosome} \
-        # --modsites-mode reference \
         # {params.base_dir}pb-CpG-tools-v2.3.1-x86_64-unknown-linux-gnu/bin/aligned_bam_to_cpg_scores \
         # --bam {input.alignment} \
-        # --modsites-mode reference \
-        # --ref {input.chromosome} \
         # --output-prefix {params.prefix} \
-        # --pileup-mode count \
+        # --model {params.base_dir}pb-CpG-tools-v2.3.1-x86_64-unknown-linux-gnu/models/pileup_calling_model.v1.tflite \
         # --threads {threads}
-        # """
 
 
 rule rename_pb_output:

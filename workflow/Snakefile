@@ -197,21 +197,19 @@ rule plot_results:
             chromosome=chromosome_conf["chromosome"],
         ),
     output:
-        tool=report(
-            "results/{platform}/{protocol}/varlo.png",
-            caption="report/varlo_performance.rst",
-            category="{platform}",
-            subcategory="{protocol}",
+        tool=expand(
+            "results/{{platform}}/{{protocol}}/varlo_{cov_bins}.png",
+            cov_bins in range(0, config["cov_bins"]),
         ),
-        tool_dist=report(
-            "results/{platform}/{protocol}/varlo_dist.png",
-            caption="varlo_distance.rst",
-            category="{platform}",
-            subcategory="{protocol}",
+        tool_dist=expand(
+            "results/{{platform}}/{{protocol}}/varlo_dist_{cov_bins}.png",
+            cov_bins in range(0, config["cov_bins"]),
         ),
         bias_pos="results/{platform}/{protocol}/bias.txt",
     conda:
         "envs/plot.yaml"
+    params:
+        cov_bins=config["cov_bins"],
     log:
         "logs/plot_results_{platform}_{protocol}.log",
     script:

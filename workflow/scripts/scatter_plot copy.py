@@ -7,6 +7,10 @@ import pickle
 import heapq
 
 
+def assign_coverage_bin(coverage):
+    return (coverage - 1) // snakemake.params["coverage_bin"]
+
+
 def entry_is_bias(prob, format_values):
     probs = re.split("[=;]", prob)
     probs_values = [probs[i] for i in [1, 3, 5]]
