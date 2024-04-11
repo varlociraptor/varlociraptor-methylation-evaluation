@@ -9,7 +9,11 @@ def compute_results():
 def scatter_plots(platform):
     base_path = Path("results") / platform
     protocols = list(config["data"][platform].keys())
-    return [str(base_path / protocol / "varlo.png") for protocol in protocols]
+    return [
+        str(base_path / protocol / ("varlo_" + str(bin) + ".png"))
+        for protocol in protocols
+        for bin in range(0, config["cov_bins"])
+    ]
 
 
 def scatter_plots_ref(platform):
