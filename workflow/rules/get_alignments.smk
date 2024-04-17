@@ -250,7 +250,7 @@ rule sam_to_bam:
         pipeline_path=config["pipeline_path"],
     shell:
         """
-        samtools view -bS {params.pipeline_path}{input} > {params.pipeline_path}{output}   
+        samtools view -bS {input} > {output}   
         """
 
 

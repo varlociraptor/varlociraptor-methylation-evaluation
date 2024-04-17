@@ -1,6 +1,7 @@
 # https://github.com/varlociraptor/varlociraptor-methylation-evaluation
 
 platforms: [Illumina_pe, PacBio]
+# platforms: [Nanopore]
 
 ref_tools:
   # Chose from: bismark, bisSNP, methylDackel, bsMap
@@ -23,7 +24,7 @@ sample:
 # methylFastQ_path: "~/Documents/Promotion/MethylFASTQ/"
 
 # Gibt an, auf wie viele scatter plots wir unsere Ergebnisse aufteilen (je nach coverage, 10 pro coverage, letztes bekommt alle restlichen)
-cov_bins: 2
+cov_bins: 1
 
 base_dir: "/projects/koesterlab/benchmark-methylation/"
 varlo_path: "/projects/koesterlab/benchmark-methylation/varlociraptor/"
