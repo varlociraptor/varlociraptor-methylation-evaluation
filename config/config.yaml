@@ -1,6 +1,6 @@
 # https://github.com/varlociraptor/varlociraptor-methylation-evaluation
 
-platforms: [Illumina_pe, PacBio]
+platforms: [PacBio]
 # platforms: [Nanopore]
 
 ref_tools:
