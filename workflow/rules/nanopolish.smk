@@ -37,7 +37,7 @@ rule nanopolish:
         "results/ref_tools/nanopolish/{protocol}/finished.txt",
     params:
         pipeline_path=config["pipeline_path"],
-        chromosome=f"chr{chromosome_conf['chromosome']}",
+        chromosome=f"chr{str(chromosome_by_platform["Nanopore"])}",
     conda:
         "../envs/nanopolish.yaml"
     shell:

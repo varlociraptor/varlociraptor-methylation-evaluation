@@ -1,32 +1,16 @@
-chromosome_conf = config["sample"]
+ref_gene = config["sample"]
 
 
 rule get_genome:
     output:
         "resources/genome.fasta",
     params:
-        species=chromosome_conf["species"],
-        datatype=chromosome_conf["datatype"],
-        build=chromosome_conf["build"],
-        release=chromosome_conf["release"],
+        species=ref_gene["species"],
+        datatype=ref_gene["datatype"],
+        build=ref_gene["build"],
+        release=ref_gene["release"],
     log:
         "logs/get_genome.log",
-    cache: "omit-software"  # save space and time with between workflow caching (see docs)
-    wrapper:
-        "v2.3.2/bio/reference/ensembl-sequence"
-
-
-rule get_chromosome:
-    output:
-        "resources/chrom.fasta",
-    params:
-        species=chromosome_conf["species"],
-        datatype=chromosome_conf["datatype"],
-        build=chromosome_conf["build"],
-        release=chromosome_conf["release"],
-        chromosome=chromosome_conf["chromosome"],
-    log:
-        "logs/get_chromosome.log",
     cache: "omit-software"  # save space and time with between workflow caching (see docs)
     wrapper:
         "v2.3.2/bio/reference/ensembl-sequence"
@@ -41,12 +25,10 @@ rule get_chromosome_from_genome:
         "logs/get_chromosome_from_genome_{chromosome}.log",
     conda:
         "../envs/samtools.yaml"
-    params:
-        chromosome=chromosome_conf["chromosome"],
     threads: 10
     shell:
         """ 
-        samtools faidx {input} {params.chromosome} > {output}
+        samtools faidx {input} {wildcards.chromosome} > {output}
         """
 
 
@@ -71,7 +53,7 @@ rule add_chr_to_fasta:
     input:
         expand(
             "resources/chromosome_{chromosome}.fasta",
-            chromosome=chromosome_conf["chromosome"],
+            chromosome=[chr for chr in chromosomes],
         ),
     output:
         "resources/chr_chromosome_{chromosome}.fasta",

@@ -1,6 +1,6 @@
 def compute_results():
     needed_inputs = []
-    for platform in config["platforms"]:
+    for platform in config["platforms"].keys():
         needed_inputs.append(scatter_plots(platform))
         needed_inputs.append(scatter_plots_ref(platform))
     return needed_inputs

@@ -1,6 +1,9 @@
 # https://github.com/varlociraptor/varlociraptor-methylation-evaluation
 
-platforms: [PacBio]
+platforms: 
+  PacBio: 21
+  Illumina_pe: 21
+  Nanopore: 1
 # platforms: [Nanopore]
 
 ref_tools:
@@ -16,7 +19,6 @@ sample:
   datatype: "dna"
   build: "GRCh38"
   release: "110"
-  chromosome: "21"
 
 # base_dir: "~/Documents/Promotion/"
 # varlo_path: "~/Documents/Promotion/varlociraptor/"

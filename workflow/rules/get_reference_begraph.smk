@@ -1,4 +1,4 @@
-chr_chromosome = "chr" + chromosome_conf["chromosome"]
+
 
 
 rule download_bedGraphs:
@@ -43,11 +43,9 @@ rule filter_bedGraphs:
         "logs/filter_bedGraphs_{bedGraph}_{chromosome}.log",
     conda:
         "../envs/awk.yaml"
-    params:
-        chromosome=chr_chromosome,
     shell:
         """
-        awk '$1 == "{params.chromosome}" {{print}}' {input} > {output}
+        awk '$1 == "{wildcards.chromosome}" {{print}}' {input} > {output}
         """
 
 
@@ -57,7 +55,7 @@ rule compute_avg_bedGraph:
         expand(
             "resources/HG002/{bedGraph}-{chromosome}.bedGraph",
             bedGraph=config["bedGraphs_HG002"],
-            chromosome=chr_chromosome,
+            chromosome=[chrom for chrom in chr_chromosome],
         ),
     output:
         "resources/bed_avg_{chromosome}.bedGraph",
@@ -68,7 +66,7 @@ rule compute_avg_bedGraph:
     conda:
         "../envs/python.yaml"
     params:
-        chromosome=chr_chromosome,
+        chromosome=wildcard.chromosome,
     script:
         "../scripts/compute_avg_bedGraph.py"
 
@@ -76,12 +74,11 @@ rule compute_avg_bedGraph:
 rule plot_avg_bedGraph:
     input:
         candidates=expand(
-            "resources/{chro}/candidates.vcf", chro=chromosome_conf["chromosome"]
-        ),
+            "resources/{chrom}/candidates.vcf", chrom=[chrom for chrom in chromosomes]),
         bedgraphs=expand(
             "resources/HG002/{bedGraph}-{chromosome}.bedGraph",
             bedGraph=config["bedGraphs_HG002"],
-            chromosome=chr_chromosome,
+            chromosome=[chrom fro chrom in chr_chromosome],
         ),
     output:
         cov="resources/bed_avg_cov.png",
