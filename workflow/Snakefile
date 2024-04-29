@@ -205,7 +205,7 @@ rule plot_results:
             "results/{{platform}}/{{protocol}}/varlo_dist_{cov_bins}.png",
             cov_bins=[i for i in range(0, config["cov_bins"])],
         ),
-        bias_pos="results/{platform}/{protocol}/bias.txt",
+        # bias_pos="results/{platform}/{protocol}/bias.txt",
     conda:
         "envs/plot.yaml"
     log:
