@@ -22,7 +22,7 @@ rule modkit:
         alignment_index="resources/Nanopore/{protocol}/alignment_focused_downsampled_dedup.bam.bai",
         chromosome=expand(
             "resources/chr_chromosome_{chromosome}.fasta",
-            chromosome=chromosome_by_platform["Nanopore"],
+            chromosome=chromosome_by_platform.get("Nanopore"),
         ),
     output:
         "results/ref_tools/modkit/{protocol}/alignments_CpG.combined.bed",

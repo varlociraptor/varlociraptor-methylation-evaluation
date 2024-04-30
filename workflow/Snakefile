@@ -73,9 +73,9 @@ rule split_candidates:
             chrom=[chrom for chrom in chromosomes],
         ),
     output:
-        scatter.split_candidates("resources/{{chr}}/candidates_{scatteritem}.bcf"),
+        scatter.split_candidates("resources/{{chrom}}/candidates_{scatteritem}.bcf"),
     log:
-        "logs/{chro}split_candidates.log",
+        "logs/{chrom}split_candidates.log",
     conda:
         "envs/rbt.yaml"
     shell:
@@ -84,11 +84,11 @@ rule split_candidates:
 
 rule compute_meth_observations:
     input:
-        chromosome=expand(
+        chromosome=lambda wildcards: expand(
             "resources/chromosome_{chrom}.fasta",
             chrom=chromosome_by_platform[wildcards.platform],
         ),
-        genome_index=expand(
+        genome_index=lambda wildcards: expand(
             "resources/chromosome_{chrom}.fasta.fai",
             chrom=chromosome_by_platform[wildcards.platform],
         ),
@@ -207,7 +207,7 @@ rule plot_results:
             "results/{{platform}}/{{protocol}}/varlo_dist_{cov_bins}.png",
             cov_bins=[i for i in range(0, config["cov_bins"])],
         ),
-        bias_pos="results/{platform}/{protocol}/bias.txt",
+        # bias_pos="results/{platform}/{protocol}/bias.txt",
     conda:
         "envs/plot.yaml"
     log:

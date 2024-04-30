@@ -1,4 +1,5 @@
 ref_gene = config["sample"]
+chromosomes = set(chromosome for chromosome in config["platforms"].values())
 
 
 rule get_genome:

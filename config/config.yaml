@@ -2,9 +2,8 @@
 
 platforms: 
   PacBio: 21
-  Illumina_pe: 21
-  Nanopore: 1
-# platforms: [Nanopore]
+  # Illumina_pe: 21
+  # Nanopore: 1
 
 ref_tools:
   # Chose from: bismark, bisSNP, methylDackel, bsMap

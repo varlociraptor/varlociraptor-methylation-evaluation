@@ -1,3 +1,4 @@
+chromosome_by_platform = config["platforms"]
 
 
 rule index_genome:
@@ -276,7 +277,7 @@ rule aligned_reads_candidates_region:
     input:
         alignment="resources/{platform}/{protocol}/alignment_focused_downsampled_dedup_renamed.bam",
         index="resources/{platform}/{protocol}/alignment_focused_downsampled_dedup_renamed.bam.bai",
-        candidate=expand(
+        candidate=lambda wildcards: expand(
             "resources/{chrom}/candidates_{{scatteritem}}.bcf",
             chrom=chromosome_by_platform[wildcards.platform],
         ),

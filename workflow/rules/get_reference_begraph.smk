@@ -1,4 +1,4 @@
-
+chr_chromosome = set("chr" + str(chromosome) for chromosome in chromosomes)
 
 
 rule download_bedGraphs:
@@ -66,7 +66,7 @@ rule compute_avg_bedGraph:
     conda:
         "../envs/python.yaml"
     params:
-        chromosome=wildcard.chromosome,
+        chromosome=lambda wildcards: wildcards.chromosome,
     script:
         "../scripts/compute_avg_bedGraph.py"
 
@@ -74,11 +74,12 @@ rule compute_avg_bedGraph:
 rule plot_avg_bedGraph:
     input:
         candidates=expand(
-            "resources/{chrom}/candidates.vcf", chrom=[chrom for chrom in chromosomes]),
+            "resources/{chrom}/candidates.vcf", chrom=[chrom for chrom in chromosomes]
+        ),
         bedgraphs=expand(
             "resources/HG002/{bedGraph}-{chromosome}.bedGraph",
             bedGraph=config["bedGraphs_HG002"],
-            chromosome=[chrom fro chrom in chr_chromosome],
+            chromosome=[chrom for chrom in chr_chromosome],
         ),
     output:
         cov="resources/bed_avg_cov.png",

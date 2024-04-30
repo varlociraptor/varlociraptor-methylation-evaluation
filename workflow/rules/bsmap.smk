@@ -50,7 +50,7 @@ rule extract_methylation:
     log:
         "logs/bsmap_{protocol}.log",
     params:
-        chromosome=chromosome_by_platform["Illumina_pe"],
+        chromosome=chromosome_by_platform.get("Illumina_pe"),
     shell:
         """
         python {input.meth_extractor} -c={params.chromosome} --ref={input.genome} --out={output} {input.bsmap_sam} -g -x CG
