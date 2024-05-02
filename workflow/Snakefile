@@ -27,7 +27,11 @@ scattergather:
     split_candidates=20,
 
 
-chromosome_conf = config["sample"]
+# chr_chromosome = "chr" + chromosome_conf["chromosome"]
+chromosome_by_platform = config["platforms"]
+chromosomes = set(chromosome for chromosome in config["platforms"].values())
+chr_chromosome = set("chr" + str(chromosome) for chromosome in chromosomes)
+print(chr_chromosome)
 platform = config["data"]
 candidate = config["candidate"]
 
@@ -43,8 +47,8 @@ rule all:
 rule find_candidates:
     input:
         expand(
-            "resources/chromosome_{chromosome}.fasta",
-            chromosome=chr_chromosome,
+            "resources/chromosome_{chrom}.fasta",
+            chrom=chr_chromosome,
         ),
     output:
         "resources/{chromosome}/candidates.bcf",
@@ -65,13 +69,13 @@ rule find_candidates:
 rule split_candidates:
     input:
         expand(
-            "resources/{chro}/candidates.bcf",
-            chro=chromosome_conf["chromosome"],
+            "resources/{chrom}/candidates.bcf",
+            chrom=[chrom for chrom in chromosomes],
         ),
     output:
-        scatter.split_candidates("resources/{{chro}}/candidates_{scatteritem}.bcf"),
+        scatter.split_candidates("resources/{{chrom}}/candidates_{scatteritem}.bcf"),
     log:
-        "logs/{chro}split_candidates.log",
+        "logs/{chrom}split_candidates.log",
     conda:
         "envs/rbt.yaml"
     shell:
@@ -80,21 +84,19 @@ rule split_candidates:
 
 rule compute_meth_observations:
     input:
-        chromosome=expand(
-            "resources/chromosome_{chromosome}.fasta",
-            chromosome=chromosome_conf["chromosome"],
+        chromosome=lambda wildcards: expand(
+            "resources/chromosome_{chrom}.fasta",
+            chrom=chromosome_by_platform[wildcards.platform],
         ),
-        genome_index=expand(
-            "resources/chromosome_{chromosome}.fasta.fai",
-            chromosome=chromosome_conf["chromosome"],
+        genome_index=lambda wildcards: expand(
+            "resources/chromosome_{chrom}.fasta.fai",
+            chrom=chromosome_by_platform[wildcards.platform],
         ),
-        # alignments="resources/{platform}/{protocol}/alignment_focused_downsampled_dedup_renamed.bam",
         alignments="resources/{platform}/{protocol}/candidate_specific/alignment_valid_{scatteritem}.bam",
-        # alignment_index="resources/{platform}/{protocol}/alignment_focused_downsampled_dedup_renamed.bam.bai",
         alignment_index="resources/{platform}/{protocol}/candidate_specific/alignment_valid_{scatteritem}.bam.bai",
-        candidates=expand(
+        candidates=lambda wildcards: expand(
             "resources/{chrom}/candidates_{{scatteritem}}.bcf",
-            chrom=chromosome_conf["chromosome"],
+            chrom=chromosome_by_platform[wildcards.platform],
         ),
     output:
         temp("results/{platform}/{protocol}/normal_{scatteritem}.bcf"),
@@ -193,8 +195,8 @@ rule plot_results:
     input:
         tool="results/{platform}/{protocol}/calls.vcf",
         true_meth=expand(
-            "resources/bed_avg_{chromosome}.bedGraph",
-            chromosome=chromosome_conf["chromosome"],
+            "resources/bed_avg_{chrom}.bedGraph",
+            chrom=[chrom for chrom in chromosomes],
         ),
     output:
         tool=expand(
@@ -220,8 +222,8 @@ rule plot_ref_results:
     input:
         tool="results/ref_tools/{method}/{protocol}/{method}.bed",
         true_meth=expand(
-            "resources/bed_avg_{chromosome}.bedGraph",
-            chromosome=chromosome_conf["chromosome"],
+            "resources/bed_avg_{chrom}.bedGraph",
+            chrom=[chrom for chrom in chromosomes],
         ),
         # bias_pos="results/{platform}/{protocol}/bias.txt",
     output:

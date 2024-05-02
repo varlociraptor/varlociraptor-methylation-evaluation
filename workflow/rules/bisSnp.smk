@@ -64,7 +64,7 @@ rule BisSNP_extract:
         prefix=lambda wildcards, input, output: os.path.splitext(output[0])[0].replace(
             ".combined", ""
         ),
-        chromosome=chromosome_conf["chromosome"],
+        chromosome=chromosome_by_platform.get("Illumina_pe"),
     shell:
         """
         java -Xmx10G -jar {input.jar} -R {input.genome} -T BisulfiteGenotyper -I {input.alignment} -vfn1 {output.cpg} -vfn2 {output.snp} -L {params.chromosome}

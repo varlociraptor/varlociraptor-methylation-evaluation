@@ -111,8 +111,6 @@
 #         "results/PacBio/{protocol}/ref_tools_completed.txt",
 #     shell:
 #         "touch {output}"
-
-
 # rule collect_ref_nanopore_illumina:
 #     input:
 #         expand(

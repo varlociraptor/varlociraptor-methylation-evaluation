@@ -1,3 +1,4 @@
+chromosome_by_platform = config["platforms"]
 
 
 rule index_genome:
@@ -103,9 +104,9 @@ rule focus_aligned_reads_chrom:
         "../envs/samtools.yaml"
     params:
         pipeline_path=config["pipeline_path"],
-        chromosome=lambda wildcards: f"chr{chromosome_conf['chromosome']}"
+        chromosome=lambda wildcards: f"chr{chromosome_by_platform[wildcards.platform]}"
         if wildcards.platform == "PacBio" or wildcards.platform == "Nanopore"
-        else chromosome_conf["chromosome"],
+        else chromosome_by_platform[wildcards.platform],
     threads: 10
     shell:
         """ 
@@ -276,9 +277,9 @@ rule aligned_reads_candidates_region:
     input:
         alignment="resources/{platform}/{protocol}/alignment_focused_downsampled_dedup_renamed.bam",
         index="resources/{platform}/{protocol}/alignment_focused_downsampled_dedup_renamed.bam.bai",
-        candidate=expand(
+        candidate=lambda wildcards: expand(
             "resources/{chrom}/candidates_{{scatteritem}}.bcf",
-            chrom=chromosome_conf["chromosome"],
+            chrom=chromosome_by_platform[wildcards.platform],
         ),
     output:
         "resources/{platform}/{protocol}/candidate_specific/alignment_{scatteritem}.bam",
@@ -288,7 +289,7 @@ rule aligned_reads_candidates_region:
         "../envs/samtools.yaml"
     params:
         window_size=config["max_read_length"],
-        chromosome=config["sample"]["chromosome"],
+        chromosome=lambda wildcards: chromosome_by_platform[wildcards.platform],
     shell:
         """
         set +o pipefail;
