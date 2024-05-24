@@ -1,23 +1,23 @@
-rule install_modkit:
-    output:
-        "modkit_installed.flag",
-    conda:
-        "../envs/modkit.yaml"
-    log:
-        "../logs/install_modkit.log",
-    shell:
-        """
-        export PATH=$PATH:~/.cargo/bin
-        export PATH=$PATH:/homes/aprinz/.cargo/bin
-        cargo install --git https://github.com/nanoporetech/modkit.git --tag v0.2.4
-        touch {output}
-        """
+# rule install_modkit:
+#     output:
+#         "modkit_installed.flag",
+#     conda:
+#         "../envs/modkit.yaml"
+#     log:
+#         "../logs/install_modkit.log",
+#     shell:
+#         """
+#         export PATH=$PATH:~/.cargo/bin
+#         export PATH=$PATH:/homes/aprinz/.cargo/bin
+#         cargo install --git https://github.com/nanoporetech/modkit.git --tag v0.2.4
+#         touch {output}
+#         """
 
 
 # Needs a fasta with >chr1 instead of >1
 rule modkit:
     input:
-        installed="modkit_installed.flag",
+        # installed="modkit_installed.flag",
         alignment="resources/Nanopore/{protocol}/alignment_focused_downsampled_dedup.bam",
         alignment_index="resources/Nanopore/{protocol}/alignment_focused_downsampled_dedup.bam.bai",
         chromosome=expand(

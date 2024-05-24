@@ -21,6 +21,7 @@ include: "rules/modkit.smk"
 include: "rules/pbCpgTools.smk"
 include: "rules/bsmap.smk"
 include: "rules/ref_tools.smk"
+include: "rules/metilene.smk"
 
 
 scattergather:
@@ -31,7 +32,6 @@ scattergather:
 chromosome_by_platform = config["platforms"]
 chromosomes = set(chromosome for chromosome in config["platforms"].values())
 chr_chromosome = set("chr" + str(chromosome) for chromosome in chromosomes)
-print(chr_chromosome)
 platform = config["data"]
 candidate = config["candidate"]
 
@@ -42,6 +42,7 @@ report: "report/workflow.rst"
 rule all:
     input:
         compute_results(),
+        # "results/dmr_calls/metilene_input.txt",
 
 
 rule find_candidates:
@@ -199,7 +200,11 @@ rule plot_results:
             chrom=[chrom for chrom in chromosomes],
         ),
     output:
-        tool=expand(
+        html=expand(
+            "results/{{platform}}/{{protocol}}/varlo_{cov_bins}.html",
+            cov_bins=[i for i in range(0, config["cov_bins"])],
+        ),
+        png=expand(
             "results/{{platform}}/{{protocol}}/varlo_{cov_bins}.png",
             cov_bins=[i for i in range(0, config["cov_bins"])],
         ),
@@ -227,8 +232,14 @@ rule plot_ref_results:
         ),
         # bias_pos="results/{platform}/{protocol}/bias.txt",
     output:
-        tool=report(
+        png=report(
             "results/{platform}/{protocol}/{method}.png",
+            caption="ref_performance.rst",
+            category="{platform}",
+            subcategory="{protocol}",
+        ),
+        html=report(
+            "results/{platform}/{protocol}/{method}.html",
             caption="ref_performance.rst",
             category="{platform}",
             subcategory="{protocol}",

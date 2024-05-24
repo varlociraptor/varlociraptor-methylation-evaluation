@@ -1,4 +1,5 @@
 channels:
+  - conda-forge
   - bioconda
 dependencies:
-  -  ont-modkit=0.2.4
+  - metilene=0.2.8

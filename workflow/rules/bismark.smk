@@ -148,10 +148,14 @@ rule unzip_bismark_results:
         """
 
 
-rule rename_bismark_output:
+rule bismark_focus_on_chromosome:
     input:
         "results/ref_tools/bismark/{protocol}/alignment_bismark_sorted.bedGraph",
     output:
         "results/ref_tools/bismark/{protocol}/bismark.bed",
+    params:
+        chromosome=lambda wildcards: chromosome_by_platform["Illumina_pe"],
     shell:
-        "mv {input} {output}"
+        """
+        awk '$1 == "{params.chromosome}"' {input} > {output}
+        """
