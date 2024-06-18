@@ -91,7 +91,6 @@ rule aligned_reads_index:
       """
 
 
-# params.chromosome muss mak 21 und mal chr21 sein (Illumina 21, PacBio chr21)
 rule focus_aligned_reads_chrom:
     input:
         bam="resources/{platform}/{protocol}/{SRA}/alignment_sorted.bam",
@@ -300,7 +299,7 @@ rule aligned_reads_candidates_region:
         """
 
 
-# TODO: Diese Regel ist eigentlich unnoetig und verbraucht viel Zeit. Das Problem ist, dass Varlociraptor nicht auf Bam Dateien arbeitet, die keine Reads haben. Durch den vorherigen Schritt kann es passieren, dass alle Kandidaten ausserhalb der Reads liegen und die bam Datei somit keine Reads hat. Daher fuegen wir einfach fuer jede Bamdatei den letzten Read der originalen Bam Datei ein.
+# TODO: This rule is actually unnecessary and consumes a lot of time. The problem is that Varlociraptor does not work on bam files that have no reads. Due to the previous step, it can happen that all candidates are outside the reads and the bam file therefore has no reads. Therefore we simply add the last read of the original bam file for each bam file.
 rule aligned_reads_candidates_region_valid:
     input:
         alignment_orig="resources/{platform}/{protocol}/alignment_focused_downsampled_dedup_renamed.sam",

@@ -36,7 +36,6 @@ rule call_metilene:
         "results/dmr_calls/metilene_input_{group2}.txt",
     output:
         "results/dmr_calls/metilene_output_{group2}.txt",
-        # expand("results/dmr_calls/metilene_{group}.txt", group=["BC02", "BC03", "BC04"]),
     log:
         "../logs/call_metilene_{group2}.log",
     conda:

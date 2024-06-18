@@ -34,7 +34,6 @@ def get_protocol_sra(wildcards):
         str(base_path / SRA / "alignment_focused_dedup.bam")
         for SRA in accession_numbers
     ]
-    # + [str(base_path / SRA / "ref_tools_completed.txt") for SRA in accession_numbers]
 
 
 def get_protocol_sra_bismark(wildcards):

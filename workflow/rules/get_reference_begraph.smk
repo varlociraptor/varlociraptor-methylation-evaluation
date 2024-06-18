@@ -51,7 +51,6 @@ rule filter_bedGraphs:
 
 rule compute_avg_bedGraph:
     input:
-        # expand("resources/{SRA}/HG002/bedGraph/{bed}.bedGraph", bed=bedGraphs),
         expand(
             "resources/HG002/{bedGraph}-{chromosome}.bedGraph",
             bedGraph=config["bedGraphs_HG002"],

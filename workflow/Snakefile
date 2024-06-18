@@ -9,26 +9,10 @@ from pathlib import Path
 configfile: "config/config.yaml"
 
 
-include: "rules/common.smk"
-include: "rules/get_data.smk"
-include: "rules/get_alignments.smk"
-include: "rules/get_reference_begraph.smk"
-include: "rules/human_readable.smk"
-include: "rules/bismark.smk"
-include: "rules/bisSnp.smk"
-include: "rules/methylDackel.smk"
-include: "rules/modkit.smk"
-include: "rules/pbCpgTools.smk"
-include: "rules/bsmap.smk"
-include: "rules/ref_tools.smk"
-include: "rules/metilene.smk"
-
-
 scattergather:
     split_candidates=20,
 
 
-# chr_chromosome = "chr" + chromosome_conf["chromosome"]
 chromosome_by_platform = config["platforms"]
 chromosomes = set(chromosome for chromosome in config["platforms"].values())
 chr_chromosome = set("chr" + str(chromosome) for chromosome in chromosomes)
@@ -39,10 +23,23 @@ candidate = config["candidate"]
 report: "report/workflow.rst"
 
 
+include: "rules/common.smk"
+include: "rules/bismark.smk"
+include: "rules/bisSnp.smk"
+include: "rules/bsmap.smk"
+include: "rules/get_alignments.smk"
+include: "rules/get_data.smk"
+include: "rules/get_reference_begraph.smk"
+include: "rules/human_readable.smk"
+include: "rules/methylDackel.smk"
+include: "rules/modkit.smk"
+include: "rules/fake_data.smk"
+include: "rules/pbCpgTools.smk"
+
+
 rule all:
     input:
         compute_results(),
-        # "results/dmr_calls/metilene_input.txt",
 
 
 rule find_candidates:
@@ -223,6 +220,60 @@ rule plot_results:
         "scripts/scatter_plot.py"
 
 
+rule plot_results_debug_pacbio:
+    input:
+        tool="results/PacBio/data1/calls.vcf",
+        ref_tool="results/ref_tools/pb_CpG_tools/data1/pb_CpG_tools.bed",
+        true_meth="resources/bed_avg_21.bedGraph",
+    output:
+        html="results/PacBio/data1/debug.html",
+        png="results/PacBio/data1/debug.png",
+        tool_dist="results/PacBio/data1/dist_debug.png",
+        # png=expand(
+        #     "results/{{platform}}/{{protocol}}/varlo_{cov_bins}.png",
+        #     cov_bins=[i for i in range(0, config["cov_bins"])],
+        # ),
+        # tool_dist=expand(
+        #     "results/{{platform}}/{{protocol}}/varlo_dist_{cov_bins}.png",
+        #     cov_bins=[i for i in range(0, config["cov_bins"])],
+        # ),
+        # bias_pos="results/{platform}/{protocol}/bias.txt",
+    conda:
+        "envs/plot.yaml"
+    log:
+        "logs/plot_results_debug.log",
+    params:
+        cov_bins=config["cov_bins"],
+    script:
+        "scripts/scatter_plot_debug.py"
+
+
+rule plot_dist_comparision:
+    input:
+        tool="results/Illumina_pe/TruSeq_HG002_LAB01_REP01/calls.vcf",
+        ref_tool="results/ref_tools/methylDackel/TruSeq_HG002_LAB01_REP01/methylDackel.bed",
+        true_meth="resources/bed_avg_21.bedGraph",
+    output:
+        png="results/Illumina_pe/TruSeq_HG002_LAB01_REP01/dist_comp.png",
+        # png=expand(
+        #     "results/{{platform}}/{{protocol}}/varlo_{cov_bins}.png",
+        #     cov_bins=[i for i in range(0, config["cov_bins"])],
+        # ),
+        # tool_dist=expand(
+        #     "results/{{platform}}/{{protocol}}/varlo_dist_{cov_bins}.png",
+        #     cov_bins=[i for i in range(0, config["cov_bins"])],
+        # ),
+        # bias_pos="results/{platform}/{protocol}/bias.txt",
+    conda:
+        "envs/plot.yaml"
+    log:
+        "logs/plot_results_debug.log",
+    params:
+        cov_bins=config["cov_bins"],
+    script:
+        "scripts/plot_distances_together.py"
+
+
 rule plot_ref_results:
     input:
         tool="results/ref_tools/{method}/{protocol}/{method}.bed",
@@ -230,7 +281,6 @@ rule plot_ref_results:
             "resources/bed_avg_{chrom}.bedGraph",
             chrom=[chrom for chrom in chromosomes],
         ),
-        # bias_pos="results/{platform}/{protocol}/bias.txt",
     output:
         png=report(
             "results/{platform}/{protocol}/{method}.png",

@@ -85,16 +85,15 @@ rule genome_index:
 
 rule get_fastq_pe:
     output:
-        # the wildcard name must be accession, pointing to an SRA number
         "resources/Illumina_pe/{protocol}/{SRA}/{accession}_1.fastq",
         "resources/Illumina_pe/{protocol}/{SRA}/{accession}_2.fastq",
     log:
         "logs/get_fastq_pe_{protocol}_{SRA}_{accession}.log",
     params:
         extra="--skip-technical",
-    threads: 6  # defaults to 6
-    # conda:
-    #     "../envs/fastq-wrapper.yaml"
+    threads: 6
+    conda:
+        "../envs/fastq-wrapper.yaml"
     wrapper:
         "v3.0.2/bio/sra-tools/fasterq-dump"
 
@@ -221,8 +220,6 @@ rule combine_nanopore_data:
         cat {params.pipeline_path}{input.header} {params.pipeline_path}{input.body} > {params.pipeline_path}{output.comb}
         samtools view -b {params.pipeline_path}{output.comb} > {params.pipeline_path}{output.alignment}
         """
-        # samtools view {params.url} | head -n 10000 | samtools view -b > {params.pipeline_path}{output.alignment}
-        # samtools view -h {params.url} chr21 -O bam > {params.pipeline_path}{output}
 
 
 rule nanopore_bam_index:

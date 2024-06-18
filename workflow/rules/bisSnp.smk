@@ -5,7 +5,6 @@ rule download_BisSNP:
     log:
         "../logs/download_BisSNP.log",
     params:
-        # base_dir="~/Documents/Promotion/",
         pipeline_path=config["pipeline_path"],
     conda:
         "../envs/install_program.yaml"
