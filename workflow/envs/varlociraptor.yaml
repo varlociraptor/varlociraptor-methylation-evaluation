@@ -19,9 +19,11 @@ dependencies:
   - mason=2.0.9
   - perl=5.32.1
   - pkg-config=0.29.2
-  - rust=1.69.0
+  - rust=1.70
   - samtools=1.16.1
   - xz=5.2.6
   - zlib=1.2.13
   - zlib-ng=2.0.6
   - zstd=1.5.2
+  - libclang=16.0.6
+  - clangdev=16.0.6

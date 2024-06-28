@@ -7,6 +7,12 @@ from collections import Counter
 import matplotlib.pyplot as plt
 
 
+def compute_rmse(predictions, targets):
+    squared_errors = [(x - y) ** 2 for x, y in zip(predictions, targets)]
+    mean_squared_error = sum(squared_errors) / len(predictions)
+    return np.sqrt(mean_squared_error)
+
+
 def get_bin(coverage):
     return min(int(coverage / 10), snakemake.params['cov_bins'] - 1)
 
@@ -79,10 +85,29 @@ def plot_distances(tool1_name, tool2_name, true_meth, varlo_values, ref_values, 
         true_values, bias_vals) if bias == "normal"]
     ref_values_no_bias = [v for v, bias in zip(
         ref_values, bias_vals) if bias == "normal"]
+    print("Len: ", len(tool_values_no_bias))
     varlo_distances = [int(round(get_euclidian_distance(x, y, x, x)))
                        for x, y in zip(tool_values_no_bias, true_values_no_bias)]
     ref_distances = [int(round(get_euclidian_distance(x, y, x, x)))
                      for x, y in zip(ref_values_no_bias, true_values_no_bias)]
+
+    print(len(tool_values_no_bias))
+    print(len(true_values_no_bias))
+    print(len(ref_values_no_bias))
+
+    rmse_varlo = round(compute_rmse(
+        tool_values_no_bias, true_values_no_bias), 2)
+    rmse_ref = round(compute_rmse(ref_values_no_bias, true_values_no_bias), 2)
+
+    # varlo_short = [v for i, v in enumerate(
+    #     tool_values_no_bias) if varlo_distances[i] < 30]
+    # true_short = [v for i, v in enumerate(
+    #     true_values_no_bias) if varlo_distances[i] < 30]
+
+    # rmse_varlo = np.round(compute_rmse(
+    #     varlo_short, true_short), 2)
+    # rmse_ref = np.round(compute_rmse(
+    #     ref_values_no_bias, true_values_no_bias), 2)
 
     # Combine data into a DataFrame
     data = pd.DataFrame({
@@ -92,7 +117,7 @@ def plot_distances(tool1_name, tool2_name, true_meth, varlo_values, ref_values, 
 
     melted_data = pd.melt(data, value_vars=[tool1_name, tool2_name],
                           var_name='Tool', value_name='Distanz')
-    melted_data = melted_data[melted_data['Distanz'] <= 20]
+    # melted_data = melted_data[melted_data['Distanz'] <= 30]
 
     # Base chart with shared y-axis encoding
     base = alt.Chart(melted_data).encode(
@@ -103,7 +128,8 @@ def plot_distances(tool1_name, tool2_name, true_meth, varlo_values, ref_values, 
 
     # Line chart
     line = base.mark_line().properties(
-        title='Distance comparision ' + tool1_name + ' and ' + tool2_name
+        title=tool1_name + ' rmse: ' + str(rmse_varlo) +
+        ' / ' + tool2_name + ' rmse: ' + str(rmse_ref)
     )
 
     # Point chart
@@ -113,7 +139,7 @@ def plot_distances(tool1_name, tool2_name, true_meth, varlo_values, ref_values, 
     histogram = line + points
 
     # Speichern oder Anzeigen des Histogramms
-    histogram.save(output)
+    histogram.save(output, scale_factor=2.0)
 
     # Speichern oder Anzeigen des Histogramms
 
@@ -143,8 +169,10 @@ coverage_bin_dicts = {}
 true_dict = {}
 ref_dict = {}
 
+
 with open(snakemake.input["true_meth"], 'r') as truth_file, open(snakemake.input["tool"], 'r') as tool_file, open(snakemake.input["ref_tool"], 'r') as ref_file:
 
+    file_name = os.path.splitext(os.path.basename(ref_file.name))[0]
     for line in tool_file:
         if not line.startswith('#'):
             parts = line.strip().split('\t')
@@ -170,6 +198,57 @@ with open(snakemake.input["true_meth"], 'r') as truth_file, open(snakemake.input
             coverage_bin_dicts[cov_bin]['bias_dict'][chrom_pos] = compute_bias(
                 info_field, values)
 
+    if file_name == 'methylDackel':
+        for line in ref_file:
+            if not line.startswith("track"):
+                parts = line.strip().split('\t')
+                chrom, position, methylation_value = parts[0], (int(
+                    parts[1]) + int(parts[2])) // 2, float(parts[3])
+                ref_dict[(chrom, position)] = methylation_value
+
+    if file_name == 'bsMap':
+        for line in ref_file:
+            if not line.startswith("chr"):
+                parts = line.strip().split('\t')
+                chrom, position, methylation_value = parts[0], int(
+                    parts[1]), float(parts[4]) * 100
+                ref_dict[(chrom, position)] = methylation_value
+
+    if file_name == 'bismark':
+        for line in ref_file:
+            if not line.startswith("track"):
+                parts = line.strip().split('\t')
+                chrom, position, methylation_value = parts[0], (int(
+                    parts[1]) + int(parts[2])) // 2, float(parts[3])
+                ref_dict[(chrom, position)] = methylation_value
+
+    if file_name == 'bisSNP':
+        for line in ref_file:
+            if not line.startswith("track"):
+                parts = line.strip().split('\t')
+                chrom, position, methylation_value = parts[0], int(
+                    parts[2]), float(parts[3])
+                ref_dict[(chrom, position)] = methylation_value
+
+    if file_name == 'modkit':
+        for line in ref_file:
+            parts = line.strip().split()
+            chrom, position, methylation_value = parts[0].removeprefix(
+                'chr'), int(parts[2]), float(parts[10])
+            ref_dict[(chrom, position)] = methylation_value
+
+    if file_name == 'pb_CpG_tools':
+        for line in ref_file:
+            if not line.startswith("track"):
+                parts = line.strip().split('\t')
+                chrom, position, methylation_value = parts[0], int(
+                    parts[2]), float(parts[3])
+                ref_dict[(chrom, position)] = methylation_value
+
+    # if file_name != 'calls':
+    #     coverage_bin_dicts[0] = {'ref_dict': ref_dict,
+    #                              'bias_dict': {}, 'prob_present': {}}
+
     for line in truth_file:
         if not line.startswith("track"):
             parts = line.strip().split('\t')
@@ -177,33 +256,37 @@ with open(snakemake.input["true_meth"], 'r') as truth_file, open(snakemake.input
                 "chr", ""), (int(parts[1]) + int(parts[2])) // 2, float(parts[3])
             true_dict[(chrom, position)] = methylation_value
 
-    for line in ref_file:
-        if not line.startswith("track"):
-            parts = line.strip().split('\t')
-            chrom, position, methylation_value = parts[0], (int(
-                parts[1]) + int(parts[2])) // 2, float(parts[3])
-            ref_dict[(chrom, position)] = methylation_value
-
 # Extract methylation values and truth values
 tool_dict = coverage_bin_dicts[0]['tool_dict']
 bias_dict = coverage_bin_dicts[0]['bias_dict']
 prob_dict = coverage_bin_dicts[0]['prob_present']
+print(len(list(tool_dict.keys())), len(list(true_dict.keys())))
 
 
-all_cpg_positions = list(set(tool_dict.keys()) | set(
-    true_dict.keys()) | set(ref_dict.keys()))
+# Berechne die Schnittmenge der Schlüssel von ref_dict, true_dict und ref_dict
+all_cpg_positions = list(set(tool_dict.keys()) & set(
+    true_dict.keys()) & set(ref_dict.keys()))
+
+print(len(all_cpg_positions))
+
 
 bias_pos = [
-    "normal" if key in tool_dict and key in true_dict else "not in true" if key in tool_dict else "not in tool" for key in all_cpg_positions]
-prob_pos = [1 for _ in all_cpg_positions]
+    bias_dict[key] if key in tool_dict and key in true_dict else "not in true" if key in tool_dict else "not in tool" for key in all_cpg_positions]
+
+prob_pos = [prob_dict[key]
+            if key in prob_dict else 1 for key in all_cpg_positions]
+
+print("Bias: ", bias_pos.count("normal"))
 
 tool_meth_values = [tool_dict.get(key, 0) for key in all_cpg_positions]
 ref_meth_values = [ref_dict.get(key, 0) for key in all_cpg_positions]
 true_meth_values = [true_dict.get(key, 0) for key in all_cpg_positions]
+
+
 # Plot TrueMeth vs toolMethod
 png_output = snakemake.output['png']
 
 
 # Plot the distribution of distances
-plot_distances("Varlociraptor", "MethylDackel", "TruthMeth",
+plot_distances("Varlociraptor", "Modkit", "TruthMeth",
                tool_meth_values, ref_meth_values, true_meth_values, bias_pos, png_output)

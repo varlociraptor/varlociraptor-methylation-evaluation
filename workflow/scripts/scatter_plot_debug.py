@@ -122,14 +122,10 @@ def plot_distances(tool_name, true_meth, tool_values, true_values, bias_vals, ou
     #           "\tVarlo: ", varlo_value, "Distance: ", dist_varlo_true,
     #           "\tTrue: ", true_value)
 
-    print(0)
-
     distances_varlo_true = [(pos, abs(varlo_dict.get(
         pos, 0) - true_dict.get(pos, 0))) for pos in all_cpg_positions]
-    print(1)
     distances_ref_true = [(pos,
                            abs(ref_dict.get(pos, 0) - true_dict.get(pos, 0))) for pos in all_cpg_positions]
-    print(2)
     distances_diff = [(pos, x - y) for (pos, x), (pos, y)
                       in zip(distances_varlo_true, distances_ref_true)]
     sorted_diffs = sorted(distances_diff, key=lambda x: x[1], reverse=True)
@@ -137,8 +133,6 @@ def plot_distances(tool_name, true_meth, tool_values, true_values, bias_vals, ou
     # Sortiere die Positionen basierend auf dem Unterschied zwischen den Distanzen
     # positions_sorted_by_diff = sorted(all_cpg_positions, key=lambda pos: distances_varlo_true[all_cpg_positions.index(
     # pos)] - distances_ref_true[all_cpg_positions.index(pos)], reverse=True)
-
-    print(3)
 
     # Gib die Positionen aus, bei denen die Distanz zwischen varlo und true am größten ist im Gegensatz zur Distanz zwischen ref und true
     for (pos, dist) in sorted_diffs[:10]:  # Top 10 Positionen
