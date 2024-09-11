@@ -97,7 +97,7 @@ rule compute_meth_observations:
             chrom=chromosome_by_platform[wildcards.platform],
         ),
     output:
-        temp("results/{platform}/{protocol}/normal_{scatteritem}.bcf"),
+        "results/{platform}/{protocol}/normal_{scatteritem}.bcf",
     log:
         "logs/compute_meth_observations_{platform}_{protocol}_{scatteritem}.log",
     conda:
@@ -113,7 +113,8 @@ rule compute_meth_observations:
         else
             PLATFORM="{wildcards.platform}"
         fi
-        cargo run --release -- preprocess variants {params.pipeline_path}{input.chromosome} --candidates {params.pipeline_path}{input.candidates} --bam {params.pipeline_path}{input.alignments} --read-type $PLATFORM > {params.pipeline_path}{output}
+        echo $PLATFORM
+        cargo run --release -- preprocess variants {params.pipeline_path}{input.chromosome} --candidates {params.pipeline_path}{input.candidates} --bam {params.pipeline_path}{input.alignments} --read-type Illumina --max-depth 5000 > {params.pipeline_path}{output}
         """
 
 
@@ -122,7 +123,7 @@ rule call_methylation:
         preprocess_obs="results/{platform}/{protocol}/normal_{scatteritem}.bcf",
         scenario="resources/scenario.yaml",
     output:
-        temp("results/{platform}/{protocol}/calls_{scatteritem}.bcf"),
+        "results/{platform}/{protocol}/calls_{scatteritem}.bcf",
     log:
         "logs/call_methylation_{platform}_{protocol}_{scatteritem}.log",
     conda:
@@ -162,7 +163,7 @@ rule calls_to_vcf:
     input:
         "results/{platform}/{protocol}/calls_{scatteritem}.bcf",
     output:
-        temp("results/{platform}/{protocol}/calls_{scatteritem}.vcf"),
+        "results/{platform}/{protocol}/calls_{scatteritem}.vcf",
     conda:
         "envs/samtools.yaml"
     log:
@@ -222,13 +223,13 @@ rule plot_results:
 
 rule plot_results_debug_pacbio:
     input:
-        tool="results/PacBio/data1/calls.vcf",
-        ref_tool="results/ref_tools/pb_CpG_tools/data1/pb_CpG_tools.bed",
-        true_meth="resources/bed_avg_21.bedGraph",
+        varlo="results/Nanopore/data1/calls.vcf",
+        ref_tool="results/ref_tools/modkit/data1/modkit.bed",
+        true_meth="resources/bed_avg_1.bedGraph",
     output:
-        html="results/PacBio/data1/debug.html",
-        png="results/PacBio/data1/debug.png",
-        tool_dist="results/PacBio/data1/dist_debug.png",
+        html="results/Nanopore/data1/debug.html",
+        png="results/Nanopore/data1/debug.png",
+        varlo_dist="results/Nanopore/data1/dist_debug.png",
         # png=expand(
         #     "results/{{platform}}/{{protocol}}/varlo_{cov_bins}.png",
         #     cov_bins=[i for i in range(0, config["cov_bins"])],

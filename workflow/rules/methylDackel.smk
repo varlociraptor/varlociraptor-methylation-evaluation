@@ -1,3 +1,4 @@
+# Vielleicht vorher Regel mit mkdir {params.pipeline_path}/results/ref_tools/dackel/{wildcards.protocol}/ einfuegen, konnte ich jetzt noch nicht ueberpruefen, gibt aber sonst glaub ich nen Fehler
 rule methylDackel:
     input:
         genome="resources/genome.fasta",
@@ -16,7 +17,7 @@ rule methylDackel:
         ),
     shell:
         """
-        MethylDackel extract {input.genome} {input.alignment} -o {params.pipeline_path}/results/ref_tools/dackel/{wildcards.protocol}/alignments --mergeContext
+        MethylDackel extract {input.genome} {input.alignment} -o {params.pipeline_path}results/ref_tools/methylDackel/{wildcards.protocol}/alignments --mergeContext
         """
 
 

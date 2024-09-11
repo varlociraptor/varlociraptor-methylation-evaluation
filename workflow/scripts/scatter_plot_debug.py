@@ -59,17 +59,17 @@ def euclidian_distance(x1, y1, x2, y2):
     return np.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
 
 
-def plot_distances(tool_name, true_meth, tool_values, true_values, bias_vals, output):
-    tool_values_no_bias = [v for v, bias in zip(
-        tool_values, bias_vals) if bias == "normal"]
-    true_values_no_bias = [v for v, bias in zip(
-        true_values, bias_vals) if bias == "normal"]
+def plot_distances(varlo_name, true_meth, varlo_values, ref_values, bias_vals, output):
+    varlo_values_no_bias = [v for v, bias in zip(
+        varlo_values, bias_vals) if bias == "normal"]
+    ref_values_no_bias = [v for v, bias in zip(
+        ref_values, bias_vals) if bias == "normal"]
     distances = [euclidian_distance(x, y, x, x)
-                 for x, y in zip(tool_values_no_bias, true_values_no_bias)]
-    # #  for x, y in zip(tool_values, true_values)]
+                 for x, y in zip(varlo_values_no_bias, ref_values_no_bias)]
+    # #  for x, y in zip(varlo_values, true_values)]
     # # sorted_list = sorted(distances, reverse=True)
 
-    rmse = compute_rmse(tool_values_no_bias, true_values_no_bias)
+    rmse = compute_rmse(varlo_values_no_bias, ref_values_no_bias)
 
     # #  Find positions with largest distances
     # positions_no_bias = [pos for pos, bias in zip(
@@ -122,35 +122,10 @@ def plot_distances(tool_name, true_meth, tool_values, true_values, bias_vals, ou
     #           "\tVarlo: ", varlo_value, "Distance: ", dist_varlo_true,
     #           "\tTrue: ", true_value)
 
-    distances_varlo_true = [(pos, abs(varlo_dict.get(
-        pos, 0) - true_dict.get(pos, 0))) for pos in all_cpg_positions]
-    distances_ref_true = [(pos,
-                           abs(ref_dict.get(pos, 0) - true_dict.get(pos, 0))) for pos in all_cpg_positions]
-    distances_diff = [(pos, x - y) for (pos, x), (pos, y)
-                      in zip(distances_varlo_true, distances_ref_true)]
-    sorted_diffs = sorted(distances_diff, key=lambda x: x[1], reverse=True)
-
-    # Sortiere die Positionen basierend auf dem Unterschied zwischen den Distanzen
-    # positions_sorted_by_diff = sorted(all_cpg_positions, key=lambda pos: distances_varlo_true[all_cpg_positions.index(
-    # pos)] - distances_ref_true[all_cpg_positions.index(pos)], reverse=True)
-
-    # Gib die Positionen aus, bei denen die Distanz zwischen varlo und true am größten ist im Gegensatz zur Distanz zwischen ref und true
-    for (pos, dist) in sorted_diffs[:10]:  # Top 10 Positionen
-        ref_value = ref_dict.get(pos, "N/A")
-        varlo_value = varlo_dict.get(pos, "N/A")
-        true_value = true_dict.get(pos, "N/A")
-
-        # dist_varlo_true = abs(varlo_value - true_value)
-        # dist_ref_true = abs(ref_value - true_value)
-        print("Position: ", pos,  "Distance: ", dist,
-              "\n\tRef: ", ref_value,
-              "\tVarlo: ", varlo_value,
-              "\tTrue: ", true_value)
-
-        # if dist_varlo_true > dist_ref_true:
-        #     print("\tVarlo schlechter als Ref")
-        # else:
-        #     print("\tRef schlechter als Varlo")
+    # if dist_varlo_true > dist_ref_true:
+    #     print("\tVarlo schlechter als Ref")
+    # else:
+    #     print("\tRef schlechter als Varlo")
 
     rounded_distances = [int(round(d)) for d in distances]
     data = pd.DataFrame({'Rounded_Distances': rounded_distances})
@@ -158,17 +133,17 @@ def plot_distances(tool_name, true_meth, tool_values, true_values, bias_vals, ou
         x=alt.X('Rounded_Distances:O', axis=alt.Axis(title='distance')),
         y=alt.Y('count():Q', axis=alt.Axis(title='number'))
     ).properties(
-        title=f'Distance {tool_name} vs. {true_meth} (rmse: {rmse})'
+        title=f'Distance {varlo_name} vs. {true_meth} (rmse: {rmse})'
     )
     chart.save(output, scale_factor=2.0)
     return rmse
 
 
-def plot_meth_vals(tool_name, true_meth, tool_values, true_values, bias_vals, prob_vals, all_cpg_positions, png_output, html_output, rmse):
+def plot_meth_vals(varlo_name, true_meth, varlo_values, true_values, bias_vals, prob_vals, all_cpg_positions, png_output, html_output, rmse):
     chromosome = [chrom for (chrom, _) in all_cpg_positions]
     position = [position for (_, position) in all_cpg_positions]
     data = pd.DataFrame({
-        tool_name: tool_values,
+        varlo_name: varlo_values,
         true_meth: true_values,
         'Bias': bias_vals,
         'Prob': prob_vals,
@@ -179,11 +154,11 @@ def plot_meth_vals(tool_name, true_meth, tool_values, true_values, bias_vals, pr
     filtered_data = data[data['Bias'] == 'normal']
 
     # # Hexbins
-    # plt.hexbin(filtered_data[tool_name], filtered_data[true_meth],
+    # plt.hexbin(filtered_data[varlo_name], filtered_data[true_meth],
     #            gridsize=20, cmap='viridis', bins='log', mincnt=-1)
 
     # plt.colorbar(label='log10(N)')
-    # plt.xlabel(tool_name)
+    # plt.xlabel(varlo_name)
     # plt.ylabel(true_meth)
     # plt.savefig(png_output, dpi=300, bbox_inches='tight')
     # plt.savefig(html_output, format='svg', dpi=300, bbox_inches='tight')
@@ -198,17 +173,17 @@ def plot_meth_vals(tool_name, true_meth, tool_values, true_values, bias_vals, pr
     )
 
     scatter = alt.Chart(data).mark_circle().encode(
-        x=tool_name,
+        x=varlo_name,
         y=true_meth,
         color="Bias:N",
         opacity="Prob:Q",
-        tooltip=['chromosome:N', 'position:N']
+        varlotip=['chromosome:N', 'position:N']
     ).interactive()
 
     final_chart = (scatter + line).properties(
         width=400,
         height=400,
-        title=alt.Title(f'{tool_name} vs. {true_meth}',
+        title=alt.Title(f'{varlo_name} vs. {true_meth}',
                         subtitle=f'Rmse: {rmse}, Data_points: {bias_vals.count("normal")}')
     ).interactive()
 
@@ -227,12 +202,12 @@ true_dict = {}
 filename = ""
 
 
-# with open(snakemake.input["calls"], 'r') as vcf_file, open(snakemake.input["tool"], 'r') as tool_file, open(snakemake.input["true_meth"][0], 'r') as truth_file:
-# with open(snakemake.input["true_meth"][0], 'r') as truth_file, open(snakemake.input["tool"], 'r') as tool_file:
-with open(snakemake.input["true_meth"], 'r') as truth_file, open(snakemake.input["tool"], 'r') as tool_file, open(snakemake.input["ref_tool"], 'r') as ref_file:
-    file_name = os.path.splitext(os.path.basename(tool_file.name))[0]
+# with open(snakemake.input["calls"], 'r') as vcf_file, open(snakemake.input["varlo"], 'r') as varlo_file, open(snakemake.input["true_meth"][0], 'r') as truth_file:
+# with open(snakemake.input["true_meth"][0], 'r') as truth_file, open(snakemake.input["varlo"], 'r') as varlo_file:
+with open(snakemake.input["true_meth"], 'r') as truth_file, open(snakemake.input["varlo"], 'r') as varlo_file, open(snakemake.input["ref_tool"], 'r') as ref_file:
+    file_name = os.path.splitext(os.path.basename(varlo_file.name))[0]
     if file_name == 'calls':  # Varlociraptor
-        for line in tool_file:
+        for line in varlo_file:
             if not line.startswith('#'):
                 parts = line.strip().split('\t')
                 chrom, pos, info_field, format_field, values = parts[0], int(
@@ -248,10 +223,10 @@ with open(snakemake.input["true_meth"], 'r') as truth_file, open(snakemake.input
                 cov_bin = get_bin(coverage)
                 if cov_bin not in coverage_bin_dicts:
                     coverage_bin_dicts[cov_bin] = {
-                        'tool_dict': {}, 'bias_dict': {}, 'prob_present': {}}
+                        'varlo_dict': {}, 'bias_dict': {}, 'prob_present': {}}
 
                 chrom_pos = (chrom, pos)
-                coverage_bin_dicts[cov_bin]['tool_dict'][chrom_pos] = meth_rate * 100
+                coverage_bin_dicts[cov_bin]['varlo_dict'][chrom_pos] = meth_rate * 100
                 coverage_bin_dicts[cov_bin]['prob_present'][chrom_pos] = get_prob_present(
                     info_field)
                 coverage_bin_dicts[cov_bin]['bias_dict'][chrom_pos] = compute_bias(
@@ -266,16 +241,23 @@ with open(snakemake.input["true_meth"], 'r') as truth_file, open(snakemake.input
 
 # Nur fuer debugging reasons, um pb zu plotten
     for line in ref_file:
-        if not line.startswith("track"):
-            parts = line.strip().split('\t')
-            chrom, position, methylation_value = parts[0], int(
-                parts[2]), float(parts[3])
-            ref_dict[(chrom, position)] = methylation_value
+        # Modkit
+        parts = line.strip().split()
+        chrom, position, methylation_value = parts[0].removeprefix(
+            'chr'), int(parts[2]), float(parts[10])
+        ref_dict[(chrom, position)] = methylation_value
+
+        # Pacbio
+        # if not line.startswith("track"):
+        #     parts = line.strip().split('\t')
+        #     chrom, position, methylation_value = parts[0], int(
+        #         parts[2]), float(parts[3])
+        #     ref_dict[(chrom, position)] = methylation_value
 
 print(-1)
 for cov_bin, bin_dicts in coverage_bin_dicts.items():
 
-    varlo_dict = bin_dicts['tool_dict']
+    varlo_dict = bin_dicts['varlo_dict']
     bias_dict = bin_dicts['bias_dict']
     prob_dict = bin_dicts['prob_present']
 
@@ -285,21 +267,22 @@ for cov_bin, bin_dicts in coverage_bin_dicts.items():
     # all_cpg_positions = list(all_cpg_positions)
     if file_name != 'calls':
         bias_pos = [
-            "normal" if key in varlo_dict and key in ref_dict else "not in true" if key in varlo_dict else "not in tool" for key in all_cpg_positions]
+            "normal" if key in varlo_dict and key in ref_dict else "not in true" if key in varlo_dict else "not in varlo" for key in all_cpg_positions]
         prob_pos = [1 for _ in all_cpg_positions]
     else:
         bias_pos = [
-            bias_dict[key] if key in varlo_dict and key in ref_dict else "not in true" if key in varlo_dict else "not in tool" for key in all_cpg_positions]
+            bias_dict[key] if key in varlo_dict and key in ref_dict else "not in true" if key in varlo_dict else "not in varlo" for key in all_cpg_positions]
 
         prob_pos = [prob_dict[key]
                     if key in prob_dict else 1 for key in all_cpg_positions]
 
-    tool_meth_values = [varlo_dict.get(key, 0) for key in all_cpg_positions]
-    true_meth_values = [ref_dict.get(key, 0) for key in all_cpg_positions]
-    # Plot TrueMeth vs toolMethod
+    varlo_meth_values = [varlo_dict.get(key, 0) for key in all_cpg_positions]
+    ref_meth_values = [ref_dict.get(key, 0) for key in all_cpg_positions]
+    ref_meth_values = [ref_dict.get(key, 0) for key in all_cpg_positions]
+    # Plot TrueMeth vs varloMethod
     png_output = snakemake.output['png']
     html_output = snakemake.output['html']
-    dist_output = snakemake.output['tool_dist']
+    dist_output = snakemake.output['varlo_dist']
 
     # If we want to have multiple plots for different coverages we have to chose the correct one
     if isinstance(png_output, list):
@@ -307,15 +290,43 @@ for cov_bin, bin_dicts in coverage_bin_dicts.items():
         html_output = html_output[cov_bin]
         dist_output = dist_output[cov_bin]
 
-    if file_name == 'calls':
-        file_name = "Varlociraptor"
-    # print("Test4", tool_meth_values, true_meth_values)
+    distances_varlo_true = [(pos, abs(varlo_dict.get(
+        pos, 0) - true_dict.get(pos, 0))) for pos in all_cpg_positions]
+    distances_ref_true = [(pos,
+                           abs(ref_dict.get(pos, 0) - true_dict.get(pos, 0))) for pos in all_cpg_positions]
+    distances_diff = [(pos, x - y) for (pos, x), (pos, y)
+                      in zip(distances_varlo_true, distances_ref_true)]
+    sorted_diffs = sorted(distances_diff, key=lambda x: x[1], reverse=True)
 
-    rmse = plot_distances(file_name, 'TrueMeth', tool_meth_values,
-                          true_meth_values, bias_pos, dist_output)
-    rmse = plot_meth_vals(file_name, 'TrueMeth', tool_meth_values,
-                          true_meth_values, bias_pos, prob_pos, all_cpg_positions, png_output, html_output, rmse)
+    # print(len(varlo_dict.keys()), len(true_dict.keys()),
+    #       len(ref_dict.keys()), sorted_diffs)
+
+    # Sortiere die Positionen basierend auf dem Unterschied zwischen den Distanzen
+    # positions_sorted_by_diff = sorted(all_cpg_positions, key=lambda pos: distances_varlo_true[all_cpg_positions.index(
+    # pos)] - distances_ref_true[all_cpg_positions.index(pos)], reverse=True)
+
+    # Gib die Positionen aus, bei denen die Distanz zwischen varlo und true am größten ist im Gegensatz zur Distanz zwischen ref und true
+    for (pos, dist) in sorted_diffs[:10]:  # Top 10 Positionen
+        ref_value = ref_dict.get(pos, "N/A")
+        varlo_value = varlo_dict.get(pos, "N/A")
+        true_value = true_dict.get(pos, "N/A")
+
+        # dist_varlo_true = abs(varlo_value - true_value)
+        # dist_ref_true = abs(ref_value - true_value)
+        print("Position: ", pos,  "Distance: ", dist,
+              "\n\tRef: ", ref_value,
+              "\tVarlo: ", varlo_value,
+              "\tTrue: ", true_value)
 
     # if file_name == 'calls':
-    #     with open(snakemake.output['bias_pos'], 'w') as f:
-    #         f.write(str(bias_dict))
+    #     file_name = "Varlociraptor"
+    # # print("Test4", varlo_meth_values, true_meth_values)
+
+    # rmse = plot_distances(file_name, 'TrueMeth', varlo_meth_values,
+    #                       ref_meth_values, bias_pos, dist_output)
+    # rmse = plot_meth_vals(file_name, 'TrueMeth', varlo_meth_values,
+    #                       ref_meth_values, bias_pos, prob_pos, all_cpg_positions, png_output, html_output, rmse)
+
+    # # if file_name == 'calls':
+    # #     with open(snakemake.output['bias_pos'], 'w') as f:
+    # #         f.write(str(bias_dict))
