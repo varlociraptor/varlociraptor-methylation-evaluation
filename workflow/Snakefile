@@ -33,7 +33,8 @@ include: "rules/get_reference_begraph.smk"
 include: "rules/human_readable.smk"
 include: "rules/methylDackel.smk"
 include: "rules/modkit.smk"
-include: "rules/fake_data.smk"
+include: "rules/testcase.smk"
+# include: "rules/fake_data.smk"
 include: "rules/pbCpgTools.smk"
 
 
@@ -114,7 +115,7 @@ rule compute_meth_observations:
             PLATFORM="{wildcards.platform}"
         fi
         echo $PLATFORM
-        cargo run --release -- preprocess variants {params.pipeline_path}{input.chromosome} --candidates {params.pipeline_path}{input.candidates} --bam {params.pipeline_path}{input.alignments} --read-type Illumina --max-depth 5000 > {params.pipeline_path}{output}
+        cargo run --release -- preprocess variants {params.pipeline_path}{input.chromosome} --candidates {params.pipeline_path}{input.candidates} --bam {params.pipeline_path}{input.alignments} --read-type $PLATFORM --max-depth 5000 > {params.pipeline_path}{output}
         """
 
 
@@ -134,7 +135,7 @@ rule call_methylation:
     shell:
         """ 
         cd {params.varlo_path}
-        cargo run --release -- call variants --omit-strand-bias generic --scenario {params.pipeline_path}{input.scenario} --obs normal={params.pipeline_path}{input.preprocess_obs} > {params.pipeline_path}{output}
+        cargo run --release -- call variants --omit-read-position-bias generic --scenario {params.pipeline_path}{input.scenario} --obs normal={params.pipeline_path}{input.preprocess_obs} > {params.pipeline_path}{output}
         """
 
 
@@ -143,7 +144,7 @@ rule filter_calls:
     input:
         "results/{platform}/{protocol}/calls_{scatteritem}.bcf",
     output:
-        temp("results/{platform}/{protocol}/calls_{scatteritem}.filtered.bcf"),
+        "results/{platform}/{protocol}/calls_{scatteritem}.filtered.bcf",
     log:
         "logs/filter_calls_{platform}_{protocol}_{scatteritem}.log",
     conda:
@@ -155,15 +156,15 @@ rule filter_calls:
     shell:
         """
         cd {params.varlo_path}
-        cargo run --release -- filter-calls control-fdr --mode local-smart {params.pipeline_path}{input} --events {params.event} --fdr 0.01 > {params.pipeline_path}{output}
+        cargo run --release -- filter-calls control-fdr --mode local-smart {params.pipeline_path}{input} --events {params.event} --fdr 0.05 > {params.pipeline_path}{output}
         """
 
 
 rule calls_to_vcf:
     input:
-        "results/{platform}/{protocol}/calls_{scatteritem}.bcf",
+        "results/{platform}/{protocol}/calls_{scatteritem}.filtered.bcf",
     output:
-        "results/{platform}/{protocol}/calls_{scatteritem}.vcf",
+        "results/{platform}/{protocol}/calls_{scatteritem}.filtered.vcf",
     conda:
         "envs/samtools.yaml"
     log:
@@ -178,7 +179,7 @@ rule calls_to_vcf:
 rule gather_calls:
     input:
         gather.split_candidates(
-            "results/{{platform}}/{{protocol}}/calls_{scatteritem}.vcf"
+            "results/{{platform}}/{{protocol}}/calls_{scatteritem}.filtered.vcf"
         ),
     output:
         "results/{platform}/{protocol}/calls.vcf",
@@ -198,55 +199,28 @@ rule plot_results:
             chrom=chromosome_by_platform[wildcards.platform],
         ),
     output:
-        html=expand(
-            "results/{{platform}}/{{protocol}}/varlo_{cov_bins}.html",
+        plot=expand(
+            "results/{{platform}}/{{protocol}}/plots/varlo/scatter_{cov_bins}.{plot_type}",
             cov_bins=[i for i in range(0, config["cov_bins"])],
-        ),
-        png=expand(
-            "results/{{platform}}/{{protocol}}/varlo_{cov_bins}.png",
-            cov_bins=[i for i in range(0, config["cov_bins"])],
+            plot_type=config["plot_type"],
         ),
         tool_dist=expand(
-            "results/{{platform}}/{{protocol}}/varlo_dist_{cov_bins}.png",
+            "results/{{platform}}/{{protocol}}/plots/varlo/dist_{cov_bins}.{plot_type}",
             cov_bins=[i for i in range(0, config["cov_bins"])],
+            plot_type=config["plot_type"],
         ),
+        precall="results/{platform}/{protocol}/plots/varlo/precall.csv",
         # bias_pos="results/{platform}/{protocol}/bias.txt",
     conda:
         "envs/plot.yaml"
     log:
         "logs/plot_results_{platform}_{protocol}.log",
     params:
+        plot_type=config["plot_type"],
         cov_bins=config["cov_bins"],
+        cov_bin_size=config["cov_bin_size"],
     script:
         "scripts/scatter_plot.py"
-
-
-rule plot_results_debug_pacbio:
-    input:
-        varlo="results/Nanopore/data1/calls.vcf",
-        ref_tool="results/ref_tools/modkit/data1/modkit.bed",
-        true_meth="resources/bed_avg_1.bedGraph",
-    output:
-        html="results/Nanopore/data1/debug.html",
-        png="results/Nanopore/data1/debug.png",
-        varlo_dist="results/Nanopore/data1/dist_debug.png",
-        # png=expand(
-        #     "results/{{platform}}/{{protocol}}/varlo_{cov_bins}.png",
-        #     cov_bins=[i for i in range(0, config["cov_bins"])],
-        # ),
-        # tool_dist=expand(
-        #     "results/{{platform}}/{{protocol}}/varlo_dist_{cov_bins}.png",
-        #     cov_bins=[i for i in range(0, config["cov_bins"])],
-        # ),
-        # bias_pos="results/{platform}/{protocol}/bias.txt",
-    conda:
-        "envs/plot.yaml"
-    log:
-        "logs/plot_results_debug.log",
-    params:
-        cov_bins=config["cov_bins"],
-    script:
-        "scripts/scatter_plot_debug.py"
 
 
 rule plot_dist_comparision:
@@ -256,16 +230,25 @@ rule plot_dist_comparision:
         #     "resources/bed_avg_{chrom}.bedGraph",
         #     chrom=chromosome_by_platform[wildcards.platform],
         # ),
-        true_meth="resources/bed_avg_1.bedGraph",
-        ref_tool="results/ref_tools/modkit/data1/modkit.bed",
+        true_meth=lambda wildcards: expand(
+            "resources/bed_avg_{chrom}.bedGraph",
+            chrom=chromosome_by_platform[wildcards.platform],
+        ),
+        ref_tool="results/ref_tools/{method}/{protocol}/{method}.bed",
+        # ref_tool="results/ref_tools/methylDackel/TruSeq_HG002_LAB01_REP01/methylDackel.bed",
     output:
-        png="results/{platform}/{protocol}/dist_comp.png",
+        plot=expand(
+            "results/{{platform}}/{{protocol}}/plots/dist_comp_{{method}}.{plot_type}",
+            plot_type=config["plot_type"],
+        ),
     conda:
         "envs/plot.yaml"
     log:
-        "logs/plot_results_debug_{platform}_{protocol}.log",
+        "logs/plot_results_debug_{platform}_{protocol}_{method}.log",
     params:
+        plot_type=config["plot_type"],
         cov_bins=config["cov_bins"],
+        method=lambda wildcards: str(wildcards.method),
     script:
         "scripts/plot_distances_together.py"
 
@@ -278,27 +261,39 @@ rule plot_ref_results:
             chrom=chromosome_by_platform[wildcards.platform],
         ),
     output:
-        png=report(
-            "results/{platform}/{protocol}/{method}.png",
-            caption="ref_performance.rst",
-            category="{platform}",
-            subcategory="{protocol}",
+        plot=expand(
+            "results/{{platform}}/{{protocol}}/plots/{{method}}/scatter_{cov_bin}.{plot_type}",
+            cov_bin=[i for i in range(0, config["cov_bins"])],
+            plot_type=config["plot_type"],
         ),
-        html=report(
-            "results/{platform}/{protocol}/{method}.html",
-            caption="ref_performance.rst",
-            category="{platform}",
-            subcategory="{protocol}",
+        tool_dist=expand(
+            "results/{{platform}}/{{protocol}}/plots/{{method}}/dist_{cov_bin}.{plot_type}",
+            cov_bin=[i for i in range(0, config["cov_bins"])],
+            plot_type=config["plot_type"],
         ),
-        tool_dist=report(
-            "results/{platform}/{protocol}/{method}_dist.png",
-            caption="report/ref_distance.rst",
-            category="{platform}",
-            subcategory="{protocol}",
-        ),
+        precall="results/{platform}/{protocol}/plots/{method}/precall.csv",
     conda:
         "envs/plot.yaml"
+    params:
+        plot_type=config["plot_type"],
+        cov_bins=config["cov_bins"],
+        cov_bin_size=config["cov_bin_size"],
     log:
         "logs/plot_ref_results_{platform}_{protocol}_{method}.log",
     script:
         "scripts/scatter_plot.py"
+
+
+rule plot_precision_recall:
+    input:
+        get_pricision_recall_csvs,
+    output:
+        "results/{platform}/{protocol}/plots/precall.{plot_type}",
+    conda:
+        "envs/plot.yaml"
+    log:
+        "logs/plot_precision_recall_{platform}_{protocol}_{plot_type}.log",
+    params:
+        plot_type=config["plot_type"],
+    script:
+        "scripts/precision_recall.py"

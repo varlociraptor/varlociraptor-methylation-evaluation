@@ -5,13 +5,19 @@ platforms:
   Illumina_pe: 21
   Nanopore: 1
 
+# Choose frome png and html
+plot_type: html
+
 ref_tools:
   # Chose from: bismark, bisSNP, methylDackel, bsMap
-  Illumina_pe: [bismark, bisSNP, methylDackel, bsMap]
+  Illumina_pe: []
+  # Illumina_pe: [bismark, bisSNP, methylDackel, bsMap]
   # Chose from: pb_CpG_tools
+  # PacBio: [pb_CpG_tools]
   PacBio: [pb_CpG_tools]
   # Chose from: modkit
-  Nanopore: [modkit]
+  # Nanopore: [modkit]
+  Nanopore: []
 
 sample:
   species: "homo_sapiens"
@@ -24,8 +30,9 @@ sample:
 # pipeline_path: "~/Documents/Promotion/varlociraptor-methylation-evaluation/"
 # methylFastQ_path: "~/Documents/Promotion/MethylFASTQ/"
 
-# Gibt an, auf wie viele scatter plots wir unsere Ergebnisse aufteilen (je nach coverage, 10 pro coverage, letztes bekommt alle restlichen)
+# Gibt an, auf wie viele scatter plots wir unsere Ergebnisse aufteilen (je nach coverage, 5 pro coverage, letztes bekommt alle restlichen)
 cov_bins: 1
+cov_bin_size: 10
 
 base_dir: "/projects/koesterlab/benchmark-methylation/"
 varlo_path: "/projects/koesterlab/benchmark-methylation/varlociraptor/"
@@ -61,8 +68,10 @@ data:
   Nanopore:
     data1: [dummySRA_nanopore]
     
-
-
+testcase:
+  # locus: 21:26081724 # for filtering
+  locus: 21:15799832 #for bias
+  prefix: test_prinz_bias_old
 
 dummySRA_pacBio: "https://downloads.pacbcloud.com/public/dataset/HG002-CpG-methylation-202202/HG002.GRCh38.haplotagged.bam"
 dummySRA_nanopore: "https://ont-open-data.s3.amazonaws.com/gm24385_mod_2021.09/extra_analysis/all.bam"

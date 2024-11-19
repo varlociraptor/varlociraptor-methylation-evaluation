@@ -13,65 +13,78 @@
 # """
 
 
-# rule download_methylFastq:
-#     output:
-#         directory("resources/tools/MethylFASTQ"),
-#     log:
-#         "../logs/download_methylFastq.log",
-#     params:
-#         pipeline_path=config["pipeline_path"],
-#     conda:
-#         "../envs/install_program.yaml"
-#     shell:
-#         """
-#         mkdir -p {params.pipeline_path}resources/tools
-#         cd {params.pipeline_path}/resources/tools
-#         git clone git@github.com:qBioTurin/MethylFASTQ.git
-#         """
+rule download_methylFastq:
+    output:
+        directory("resources/tools/MethylFASTQ"),
+    log:
+        "../logs/download_methylFastq.log",
+    params:
+        pipeline_path=config["pipeline_path"],
+    conda:
+        "../envs/install_program.yaml"
+    shell:
+        """
+        mkdir -p {params.pipeline_path}resources/tools
+        cd {params.pipeline_path}/resources/tools
+        git clone git@github.com:qBioTurin/MethylFASTQ.git
+        """
 
 
-# # chg and chh = 1 because we are not interested in these anyways and want them to be unchanged in the bisulfite bams
-# rule fake_meth_data:
-#     input:
-#         methylFastQ="resources/tools/MethylFASTQ/src/methylFASTQ.py",
-#         fasta="resources/chromosome_21.fasta",
-#     output:
-#         f1="resources/Illumina_pe/simulated_data/{sim_mode}/chromosome_21_pe_f150r150_dir_R1.fastq",
-#         f2="resources/Illumina_pe/simulated_data/{sim_mode}/chromosome_21_pe_f150r150_dir_R2.fastq",
-#         ch3="resources/Illumina_pe/simulated_data/{sim_mode}/chromosome_21_pe_f150r150_dir.ch3",
-#     conda:
-#         "../envs/methylFastQ.yaml"
-#     log:
-#         "logs/fake_meth_data.log",
-#     params:
-#         pipeline_path=config["pipeline_path"],
-#         meth=lambda wildcards: 0.8 if wildcards.platform == "meth" else 1.0,
-#         snp=lambda wildcards: 0.0 if wildcards.platform == "meth" else 0.8,
-#     shell:
-#         """
-#         python {input.methylFastQ} -i {input.fasta} -o /projects/koesterlab/benchmark-methylation/varlociraptor-methylation-evaluation/resources/Illumina_pe/simulated_data/{wildcards.sim_mode} --seq paired_end --read 150 --chh 1.0 --chg 1.0 --cg {params.meth} --snp {params.snp} --error 0.0 --coverage 4
-#         """
+# chg and chh = 1 because we are not interested in these anyways and want them to be unchanged in the bisulfite bams
+rule fake_meth_data:
+    input:
+        methylFastQ="resources/tools/MethylFASTQ/src/methylFASTQ.py",
+        fasta="resources/test_chr.fasta",
+    output:
+        f1="resources/Illumina_pe/simulated_data/{sim_mode}/test_chr_pe_f4r4_dir_R1.fastq",
+        f2="resources/Illumina_pe/simulated_data/{sim_mode}/test_chr_pe_f4r4_dir_R2.fastq",
+        ch3="resources/Illumina_pe/simulated_data/{sim_mode}/test_chr_pe_f4r4_dir.ch3",
+    conda:
+        "../envs/methylFastQ.yaml"
+    log:
+        "logs/fake_meth_data{sim_mode}.log",
+    params:
+        pipeline_path=config["pipeline_path"],
+        # meth=lambda wildcards: 0.8 if wildcards.platform == "meth" else 1.0,
+        # snp=lambda wildcards: 0.0 if wildcards.platform == "meth" else 0.8,
+    shell:
+        """
+        python {input.methylFastQ} -i {input.fasta} -o /projects/koesterlab/benchmark-methylation/varlociraptor-methylation-evaluation/resources/Illumina_pe/simulated_data/{wildcards.sim_mode} --seq paired_end --read 4 --chh 1.0 --chg 1.0 --cg 1.0 --snp 0.0 --error 0.0 --coverage 2
+        """
 
 
-# rule align_simulated_reads:
-#     input:
-#         fasta_index="resources/genome.fasta.bwameth.c2t",
-#         fasta="resources/genome.fasta",
-#         reads1="resources/Illumina_pe/simulated_data/chromosome_21_pe_f150r150_dir_R1.fastq",
-#         reads2="resources/Illumina_pe/simulated_data/chromosome_21_pe_f150r150_dir_R1.fastq",
-#     output:
-#         "resources/Illumina_pe/simulated_data/{sim_mode}/alignment.bam",
-#     conda:
-#         "../envs/bwa-meth.yaml"
-#     log:
-#         "logs/align_simulated_reads.log",
-#     threads: 30
-#     resources:
-#         mem_mb=512,
-#     shell:
-#         """
-#         bwameth.py --threads {threads} --reference {input.fasta} {input.reads1} {input.reads2}  | samtools view -S -b - > {output}
-#         """
+rule index_genome:
+    input:
+        "resources/test_chr.fasta",
+    output:
+        "resources/test_chr.fasta.bwameth.c2t",
+    log:
+        "logs/index_genome.log",
+    conda:
+        "../envs/bwa-meth.yaml"
+    shell:
+        "bwameth.py index-mem2 {input}"
+
+
+rule align_simulated_reads:
+    input:
+        fasta_index="resources/test_chr.fasta.bwameth.c2t",
+        fasta="resources/test_chr.fasta",
+        reads1="resources/Illumina_pe/simulated_data/{sim_mode}/test_chr_pe_f4r4_dir_R1.fastq",
+        reads2="resources/Illumina_pe/simulated_data/{sim_mode}/test_chr_pe_f4r4_dir_R1.fastq",
+    output:
+        "resources/Illumina_pe/simulated_data/{sim_mode}/alignment.bam",
+    conda:
+        "../envs/bwa-meth.yaml"
+    log:
+        "logs/align_simulated_reads_{sim_mode}.log",
+    threads: 30
+    resources:
+        mem_mb=512,
+    shell:
+        """
+        bwameth.py --threads {threads} --reference {input.fasta} {input.reads1} {input.reads2}  | samtools view -S -b - > {output}
+        """
 
 
 # rule compute_meth_observations:

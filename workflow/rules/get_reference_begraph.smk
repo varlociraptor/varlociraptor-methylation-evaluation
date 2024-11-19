@@ -70,24 +70,26 @@ rule compute_avg_bedGraph:
         "../scripts/compute_avg_bedGraph.py"
 
 
-rule plot_avg_bedGraph:
-    input:
-        candidates=expand(
-            "resources/{chrom}/candidates.vcf", chrom=[chrom for chrom in chromosomes]
-        ),
-        bedgraphs=expand(
-            "resources/HG002/{bedGraph}-{chromosome}.bedGraph",
-            bedGraph=config["bedGraphs_HG002"],
-            chromosome=[chrom for chrom in chr_chromosome],
-        ),
-    output:
-        cov="resources/bed_avg_cov.png",
-        meth="resources/bed_avg_meth.png",
-    conda:
-        "../envs/plot.yaml"
-    wildcard_constraints:
-        chromosome="[^_]+",
-    log:
-        "logs/plot_avg_bedGraph.log",
-    script:
-        "../scripts/plot_avg_bedGraph.py"
+# rule plot_avg_bedGraph:
+#     input:
+#         candidates=expand(
+#             "resources/{chrom}/candidates.vcf", chrom=[chrom for chrom in chromosomes]
+#         ),
+#         bedgraphs=expand(
+#             "resources/HG002/{bedGraph}-{chromosome}.bedGraph",
+#             bedGraph=config["bedGraphs_HG002"],
+#             chromosome=[chrom for chrom in chr_chromosome],
+#         ),
+#     output:
+#         cov="resources/bed_avg_cov.{plot_type}",
+#         meth="resources/bed_avg_meth.{plot_type}",
+#     conda:
+#         "../envs/plot.yaml"
+#     wildcard_constraints:
+#         chromosome="[^_]+",
+#     log:
+#         "logs/plot_avg_bedGraph.log",
+#     params:
+#         plot_type=config["plot_type"],
+#     script:
+#         "../scripts/plot_avg_bedGraph.py"

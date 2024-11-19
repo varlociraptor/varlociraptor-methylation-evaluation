@@ -3,6 +3,8 @@ def compute_results():
     for platform in config["platforms"].keys():
         needed_inputs.append(scatter_plots(platform))
         needed_inputs.append(scatter_plots_ref(platform))
+        needed_inputs.append(diff_plots(platform))
+        needed_inputs.append(precision_call(platform))
     return needed_inputs
 
 
@@ -10,7 +12,11 @@ def scatter_plots(platform):
     base_path = Path("results") / platform
     protocols = list(config["data"][platform].keys())
     return [
-        str(base_path / protocol / ("varlo_" + str(bin) + ".png"))
+        str(
+            base_path
+            / protocol
+            / ("plots/varlo/scatter_" + str(bin) + "." + config["plot_type"])
+        )
         for protocol in protocols
         for bin in range(0, config["cov_bins"])
     ]
@@ -21,9 +27,46 @@ def scatter_plots_ref(platform):
     protocols = list(config["data"][platform].keys())
     ref_methods = config["ref_tools"][platform]
     return [
-        str(base_path / protocol / (method + ".png"))
+        # str(base_path / protocol / ("plots/" + method + str(bin) + snakemake.params["plot_type"]))
+        str(
+            base_path
+            / protocol
+            / (
+                "plots/"
+                + str(method)
+                + "/scatter_"
+                + str(bin)
+                + "."
+                + config["plot_type"]
+            )
+        )
         for protocol in protocols
         for method in ref_methods
+        for bin in range(0, config["cov_bins"])
+    ]
+
+
+def diff_plots(platform):
+    base_path = Path("results") / platform
+    protocols = list(config["data"][platform].keys())
+    ref_methods = config["ref_tools"][platform]
+    return [
+        str(
+            base_path
+            / protocol
+            / ("plots/dist_comp_" + method + "." + config["plot_type"])
+        )
+        for protocol in protocols
+        for method in ref_methods
+    ]
+
+
+def precision_call(platform):
+    base_path = Path("results") / platform
+    protocols = list(config["data"][platform].keys())
+    return [
+        str(base_path / protocol / ("plots/precall." + config["plot_type"]))
+        for protocol in protocols
     ]
 
 
@@ -52,3 +95,11 @@ def get_ref_methods(wildcards):
         str(base_path / method / wildcards.protocol / (method + ".bed"))
         for method in ref_methods
     ]
+
+
+def get_pricision_recall_csvs(wildcards):
+
+    base_path = Path("results") / wildcards.platform / wildcards.protocol / "plots"
+    ref_methods = config["ref_tools"][wildcards.platform]
+    ref_methods.append("varlo")
+    return [str(base_path / method / "precall.csv") for method in ref_methods]

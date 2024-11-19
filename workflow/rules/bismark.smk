@@ -131,3 +131,16 @@ rule bismark_focus_on_chromosome:
         """
         awk '$1 == "{params.chromosome}"' {input} > {output}
         """
+
+
+# Example for CpG only coverage
+rule bismark2bedGraph_cpg:
+    input:
+        "results/ref_tools/bismark/{protocol}/alignment_bismark_sorted.bedGraph.gz",
+    output:
+        "results/ref_tools/bismark/{protocol}/alignment_bismark_sorted_new.bedGraph.gz",
+        "results/ref_tools/bismark/{protocol}/alignment_bismark_sorted_new.bismark.cov.gz",
+    log:
+        "logs/meth_cpg/{protocol}_CpG.log",
+    wrapper:
+        "v5.0.2/bio/bismark/bismark2bedGraph"
