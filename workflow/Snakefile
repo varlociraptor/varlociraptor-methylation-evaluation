@@ -156,7 +156,7 @@ rule filter_calls:
     shell:
         """
         cd {params.varlo_path}
-        cargo run --release -- filter-calls control-fdr --mode local-smart {params.pipeline_path}{input} --events {params.event} --fdr 0.05 > {params.pipeline_path}{output}
+        cargo run --release -- filter-calls control-fdr --mode local-smart {params.pipeline_path}{input} --events {params.event} --fdr 0.005 > {params.pipeline_path}{output}
         """
 
 
@@ -241,6 +241,11 @@ rule plot_dist_comparision:
             "results/{{platform}}/{{protocol}}/plots/dist_comp_{{method}}.{plot_type}",
             plot_type=config["plot_type"],
         ),
+        scatter_plot=expand(
+            "results/{{platform}}/{{protocol}}/plots/scatter_comp_{{method}}.{plot_type}",
+            plot_type=config["plot_type"],
+        ),
+        distances="results/{platform}/{protocol}/debug/distances_{method}.txt",
     conda:
         "envs/plot.yaml"
     log:
@@ -248,7 +253,6 @@ rule plot_dist_comparision:
     params:
         plot_type=config["plot_type"],
         cov_bins=config["cov_bins"],
-        method=lambda wildcards: str(wildcards.method),
     script:
         "scripts/plot_distances_together.py"
 
@@ -297,3 +301,22 @@ rule plot_precision_recall:
         plot_type=config["plot_type"],
     script:
         "scripts/precision_recall.py"
+
+
+rule debug_distances:
+    input:
+        tool="results/{platform}/{protocol}/calls.vcf",
+        distances="results/{platform}/{protocol}/debug/distances_{method}.txt",
+        ref_tool="results/ref_tools/{method}/{protocol}/{method}.bed",
+        true_meth=lambda wildcards: expand(
+            "resources/bed_avg_{chrom}.bedGraph",
+            chrom=chromosome_by_platform[wildcards.platform],
+        ),
+    output:
+        distances="results/{platform}/{protocol}/debug/distances_origin_{method}.txt",
+    conda:
+        "envs/plot.yaml"
+    log:
+        "logs/debug_distances_{platform}_{protocol}_{method}.log",
+    script:
+        "scripts/debug_distances.py"

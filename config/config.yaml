@@ -6,18 +6,18 @@ platforms:
   Nanopore: 1
 
 # Choose frome png and html
-plot_type: html
+plot_type: png
 
 ref_tools:
   # Chose from: bismark, bisSNP, methylDackel, bsMap
-  Illumina_pe: []
+  Illumina_pe: [methylDackel]
   # Illumina_pe: [bismark, bisSNP, methylDackel, bsMap]
   # Chose from: pb_CpG_tools
   # PacBio: [pb_CpG_tools]
   PacBio: [pb_CpG_tools]
   # Chose from: modkit
   # Nanopore: [modkit]
-  Nanopore: []
+  Nanopore: [modkit]
 
 sample:
   species: "homo_sapiens"
@@ -30,8 +30,8 @@ sample:
 # pipeline_path: "~/Documents/Promotion/varlociraptor-methylation-evaluation/"
 # methylFastQ_path: "~/Documents/Promotion/MethylFASTQ/"
 
-# Gibt an, auf wie viele scatter plots wir unsere Ergebnisse aufteilen (je nach coverage, 5 pro coverage, letztes bekommt alle restlichen)
-cov_bins: 1
+# Gibt an, auf wie viele scatter plots wir unsere Ergebnisse aufteilen (je nach coverage, cov_bin_size pro coverage, letztes bekommt alle restlichen)
+cov_bins: 5
 cov_bin_size: 10
 
 base_dir: "/projects/koesterlab/benchmark-methylation/"
