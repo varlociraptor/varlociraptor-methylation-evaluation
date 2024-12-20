@@ -6,7 +6,7 @@ platforms:
   Nanopore: 1
 
 # Choose frome png and html
-plot_type: png
+plot_type: html
 
 ref_tools:
   # Chose from: bismark, bisSNP, methylDackel, bsMap
@@ -33,6 +33,16 @@ sample:
 # Gibt an, auf wie viele scatter plots wir unsere Ergebnisse aufteilen (je nach coverage, cov_bin_size pro coverage, letztes bekommt alle restlichen)
 cov_bins: 5
 cov_bin_size: 10
+
+# cov_bins: 
+#   Illumina_pe: 5
+#   PacBio: 7
+#   Nanopore: 7
+# cov_bin_size:
+#   Illumina_pe: 10
+#   PacBio: 20
+#   Nanopore: 20
+
 
 base_dir: "/projects/koesterlab/benchmark-methylation/"
 varlo_path: "/projects/koesterlab/benchmark-methylation/varlociraptor/"

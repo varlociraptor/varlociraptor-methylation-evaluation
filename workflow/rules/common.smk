@@ -4,7 +4,7 @@ def compute_results():
         needed_inputs.append(scatter_plots(platform))
         needed_inputs.append(scatter_plots_ref(platform))
         needed_inputs.append(diff_plots(platform))
-        needed_inputs.append(precision_call(platform))
+        needed_inputs.append(precision_recall(platform))
     return needed_inputs
 
 
@@ -61,12 +61,13 @@ def diff_plots(platform):
     ]
 
 
-def precision_call(platform):
+def precision_recall(platform):
     base_path = Path("results") / platform
     protocols = list(config["data"][platform].keys())
     return [
-        str(base_path / protocol / ("plots/precall." + config["plot_type"]))
+        f"{base_path}/{protocol}/plots/precall_{bin}.{config['plot_type']}"
         for protocol in protocols
+        for bin in range(0, config["cov_bins"])
     ]
 
 
@@ -97,9 +98,9 @@ def get_ref_methods(wildcards):
     ]
 
 
-def get_pricision_recall_csvs(wildcards):
+def get_precision_recall_csvs(wildcards):
 
     base_path = Path("results") / wildcards.platform / wildcards.protocol / "plots"
-    ref_methods = config["ref_tools"][wildcards.platform]
-    ref_methods.append("varlo")
-    return [str(base_path / method / "precall.csv") for method in ref_methods]
+    methods = config["ref_tools"][wildcards.platform]
+    methods.append("varlo")
+    return [str(base_path / method / "precall_{cov_bin}.csv") for method in methods]

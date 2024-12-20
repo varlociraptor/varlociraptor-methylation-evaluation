@@ -162,9 +162,9 @@ rule filter_calls:
 
 rule calls_to_vcf:
     input:
-        "results/{platform}/{protocol}/calls_{scatteritem}.filtered.bcf",
+        "results/{platform}/{protocol}/calls_{scatteritem}.bcf",
     output:
-        "results/{platform}/{protocol}/calls_{scatteritem}.filtered.vcf",
+        "results/{platform}/{protocol}/calls_{scatteritem}.vcf",
     conda:
         "envs/samtools.yaml"
     log:
@@ -179,7 +179,7 @@ rule calls_to_vcf:
 rule gather_calls:
     input:
         gather.split_candidates(
-            "results/{{platform}}/{{protocol}}/calls_{scatteritem}.filtered.vcf"
+            "results/{{platform}}/{{protocol}}/calls_{scatteritem}.vcf"
         ),
     output:
         "results/{platform}/{protocol}/calls.vcf",
@@ -199,17 +199,32 @@ rule plot_results:
             chrom=chromosome_by_platform[wildcards.platform],
         ),
     output:
-        plot=expand(
-            "results/{{platform}}/{{protocol}}/plots/varlo/scatter_{cov_bins}.{plot_type}",
-            cov_bins=[i for i in range(0, config["cov_bins"])],
-            plot_type=config["plot_type"],
+        plot = report(
+            expand(
+                "results/{{platform}}/{{protocol}}/plots/varlo/scatter_{cov_bins}.{plot_type}",
+                cov_bins=[i for i in range(0, config["cov_bins"])],
+                plot_type=config["plot_type"],
+            ),
+            # caption="../report/metilene_plots.rst",
+            category=lambda wildcards: wildcards.platform,
+            subcategory="Varlo plots",
+            labels=lambda wildcards: {
+                "scatter_plot coverage": wildcards.cov_bins - wildcards.cov_bins + confi["cov_bin_size"],
+            },
         ),
-        tool_dist=expand(
-            "results/{{platform}}/{{protocol}}/plots/varlo/dist_{cov_bins}.{plot_type}",
-            cov_bins=[i for i in range(0, config["cov_bins"])],
-            plot_type=config["plot_type"],
+        tool_dist = report(
+            expand(
+                "results/{{platform}}/{{protocol}}/plots/varlo/dist_{cov_bins}.{plot_type}",
+                cov_bins=[i for i in range(0, config["cov_bins"])],
+                plot_type=config["plot_type"],
+            ),
+            category=lambda wildcards: wildcards.platform,
+            subcategory="Varlo plots",
         ),
-        precall="results/{platform}/{protocol}/plots/varlo/precall.csv",
+        precall=expand("results/{{platform}}/{{protocol}}/plots/varlo/precall_{cov_bins}.csv",
+            cov_bins=[i for i in range(0, config["cov_bins"])],
+        ),
+
         # bias_pos="results/{platform}/{protocol}/bias.txt",
     conda:
         "envs/plot.yaml"
@@ -237,13 +252,20 @@ rule plot_dist_comparision:
         ref_tool="results/ref_tools/{method}/{protocol}/{method}.bed",
         # ref_tool="results/ref_tools/methylDackel/TruSeq_HG002_LAB01_REP01/methylDackel.bed",
     output:
-        plot=expand(
+        plot=report(
+            expand(
             "results/{{platform}}/{{protocol}}/plots/dist_comp_{{method}}.{plot_type}",
             plot_type=config["plot_type"],
         ),
-        scatter_plot=expand(
+            category=lambda wildcards: wildcards.platform,
+            subcategory="Comparisions",
+        ),
+        scatter_plot=report(expand(
             "results/{{platform}}/{{protocol}}/plots/scatter_comp_{{method}}.{plot_type}",
             plot_type=config["plot_type"],
+        ),
+            category=lambda wildcards: wildcards.platform,
+            subcategory="Comparisions",
         ),
         distances="results/{platform}/{protocol}/debug/distances_{method}.txt",
     conda:
@@ -265,17 +287,28 @@ rule plot_ref_results:
             chrom=chromosome_by_platform[wildcards.platform],
         ),
     output:
-        plot=expand(
+        plot=report(
+            expand(
             "results/{{platform}}/{{protocol}}/plots/{{method}}/scatter_{cov_bin}.{plot_type}",
             cov_bin=[i for i in range(0, config["cov_bins"])],
             plot_type=config["plot_type"],
         ),
-        tool_dist=expand(
+            category=lambda wildcards: wildcards.platform,
+            subcategory="Ref_method plots",
+        ),
+        tool_dist=report(
+            expand(
             "results/{{platform}}/{{protocol}}/plots/{{method}}/dist_{cov_bin}.{plot_type}",
             cov_bin=[i for i in range(0, config["cov_bins"])],
             plot_type=config["plot_type"],
+            ),
+            category=lambda wildcards: wildcards.platform,
+            subcategory="Ref_method plots",
         ),
-        precall="results/{platform}/{protocol}/plots/{method}/precall.csv",
+        precall=expand("results/{{platform}}/{{protocol}}/plots/{{method}}/precall_{cov_bins}.csv",
+            cov_bins=[i for i in range(0, config["cov_bins"])],
+        ),
+
     conda:
         "envs/plot.yaml"
     params:
@@ -290,13 +323,21 @@ rule plot_ref_results:
 
 rule plot_precision_recall:
     input:
-        get_pricision_recall_csvs,
+        get_precision_recall_csvs
+        # "results/{platform}/{protocol}/plots/varlo/precall_{cov_bin}.csv",
     output:
-        "results/{platform}/{protocol}/plots/precall.{plot_type}",
+        report(
+            expand(
+            "results/{{platform}}/{{protocol}}/plots/precall_{{cov_bin}}.{{plot_type}}",
+            ),
+            category=lambda wildcards: wildcards.platform,
+            subcategory="Comparisions",
+        ),
+
     conda:
         "envs/plot.yaml"
     log:
-        "logs/plot_precision_recall_{platform}_{protocol}_{plot_type}.log",
+        # "logs/plot_precision_recall_{platform}_{protocol}_{plot_type}.log",
     params:
         plot_type=config["plot_type"],
     script:
