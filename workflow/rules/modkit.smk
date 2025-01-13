@@ -8,7 +8,7 @@ rule modkit:
             chromosome=chromosome_by_platform.get("Nanopore"),
         ),
     output:
-        "results/ref_tools/modkit/{protocol}/alignments_CpG.combined.bed",
+        "results/Nanopore/{protocol}/result_files/alignments_CpG.combined.bed",
     conda:
         "../envs/modkit.yaml"
     log:
@@ -23,8 +23,8 @@ rule modkit:
 
 rule rename_modkit_output:
     input:
-        "results/ref_tools/modkit/{protocol}/alignments_CpG.combined.bed",
+        "results/Nanopore/{protocol}/result_files/alignments_CpG.combined.bed",
     output:
-        "results/ref_tools/modkit/{protocol}/modkit.bed",
+        "results/Nanopore/{protocol}/result_files/modkit.bed",
     shell:
         "mv {input} {output}"

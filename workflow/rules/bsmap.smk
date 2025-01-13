@@ -24,7 +24,7 @@ rule bsmap:
         # alignment_index="resources/Illumina_pe/{protocol}/alignment_focused_downsampled_dedup.bam.bai",
     output:
         alignment_renamed=temp("resources/Illumina_pe/{protocol}/bsmap.bam"),
-        out="results/ref_tools/bsMap/{protocol}/out.sam",
+        out="results/Illumina_pe/{protocol}/result_files/out.sam",
     conda:
         "../envs/bsmap.yaml"
     log:
@@ -41,10 +41,10 @@ rule bsmap:
 rule extract_methylation:
     input:
         genome="resources/genome.fasta",
-        bsmap_sam="results/ref_tools/bsMap/{protocol}/out.sam",
+        bsmap_sam="results/Illumina_pe/{protocol}/result_files/out.sam",
         meth_extractor="resources/ref_tools/bsMap/methratio.py",
     output:
-        "results/ref_tools/bsMap/{protocol}/methylation_ratios.bed",
+        "results/Illumina_pe/{protocol}/result_files/methylation_ratios.bed",
     conda:
         "../envs/bsmap.yaml"
     log:
@@ -59,8 +59,8 @@ rule extract_methylation:
 
 rule rename_bsmap_output:
     input:
-        "results/ref_tools/bsMap/{protocol}/methylation_ratios.bed",
+        "results/Illumina_pe/{protocol}/result_files/methylation_ratios.bed",
     output:
-        "results/ref_tools/bsMap/{protocol}/bsMap.bed",
+        "results/Illumina_pe/{protocol}/result_files/bsMap.bed",
     shell:
         "mv {input} {output}"

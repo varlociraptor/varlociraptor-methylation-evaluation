@@ -93,7 +93,7 @@ rule bismark_extract_results:
     input:
         "resources/ref_tools/bismark/alignment/{protocol}/alignment_bismark_sorted.bam",
     output:
-        "results/ref_tools/bismark/{protocol}/alignment_bismark_sorted.bedGraph.gz",
+        "results/Illumina_pe/{protocol}/result_files/CpG_context_alignment_bismark_sorted.txt",
     params:
         bismark_dir=config["pipeline_path"] + "resources/ref_tools/bismark",
     conda:
@@ -101,46 +101,73 @@ rule bismark_extract_results:
     shell:
         """
         mkdir -p $(dirname {output})
-        bismark_methylation_extractor --bedGraph {input} -o $(dirname {output}) --split_by_chromosome
+        bismark_methylation_extractor {input} -o $(dirname {output}) --comprehensive --merge_non_CpG
         """
 
 
-rule unzip_bismark_results:
+# rule bismark_methylation_extractor:
+#     input:
+#         "resources/ref_tools/bismark/alignment/{protocol}/alignment_bismark_sorted.bam",
+#     output:
+#         mbias_r1="qc/meth/{protocol}.M-bias_R1.png",
+#         mbias_report="resources/ref_tools/bismark/meth/{protocol}.M-bias.txt",
+#         splitting_report="resources/ref_tools/bismark/meth/{protocol}_splitting_report.txt",
+#         # 1-based start, 1-based end ('inclusive') methylation info: % and counts
+#         methylome_CpG_cov="resources/ref_tools/bismark/meth_cpg/{protocol}.bismark.cov.gz",
+#         # BedGraph with methylation percentage: 0-based start, end exclusive
+#         methylome_CpG_mlevel_bedGraph="resources/ref_tools/bismark/meth_cpg/{protocol}.bedGraph.gz",
+#         # Primary output files: methylation status at each read cytosine position: (extremely large)
+#         read_base_meth_state_cpg="resources/ref_tools/bismark/alignment/{protocol}/CpG_context.txt.gz",
+#         # * You could merge CHG, CHH using: --merge_non_CpG
+#         read_base_meth_state_chg="resources/ref_tools/bismark/meth/CHG_context_{protocol}.txt.gz",
+#         read_base_meth_state_chh="resources/ref_tools/bismark/meth/CHH_context_{protocol}.txt.gz",
+#     log:
+#         "logs/meth/{protocol}.log",
+#     params:
+#         output_dir="meth",  # optional output dir
+#         extra="--gzip --comprehensive --bedGraph",  # optional params string
+#     wrapper:
+#         "v5.5.0/bio/bismark/bismark_methylation_extractor"
+
+
+# Example for CpG only coverage
+rule bismark2bedGraph_cpg:
     input:
-        "results/ref_tools/bismark/{protocol}/alignment_bismark_sorted.bedGraph.gz",
+        "results/Illumina_pe/{protocol}/result_files/CpG_context_alignment_bismark_sorted.txt",
+        # "results/Illumina_pe/{protocol}/result_files/CpG_context_test_dataset.fastq_bismark.txt",
+        # "resources/ref_tools/bismark/alignment/{protocol}/CpG_context.txt.gz",
     output:
-        "results/ref_tools/bismark/{protocol}/alignment_bismark_sorted.bedGraph",
-    params:
-        bismark_dir=config["pipeline_path"] + "resources/ref_tools/bismark",
-    conda:
-        "../envs/bismark.yaml"
-    shell:
-        """
-        gunzip {input}
-        """
+        bedGraph="results/Illumina_pe/{protocol}/result_files/CpG.bedGraph.gz",
+        cov="results/Illumina_pe/{protocol}/result_files/CpG.bismark.cov.gz",
+    log:
+        "logs/meth_cpg/{protocol}_CpG.log",
+    wrapper:
+        "v5.5.0/bio/bismark/bismark2bedGraph"
+
+
+# rule unzip_bismark_results:
+#     input:
+#         "results/Illumina_pe/{protocol}/result_files/CpG.bismark.cov.gz",
+#     output:
+#         "results/Illumina_pe/{protocol}/result_files/alignment_bismark_sorted.bedGraph",
+#     params:
+#         bismark_dir=config["pipeline_path"] + "resources/ref_tools/bismark",
+#     conda:
+#         "../envs/bismark.yaml"
+#     shell:
+#         """
+#         gunzip {input}
+#         """
 
 
 rule bismark_focus_on_chromosome:
     input:
-        "results/ref_tools/bismark/{protocol}/alignment_bismark_sorted.bedGraph",
+        "results/Illumina_pe/{protocol}/result_files/CpG.bismark.cov",
     output:
-        "results/ref_tools/bismark/{protocol}/bismark.bed",
+        "results/Illumina_pe/{protocol}/result_files/bismark.bed",
     params:
         chromosome=lambda wildcards: chromosome_by_platform["Illumina_pe"],
     shell:
         """
         awk '$1 == "{params.chromosome}"' {input} > {output}
         """
-
-
-# Example for CpG only coverage
-rule bismark2bedGraph_cpg:
-    input:
-        "results/ref_tools/bismark/{protocol}/alignment_bismark_sorted.bedGraph.gz",
-    output:
-        "results/ref_tools/bismark/{protocol}/alignment_bismark_sorted_new.bedGraph.gz",
-        "results/ref_tools/bismark/{protocol}/alignment_bismark_sorted_new.bismark.cov.gz",
-    log:
-        "logs/meth_cpg/{protocol}_CpG.log",
-    wrapper:
-        "v5.0.2/bio/bismark/bismark2bedGraph"

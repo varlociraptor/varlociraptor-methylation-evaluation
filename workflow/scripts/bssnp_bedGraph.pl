@@ -64,8 +64,8 @@ else{
 		$type = "\\w+"; ##by default, output all sites in VCF file
 	}
 }
-
-my $head_line = "track type=bedGraph name=${cpg_name_output}.${bissnp_version}  description=\"$type methylation level\" visibility=3";
+my $head_line = "track type=bedGraph name=${cpg_name_output}.${bissnp_version} description=\"$type methylation level and coverage\" visibility=3";
+# my $head_line = "track type=bedGraph name=${cpg_name_output}.${bissnp_version}  description=\"$type methylation level\" visibility=3";
 #variableStep chrom=chr19 span=150"
 print OUT "$head_line\n";
 
@@ -101,8 +101,8 @@ while(<FH>){
 			my $start = $splitin[1]-1;
 			my $end = $splitin[1];
 			my $ct_reads = $num_c + $num_t;
-			#my $out_line = "$chr\t$start\t$end\t$methy\t$ct_reads";
-			my $out_line = "$chr\t$start\t$end\t$methy";
+			my $out_line = "$chr\t$start\t$end\t$methy\t$ct_reads";
+			# my $out_line = "$chr\t$start\t$end\t$methy";
 			print OUT "$out_line\n";
 		}
 		

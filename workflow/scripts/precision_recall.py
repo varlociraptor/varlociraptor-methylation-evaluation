@@ -19,7 +19,7 @@ print(snakemake.output[0])
 
 # Altair Plot erstellen: Linie und Punkte
 line_chart = (
-    alt.Chart(df_combined[df_combined["tool"] == "Varlociraptor"])
+    alt.Chart(df_combined[df_combined["tool"] == "varlo"])
     .mark_line()
     .encode(
         x="recall:Q",
@@ -32,6 +32,7 @@ line_chart = (
                 ]
             ),
         ),
+        color="tool:N",
         order=alt.Order("prob_pres_threshold", sort="ascending"),
     )
 )

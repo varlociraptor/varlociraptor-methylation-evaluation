@@ -7,17 +7,20 @@ platforms:
 
 # Choose frome png and html
 plot_type: html
+prob_pres_threshhold: 0.0
+
 
 ref_tools:
   # Chose from: bismark, bisSNP, methylDackel, bsMap
-  Illumina_pe: [methylDackel]
+  Illumina_pe: [bismark, bisSNP, methylDackel, bsMap]
+  # Illumina_pe: [bismark]
   # Illumina_pe: [bismark, bisSNP, methylDackel, bsMap]
   # Chose from: pb_CpG_tools
-  # PacBio: [pb_CpG_tools]
   PacBio: [pb_CpG_tools]
+  # PacBio: []
   # Chose from: modkit
-  # Nanopore: [modkit]
   Nanopore: [modkit]
+  # Nanopore: []
 
 sample:
   species: "homo_sapiens"
@@ -31,17 +34,17 @@ sample:
 # methylFastQ_path: "~/Documents/Promotion/MethylFASTQ/"
 
 # Gibt an, auf wie viele scatter plots wir unsere Ergebnisse aufteilen (je nach coverage, cov_bin_size pro coverage, letztes bekommt alle restlichen)
-cov_bins: 5
-cov_bin_size: 10
+# cov_bins: 5
+# cov_bin_size: 10
 
-# cov_bins: 
-#   Illumina_pe: 5
-#   PacBio: 7
-#   Nanopore: 7
-# cov_bin_size:
-#   Illumina_pe: 10
-#   PacBio: 20
-#   Nanopore: 20
+cov_bins: 
+  Illumina_pe: 5
+  PacBio: 5
+  Nanopore: 5
+cov_bin_size:
+  Illumina_pe: 10
+  PacBio: 20
+  Nanopore: 20
 
 
 base_dir: "/projects/koesterlab/benchmark-methylation/"

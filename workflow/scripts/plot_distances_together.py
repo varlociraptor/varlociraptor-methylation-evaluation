@@ -5,30 +5,8 @@ import re
 import os
 
 
-def compute_bias(prob, format_values):
-    probs = re.split("[=;]", prob)
-    probs_values = [probs[i] for i in [1, 3, 5]]
-    try:
-        prob_values = [float(value) for value in probs_values]
-    except:
-        return "bias"
-    min_value = min(prob_values)
-    min_index = prob_values.index(min_value)
-
-    bias_labels = ["SB", "ROB", "RPB", "SCB", "HE", "ALB"]
-
-    if any(value != "." for value in format_values[6:12]):
-        bias = bias_labels[format_values[6:12].index(".")]
-    else:
-        bias = "normal"
-
-    if min_index != 0:
-        bias = "normal"
-    return bias
-
-
 def compute_rmse(df, tool_col):
-    squared_errors = (df[tool_col] - df["true_methylation"]) ** 2
+    squared_errors = (df[tool_col] - df["true_methylation_x"]) ** 2
     mean_squared_error = squared_errors.mean()
     return np.sqrt(mean_squared_error)
 
@@ -47,11 +25,14 @@ def compute_distances(df):
         output: Path to the output file.
     """
     df["varlo_distance"] = (
-        (df["varlo_methylation"] - df["true_methylation"]).abs().round().astype(int)
+        (df["varlo_methylation"] - df["true_methylation_x"]).abs().round().astype(int)
     )
 
     df["ref_distance"] = (
-        (df["ref_tool_methylation"] - df["true_methylation"]).abs().round().astype(int)
+        (df["ref_tool_methylation"] - df["true_methylation_x"])
+        .abs()
+        .round()
+        .astype(int)
     )
 
     df["distance_tools"] = (df["varlo_methylation"] - df["ref_tool_methylation"]).abs()
@@ -104,12 +85,14 @@ def scatter_plot(df, ref_tool, output):
         .encode(x="x:Q", y="y:Q")
     )
 
+    print("Datensatz: ", df)
+
     scatter_meth = (
         alt.Chart(df)
         .mark_circle(color="blue")
         .encode(
             x="varlo_methylation",
-            y="true_methylation",
+            y="true_methylation_x",
             # color="bias:N",
             opacity=alt.value(0.3),
             tooltip=["chromosome:N", "position:N"],
@@ -121,7 +104,7 @@ def scatter_plot(df, ref_tool, output):
         .mark_circle(color="red")
         .encode(
             x="ref_tool_methylation",
-            y="true_methylation",
+            y="true_methylation_x",
             # color="bias:N",
             opacity=alt.value(0.3),
             tooltip=["chromosome:N", "position:N"],
@@ -176,154 +159,25 @@ def debug_distances(df, output):
         )
 
 
-def read_truth_file(truth_file_path):
-    # Lies TrueMeth-Daten
-    df = []
-
-    with open(truth_file_path, "r") as truth_file:
-        for line in truth_file:
-            if line.startswith("track"):
-                continue
-            parts = line.strip().split("\t")
-            chrom, start, end, meth_rate = (
-                parts[0].replace("chr", ""),
-                int(parts[1]),
-                int(parts[2]),
-                float(parts[3]),
-            )
-            position = (start + end) // 2
-            df.append([chrom, position, meth_rate])
-
-    return pd.DataFrame(df, columns=["chromosome", "position", "true_methylation"])
-
-
-def read_tool_file(tool_file_path, file_name):
-    # Allgemeine Struktur für die Datei
-    df = []
-
-    with open(tool_file_path, "r") as tool_file:
-
-        for line in tool_file:
-            if line.startswith("#") or line.startswith("track"):
-                continue
-            parts = line.strip().split("\t")
-
-            # Spezifische Struktur für jedes Tool
-            if file_name == "Varlociraptor":  # Varlociraptor
-                chrom, pos, alternative, info_field, format_field, values = (
-                    parts[0],
-                    int(parts[1]),
-                    parts[4],
-                    parts[7],
-                    parts[8],
-                    parts[9].split(":"),
-                )
-                if alternative == "<METH>":
-                    format_fields = format_field.split(":")
-                    dp_index = format_fields.index("DP")
-                    af_index = format_fields.index("AF")
-
-                    meth_rate = float(values[af_index]) * 100
-                    coverage = int(values[dp_index])
-
-                    bias = compute_bias(info_field, values)
-
-                    df.append([chrom, pos, meth_rate, coverage, bias])
-
-            elif file_name == "methylDackel":
-                chrom, start, end, meth_rate, coverage = (
-                    parts[0],
-                    int(parts[1]),
-                    int(parts[2]),
-                    float(parts[3]),
-                    int(parts[4]) + int(parts[5]),
-                )
-                position = (start + end) // 2
-                df.append([chrom, position, meth_rate, coverage, "normal"])
-
-            elif file_name == "bsMap":
-                chrom, position, meth_rate, coverage = (
-                    parts[0],
-                    int(parts[1]),
-                    float(parts[4]) * 100,
-                    int(parts[5]),
-                )
-                df.append([chrom, position, meth_rate, coverage, "normal"])
-
-            elif file_name == "bismark":
-                chrom, start, end, meth_rate = (
-                    parts[0],
-                    int(parts[1]),
-                    int(parts[2]),
-                    float(parts[3]),
-                )
-                position = (start + end) // 2
-                df.append([chrom, position, meth_rate, None, "normal"])
-
-            elif file_name == "bisSNP":
-                chrom, position, meth_rate = (
-                    parts[0],
-                    int(parts[2]),
-                    float(parts[3]),
-                )
-                df.append([chrom, position, meth_rate, None, "normal"])
-
-            elif file_name == "modkit":
-                details = parts[9].split()
-                chrom, position, coverage, meth_rate = (
-                    parts[0].removeprefix("chr"),
-                    int(parts[2]),
-                    int(details[0]),
-                    float(details[1]),
-                )
-                df.append([chrom, position, meth_rate, None, "normal"])
-
-            elif file_name == "pb_CpG_tools":
-                chrom, position, meth_rate, coverage = (
-                    parts[0],
-                    int(parts[2]),
-                    float(parts[3]),
-                    int(parts[5]),
-                )
-
-                df.append([chrom, position, meth_rate, coverage, "normal"])
-
-    # Erstelle DataFrame
-    columns = [
-        "chromosome",
-        "position",
-        "tool_methylation",
-        "coverage",
-        "bias",
-    ]
-    return pd.DataFrame(df, columns=columns)
-
-
 pd.set_option("display.max_columns", None)
-varlo_file = snakemake.input["tool"]
+varlo_file = snakemake.input["varlo"]
 ref_file = snakemake.input["ref_tool"]
 ref_tool = os.path.splitext(os.path.basename(ref_file))[0]
 
+varlo_df = pd.read_parquet(varlo_file, engine="pyarrow")
+ref_df = pd.read_parquet(ref_file, engine="pyarrow")
 
-varlo_df = read_tool_file(varlo_file, "Varlociraptor")
-ref_df = read_tool_file(ref_file, ref_tool)
-truth_df = read_truth_file(snakemake.input["true_meth"][0])
+print("DF1:", varlo_df)
+print("DF2:", ref_df)
 
-
-df_temp = pd.merge(
+df = pd.merge(
     varlo_df[varlo_df["bias"] == "normal"],  # Gefiltertes varlo_df
     ref_df,  # ref_df
     on=["chromosome", "position"],  # Gemeinsame Spalten
     how="inner",  # Nur gemeinsame Einträge
 )
 
-
-df = pd.merge(
-    df_temp,  # Ergebnis des ersten Merges
-    truth_df,  # truth_df
-    on=["chromosome", "position"],  # Gemeinsame Spalten
-    how="inner",  # Nur gemeinsame Einträge
-)
+print("Datensatz1: ", df)
 
 df.rename(
     columns={

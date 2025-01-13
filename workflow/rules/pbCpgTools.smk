@@ -23,7 +23,7 @@ rule pb_CpG_tools:
         alignment_index="resources/PacBio/{protocol}/alignment_focused_downsampled_dedup_renamed.bam.bai",
         genome="resources/genome.fasta",
     output:
-        "results/ref_tools/pb_CpG_tools/{protocol}/alignments_CpG.combined.bed",
+        "results/PacBio/{protocol}/result_files/alignments_CpG.combined.bed",
     log:
         "logs/pb_CpG_tools_{protocol}.log",
     params:
@@ -44,8 +44,8 @@ rule pb_CpG_tools:
 
 rule rename_pb_output:
     input:
-        "results/ref_tools/pb_CpG_tools/{protocol}/alignments_CpG.combined.bed",
+        "results/PacBio/{protocol}/result_files/alignments_CpG.combined.bed",
     output:
-        "results/ref_tools/pb_CpG_tools/{protocol}/pb_CpG_tools.bed",
+        "results/PacBio/{protocol}/result_files/pb_CpG_tools.bed",
     shell:
         "mv {input} {output}"
