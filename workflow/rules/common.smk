@@ -2,44 +2,9 @@ def compute_results():
     needed_inputs = []
     for platform in config["platforms"].keys():
         needed_inputs.append(scatter_plots(platform))
-        # needed_inputs.append(scatter_plots_ref(platform))
         needed_inputs.append(diff_plots(platform))
         needed_inputs.append(precision_recall(platform))
-        needed_inputs.append(scatter_all_cov(platform))
-    print(needed_inputs)
     return needed_inputs
-
-
-# def scatter_plots(platform):
-#     base_path = Path("results") / platform
-#     protocols = list(config["data"][platform].keys())
-#     return [
-#         str(
-#             base_path
-#             / protocol
-#             / ("plots/varlo/scatter_" + str(bin) + "." + config["plot_type"])
-#         )
-#         for protocol in protocols
-#         # for bin in list(range(0, config["cov_bins"][platform])) + ["all"]
-#         for bin in list(range(0, config["cov_bins"][platform]))
-#     ]
-
-
-def scatter_all_cov(platform):
-    base_path = Path("results") / platform
-    protocols = list(config["data"][platform].keys())
-    ref_methods = config["ref_tools"][platform]
-    return [
-        str(
-            base_path
-            / protocol
-            / ("plots/" + str(method) + "/all_" + str(bin) + "." + config["plot_type"])
-        )
-        for protocol in protocols
-        for method in list(ref_methods + ["varlo"])
-        # for bin in list(range(0, config["cov_bins"][platform])) + ["all"]
-        for bin in ["dist", "scatter"]
-    ]
 
 
 def scatter_plots(platform):
@@ -54,16 +19,19 @@ def scatter_plots(platform):
             / (
                 "plots/"
                 + str(method)
-                + "/scatter_"
+                + "/"
+                + type
+                + "_"
                 + str(bin)
                 + "."
                 + config["plot_type"]
             )
         )
         for protocol in protocols
+        for type in ["scatter", "dist"]
         for method in list(ref_methods + ["varlo"])
-        # for bin in list(range(0, config["cov_bins"][platform])) + ["all"]
-        for bin in list(range(0, config["cov_bins"][platform]))
+        for bin in list(range(0, config["cov_bins"][platform])) + ["all"]
+        # for bin in list(range(0, config["cov_bins"][platform]))
     ]
 
 
@@ -75,8 +43,9 @@ def diff_plots(platform):
         str(
             base_path
             / protocol
-            / ("plots/dist_comp_" + method + "." + config["plot_type"])
+            / ("plots/" + plot_type + "_comp_" + method + "." + config["plot_type"])
         )
+        for plot_type in ["scatter", "dist"]
         for protocol in protocols
         for method in ref_methods
     ]

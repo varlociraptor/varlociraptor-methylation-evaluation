@@ -79,13 +79,14 @@ def distance_plot(melted_df, df, ref_tool, output):
 
 
 def scatter_plot(df, ref_tool, output):
+    rmse_varlo = round(compute_rmse(df, "varlo_methylation"), 2)
+    rmse_ref = round(compute_rmse(df, "ref_tool_methylation"), 2)
+
     line = (
         alt.Chart(pd.DataFrame({"x": [0, 100], "y": [0, 100]}))
         .mark_line(color="green")
         .encode(x="x:Q", y="y:Q")
     )
-
-    print("Datensatz: ", df)
 
     scatter_meth = (
         alt.Chart(df)
@@ -117,20 +118,19 @@ def scatter_plot(df, ref_tool, output):
             width=400,
             height=400,
             title=alt.Title(
-                f"Varlo and {ref_tool} vs. TrueMeth",
+                f"Varlo (RMSE {rmse_varlo}) and {ref_tool} (RMSE {rmse_ref}) vs. TrueMeth",
                 subtitle=f"{ref_tool} methylation (red) in front of Varlo methylation (blue)",
             ),
         )
         .interactive()
     )
-
     chart2 = (
         (scatter_ref + scatter_meth + line)
         .properties(
             width=400,
             height=400,
             title=alt.Title(
-                f"Varlo and {ref_tool} vs. TrueMeth",
+                f"Varlo (RMSE {rmse_varlo}) and {ref_tool} (RMSE {rmse_ref}) vs. TrueMeth",
                 subtitle=f"Varlo methylation (blue) in front of {ref_tool} methylation (red)",
             ),
         )

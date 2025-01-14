@@ -21,7 +21,7 @@ rule plot_results_cov_specific:
         tool="results/{platform}/{protocol}/result_files/{method}.parquet",
     output:
         plot=report(
-            "results/{platform}/{protocol}/plots/{method}/scatter_{cov_bin}.{plot_type}",
+            "results/{platform}/{protocol}/plots/{method}/scatter_{cov_bin, [0-9]+}.{plot_type}",
             category=lambda wildcards: wildcards.platform,
             subcategory=lambda wildcards: f"{wildcards.method} plots",
             labels= lambda wildcards: {
@@ -30,7 +30,7 @@ rule plot_results_cov_specific:
                 },
             ),
         tool_dist=report(
-            "results/{platform}/{protocol}/plots/{method}/dist_{cov_bin}.{plot_type}",
+            "results/{platform}/{protocol}/plots/{method}/dist_{cov_bin, [0-9]+}.{plot_type}",
             category=lambda wildcards: wildcards.platform,
             subcategory=lambda wildcards: f"{wildcards.method} plots",
             labels= lambda wildcards: {
@@ -39,7 +39,8 @@ rule plot_results_cov_specific:
             },
         ),
     # wildcard_constraints:
-    #     cov_bin="(?!all)"
+        # cov_bin=[A-Z]+
+        # cov_bin="(?!all)"
     conda: 
         "../envs/plot.yaml",
     params:
@@ -54,8 +55,8 @@ rule plot_results_all_cov:
         tool="results/{platform}/{protocol}/result_files/{method}.parquet",
     output:
         plot=report(
-            # "results/{platform}/{protocol}/plots/{method}/scatter_all.{plot_type}",
-            "results/{platform}/{protocol}/plots/{method}/all_scatter.{plot_type}",
+            "results/{platform}/{protocol}/plots/{method}/scatter_all.{plot_type}",
+            # "results/{platform}/{protocol}/plots/{method}/all_scatter.{plot_type}",
             category=lambda wildcards: wildcards.platform,
             subcategory=lambda wildcards: f"{wildcards.method} plots",
             labels= lambda wildcards: {
@@ -65,7 +66,7 @@ rule plot_results_all_cov:
             ),
         tool_dist=report(
             # "results/{platform}/{protocol}/plots/{method}/dist_all.{plot_type}",
-            "results/{platform}/{protocol}/plots/{method}/all_dist.{plot_type}",
+            "results/{platform}/{protocol}/plots/{method}/dist_all.{plot_type}",
             category=lambda wildcards: wildcards.platform,
             subcategory=lambda wildcards: f"{wildcards.method} plots",
             labels= lambda wildcards: {
