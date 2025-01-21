@@ -88,8 +88,8 @@ def read_tool_file(tool_file_path, file_name):
                     meth_rate = float(values[af_index]) * 100
                     coverage = int(values[dp_index])
 
-                    match = re.search(r"PROB_PRESENT=([\d\.]+)", info_field)
-                    prob_present = 2
+                    match = re.search(r"PROB_HIGH=([\d\.]+)", info_field)
+                    prob_present = 0
                     try:
                         prob_present = 10 ** (-float(match.group(1)) / 10)
                     except:

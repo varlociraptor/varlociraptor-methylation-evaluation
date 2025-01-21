@@ -5,11 +5,17 @@ import csv
 import os
 
 
-def compute_precision_recall(df, cov_bin, methylation_threshold, last=False):
-
-    df["tool_binary"] = df["tool_methylation"].apply(
-        lambda x: 1 if x > methylation_threshold else 0
-    )
+def compute_precision_recall(
+    df, cov_bin, methylation_threshold, filename="tool", prob_threshold=0, last=False
+):
+    if file_name == "varlo":
+        df["tool_binary"] = df["prob_present"].apply(
+            lambda x: 1 if x > prob_threshold else 0
+        )
+    else:
+        df["tool_binary"] = df["tool_methylation"].apply(
+            lambda x: 1 if x > methylation_threshold else 0
+        )
     df["truth_binary"] = df["true_methylation"].apply(
         lambda x: 1 if x > methylation_threshold else 0
     )
@@ -17,9 +23,6 @@ def compute_precision_recall(df, cov_bin, methylation_threshold, last=False):
     TP = ((df["tool_binary"] == 1) & (df["truth_binary"] == 1)).sum()
     FP = ((df["tool_binary"] == 1) & (df["truth_binary"] == 0)).sum()
     FN = ((df["tool_binary"] == 0) & (df["truth_binary"] == 1)).sum()
-
-    print(df)
-    print(TP, FP, FN)
 
     precision = TP / (TP + FP) if (TP + FP) > 0 else 0.0
     recall = TP / (TP + FN) if (TP + FN) > 0 else 0.0
@@ -53,16 +56,16 @@ def compute_precision_recall_thresholds(df, methylation_threshold, last=False):
 
     # Schritt 3: Für jeden Batch etwas berechnen
     thresholds = np.arange(0, 1, 0.01)
-    for threshold in thresholds:
-        filtered_df = df[df["prob_present"] > threshold]
+    for prob_threshold in thresholds:
+        # filtered_df = df[df["prob_present"] > threshold]
         precision, recall, coverages = compute_precision_recall(
-            filtered_df, cov_bin, methylation_threshold, last
+            df, cov_bin, methylation_threshold, "varlo", prob_threshold, last
         )
         precision_list.append(precision)
         recall_list.append(recall)
         coverages_list.append(coverages)
-        prob_present_threshhold.append(threshold)
-        number_sites.append(len(filtered_df))
+        prob_present_threshhold.append(prob_threshold)
+        number_sites.append(len(df))
     return (
         precision_list,
         recall_list,
@@ -127,6 +130,7 @@ max_cov = df["coverage"].max()
 
 
 df = df[df["cov_bin"] == cov_bin]
+print(df)
 if file_name == "varlo":
     precision, recall, coverages, prob_present_threshhold, number_sites = (
         compute_precision_recall_thresholds(

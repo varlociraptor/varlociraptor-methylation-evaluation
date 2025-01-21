@@ -96,7 +96,7 @@ def scatter_plot(df, ref_tool, output):
             y="true_methylation_x",
             # color="bias:N",
             opacity=alt.value(0.3),
-            tooltip=["chromosome:N", "position:N"],
+            tooltip=["chromosome:N", "position:N", "coverage_x:N"],
         )
         .interactive()
     )
@@ -108,7 +108,7 @@ def scatter_plot(df, ref_tool, output):
             y="true_methylation_x",
             # color="bias:N",
             opacity=alt.value(0.3),
-            tooltip=["chromosome:N", "position:N"],
+            tooltip=["chromosome:N", "position:N", "coverage_y:N"],
         )
         .interactive()
     )
@@ -144,31 +144,16 @@ def scatter_plot(df, ref_tool, output):
     combined_chart.save(output, scale_factor=2.0)
 
 
-def debug_distances(df, output):
-    print("Output: ", output)
-    print(df)
-    with open(output, "w") as out_file:
-        df = df.sort_values(by="distance_tools", ascending=False)
-        out_file.write(
-            f"big_dist: {list(zip(df['chromosome'], df['position']))[:20]}\n"
-        )
-
-        df = df.sort_values(by="distance_tools", ascending=True)
-        out_file.write(
-            f"small_dist: {list(zip(df['chromosome'], df['position']))[:20]}\n"
-        )
-
-
 pd.set_option("display.max_columns", None)
 varlo_file = snakemake.input["varlo"]
 ref_file = snakemake.input["ref_tool"]
 ref_tool = os.path.splitext(os.path.basename(ref_file))[0]
 
 varlo_df = pd.read_parquet(varlo_file, engine="pyarrow")
+varlo_df = varlo_df[
+    varlo_df["prob_present"] > float(snakemake.params["prob_pres_threshhold"])
+]
 ref_df = pd.read_parquet(ref_file, engine="pyarrow")
-
-print("DF1:", varlo_df)
-print("DF2:", ref_df)
 
 df = pd.merge(
     varlo_df[varlo_df["bias"] == "normal"],  # Gefiltertes varlo_df
@@ -191,5 +176,3 @@ scatter_plot(df, ref_tool, snakemake.output["scatter_plot"][0])
 
 df, melted_data = compute_distances(df)
 distance_plot(melted_data, df, ref_tool, snakemake.output["plot"][0])
-
-debug_distances(df, snakemake.output["distances"])

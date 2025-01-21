@@ -113,14 +113,14 @@ rule plot_dist_comparision:
                 "coverage": "all"
             },
         ),
-        distances="results/{platform}/{protocol}/debug/distances_{method}.txt",
     conda:
         "../envs/plot.yaml"
     log:
-        "logs/plot_results_debug_{platform}_{protocol}_{method}.log",
+        "logs/plot_dist_comparision_{platform}_{protocol}_{method}.log",
     params:
         plot_type=config["plot_type"],
         cov_bins=config["cov_bins"],
+        prob_pres_threshhold=config["prob_pres_threshhold"],
     script:
         "../scripts/plot_distances_together.py"
 
@@ -165,6 +165,6 @@ rule plot_precision_recall:
     params:
         plot_type=config["plot_type"],
     script:
-        "../scripts/precision_recall.py"
+        "../scripts/plot_precision_recall.py"
 
 

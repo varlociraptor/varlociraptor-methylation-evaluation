@@ -145,19 +145,20 @@ rule bismark2bedGraph_cpg:
         "v5.5.0/bio/bismark/bismark2bedGraph"
 
 
-# rule unzip_bismark_results:
-#     input:
-#         "results/Illumina_pe/{protocol}/result_files/CpG.bismark.cov.gz",
-#     output:
-#         "results/Illumina_pe/{protocol}/result_files/alignment_bismark_sorted.bedGraph",
-#     params:
-#         bismark_dir=config["pipeline_path"] + "resources/ref_tools/bismark",
-#     conda:
-#         "../envs/bismark.yaml"
-#     shell:
-#         """
-#         gunzip {input}
-#         """
+rule unzip_bismark_results:
+    input:
+        "results/Illumina_pe/{protocol}/result_files/CpG.bismark.cov.gz",
+    output:
+        # "results/Illumina_pe/{protocol}/result_files/alignment_bismark_sorted.bedGraph",
+        "results/Illumina_pe/{protocol}/result_files/CpG.bismark.cov",
+    params:
+        bismark_dir=config["pipeline_path"] + "resources/ref_tools/bismark",
+    conda:
+        "../envs/bismark.yaml"
+    shell:
+        """
+        gunzip {input}
+        """
 
 
 rule bismark_focus_on_chromosome:

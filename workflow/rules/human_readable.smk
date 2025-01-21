@@ -1,7 +1,3 @@
-scattergather:
-    split_candidates=20,
-
-
 rule candidates_to_vcf:
     input:
         "resources/{chro}/candidates.bcf",
