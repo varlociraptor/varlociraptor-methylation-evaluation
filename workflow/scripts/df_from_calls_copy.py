@@ -3,6 +3,13 @@ import os
 import re
 
 
+def number_reads(s):
+    numbers = re.findall(r"\d+", s)
+    if not numbers:
+        return 0
+    return sum(int(num) for num in numbers)
+
+
 def get_bin(coverage):
     return min(
         int(coverage / snakemake.params["cov_bin_size"]),
@@ -76,8 +83,15 @@ def read_tool_file(tool_file_path, file_name):
                     format_fields = format_field.split(":")
                     dp_index = format_fields.index("DP")
                     af_index = format_fields.index("AF")
-
-                    meth_rate = float(values[af_index]) * 100
+                    # meth_rate = float(values[af_index]) * 100
+                    saobs_index = format_fields.index("SAOBS")
+                    srobs_index = format_fields.index("SROBS")
+                    saobs = number_reads(values[saobs_index])
+                    srobs = number_reads(values[srobs_index])
+                    if srobs == 0:
+                        meth_rate = 100
+                    else:
+                        meth_rate = (saobs / (saobs + srobs)) * 100
                     coverage = int(values[dp_index])
 
                     match = re.search(r"PROB_HIGH=([\d\.]+)", info_field)
@@ -90,8 +104,6 @@ def read_tool_file(tool_file_path, file_name):
                         print(
                             f"Prob present not found on chrom {chrom}, position {position}"
                         )
-                        if position == 5030481:
-                            print("CONTINUIE")
                         continue
 
                     bias = compute_bias(info_field, values)
@@ -250,10 +262,12 @@ tool_df = read_tool_file(tool_file, file_name)
 truth_df = read_truth_file(snakemake.input["true_meth"][0])
 
 max_cov = tool_df["coverage"].max()
+print("Debug")
+print(tool_df.shape)
+print(tool_df[tool_df["position"] == "5030481"])
 df = pd.merge(
     tool_df[tool_df["bias"] == "normal"],  # Filter Tool-Daten
     truth_df,  # Filter True-Daten
     on=["chromosome", "position"],
 )
-print(df.to_string())
 df.to_parquet(snakemake.output[0], engine="pyarrow", compression="snappy")

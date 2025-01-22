@@ -151,9 +151,12 @@ ref_tool = os.path.splitext(os.path.basename(ref_file))[0]
 
 varlo_df = pd.read_parquet(varlo_file, engine="pyarrow")
 varlo_df = varlo_df[
-    varlo_df["prob_present"] > float(snakemake.params["prob_pres_threshhold"])
+    varlo_df["prob_present"] >= float(snakemake.params["prob_pres_threshhold"])
 ]
 ref_df = pd.read_parquet(ref_file, engine="pyarrow")
+
+print(varlo_df[varlo_df["position"] == 5033665])
+
 
 df = pd.merge(
     varlo_df[varlo_df["bias"] == "normal"],  # Gefiltertes varlo_df
@@ -162,7 +165,24 @@ df = pd.merge(
     how="inner",  # Nur gemeinsame Einträge
 )
 
-print("Datensatz1: ", df)
+
+#######################################
+#  Outer Merge: Alle Zeilen aus beiden DataFrames
+merged_outer = pd.merge(
+    varlo_df,
+    ref_df,
+    on=["chromosome", "position"],
+    how="outer",
+    indicator=True,  # Fügt eine Spalte "_merge" hinzu
+)
+
+# Zeilen filtern, die nur in einem der beiden DataFrames enthalten sind
+not_in_merged = merged_outer[merged_outer["_merge"] != "both"]
+
+# Alle nicht enthaltenen Zeilen ausgeben
+print("Not in merged")
+print(not_in_merged.to_string())
+#####################################
 
 df.rename(
     columns={

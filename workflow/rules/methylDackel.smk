@@ -1,4 +1,3 @@
-# Vielleicht vorher Regel mit mkdir {params.pipeline_path}/results/ref_tools/dackel/{wildcards.protocol}/ einfuegen, konnte ich jetzt noch nicht ueberpruefen, gibt aber sonst glaub ich nen Fehler
 rule methylDackel:
     input:
         genome="resources/genome.fasta",
@@ -24,7 +23,6 @@ rule methylDackel:
         """
 
 
-# Vielleicht vorher Regel mit mkdir {params.pipeline_path}/results/ref_tools/dackel/{wildcards.protocol}/ einfuegen, konnte ich jetzt noch nicht ueberpruefen, gibt aber sonst glaub ich nen Fehler
 rule methylDackel_debug:
     input:
         genome="resources/genome.fasta",

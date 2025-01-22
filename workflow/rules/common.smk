@@ -57,7 +57,8 @@ def precision_recall(platform):
     return [
         f"{base_path}/{protocol}/plots/precall_{bin}.{config['plot_type']}"
         for protocol in protocols
-        for bin in range(0, config["cov_bins"][platform])
+        for bin in list(range(0, config["cov_bins"][platform])) + ["all"]
+        # for bin in range(0, config["cov_bins"][platform])
     ]
 
 

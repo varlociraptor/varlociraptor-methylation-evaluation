@@ -154,7 +154,11 @@ rule plot_precision_recall:
             subcategory="All Comparisions",
             labels=lambda wildcards: {
                 "type": "precision recall",
-                "coverage": f"{int(wildcards.cov_bin) * int(config['cov_bin_size'][wildcards.platform])} - {int(wildcards.cov_bin) * int(config['cov_bin_size'][wildcards.platform]) + int(config['cov_bin_size'][wildcards.platform]) - 1}",
+                "coverage": (
+                    "all"
+                    if wildcards.cov_bin == "all"
+                    else f"{int(wildcards.cov_bin) * int(config['cov_bin_size'][wildcards.platform])} - {int(wildcards.cov_bin) * int(config['cov_bin_size'][wildcards.platform]) + int(config['cov_bin_size'][wildcards.platform]) - 1}"
+                ),
             },
         ),
 

@@ -8,7 +8,7 @@ import os
 def compute_precision_recall(
     df, cov_bin, methylation_threshold, filename="tool", prob_threshold=0, last=False
 ):
-    if file_name == "varlo":
+    if filename == "varlo":
         df["tool_binary"] = df["prob_present"].apply(
             lambda x: 1 if x > prob_threshold else 0
         )
@@ -19,10 +19,15 @@ def compute_precision_recall(
     df["truth_binary"] = df["true_methylation"].apply(
         lambda x: 1 if x > methylation_threshold else 0
     )
-
     TP = ((df["tool_binary"] == 1) & (df["truth_binary"] == 1)).sum()
     FP = ((df["tool_binary"] == 1) & (df["truth_binary"] == 0)).sum()
     FN = ((df["tool_binary"] == 0) & (df["truth_binary"] == 1)).sum()
+
+    if prob_threshold == 0.99:
+        filtered_rows = df[(df["tool_binary"] == 1) & (df["truth_binary"] == 0)]
+        print("Debug")
+        print(filtered_rows.to_string())
+        print(FP)
 
     precision = TP / (TP + FP) if (TP + FP) > 0 else 0.0
     recall = TP / (TP + FN) if (TP + FN) > 0 else 0.0
@@ -30,10 +35,13 @@ def compute_precision_recall(
 
     if last:
         coverages = f"{cov_bin* cov_bin_size}-max_cov"
+    elif cov_bin == "all":
+        coverages = f"0 - max_cov"
     else:
+        cov_bin = int(cov_bin)
         coverages = f"{cov_bin* cov_bin_size}-{cov_bin* cov_bin_size+ cov_bin_size-1}"
 
-    return precision, recall, coverages
+    return precision, recall, coverages, TP, FP, FN
 
 
 def compute_precision_recall_thresholds(df, methylation_threshold, last=False):
@@ -45,20 +53,17 @@ def compute_precision_recall_thresholds(df, methylation_threshold, last=False):
         coverages_list,
         prob_present_threshhold,
         number_sites,
-    ) = (
-        [],
-        [],
-        [],
-        [],
-        [],
-    )
+        TP_list,
+        FP_list,
+        FN_list,
+    ) = ([], [], [], [], [], [], [], [])
     # Schritt 2: Teile die Zeilen in 100 gleich große Batches (so gut wie möglich)
 
     # Schritt 3: Für jeden Batch etwas berechnen
     thresholds = np.arange(0, 1, 0.01)
     for prob_threshold in thresholds:
         # filtered_df = df[df["prob_present"] > threshold]
-        precision, recall, coverages = compute_precision_recall(
+        precision, recall, coverages, TP, FP, FN = compute_precision_recall(
             df, cov_bin, methylation_threshold, "varlo", prob_threshold, last
         )
         precision_list.append(precision)
@@ -66,17 +71,32 @@ def compute_precision_recall_thresholds(df, methylation_threshold, last=False):
         coverages_list.append(coverages)
         prob_present_threshhold.append(prob_threshold)
         number_sites.append(len(df))
+        TP_list.append(TP)
+        FP_list.append(FP)
+        FN_list.append(FN)
     return (
         precision_list,
         recall_list,
         coverages_list,
         prob_present_threshhold,
         number_sites,
+        TP_list,
+        FP_list,
+        FN_list,
     )
 
 
 def save_precision_recall(
-    tool, coverage, no_sites, precision, recall, prob_present_threshhold, filename
+    tool,
+    coverage,
+    no_sites,
+    precision,
+    recall,
+    prob_present_threshhold,
+    TP,
+    FP,
+    FN,
+    filename,
 ):
     # Datei anlegen mit Header, wenn sie nicht existiert
     try:
@@ -90,6 +110,9 @@ def save_precision_recall(
                     "precision",
                     "prob_pres_threshold",
                     "recall",
+                    "TP",
+                    "FP",
+                    "FN",
                 ]
             )
     except FileExistsError:
@@ -107,6 +130,9 @@ def save_precision_recall(
                     precision[i],
                     prob_present_threshhold[i],
                     recall[i],
+                    TP[i],
+                    FP[i],
+                    FN[i],
                 ]
             )
 
@@ -125,14 +151,14 @@ file_name = "Varlociraptor" if base_name == "calls" else base_name
 
 df = pd.read_parquet(tool_file, engine="pyarrow")
 
-cov_bin = int(snakemake.params["cov_bin"])
 max_cov = df["coverage"].max()
+cov_bin = snakemake.params["cov_bin"]
 
-
-df = df[df["cov_bin"] == cov_bin]
+if cov_bin != "all":
+    df = df[df["cov_bin"] == int(cov_bin)]
 print(df)
 if file_name == "varlo":
-    precision, recall, coverages, prob_present_threshhold, number_sites = (
+    precision, recall, coverages, prob_present_threshhold, number_sites, TP, FP, FN = (
         compute_precision_recall_thresholds(
             df,
             methylation_threshold,
@@ -146,10 +172,13 @@ if file_name == "varlo":
         precision,
         recall,
         prob_present_threshhold,
+        TP,
+        FP,
+        FN,
         snakemake.output["precall"],
     )
 else:
-    precision, recall, coverages = compute_precision_recall(
+    precision, recall, coverages, TP, FP, FN = compute_precision_recall(
         df,
         cov_bin,
         methylation_threshold,
@@ -163,5 +192,8 @@ else:
         [precision],
         [recall],
         [0],
+        [TP],
+        [FP],
+        [FN],
         snakemake.output["precall"],
     )

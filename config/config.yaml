@@ -6,7 +6,7 @@ platforms:
   Nanopore: 1
 
 # Choose frome png and html
-plot_type: png
+plot_type: html
 prob_pres_threshhold: 0.0
 
 
@@ -38,11 +38,11 @@ sample:
 # cov_bin_size: 10
 
 cov_bins: 
-  Illumina_pe: 10
+  Illumina_pe: 5
   PacBio: 5
   Nanopore: 5
 cov_bin_size:
-  Illumina_pe: 5
+  Illumina_pe: 10
   PacBio: 20
   Nanopore: 20
 
