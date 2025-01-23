@@ -14,19 +14,6 @@ rule candidates_to_vcf:
         """
 
 
-rule candidate_splits_to_vcf:
-    input:
-        "resources/{chro}/candidates_{scatteritem}.bcf",
-    output:
-        temp("resources/{chro}/candidates_{scatteritem}.vcf"),
-    conda:
-        "../envs/samtools.yaml"
-    log:
-        "logs/{chro}/candidate_splits_to_vcf_{scatteritem}.log",
-    shell:
-        """
-        bcftools view {input} > {output}
-        """
 
 
 rule aligned_reads_sorted_sam:

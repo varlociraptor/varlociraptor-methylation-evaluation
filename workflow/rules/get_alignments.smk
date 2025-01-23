@@ -335,3 +335,4 @@ rule aligned_reads_candidates_region_index:
         """
         samtools index -@ {threads} {params.pipeline_path}{input}
         """
+

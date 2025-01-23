@@ -84,8 +84,6 @@ def read_tool_file(tool_file_path, file_name):
                     prob_present = 0
                     try:
                         prob_present = 10 ** (-float(match.group(1)) / 10)
-                        if position == 5030481:
-                            print(prob_present)
                     except:
                         print(
                             f"Prob present not found on chrom {chrom}, position {position}"
@@ -139,7 +137,7 @@ def read_tool_file(tool_file_path, file_name):
                         coverage,
                         get_bin(coverage),
                         "normal",
-                        None,
+                        0,
                     ]
                 )
 
@@ -160,7 +158,7 @@ def read_tool_file(tool_file_path, file_name):
                         coverage,
                         get_bin(coverage),
                         "normal",
-                        None,
+                        0,
                     ]
                 )
 
@@ -179,7 +177,7 @@ def read_tool_file(tool_file_path, file_name):
                         coverage,
                         get_bin(coverage),
                         "normal",
-                        None,
+                        0,
                     ]
                 )
 
@@ -200,7 +198,7 @@ def read_tool_file(tool_file_path, file_name):
                         coverage,
                         get_bin(coverage),
                         "normal",
-                        None,
+                        0,
                     ]
                 )
 
@@ -222,7 +220,7 @@ def read_tool_file(tool_file_path, file_name):
                         coverage,
                         get_bin(coverage),
                         "normal",
-                        None,
+                        0,
                     ]
                 )
     # Erstelle DataFrame
@@ -237,7 +235,7 @@ def read_tool_file(tool_file_path, file_name):
     ]
     return pd.DataFrame(df, columns=columns)
 
-
+pd.set_option("display.max_columns", None)
 # Globale DataFrames
 tool_df = pd.DataFrame()
 truth_df = pd.DataFrame()
@@ -250,10 +248,11 @@ tool_df = read_tool_file(tool_file, file_name)
 truth_df = read_truth_file(snakemake.input["true_meth"][0])
 
 max_cov = tool_df["coverage"].max()
+print(tool_df.head(30))
+
 df = pd.merge(
-    tool_df[tool_df["bias"] == "normal"],  # Filter Tool-Daten
+    tool_df,  # Filter Tool-Daten
     truth_df,  # Filter True-Daten
     on=["chromosome", "position"],
 )
-print(df.to_string())
 df.to_parquet(snakemake.output[0], engine="pyarrow", compression="snappy")
