@@ -34,56 +34,84 @@ rule download_methylFastq:
 rule fake_meth_data:
     input:
         methylFastQ="resources/tools/MethylFASTQ/src/methylFASTQ.py",
-        fasta="resources/test_chr.fasta",
+        # fasta="resources/test_chr.fasta",
+        fasta="resources/chromosome_{chrom}.fasta",
     output:
-        f1="resources/Illumina_pe/simulated_data/{sim_mode}/test_chr_pe_f4r4_dir_R1.fastq",
-        f2="resources/Illumina_pe/simulated_data/{sim_mode}/test_chr_pe_f4r4_dir_R2.fastq",
-        ch3="resources/Illumina_pe/simulated_data/{sim_mode}/test_chr_pe_f4r4_dir.ch3",
+        f1="resources/Illumina_pe/simulated_data/chromosome_{chrom}_pe_f150r150_dir_R1.fastq",
+        f2="resources/Illumina_pe/simulated_data/chromosome_{chrom}_pe_f150r150_dir_R2.fastq",
+        ch3="resources/Illumina_pe/simulated_data/chromosome_{chrom}_pe_f150r150_dir.ch3",
+        # direc=directory("resources/Illumina_pe/simulated_data/"),
     conda:
         "../envs/methylFastQ.yaml"
-    log:
-        "logs/fake_meth_data{sim_mode}.log",
     params:
         pipeline_path=config["pipeline_path"],
         # meth=lambda wildcards: 0.8 if wildcards.platform == "meth" else 1.0,
         # snp=lambda wildcards: 0.0 if wildcards.platform == "meth" else 0.8,
     shell:
         """
-        python {input.methylFastQ} -i {input.fasta} -o /projects/koesterlab/benchmark-methylation/varlociraptor-methylation-evaluation/resources/Illumina_pe/simulated_data/{wildcards.sim_mode} --seq paired_end --read 4 --chh 1.0 --chg 1.0 --cg 1.0 --snp 0.0 --error 0.0 --coverage 2
+        output_path=$(dirname "{output.f1}")
+        python {input.methylFastQ} -i {input.fasta} -o $output_path --seq paired_end --read 150 --chh 1.0 --chg 1.0 --cg 0.5 --snp 0.01 --error 0.005 --coverage 10
         """
+        # python {input.methylFastQ} -i {input.fasta} -o /projects/koesterlab/benchmark-methylation/varlociraptor-methylation-evaluation/resources/Illumina_pe/simulated_data/{wildcards.sim_mode} --seq paired_end --read 4 --chh 1.0 --chg 1.0 --cg 1.0 --snp 0.0 --error 0.0 --coverage 2
 
 
-rule index_genome:
+rule index_chromosome:
     input:
-        "resources/test_chr.fasta",
+        "resources/chromosome_{chrom}.fasta",
     output:
-        "resources/test_chr.fasta.bwameth.c2t",
-    log:
-        "logs/index_genome.log",
+        "resources/chromosome_{chrom}.fasta.bwameth.c2t",
     conda:
         "../envs/bwa-meth.yaml"
+    resources:
+        mem_mb=512,
+        runtime=10,
     shell:
-        "bwameth.py index-mem2 {input}"
+        "bwameth.py index {input}"
 
 
 rule align_simulated_reads:
     input:
-        fasta_index="resources/test_chr.fasta.bwameth.c2t",
-        fasta="resources/test_chr.fasta",
-        reads1="resources/Illumina_pe/simulated_data/{sim_mode}/test_chr_pe_f4r4_dir_R1.fastq",
-        reads2="resources/Illumina_pe/simulated_data/{sim_mode}/test_chr_pe_f4r4_dir_R1.fastq",
+        fasta=expand(
+            "resources/chromosome_{chrom}.fasta",
+            chrom=chromosome_by_platform["Illumina_pe"],
+        ),
+        fasta_index=expand(
+            "resources/chromosome_{chrom}.fasta.bwameth.c2t",
+            chrom=chromosome_by_platform["Illumina_pe"],
+        ),
+        # fasta_index="resources/test_chr.fasta.bwameth.c2t",
+        # fasta="resources/test_chr.fasta",
+        f1=expand(
+            "resources/Illumina_pe/simulated_data/chromosome_{chrom}_pe_f150r150_dir_R1.fastq",
+            chrom=chromosome_by_platform["Illumina_pe"],
+        ),
+        f2=expand(
+            "resources/Illumina_pe/simulated_data/chromosome_{chrom}_pe_f150r150_dir_R2.fastq",
+            chrom=chromosome_by_platform["Illumina_pe"],
+        ),
     output:
-        "resources/Illumina_pe/simulated_data/{sim_mode}/alignment.bam",
+        "resources/Illumina_pe/simulated_data/alignment.bam",
     conda:
         "../envs/bwa-meth.yaml"
-    log:
-        "logs/align_simulated_reads_{sim_mode}.log",
     threads: 30
-    resources:
-        mem_mb=512,
     shell:
         """
-        bwameth.py --threads {threads} --reference {input.fasta} {input.reads1} {input.reads2}  | samtools view -S -b - > {output}
+        bwameth.py --threads {threads} --reference {input.fasta} {input.f1} {input.f2}  | samtools view -S -b - > {output}
+        """
+
+
+rule sort_simulated_reads:
+    input:
+        "resources/Illumina_pe/simulated_data/alignment.bam",
+    output:
+        # Name it like that in order to skip filtering on qual, mark_duplicates, ...
+        "resources/Illumina_pe/simulated_data/alignment_focused_downsampled_dedup_renamed.bam",
+    conda:
+        "../envs/bwa-meth.yaml"
+    threads: 10
+    shell:
+        """
+        samtools sort -@ {threads}  {input} -o {output}    
         """
 
 

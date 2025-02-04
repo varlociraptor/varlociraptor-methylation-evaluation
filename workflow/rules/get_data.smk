@@ -92,6 +92,8 @@ rule get_fastq_pe:
     params:
         extra="--skip-technical",
     threads: 6
+    wildcard_constraints:
+        protocol="^(?!simulated_data$).*",
     conda:
         "../envs/fastq-wrapper.yaml"
     wrapper:
@@ -121,6 +123,8 @@ rule trim_fastq_pe:
         "logs/trim_fastq_pe_{protocol}_{SRA}_{accession}.log",
     conda:
         "../envs/fastp.yaml"
+    wildcard_constraints:
+        protocol="^(?!simulated_data$).*",
     params:
         pipeline_path=config["pipeline_path"],
     shell:
@@ -195,7 +199,7 @@ rule get_nanopore_body:
         "../envs/samtools.yaml"
     shell:
         """
-        samtools view {params.url} | head -n 10000 > {params.pipeline_path}{output.body}
+        samtools view {params.url} | head -n 100000 > {params.pipeline_path}{output.body}
         """
 
 

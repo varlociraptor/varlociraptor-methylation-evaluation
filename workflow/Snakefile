@@ -35,7 +35,7 @@ include: "rules/methylDackel.smk"
 include: "rules/modkit.smk"
 include: "rules/plot_results.smk"
 include: "rules/testcase.smk"
-# include: "rules/fake_data.smk"
+include: "rules/fake_data.smk"
 include: "rules/pbCpgTools.smk"
 include: "rules/varlociraptor.smk"
 

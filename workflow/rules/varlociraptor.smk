@@ -2,10 +2,8 @@
 
 rule find_candidates:
     input:
-        expand(
-            "resources/chromosome_{chrom}.fasta",
-            chrom=chr_chromosome,
-        ),
+        "resources/chromosome_{chromosome}.fasta",
+        # chrom=chr_chromosome,
     output:
         "resources/{chromosome}/candidates.bcf",
     log:
@@ -24,10 +22,7 @@ rule find_candidates:
 
 rule split_candidates:
     input:
-        expand(
-            "resources/{chrom}/candidates.bcf",
-            chrom=[chrom for chrom in chromosomes],
-        ),
+        "resources/{chrom}/candidates.bcf",
     output:
         scatter.split_candidates("resources/{{chrom}}/candidates_{scatteritem}.bcf"),
     log:
@@ -64,7 +59,7 @@ rule compute_meth_observations:
         varlo_path=config["varlo_path"],
         pipeline_path=config["pipeline_path"],
     shell:
-        """ 
+        """
         cd {params.varlo_path}
         if [[ "{wildcards.platform}" == "Illumina_pe" || "{wildcards.platform}" == "Illumina_se" ]]; then
             PLATFORM="Illumina"

@@ -81,7 +81,7 @@ def distance_plot(melted_df, df, ref_tool, output):
 def scatter_plot(df, ref_tool, output):
     rmse_varlo = round(compute_rmse(df, "varlo_methylation"), 2)
     rmse_ref = round(compute_rmse(df, "ref_tool_methylation"), 2)
-
+    print("Dataframe:", df.head(20))
     line = (
         alt.Chart(pd.DataFrame({"x": [0, 100], "y": [0, 100]}))
         .mark_line(color="green")

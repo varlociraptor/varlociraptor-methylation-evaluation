@@ -1,3 +1,6 @@
+# Computes the coverage over the input alignment in order to have a common coverage over which we can stratidfy the plots of the different tools
+
+
 rule candidate_splits_to_vcf:
     input:
         "resources/{chro}/candidates_{scatteritem}.bcf",
@@ -29,7 +32,6 @@ rule mosdepth_bed:
     input:
         bam="resources/{platform}/{protocol}/alignment_focused_downsampled_dedup_renamed.bam",
         bai="resources/{platform}/{protocol}/alignment_focused_downsampled_dedup_renamed.bam.bai",
-        # TODO make chromosome possible as wildcard
         bed=lambda wildcards: expand(
             "resources/{chrom}/candidates.bed",
             chrom=chromosome_by_platform[wildcards.platform],

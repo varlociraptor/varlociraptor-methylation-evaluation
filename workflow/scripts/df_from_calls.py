@@ -3,6 +3,12 @@ import os
 import re
 
 
+def cb_to_number(s):
+    # Finde alle Zahlen, aber ignoriere die, die vor einem "E" oder "e" stehen
+    matches = re.findall(r"\d+(?=[^Ee]|$)", s)
+    return sum(map(int, matches))
+
+
 def get_bin(coverage):
     return min(
         int(coverage / snakemake.params["cov_bin_size"]),
@@ -11,9 +17,6 @@ def get_bin(coverage):
 
 
 def compute_bias(prob, format_values):
-    # min_value = min(prob_values)
-    # min_index = prob_values.index(min_value)
-
     bias_labels = ["SB", "ROB", "RPB", "SCB", "HE", "ALB"]
 
     if any(value != "." for value in format_values[6:12]):
@@ -21,9 +24,71 @@ def compute_bias(prob, format_values):
     else:
         bias = "normal"
 
-    # if min_index != 0:
-    #     bias = "normal"
     return bias
+
+
+def read_simulated_file(simulated_file_path):
+    cov_df = []
+    truth_df = []
+    with open(simulated_file_path, "r") as truth_file:
+        lines = truth_file.readlines()
+        i = 0
+        while i < len(lines):
+            # Zeile aufteilen
+            parts1 = lines[i].strip().split("\t")
+            chrom1, type1, cov1, meth_rate1 = (
+                parts1[0],
+                parts1[3],
+                float(parts1[5]),
+                float(parts1[6]),
+            )
+
+            if type1 == "CG":
+                # Naechste Zeile
+                parts2 = lines[i + 1].strip().split("\t")
+                pos2, type2, cov2, meth_rate2 = (
+                    int(parts2[1]),
+                    parts2[3],
+                    float(parts2[5]),
+                    float(parts2[6]),
+                )
+
+                if type2 == "CG":
+                    # Aggregiere die Daten
+                    position = pos2  # Mittelwert der Position
+                    coverage = (cov1 + cov2) / 2  # Durchschnitt der Coverage
+                    meth_rate = (
+                        (meth_rate1 + meth_rate2) / 2
+                    ) * 100  # Durchschnitt der Methylierungsrate
+
+                    cov_df.append([chrom1, position, coverage, get_bin(coverage)])
+                    truth_df.append([chrom1, position, meth_rate])
+                    i += 2  # Weiter zur nächsten Zeile nach dem Paar
+                else:
+                    i += 1  # Falls die naechste Zeile nicht CG ist, weiter zur nächsten
+            else:
+                i += 1  # Falls aktuelle Zeile kein CG ist, weiter zur nächsten
+
+    return (
+        pd.DataFrame(cov_df, columns=["chromosome", "position", "coverage", "cov_bin"]),
+        pd.DataFrame(truth_df, columns=["chromosome", "position", "true_methylation"]),
+    )
+
+
+def read_coverage_file(file_path):
+    df = []
+
+    with open(file_path, "r") as file:
+        for line in file:
+            parts = line.strip().split("\t")
+            chrom = parts[0]  # Chromosom
+            position = int(parts[1])  # Startposition
+            coverage = float(parts[3])  # Coverage-Wert
+            cov_bin = get_bin(coverage)
+
+            df.append([chrom, position, coverage, cov_bin])
+
+    return pd.DataFrame(df, columns=["chromosome", "position", "coverage", "cov_bin"])
 
 
 def read_truth_file(truth_file_path):
@@ -57,7 +122,8 @@ def read_tool_file(tool_file_path, file_name):
             if (
                 line.startswith("#")
                 or line.startswith("track")
-                or line.startswith("chr")
+                # TODO: I don't know why I included this once, but modkit fails with this lineS
+                # or line.startswith("chr")
             ):
                 continue
             parts = line.strip().split("\t")
@@ -76,8 +142,19 @@ def read_tool_file(tool_file_path, file_name):
                     format_fields = format_field.split(":")
                     dp_index = format_fields.index("DP")
                     af_index = format_fields.index("AF")
+                    if snakemake.params["meth_type"] == "ratio":
+                        saobs_index = format_fields.index("SAOBS")
+                        srobs_index = format_fields.index("SROBS")
+                        saobs = cb_to_number(values[saobs_index])
+                        srobs = cb_to_number(values[srobs_index])
+                        meth_rate = (
+                            (saobs / (saobs + srobs) * 100)
+                            if (saobs + srobs) != 0
+                            else 0
+                        )
 
-                    meth_rate = float(values[af_index]) * 100
+                    else:
+                        meth_rate = float(values[af_index]) * 100
                     coverage = int(values[dp_index])
 
                     match = re.search(r"PROB_HIGH=([\d\.]+)", info_field)
@@ -94,8 +171,6 @@ def read_tool_file(tool_file_path, file_name):
 
                     bias = compute_bias(info_field, values)
                     cov_bin = get_bin(coverage)
-                    if position == 5030481:
-                        print(bias)
                     df.append(
                         [
                             chrom,
@@ -228,12 +303,13 @@ def read_tool_file(tool_file_path, file_name):
         "chromosome",
         "position",
         "tool_methylation",
-        "coverage",
-        "cov_bin",
+        "tool_coverage",
+        "tool_cov_bin",
         "bias",
         "prob_present",
     ]
     return pd.DataFrame(df, columns=columns)
+
 
 pd.set_option("display.max_columns", None)
 # Globale DataFrames
@@ -245,14 +321,23 @@ tool_file = snakemake.input["tool"]
 file_name = os.path.splitext(os.path.basename(tool_file))[0]
 
 tool_df = read_tool_file(tool_file, file_name)
-truth_df = read_truth_file(snakemake.input["true_meth"][0])
 
-max_cov = tool_df["coverage"].max()
-print(tool_df.head(30))
 
-df = pd.merge(
-    tool_df,  # Filter Tool-Daten
-    truth_df,  # Filter True-Daten
-    on=["chromosome", "position"],
-)
+if snakemake.params["simulated"]:
+    cov_df, truth_df = read_simulated_file(snakemake.input["simulated"][0])
+else:
+    truth_df = read_truth_file(snakemake.input["true_meth"][0])
+    cov_df = read_coverage_file(snakemake.input["coverage"])
+
+# Mergen von tool_df mit truth_df (Left Join → Alle Positionen aus truth_df bleiben erhalten)
+df = pd.merge(truth_df, tool_df, on=["chromosome", "position"], how="left")
+
+# Mergen von df mit cov_df (wieder Left Join → Nur Positionen aus truth_df bleiben erhalten)
+df = pd.merge(df, cov_df, on=["chromosome", "position"], how="left")
+
+# Fehlende Werte mit 0 ersetzen
+df.fillna(0, inplace=True)
+
+print(df.head())
+df["bias"] = df["bias"].astype(str)
 df.to_parquet(snakemake.output[0], engine="pyarrow", compression="snappy")

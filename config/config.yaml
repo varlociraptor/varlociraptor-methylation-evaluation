@@ -8,19 +8,21 @@ platforms:
 # Choose frome png and html
 plot_type: html
 prob_pres_threshhold: 0.0
+# Choose between ratio and posterior for different types of methylation rates
+meth_type: ratio
 
 
 ref_tools:
   # Chose from: bismark, bisSNP, methylDackel, bsMap
-  Illumina_pe: [bismark, bisSNP, methylDackel, bsMap]
-  # Illumina_pe: [methylDackel]
+  # Illumina_pe: [bismark, bisSNP, methylDackel, bsMap]
+  Illumina_pe: [methylDackel]
   # Illumina_pe: [bismark, bisSNP, methylDackel, bsMap]
   # Chose from: pb_CpG_tools
   PacBio: [pb_CpG_tools]
   # PacBio: []
   # Chose from: modkit
-  # Nanopore: [modkit]
-  Nanopore: []
+  Nanopore: [modkit]
+  # Nanopore: []
 
 sample:
   species: "homo_sapiens"
@@ -73,7 +75,7 @@ data:
   #   TrueMethylOX_HG002_LAB01_REP01: [SRR13051231, SRR13051232]
   #   TrueMethylBS_HG002_LAB01_REP02: [SRR13051250, SRR13051251] #2023-10-25T12:57:27 fasterq-dump.3.0.6 err: storage exhausted while writing file within file system module - system bad file descriptor error fd='4'
   #   TrueMethylBS_HG002_LAB01_REP01: [SRR13051253] #2023-10-25T12:57:27 fasterq-dump.3.0.6 err: storage exhausted while writing file within file system module - system bad file descriptor error fd='4'
-    # simulated_data: [no_sra]
+    simulated_data: [no_sra]
   Illumina_se:
     # No example data found
   PacBio:

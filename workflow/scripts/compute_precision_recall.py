@@ -8,7 +8,7 @@ import os
 def compute_precision_recall(
     df, cov_bin, methylation_threshold, filename="tool", prob_threshold=0, last=False
 ):
-    if filename == "varlo":
+    if filename == "varlo" and snakemake.params["meth_type"] == "posterior":
         df["tool_binary"] = df["prob_present"].apply(
             lambda x: 1 if x > prob_threshold else 0
         )
@@ -146,18 +146,19 @@ methylation_threshold = 5  # Methylation threshold
 
 
 tool_file = snakemake.input[0]
-base_name = os.path.splitext(os.path.basename(tool_file))[0]
-file_name = "Varlociraptor" if base_name == "calls" else base_name
+file_name = os.path.splitext(os.path.basename(tool_file))[0]
 
 df = pd.read_parquet(tool_file, engine="pyarrow")
-
+print("cols:", df.columns)
+print(df.to_string())
 max_cov = df["coverage"].max()
 cov_bin = snakemake.params["cov_bin"]
 
 if cov_bin != "all":
     df = df[df["cov_bin"] == int(cov_bin)]
 print(df)
-if file_name == "varlo":
+
+if file_name == "varlo" and snakemake.params["meth_type"] == "posterior":
     precision, recall, coverages, prob_present_threshhold, number_sites, TP, FP, FN = (
         compute_precision_recall_thresholds(
             df,

@@ -5,13 +5,38 @@ rule ref_df:
             "resources/bed_avg_{chrom}.bedGraph",
             chrom=chromosome_by_platform[wildcards.platform],
         ),
+        coverage="resources/{platform}/{protocol}/cov.regions.bed"
     output:
         "results/{platform}/{protocol}/result_files/{method}.parquet",
     conda:
         "../envs/plot.yaml"
+    wildcard_constraints:
+        protocol="(?!simulated_data).*",
     params:
         cov_bin_size=lambda wildcards: config["cov_bin_size"][wildcards.platform],
         cov_bins=lambda wildcards: config["cov_bins"][wildcards.platform],
+        meth_type=config["meth_type"],
+        simulated=False
+    script:
+        "../scripts/df_from_calls.py"
+
+rule ref_df_simulated:
+    input:
+        tool="results/Illumina_pe/simulated_data/result_files/{method}.bed",
+        simulated=expand(
+            "resources/Illumina_pe/simulated_data/chromosome_{chrom}_pe_f150r150_dir.ch3",
+            chrom=chromosome_by_platform["Illumina_pe"],
+        ),
+        # coverage="resources/Illumina_pe/simulated_data/cov.regions.bed"
+    output:
+        "results/Illumina_pe/simulated_data/result_files/{method}.parquet",
+    conda:
+        "../envs/plot.yaml"
+    params:
+        cov_bin_size=lambda wildcards: config["cov_bin_size"]["Illumina_pe"],
+        cov_bins=lambda wildcards: config["cov_bins"]["Illumina_pe"],
+        meth_type=config["meth_type"],
+        simulated=True
     script:
         "../scripts/df_from_calls.py"
 
@@ -22,7 +47,7 @@ rule plot_results_cov_specific:
     output:
         plot=report(
             "results/{platform}/{protocol}/plots/{method}/scatter_{cov_bin, [0-9]+}.{plot_type}",
-            category=lambda wildcards: wildcards.platform,
+            category=lambda wildcards: f"{wildcards.platform} - {wildcards.protocol}",
             subcategory=lambda wildcards: f"{wildcards.method} plots",
             labels= lambda wildcards: {
                 "type": "scatter plot",
@@ -31,7 +56,8 @@ rule plot_results_cov_specific:
             ),
         tool_dist=report(
             "results/{platform}/{protocol}/plots/{method}/dist_{cov_bin, [0-9]+}.{plot_type}",
-            category=lambda wildcards: wildcards.platform,
+                        category=lambda wildcards: f"{wildcards.platform} - {wildcards.protocol}",
+
             subcategory=lambda wildcards: f"{wildcards.method} plots",
             labels= lambda wildcards: {
                 "type": "dist plot",
@@ -57,7 +83,7 @@ rule plot_results_all_cov:
         plot=report(
             "results/{platform}/{protocol}/plots/{method}/scatter_all.{plot_type}",
             # "results/{platform}/{protocol}/plots/{method}/all_scatter.{plot_type}",
-            category=lambda wildcards: wildcards.platform,
+            category=lambda wildcards: f"{wildcards.platform} - {wildcards.protocol}",
             subcategory=lambda wildcards: f"{wildcards.method} plots",
             labels= lambda wildcards: {
                 "type": "scatter plot",
@@ -67,7 +93,7 @@ rule plot_results_all_cov:
         tool_dist=report(
             # "results/{platform}/{protocol}/plots/{method}/dist_all.{plot_type}",
             "results/{platform}/{protocol}/plots/{method}/dist_all.{plot_type}",
-            category=lambda wildcards: wildcards.platform,
+            category=lambda wildcards: f"{wildcards.platform} - {wildcards.protocol}",
             subcategory=lambda wildcards: f"{wildcards.method} plots",
             labels= lambda wildcards: {
                 "type": "dist plot",
@@ -93,7 +119,8 @@ rule plot_dist_comparision:
             "results/{{platform}}/{{protocol}}/plots/dist_comp_{{method}}.{plot_type}",
             plot_type=config["plot_type"],
         ),
-            category=lambda wildcards: wildcards.platform,
+                        category=lambda wildcards: f"{wildcards.platform} - {wildcards.protocol}",
+
             subcategory="All Comparisions",
             labels=lambda wildcards: {
                 "type": "distance comparision",
@@ -105,7 +132,8 @@ rule plot_dist_comparision:
             "results/{{platform}}/{{protocol}}/plots/scatter_comp_{{method}}.{plot_type}",
             plot_type=config["plot_type"],
         ),
-            category=lambda wildcards: wildcards.platform,
+                        category=lambda wildcards: f"{wildcards.platform} - {wildcards.protocol}",
+
             subcategory="All Comparisions",
             labels=lambda wildcards: {
                 "type": "scatter comparision",
@@ -138,6 +166,7 @@ rule compute_precision_recall:
         cov_bin= lambda wildcards: wildcards.cov_bin,
         cov_bin_size=lambda wildcards: config["cov_bin_size"][wildcards.platform],
         prob_pres_threshhold=config["prob_pres_threshhold"],
+        meth_type=config["meth_type"]
     script:
         "../scripts/compute_precision_recall.py"
 
@@ -150,7 +179,8 @@ rule plot_precision_recall:
             expand(
             "results/{{platform}}/{{protocol}}/plots/precall_{{cov_bin}}.{{plot_type}}",
             ),
-            category=lambda wildcards: wildcards.platform,
+                        category=lambda wildcards: f"{wildcards.platform} - {wildcards.protocol}",
+
             subcategory="All Comparisions",
             labels=lambda wildcards: {
                 "type": "precision recall",
