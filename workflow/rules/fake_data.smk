@@ -252,7 +252,7 @@ rule align_simulated_reads:
             chrom=chromosome_by_platform["Illumina_pe"],
         ),
     output:
-        "resources/Illumina_pe/simulated_data/alignment.bam",
+        "resources/Illumina_pe/simulated_data/no_sra/alignment.bam",
     conda:
         "../envs/bwa-meth.yaml"
     threads: 30

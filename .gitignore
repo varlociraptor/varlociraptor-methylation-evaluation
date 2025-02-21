@@ -1,4 +1,6 @@
 results/**
+results_posterior/**
+results_ratio/**
 resources/**
 logs/**
 .snakemake

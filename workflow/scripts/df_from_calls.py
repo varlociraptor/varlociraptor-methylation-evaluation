@@ -36,9 +36,10 @@ def read_simulated_file(simulated_file_path):
         while i < len(lines):
             # Zeile aufteilen
             parts1 = lines[i].strip().split("\t")
-            chrom1, type1, cov1, meth_rate1 = (
+            chrom1, type1, meth_reads1, cov1, meth_rate1 = (
                 parts1[0],
                 parts1[3],
+                float(parts1[4]),
                 float(parts1[5]),
                 float(parts1[6]),
             )
@@ -46,9 +47,10 @@ def read_simulated_file(simulated_file_path):
             if type1 == "CG":
                 # Naechste Zeile
                 parts2 = lines[i + 1].strip().split("\t")
-                pos2, type2, cov2, meth_rate2 = (
+                pos2, type2, meth_reads2, cov2, meth_rate2 = (
                     int(parts2[1]),
                     parts2[3],
+                    float(parts2[4]),
                     float(parts2[5]),
                     float(parts2[6]),
                 )
@@ -58,8 +60,11 @@ def read_simulated_file(simulated_file_path):
                     position = pos2  # Mittelwert der Position
                     coverage = (cov1 + cov2) / 2  # Durchschnitt der Coverage
                     meth_rate = (
-                        (meth_rate1 + meth_rate2) / 2
-                    ) * 100  # Durchschnitt der Methylierungsrate
+                        ((meth_reads1 + meth_reads2) / (cov1 + cov2)) * 100
+                        if (cov1 + cov2) != 0
+                        else 0
+                    )
+                    # Durchschnitt der Methylierungsrate
 
                     cov_df.append([chrom1, position, coverage, get_bin(coverage)])
                     truth_df.append([chrom1, position, meth_rate])
@@ -122,8 +127,6 @@ def read_tool_file(tool_file_path, file_name):
             if (
                 line.startswith("#")
                 or line.startswith("track")
-                # TODO: I don't know why I included this once, but modkit fails with this lineS
-                # or line.startswith("chr")
             ):
                 continue
             parts = line.strip().split("\t")
@@ -198,6 +201,8 @@ def read_tool_file(tool_file_path, file_name):
                 )
 
             elif file_name == "bsMap":
+                if line.startswith("chr"):
+                    continue
                 chrom, position, meth_rate, coverage = (
                     parts[0],
                     int(parts[1]),
@@ -337,6 +342,14 @@ df = pd.merge(df, cov_df, on=["chromosome", "position"], how="left")
 
 # Fehlende Werte mit 0 ersetzen
 df.fillna(0, inplace=True)
+
+print(df.columns)
+print(df.shape)
+print(df.head())
+
+# Delete all values that are not covered by the reads
+df = df[df["coverage"] > 0]
+print(df.shape)
 
 print(df.head())
 df["bias"] = df["bias"].astype(str)

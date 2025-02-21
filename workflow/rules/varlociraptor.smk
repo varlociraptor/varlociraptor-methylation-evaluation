@@ -87,7 +87,7 @@ rule call_methylation:
     shell:
         """ 
         cd {params.varlo_path}
-        cargo run --release -- call variants --omit-read-position-bias generic --scenario {params.pipeline_path}{input.scenario} --obs normal={params.pipeline_path}{input.preprocess_obs} > {params.pipeline_path}{output}
+        cargo run --release -- call variants generic --scenario {params.pipeline_path}{input.scenario} --obs normal={params.pipeline_path}{input.preprocess_obs} > {params.pipeline_path}{output}
         """
 
 

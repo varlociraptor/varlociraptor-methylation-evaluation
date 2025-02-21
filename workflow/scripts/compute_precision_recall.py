@@ -23,12 +23,6 @@ def compute_precision_recall(
     FP = ((df["tool_binary"] == 1) & (df["truth_binary"] == 0)).sum()
     FN = ((df["tool_binary"] == 0) & (df["truth_binary"] == 1)).sum()
 
-    if prob_threshold == 0.99:
-        filtered_rows = df[(df["tool_binary"] == 1) & (df["truth_binary"] == 0)]
-        print("Debug")
-        print(filtered_rows.to_string())
-        print(FP)
-
     precision = TP / (TP + FP) if (TP + FP) > 0 else 0.0
     recall = TP / (TP + FN) if (TP + FN) > 0 else 0.0
     cov_bin_size = int(snakemake.params["cov_bin_size"])
@@ -149,14 +143,14 @@ tool_file = snakemake.input[0]
 file_name = os.path.splitext(os.path.basename(tool_file))[0]
 
 df = pd.read_parquet(tool_file, engine="pyarrow")
-print("cols:", df.columns)
-print(df.to_string())
 max_cov = df["coverage"].max()
 cov_bin = snakemake.params["cov_bin"]
 
 if cov_bin != "all":
     df = df[df["cov_bin"] == int(cov_bin)]
-print(df)
+
+print("Df after cov_bin:")
+print(df.to_string())
 
 if file_name == "varlo" and snakemake.params["meth_type"] == "posterior":
     precision, recall, coverages, prob_present_threshhold, number_sites, TP, FP, FN = (
