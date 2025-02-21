@@ -23,12 +23,6 @@ def compute_precision_recall(
     FP = ((df["tool_binary"] == 1) & (df["truth_binary"] == 0)).sum()
     FN = ((df["tool_binary"] == 0) & (df["truth_binary"] == 1)).sum()
 
-
-    if prob_threshold == 0.3:
-        df_filtered = df[(df["tool_binary"] == 1) & (df["truth_binary"] == 0)]
-        print("FP")
-        print(df_filtered.to_string())
-
     precision = TP / (TP + FP) if (TP + FP) > 0 else 0.0
     recall = TP / (TP + FN) if (TP + FN) > 0 else 0.0
     cov_bin_size = int(snakemake.params["cov_bin_size"])
