@@ -1,6 +1,11 @@
 rule methylDackel:
     input:
-        genome="resources/genome.fasta",
+        # Wenn Probleme versuche genome statt chromosome
+        # genome="resources/genome.fasta",
+        chromosome=lambda wildcards: expand(
+            "resources/chromosome_{chrom}.fasta",
+            chrom=chromosome_by_platform["Illumina_pe"],
+        ),
         alignment="resources/Illumina_pe/{protocol}/alignment_focused_downsampled_dedup_renamed.bam",
         alignment_index="resources/Illumina_pe/{protocol}/alignment_focused_downsampled_dedup_renamed.bam.bai",
     output:
@@ -19,33 +24,7 @@ rule methylDackel:
         echo test
         OUTDIR=$(dirname {output})/alignments
         echo $OUTDIR
-        MethylDackel extract {input.genome} {input.alignment} -o $OUTDIR --mergeContext
-        """
-
-
-rule methylDackel_debug:
-    input:
-        genome="resources/genome.fasta",
-        # alignment="resources/Illumina_pe/TruSeq_HG002_LAB01_REP01/alignment_focused_downsampled_dedup_renamed.bam",
-        # alignment_index="resources/Illumina_pe/TruSeq_HG002_LAB01_REP01/alignment_focused_downsampled_dedup_renamed.bam.bai",
-        alignment="resources/Illumina_pe/TruSeq_HG002_LAB01_REP01/candidate_specific/alignment_valid_20-of-20.bam",
-        alignment_index="resources/Illumina_pe/TruSeq_HG002_LAB01_REP01/candidate_specific/alignment_valid_20-of-20.bam.bai",
-    output:
-        "resources/Illumina_pe/TruSeq_HG002_LAB01_REP01/candidate_specific/alignments_CpG.bedGraph",
-    conda:
-        "../envs/methylDackel.yaml"
-    log:
-        "logs/methylDackel.log",
-    params:
-        pipeline_path=config["pipeline_path"],
-        prefix=lambda wildcards, input, output: os.path.splitext(output[0])[0].replace(
-            ".combined", ".bedGraph"
-        ),
-    shell:
-        """
-        OUTDIR=$(dirname {output})/alignments
-        echo $OUTDIR
-        MethylDackel extract {input.genome} {input.alignment} -o $OUTDIR --mergeContext
+        MethylDackel extract {input.chromosome} {input.alignment} -o $OUTDIR --mergeContext
         """
 
 

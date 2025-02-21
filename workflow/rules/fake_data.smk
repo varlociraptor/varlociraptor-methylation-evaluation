@@ -43,7 +43,7 @@
 #         """
 
 
-rule fake_meth_fasta_mason:
+rule fake_methylation_mason:
     input:
         "resources/chromosome_{chrom}.fasta",
     output:
@@ -57,16 +57,38 @@ rule fake_meth_fasta_mason:
     shell:
         """
         mason_methylation --in {input} \
-               --methylation-levels \
-               --meth-cg-sigma 0.3 \
-               --meth-cg-mu 0.5 \
-               --out {output.methylation} \
+            --methylation-levels \
+            --meth-cg-sigma 0.3 \
+            --meth-cg-mu 0.5 \
+            --out {output.methylation} \
         """
 
 
-rule fake_meth_fastq_mason:
+rule fake_variants_mason:
+    input:
+        "resources/chromosome_{chrom}.fasta",
+    output:
+        "resources/Illumina_pe/simulated_data/chromosome_{chrom}_variants.vcf",
+    conda:
+        "../envs/mason.yaml"
+    params:
+        pipeline_path=config["pipeline_path"],
+        # meth=lambda wildcards: 0.8 if wildcards.platform == "meth" else 1.0,
+        # snp=lambda wildcards: 0.0 if wildcards.platform == "meth" else 0.8,
+    shell:
+        """
+        mason_variator --in-reference {input} \
+            --out-vcf {output} \
+        """
+        # --snp-rate 0.01 \
+        # --small-indel-rate 0.001 \
+        # --sv-indel-rate 0.001 \
+
+
+rule fake_reads_mason:
     input:
         genome="resources/chromosome_{chrom}.fasta",
+        variants="resources/Illumina_pe/simulated_data/chromosome_{chrom}_variants.vcf",
         methylation="resources/Illumina_pe/simulated_data/chromosome_{chrom}_meth.fa",
     output:
         # bam="resources/Illumina_pe/simulated_data/alignment_{chrom}.bam",
@@ -82,13 +104,14 @@ rule fake_meth_fastq_mason:
     shell:
         """
         mason_simulator --input-reference {input.genome} \
-                --num-fragments 1000 \
+                --num-fragments 1000000 \
                 --out {output.f1} \
                 --out-right {output.f2} \
+                --input-vcf {input.variants} \
                 --meth-fasta-in {input.methylation} \
                 --enable-bs-seq \
-                --bs-seq-conversion-rate 1.00 \
                 --seq-technology illumina \
+
         """
         # mason_simulator --input-reference {input.variants} \
 
