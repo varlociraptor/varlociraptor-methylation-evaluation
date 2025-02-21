@@ -27,12 +27,33 @@ rule bismark_align:
     conda:
         "../envs/bismark.yaml"
     threads: 6
+    wildcard_constraints:
+        protocol="^(?!simulated_data$).*",
     shell:
         """
         mkdir -p $(dirname {output})
         bismark --genome {params.bismark_dir} -1 {input.reads1} -2 {input.reads2} -o $(dirname {output}) --parallel {threads}
         """
 
+rule bismark_align_simulated:
+    input:
+        "resources/ref_tools/bismark/Bisulfite_Genome",
+        reads1="resources/Illumina_pe/simulated_data/chromosome_{chrom}_pe_f150r150_dir_R1.fastq",
+        reads2="resources/Illumina_pe/simulated_data/chromosome_{chrom}_pe_f150r150_dir_R2.fastq",
+        # reads1="resources/Illumina_pe/{protocol}/{SRA}/{SRA}_1_trimmed.fastq",
+        # reads2="resources/Illumina_pe/{protocol}/{SRA}/{SRA}_2_trimmed.fastq",
+    output:
+        "resources/ref_tools/bismark/alignment/{protocol}/{SRA}/{SRA}_1_trimmed_bismark_bt2_pe.bam",
+    params:
+        bismark_dir=config["pipeline_path"] + "resources/ref_tools/bismark",
+    conda:
+        "../envs/bismark.yaml"
+    threads: 6
+    shell:
+        """
+        mkdir -p $(dirname {output})
+        bismark --genome {params.bismark_dir} -1 {input.reads1} -2 {input.reads2} -o $(dirname {output}) --parallel {threads}
+        """
 
 rule bismark_deduplicate:
     input:

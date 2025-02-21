@@ -50,11 +50,12 @@ rule fake_meth_data:
     shell:
         """
         output_path=$(dirname "{output.f1}")
-        python {input.methylFastQ} -i {input.fasta} -o $output_path --seq paired_end --read 150 --chh 1.0 --chg 1.0 --cg 0.5 --snp 0.01 --error 0.005 --coverage 10
+        python {input.methylFastQ} -i {input.fasta} -o $output_path --seq paired_end --read 150 --chh 1.0 --chg 1.0 --cg 0.7 --snp 0.05 --error 0.01 --coverage 20
         """
         # python {input.methylFastQ} -i {input.fasta} -o /projects/koesterlab/benchmark-methylation/varlociraptor-methylation-evaluation/resources/Illumina_pe/simulated_data/{wildcards.sim_mode} --seq paired_end --read 4 --chh 1.0 --chg 1.0 --cg 1.0 --snp 0.0 --error 0.0 --coverage 2
 
 
+# Must be done manually does not work with snakemake
 rule index_chromosome:
     input:
         "resources/chromosome_{chrom}.fasta",
@@ -90,7 +91,7 @@ rule align_simulated_reads:
             chrom=chromosome_by_platform["Illumina_pe"],
         ),
     output:
-        "resources/Illumina_pe/simulated_data/alignment.bam",
+        "resources/Illumina_pe/simulated_data/no_sra/alignment.bam",
     conda:
         "../envs/bwa-meth.yaml"
     threads: 30
@@ -100,19 +101,34 @@ rule align_simulated_reads:
         """
 
 
-rule sort_simulated_reads:
-    input:
-        "resources/Illumina_pe/simulated_data/alignment.bam",
-    output:
-        # Name it like that in order to skip filtering on qual, mark_duplicates, ...
-        "resources/Illumina_pe/simulated_data/alignment_focused_downsampled_dedup_renamed.bam",
-    conda:
-        "../envs/bwa-meth.yaml"
-    threads: 10
-    shell:
-        """
-        samtools sort -@ {threads}  {input} -o {output}    
-        """
+# rule sort_simulated_reads:
+#     input:
+#         "resources/Illumina_pe/simulated_data/alignment.bam",
+#     output:
+#         # Name it like that in order to skip filtering on qual, mark_duplicates, ...
+#         "resources/Illumina_pe/simulated_data/alignment.bam",
+#     conda:
+#         "../envs/bwa-meth.yaml"
+#     threads: 10
+#     shell:
+#         """
+#         samtools sort -@ {threads}  {input} -o {output}
+#         """
+
+
+# rule sam_simulated:
+#     input:
+#         "resources/Illumina_pe/simulated_data/alignment.bam",
+#     output:
+#         # Name it like that in order to skip filtering on qual, mark_duplicates, ...
+#         "resources/Illumina_pe/simulated_data/alignment_focused_downsampled_dedup_renamed.sam",
+#     conda:
+#         "../envs/samtools.yaml"
+#     threads: 10
+#     shell:
+#         """
+#         samtools view -h -o {output} {input}     
+#         """
 
 
 # rule compute_meth_observations:
