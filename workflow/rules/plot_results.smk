@@ -20,14 +20,35 @@ rule ref_df:
     script:
         "../scripts/df_from_calls.py"
 
-rule ref_df_simulated:
+# rule ref_df_simulated_methylfastq:
+#     input:
+#         tool="results/Illumina_pe/simulated_data/result_files/{method}.bed",
+#         simulated=expand(
+#             "resources/Illumina_pe/simulated_data/chromosome_{chrom}_pe_f150r150_dir.ch3",
+#             chrom=chromosome_by_platform["Illumina_pe"],
+#         ),
+#         # coverage="resources/Illumina_pe/simulated_data/cov.regions.bed"
+#     output:
+#         "results/Illumina_pe/simulated_data/result_files/{method}.parquet",
+#     conda:
+#         "../envs/plot.yaml"
+#     params:
+#         cov_bin_size=lambda wildcards: config["cov_bin_size"]["Illumina_pe"],
+#         cov_bins=lambda wildcards: config["cov_bins"]["Illumina_pe"],
+#         meth_type=config["meth_type"],
+#         simulated=True
+#     script:
+#         "../scripts/df_from_calls.py"
+
+
+rule ref_df_simulated_mason:
     input:
         tool="results/Illumina_pe/simulated_data/result_files/{method}.bed",
-        simulated=expand(
-            "resources/Illumina_pe/simulated_data/chromosome_{chrom}_pe_f150r150_dir.ch3",
+        true_meth=expand(
+            "resources/Illumina_pe/simulated_data/chromosome_{chrom}_truth.bed",
             chrom=chromosome_by_platform["Illumina_pe"],
         ),
-        # coverage="resources/Illumina_pe/simulated_data/cov.regions.bed"
+        coverage="resources/Illumina_pe/simulated_data/cov.regions.bed"
     output:
         "results/Illumina_pe/simulated_data/result_files/{method}.parquet",
     conda:
@@ -36,10 +57,9 @@ rule ref_df_simulated:
         cov_bin_size=lambda wildcards: config["cov_bin_size"]["Illumina_pe"],
         cov_bins=lambda wildcards: config["cov_bins"]["Illumina_pe"],
         meth_type=config["meth_type"],
-        simulated=True
+        simulated=False
     script:
         "../scripts/df_from_calls.py"
-
 
 rule plot_results_cov_specific:
     input:

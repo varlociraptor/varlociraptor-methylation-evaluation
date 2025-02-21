@@ -1,12 +1,12 @@
 # https://github.com/varlociraptor/varlociraptor-methylation-evaluation
 
 platforms: 
-  PacBio: 21
-  Illumina_pe: 21
-  Nanopore: 1
+  # PacBio: 21
+  Illumina_pe: J02459
+  # Nanopore: 1
 
 # Choose frome png and html
-plot_type: html
+plot_type: png
 prob_pres_threshhold: 0.0
 # Choose between ratio and posterior for different types of methylation rates
 meth_type: ratio
@@ -48,11 +48,18 @@ cov_bin_size:
   PacBio: 20
   Nanopore: 20
 
+# Local execution
+base_dir: /home/adrian/Documents/Promotion/varlo_stuff/"
+varlo_path: "/home/adrian/Documents/Promotion/varlo_stuff/varlociraptor"
+pipeline_path: "/home/adrian/Documents/Promotion/varlo_stuff/varlociraptor-methylation-evaluation/"
+methylFastQ_path: "/home/adrian/Documents/Promotion/varlo_stuff/tools/MethylFASTQ"
 
-base_dir: "/projects/koesterlab/benchmark-methylation/"
-varlo_path: "/projects/koesterlab/benchmark-methylation/varlociraptor/"
-pipeline_path: "/projects/koesterlab/benchmark-methylation/varlociraptor-methylation-evaluation/"
-methylFastQ_path: "/projects/koesterlab/benchmark-methylation/MethylFASTQ/"
+
+# Cluster execution
+# base_dir: "/projects/koesterlab/benchmark-methylation/"
+# varlo_path: "/projects/koesterlab/benchmark-methylation/varlociraptor/"
+# pipeline_path: "/projects/koesterlab/benchmark-methylation/varlociraptor-methylation-evaluation/"
+# methylFastQ_path: "/projects/koesterlab/benchmark-methylation/MethylFASTQ/"
 
 candidate: 40437798
 max_read_length: 100000
@@ -60,7 +67,7 @@ max_read_length: 100000
 data:
   Illumina_pe:
     # test: [SRR_test]
-    TruSeq_HG002_LAB01_REP01: [SRR13050995, SRR13050996, SRR13050998]
+    # TruSeq_HG002_LAB01_REP01: [SRR13050995, SRR13050996, SRR13050998]
   #   TruSeq_HG002_LAB01_REP02: [SRR13050992, SRR13050993, SRR13050994]   
   #   SPLAT_HG002_LAB01_REP01_4: [SRR13051055, SRR13051056, SRR13051057, SRR13051058]
   #   SPLAT_HG002_LAB01_REP02_4:  [SRR13051050, SRR13051051, SRR13051052, SRR13051054]

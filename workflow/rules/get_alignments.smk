@@ -325,12 +325,45 @@ rule aligned_reads_candidates_region:
         """
 
 
+# # TODO: This rule is actually unnecessary and consumes a lot of time. The problem is that Varlociraptor does not work on bam files that have no reads. Due to the previous step, it can happen that all candidates are outside the reads and the bam file therefore has no reads. Therefore we simply add the last read of the original bam file for each bam file.
+# rule aligned_reads_candidates_region_valid:
+#     input:
+#         alignment_orig="resources/{platform}/{protocol}/alignment_focused_downsampled_dedup_renamed.bam",
+#         alignment_specific="resources/{platform}/{protocol}/candidate_specific/alignment_{scatteritem}.bam",
+#     output:
+#         bam="resources/{platform}/{protocol}/candidate_specific/alignment_valid_{scatteritem}.bam",
+#     log:
+#         "logs/aligned_reads_candidates_region_valid_{platform}_{protocol}_{scatteritem}.log",
+#     conda:
+#         "../envs/samtools.yaml"
+#     shell:
+#         """
+#         samtools view -h -o {output.sam} {input.alignment_specific}
+#         tail -n 1 {input.alignment_orig} >> {output.sam}
+#         samtools view -bS -o {output.bam} {output.sam}
+#         """
+
+
+rule valid_sam_to_bam:
+    input:
+        "resources/{platform}/{protocol}/alignment_focused_downsampled_dedup_renamed.bam",
+    output:
+        "resources/{platform}/{protocol}/alignment_focused_downsampled_dedup_renamed.sam",
+    conda:
+        "../envs/samtools.yaml"
+    shell:
+        """
+        samtools view -h -o {output} {input}
+        """
+
+
 # TODO: This rule is actually unnecessary and consumes a lot of time. The problem is that Varlociraptor does not work on bam files that have no reads. Due to the previous step, it can happen that all candidates are outside the reads and the bam file therefore has no reads. Therefore we simply add the last read of the original bam file for each bam file.
 rule aligned_reads_candidates_region_valid:
     input:
-        alignment_orig="resources/{platform}/{protocol}/alignment_focused_downsampled_dedup_renamed.bam",
+        alignment_orig="resources/{platform}/{protocol}/alignment_focused_downsampled_dedup_renamed.sam",
         alignment_specific="resources/{platform}/{protocol}/candidate_specific/alignment_{scatteritem}.bam",
     output:
+        sam="resources/{platform}/{protocol}/candidate_specific/alignment_valid_{scatteritem}.sam",
         bam="resources/{platform}/{protocol}/candidate_specific/alignment_valid_{scatteritem}.bam",
     log:
         "logs/aligned_reads_candidates_region_valid_{platform}_{protocol}_{scatteritem}.log",
@@ -338,8 +371,9 @@ rule aligned_reads_candidates_region_valid:
         "../envs/samtools.yaml"
     shell:
         """
-        last_read=$(samtools view {input.alignment_orig} | tail -n 1)
-        echo -e "$(samtools view -H {input.alignment_specific})\n$last_read" | samtools view -bS - > {output.bam}
+        samtools view -h -o {output.sam} {input.alignment_specific}
+        tail -n 1 {input.alignment_orig} >> {output.sam}
+        samtools view -bS -o {output.bam} {output.sam}
         """
 
 

@@ -10,7 +10,7 @@ configfile: "config/config.yaml"
 
 
 scattergather:
-    split_candidates=20,
+    split_candidates=4,
 
 
 chromosome_by_platform = config["platforms"]
