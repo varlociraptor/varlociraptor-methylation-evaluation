@@ -126,7 +126,7 @@ rule fake_reads_mason:
     shell:
         """
         mason_simulator --input-reference {input.genome} \
-                --num-fragments 1000000 \
+                --num-fragments 5000000 \
                 --out {output.f1} \
                 --out-right {output.f2} \
                 --meth-fasta-in {input.methylation} \
@@ -139,8 +139,111 @@ rule fake_reads_mason:
         # mason_simulator --input-reference {input.variants} \
 
 
+########Compute truth
+
+
+# Mason has a different meth ratio for forward and reverse strands.
+# That is why we need to compute the coverage on the forward and reverse strand independently.
+
+
+rule mason_alignment_forward:
+    input:
+        "resources/Illumina_pe/simulated_data/alignment.bam",
+    output:
+        first="resources/Illumina_pe/simulated_data/alignment_99.bam",
+        second="resources/Illumina_pe/simulated_data/alignment_147.bam",
+        forward="resources/Illumina_pe/simulated_data/alignment_forward.bam",
+    conda:
+        "../envs/samtools.yaml"
+    shell:
+        """
+        samtools view -b -f 64 -F 16 {input} > {output.first}
+        samtools view -b -f 16 -F 64 {input} > {output.second}
+        samtools merge {output.forward} {output.first} {output.second}
+        """
+
+
+rule mason_alignment_reverse:
+    input:
+        "resources/Illumina_pe/simulated_data/alignment.bam",
+    output:
+        first="resources/Illumina_pe/simulated_data/alignment_83.bam",
+        second="resources/Illumina_pe/simulated_data/alignment_163.bam",
+        rev="resources/Illumina_pe/simulated_data/alignment_reverse.bam",
+    conda:
+        "../envs/samtools.yaml"
+    shell:
+        """
+        samtools view -b -f 16 -f 64 {input} > {output.first}
+        samtools view -b -F 16 -F 64 {input} > {output.second}
+        samtools merge {output.rev} {output.first} {output.second}
+        """
+
+
+rule sort_mason_reads:
+    input:
+        "resources/Illumina_pe/simulated_data/alignment_{orientation}.bam",
+    output:
+        # Name it like that in order to skip filtering on qual, mark_duplicates, ...
+        "resources/Illumina_pe/simulated_data/alignment_sorted_{orientation}.bam",
+    conda:
+        "../envs/samtools.yaml"
+    threads: 10
+    shell:
+        """
+        samtools sort -@ {threads}  {input} -o {output}    
+        """
+
+
+rule index_mason_alignment:
+    input:
+        "resources/Illumina_pe/simulated_data/alignment_sorted_{orientation}.bam",
+    output:
+        "resources/Illumina_pe/simulated_data/alignment_sorted_{orientation}.bam.bai",
+    conda:
+        "../envs/samtools.yaml"
+    shell:
+        "samtools index {input}"
+
+
+rule mosdepth_mason_truth:
+    input:
+        bam="resources/Illumina_pe/simulated_data/alignment_sorted_{orientation}.bam",
+        bai="resources/Illumina_pe/simulated_data/alignment_sorted_{orientation}.bam.bai",
+        bed=lambda wildcards: expand(
+            "resources/{chrom}/candidates.bed",
+            chrom=chromosome_by_platform["Illumina_pe"],
+        ),
+    output:
+        "resources/Illumina_pe/simulated_data/{orientation}_cov.mosdepth.global.dist.txt",
+        "resources/Illumina_pe/simulated_data/{orientation}_cov.mosdepth.region.dist.txt",
+        "resources/Illumina_pe/simulated_data/{orientation}_cov.regions.bed.gz",
+        summary="resources/Illumina_pe/simulated_data/{orientation}_cov.mosdepth.summary.txt",  # this named output is required for prefix parsing
+    log:
+        "logs/mosdepth_bed/{orientation}.log",
+    params:
+        extra="--no-per-base --use-median",  # optional
+    # additional decompression threads through `--threads`
+    threads: 4  # This value - 1 will be sent to `--threads`
+    wrapper:
+        "v5.5.2/bio/mosdepth"
+
+
+rule unzip_mosdepth_mason:
+    input:
+        "resources/Illumina_pe/simulated_data/{orientation}_cov.regions.bed.gz",
+    output:
+        "resources/Illumina_pe/simulated_data/{orientation}_cov.regions.bed",
+    shell:
+        """
+        gunzip {input}
+        """
+
+
 rule mason_truth:
     input:
+        cov_forward="resources/Illumina_pe/simulated_data/forward_cov.regions.bed",  # this named output is required for prefix parsing
+        cov_reverse="resources/Illumina_pe/simulated_data/reverse_cov.regions.bed",  # this named output is required for prefix parsing
         methylation="resources/Illumina_pe/simulated_data/chromosome_{chrom}_meth.fa",
         candidates="resources/{chrom}/candidates.vcf",
     output:
@@ -149,6 +252,9 @@ rule mason_truth:
         "../envs/python.yaml"
     script:
         "../scripts/ascii_to_meth.py"
+
+
+###############################################################
 
 
 rule align_simulated_reads_mason:

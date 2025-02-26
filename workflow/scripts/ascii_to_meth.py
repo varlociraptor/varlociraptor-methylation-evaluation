@@ -1,4 +1,4 @@
-import re
+from collections import defaultdict
 
 
 def parse_vcf(candidates):
@@ -14,19 +14,35 @@ def parse_vcf(candidates):
     return positions
 
 
+def parse_cov(file_path, strand, coverages):
+
+    with open(file_path, "r") as file:
+
+        for line in file:
+            parts = line.strip().split("\t")
+            chrom = parts[0]  # Chromosom
+            position = int(parts[1])  # Startposition
+            coverage = float(parts[3])  # Coverage-Wert
+
+            coverages[(chrom, position)][strand] = coverage
+    return coverages
+
+
 def parse_fasta(meth_file):
     """Parses the ASCII FASTA file and extracts methylation levels."""
-    methylation_data = {}
+    methylation_data = defaultdict(lambda: defaultdict(str))
     with open(meth_file, "r") as f:
-        current_seq = None
+        current_seq, strand = None, None
         for i, line in enumerate(f):
             if i % 10000 == 0:
                 print(f"Processing line {i}", flush=True)
             if line.startswith(">"):
-                current_seq = line.strip().split("/")[0][1:]  # Extract chromosome ID
-                methylation_data[current_seq] = ""
+                chrom_info = line.strip().split("/")
+                current_seq, strand = chrom_info[0][1:], chrom_info[1]
+                print(line.strip(), current_seq)
+                methylation_data[current_seq][strand] = ""
             else:
-                methylation_data[current_seq] += line.strip()
+                methylation_data[current_seq][strand] += line.strip()
     return methylation_data
 
 
@@ -39,26 +55,43 @@ def ascii_to_methylation(char):
     return L
 
 
-def generate_bed(candidate_positions, meth_data, output_file):
+def generate_bed(candidate_positions, meth_data, coverages, output_file):
     """Generates a BED file with methylation information."""
+    print(meth_data["J02459"]["TOP"][3])
     with open(output_file, "w") as out:
         for chrom, pos in candidate_positions:
-            print(chrom, pos)
-            if chrom in meth_data and pos - 1 < len(meth_data[chrom]):
+            if chrom in meth_data and pos - 1 < len(meth_data[chrom]["BOT"]):
+                coverage_top = coverages[(chrom, pos)]["TOP"]
+                coverage_bot = coverages[(chrom, pos)]["BOT"]
+                coverage = coverage_top + coverage_bot
+                ascii_char_bot = meth_data[chrom]["BOT"][pos]  # 1-based to 0-based
+                ascii_char_top = meth_data[chrom]["TOP"][pos - 1]  # 1-based to 0-based
+                print(pos)
+                # print(ascii_char_bot, ascii_char_top)
+                meth_level = (
+                    0
+                    if coverage == 0
+                    else (
+                        ascii_to_methylation(ascii_char_bot) * coverage_bot
+                        + ascii_to_methylation(ascii_char_top) * coverage_top
+                    )
+                    / coverage
+                )
 
-                ascii_char = meth_data[chrom][pos]  # 1-based to 0-based
-                meth_level = ascii_to_methylation(ascii_char)
                 out.write(
-                    f"{chrom}\t{pos-1}\t{pos+1}\t{meth_level:.2f}\t{ascii_char}\n"
+                    f"{chrom}\t{pos-1}\t{pos+1}\t{meth_level:.2f}\t{ascii_char_bot}\t{ascii_char_top}\n"
                 )
 
 
-print(f"Generating candidates", flush=True)
 candidates = snakemake.input["candidates"]
 meth_file = snakemake.input["methylation"]
+cov_forward_file = snakemake.input["cov_forward"]
+cov_reverse_file = snakemake.input["cov_reverse"]
 output_file = snakemake.output[0]
 candidate_positions = parse_vcf(candidates)
-print(f"Generating methylation data", flush=True)
+cov_forward = parse_cov(
+    cov_forward_file, "TOP", defaultdict(lambda: defaultdict(float))
+)
+coverages = parse_cov(cov_reverse_file, "BOT", cov_forward)
 meth_data = parse_fasta(meth_file)
-print(f"Generating BED file", flush=True)
-generate_bed(candidate_positions, meth_data, output_file)
+generate_bed(candidate_positions, meth_data, coverages, output_file)

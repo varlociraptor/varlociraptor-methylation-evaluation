@@ -16,7 +16,7 @@ rule find_candidates:
     shell:
         """ 
         cd {params.varlo_path}
-        cargo run -- methylation-candidates {input} {output}
+        cargo run -- methylation-candidates {params.pipeline_path}{input} {params.pipeline_path}{output}
         """
 
 
@@ -87,7 +87,7 @@ rule call_methylation:
     shell:
         """ 
         cd {params.varlo_path}
-        cargo run --release -- call variants generic --scenario {input.scenario} --obs normal={input.preprocess_obs} > {output}
+        cargo run --release -- call variants generic --scenario {params.pipeline_path}{input.scenario} --obs normal={params.pipeline_path}{input.preprocess_obs} > {params.pipeline_path}{output}
         """
 
 
