@@ -93,7 +93,7 @@ rule index_aligned_reads:
         protocol="^(?!simulated_data$).*",
     shell:
         """
-        samtools index -@ {threads} {params.pipeline_path}{input}
+        samtools index -@ {threads} {input}
       """
 
 
@@ -219,7 +219,7 @@ rule aligned_downsampled_index:
         protocol="^(?!simulated_data$).*",
     shell:
         """
-        samtools index -@ {threads} {params.pipeline_path}{input}
+        samtools index -@ {threads} {input}
         """
 
 
@@ -240,7 +240,7 @@ rule bam_to_sam:
         protocol="^(?!simulated_data$).*",
     shell:
         """
-        samtools view -@ {threads} -h  -o {params.pipeline_path}/{output}  {params.pipeline_path}{input}   
+        samtools view -@ {threads} -h  -o /{output}  {input}   
 
         """
 
@@ -296,7 +296,7 @@ rule aligned_downsampled_reads_dedup_index:
     threads: 10
     shell:
         """
-        samtools index -@ {threads} {params.pipeline_path}{input}
+        samtools index -@ {threads} {input}
         """
 
 
@@ -361,5 +361,5 @@ rule aligned_reads_candidates_region_index:
     threads: 10
     shell:
         """
-        samtools index -@ {threads} {params.pipeline_path}{input}
+        samtools index -@ {threads} {input}
         """

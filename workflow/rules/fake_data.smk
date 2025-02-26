@@ -43,9 +43,28 @@
 #         """
 
 
+rule download_mason_latest:
+    output:
+        mason_dir=directory("resources/tools/seqan/apps/mason2"),
+        mason="resources/tools/seqan/apps/mason2/methylation_levels.h",
+    log:
+        "../logs/download_mason.log",
+    params:
+        pipeline_path=config["pipeline_path"],
+    conda:
+        "../envs/install_program.yaml"
+    shell:
+        """
+        mkdir -p resources/tools
+        cd resources/tools
+        git clone git@github.com:seqan/seqan.git
+        """
+
+
 rule fake_methylation_mason:
     input:
-        "resources/chromosome_{chrom}.fasta",
+        # mason=directory("resources/tools/seqan/apps/mason2"),
+        chrom="resources/chromosome_{chrom}.fasta",
     output:
         methylation="resources/Illumina_pe/simulated_data/chromosome_{chrom}_meth.fa",
     conda:
@@ -56,17 +75,19 @@ rule fake_methylation_mason:
         # snp=lambda wildcards: 0.0 if wildcards.platform == "meth" else 0.8,
     shell:
         """
-        mason_methylation --in {input} \
+        mason_methylation --in {input.chrom} \
             --methylation-levels \
             --meth-cg-sigma 0.3 \
             --meth-cg-mu 0.5 \
             --out {output.methylation} \
         """
+        # cd {input.mason} && \
 
 
 rule fake_variants_mason:
     input:
-        "resources/chromosome_{chrom}.fasta",
+        # mason=directory("resources/tools/seqan/apps/mason2"),
+        chrom="resources/chromosome_{chrom}.fasta",
     output:
         "resources/Illumina_pe/simulated_data/chromosome_{chrom}_variants.vcf",
     conda:
@@ -77,9 +98,10 @@ rule fake_variants_mason:
         # snp=lambda wildcards: 0.0 if wildcards.platform == "meth" else 0.8,
     shell:
         """
-        mason_variator --in-reference {input} \
+        mason_variator --in-reference {input.chrom} \
             --out-vcf {output} \
         """
+        # cd {input.mason} && \
         # --snp-rate 0.01 \
         # --small-indel-rate 0.001 \
         # --sv-indel-rate 0.001 \
@@ -91,7 +113,7 @@ rule fake_reads_mason:
         variants="resources/Illumina_pe/simulated_data/chromosome_{chrom}_variants.vcf",
         methylation="resources/Illumina_pe/simulated_data/chromosome_{chrom}_meth.fa",
     output:
-        # bam="resources/Illumina_pe/simulated_data/alignment_{chrom}.bam",
+        # bam="resources/Illumina_pe/simulated_data/alignment_{chrom}_test.bam",
         f1="resources/Illumina_pe/simulated_data/chromosome_{chrom}_f1.fastq",
         f2="resources/Illumina_pe/simulated_data/chromosome_{chrom}_f2.fastq",
         # truth="resources/Illumina_pe/simulated_data/chromosome_{chrom}.fasta",
@@ -107,12 +129,13 @@ rule fake_reads_mason:
                 --num-fragments 1000000 \
                 --out {output.f1} \
                 --out-right {output.f2} \
-                --input-vcf {input.variants} \
                 --meth-fasta-in {input.methylation} \
                 --enable-bs-seq \
-                --seq-technology illumina \
-
+                --illumina-read-length 200 \
         """
+        # --seq-technology illumina \
+        # --out-alignment {output.bam} \
+        # --input-vcf {input.variants} \
         # mason_simulator --input-reference {input.variants} \
 
 
@@ -155,6 +178,7 @@ rule align_simulated_reads_mason:
     threads: 30
     shell:
         """
+        bwameth.py index-mem2 {input.fasta} && \
         bwameth.py --threads {threads} --reference {input.fasta} {input.f1} {input.f2} > {output}
         """
 
@@ -207,8 +231,8 @@ rule sam_bam_mason:
 #         "../envs/install_program.yaml"
 #     shell:
 #         """
-#         mkdir -p {params.pipeline_path}resources/tools
-#         cd {params.pipeline_path}/resources/tools
+#         mkdir -p resources/tools
+#         cd /resources/tools
 #         git clone git@github.com:qBioTurin/MethylFASTQ.git
 #         """
 
@@ -281,6 +305,7 @@ rule align_simulated_reads:
     threads: 30
     shell:
         """
+        bwameth.py index-mem2 {input.fasta} && \
         bwameth.py --threads {threads} --reference {input.fasta} {input.f1} {input.f2}  | samtools view -S -b - > {output}
         """
 
@@ -327,7 +352,7 @@ rule sort_simulated_reads:
 #         else
 #             PLATFORM="{wildcards.platform}"
 #         fi
-#         cargo run --release -- preprocess variants {params.pipeline_path}{input.chromosome} --candidates {params.pipeline_path}{input.candidates} --bam {params.pipeline_path}{input.alignments} --read-type $PLATFORM > {params.pipeline_path}{output}
+#         cargo run --release -- preprocess variants {input.chromosome} --candidates {input.candidates} --bam {input.alignments} --read-type $PLATFORM > {output}
 #         """
 # rule call_varlo_joint:
 #     input:
@@ -346,5 +371,5 @@ rule sort_simulated_reads:
 #     shell:
 #         """
 #         cd {params.varlo_path}
-#         cargo run --release -- call variants --omit-strand-bias generic --scenario {params.pipeline_path}{input.scenario} --obs normal={params.pipeline_path}{input.preprocess_obs} > {params.pipeline_path}{output}
+#         cargo run --release -- call variants --omit-strand-bias generic --scenario {input.scenario} --obs normal={input.preprocess_obs} > {output}
 #         """

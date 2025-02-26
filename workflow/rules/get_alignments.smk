@@ -89,7 +89,7 @@ rule index_aligned_reads:
     threads: 1
     shell:
         """
-        samtools index -@ {threads} {params.pipeline_path}{input}
+        samtools index -@ {threads} {input}
       """
 
 
@@ -203,7 +203,7 @@ rule aligned_downsampled_index:
     threads: 1
     shell:
         """
-        samtools index -@ {threads} {params.pipeline_path}{input}
+        samtools index -@ {threads} {input}
         """
 
 
@@ -222,7 +222,7 @@ rule bam_to_sam:
     threads: 1
     shell:
         """
-        samtools view -@ {threads} -h  -o {params.pipeline_path}/{output}  {params.pipeline_path}{input}   
+        samtools view -@ {threads} -h  -o /{output}  {input}   
 
         """
 
@@ -236,6 +236,8 @@ rule rename_chromosomes_in_sam:
         "logs/rename_chromosomes_in_sam_{platform}_{protocol}.log",
     conda:
         "../envs/python.yaml"
+    wildcard_constraints:
+        protocol="^(?!simulated_data$).*",
     script:
         "../scripts/rename_alignment.py"
 
@@ -272,7 +274,7 @@ rule aligned_downsampled_reads_dedup_index:
     threads: 10
     shell:
         """
-        samtools index -@ {threads} {params.pipeline_path}{input}
+        samtools index -@ {threads} {input}
         """
 
 
@@ -369,5 +371,5 @@ rule aligned_reads_candidates_region_index:
     threads: 10
     shell:
         """
-        samtools index -@ {threads} {params.pipeline_path}{input}
+        samtools index -@ {threads} {input}
         """

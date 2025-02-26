@@ -2,11 +2,11 @@
 
 platforms: 
   # PacBio: 21
-  Illumina_pe: J02459
+  Illumina_pe: 21
   # Nanopore: 1
 
 # Choose frome png and html
-plot_type: png
+plot_type: html
 prob_pres_threshhold: 0.0
 # Choose between ratio and posterior for different types of methylation rates in the result plots
 meth_type: posterior
@@ -49,17 +49,17 @@ cov_bin_size:
   Nanopore: 20
 
 # Local execution
-base_dir: /home/adrian/Documents/Promotion/varlo_stuff/"
-varlo_path: "/home/adrian/Documents/Promotion/varlo_stuff/varlociraptor"
-pipeline_path: "/home/adrian/Documents/Promotion/varlo_stuff/varlociraptor-methylation-evaluation/"
-methylFastQ_path: "/home/adrian/Documents/Promotion/varlo_stuff/tools/MethylFASTQ"
+# base_dir: /home/adrian/Documents/Promotion/varlo_stuff/"
+# varlo_path: "/home/adrian/Documents/Promotion/varlo_stuff/varlociraptor"
+# pipeline_path: "/home/adrian/Documents/Promotion/varlo_stuff/varlociraptor-methylation-evaluation/"
+# methylFastQ_path: "/home/adrian/Documents/Promotion/varlo_stuff/tools/MethylFASTQ"
 
 
 # Cluster execution
-# base_dir: "/projects/koesterlab/benchmark-methylation/"
-# varlo_path: "/projects/koesterlab/benchmark-methylation/varlociraptor/"
-# pipeline_path: "/projects/koesterlab/benchmark-methylation/varlociraptor-methylation-evaluation/"
-# methylFastQ_path: "/projects/koesterlab/benchmark-methylation/MethylFASTQ/"
+base_dir: "/projects/koesterlab/benchmark-methylation"
+varlo_path: "/projects/koesterlab/benchmark-methylation/varlociraptor"
+pipeline_path: "/projects/koesterlab/benchmark-methylation/varlociraptor-methylation-evaluation/"
+methylFastQ_path: "/projects/koesterlab/benchmark-methylation/MethylFASTQ"
 
 # Number of scatter gather items
 scatter_number: 20

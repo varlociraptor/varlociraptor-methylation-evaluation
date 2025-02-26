@@ -29,8 +29,8 @@ rule preprocess_testcase:
     shell:
         """ 
         cd {params.varlo_path}
-        cargo run --release -- preprocess variants --testcase-locus {params.locus} --testcase-prefix {params.prefix} {params.pipeline_path}{input.chromosome} --candidates {params.pipeline_path}{input.candidates} --bam {params.pipeline_path}{input.alignments} --read-type Illumina --max-depth 5000 > {params.pipeline_path}{output}
-        touch {params.pipeline_path}{output}
+        cargo run --release -- preprocess variants --testcase-locus {params.locus} --testcase-prefix {params.prefix} {input.chromosome} --candidates {input.candidates} --bam {input.alignments} --read-type Illumina --max-depth 5000 > {output}
+        touch {output}
         """
 
 
@@ -53,6 +53,6 @@ rule call_testcase:
     shell:
         """ 
         cd {params.varlo_path}
-        cargo run --release -- call variants --testcase-locus {params.locus} --testcase-prefix {params.prefix} --omit-strand-bias generic --scenario {params.pipeline_path}{input.scenario} --obs normal={params.pipeline_path}{input.preprocess_obs}
-        touch {params.pipeline_path}{output}
+        cargo run --release -- call variants --testcase-locus {params.locus} --testcase-prefix {params.prefix} --omit-strand-bias generic --scenario {input.scenario} --obs normal={input.preprocess_obs}
+        touch {output}
         """

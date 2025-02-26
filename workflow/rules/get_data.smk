@@ -42,11 +42,9 @@ rule chromosome_index:
         "logs/chromosome_index_{chromosome}.log",
     conda:
         "../envs/samtools.yaml"
-    params:
-        pipeline_path=config["pipeline_path"],
     shell:
         """ 
-        samtools faidx {params.pipeline_path}{input}
+        samtools faidx {input}
         """
 
 
@@ -79,7 +77,7 @@ rule genome_index:
         pipeline_path=config["pipeline_path"],
     shell:
         """ 
-        samtools faidx {params.pipeline_path}{input}
+        samtools faidx {input}
         """
 
 
@@ -179,8 +177,8 @@ rule get_nanopore_header:
         "../envs/samtools.yaml"
     shell:
         """
-        mkdir -p $(dirname {params.pipeline_path}{output.header})
-        samtools view -H {params.url} > {params.pipeline_path}{output.header}
+        mkdir -p $(dirname {output.header})
+        samtools view -H {params.url} > {output.header}
         """
 
 
@@ -199,7 +197,7 @@ rule get_nanopore_body:
         "../envs/samtools.yaml"
     shell:
         """
-        samtools view {params.url} | head -n 100000 > {params.pipeline_path}{output.body}
+        samtools view {params.url} | head -n 100000 > {output.body}
         """
 
 
@@ -221,8 +219,8 @@ rule combine_nanopore_data:
         "../envs/samtools.yaml"
     shell:
         """
-        cat {params.pipeline_path}{input.header} {params.pipeline_path}{input.body} > {params.pipeline_path}{output.comb}
-        samtools view -b {params.pipeline_path}{output.comb} > {params.pipeline_path}{output.alignment}
+        cat {input.header} {input.body} > {output.comb}
+        samtools view -b {output.comb} > {output.alignment}
         """
 
 
@@ -240,5 +238,5 @@ rule nanopore_bam_index:
         "logs/nanopore_bam_index_{protocol}_{SRA}.log",
     shell:
         """
-        samtools view -b https://ont-open-data.s3.amazonaws.com/gm24385_mod_2021.09/extra_analysis/all.bam | samtools index - {params.pipeline_path}{output}
+        samtools view -b https://ont-open-data.s3.amazonaws.com/gm24385_mod_2021.09/extra_analysis/all.bam | samtools index - {output}
         """

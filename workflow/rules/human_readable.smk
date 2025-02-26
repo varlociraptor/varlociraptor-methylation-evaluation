@@ -14,8 +14,6 @@ rule candidates_to_vcf:
         """
 
 
-
-
 rule aligned_reads_sorted_sam:
     input:
         "resources/{SRA}/aligned-reads-illumina-sorted.bam",
@@ -30,7 +28,7 @@ rule aligned_reads_sorted_sam:
     threads: 10
     shell:
         """ 
-        samtools view -@ {threads} -h  -o {params.pipeline_path}/{output}  {params.pipeline_path}{input}   
+        samtools view -@ {threads} -h  -o /{output}  {input}   
         """
 
 
@@ -48,7 +46,7 @@ rule aligned_reads_filtered_sam:
     threads: 10
     shell:
         """ 
-        samtools view -@ {threads} -h  -o {params.pipeline_path}/{output}  {params.pipeline_path}{input}   
+        samtools view -@ {threads} -h  -o /{output}  {input}   
         """
 
 
@@ -81,7 +79,7 @@ rule bcf_indices:
         pipeline_path=config["pipeline_path"],
     shell:
         """
-        bcftools index  {params.pipeline_path}{input}
+        bcftools index  {input}
         """
 
 
@@ -103,7 +101,7 @@ rule single_bcf:
         pipeline_path=config["pipeline_path"],
     shell:
         """
-        bcftools merge -o {params.pipeline_path}{output} {params.pipeline_path}{input.bcf}
+        bcftools merge -o {output} {input.bcf}
         """
 
 

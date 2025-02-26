@@ -50,5 +50,5 @@ rule fake_meth_data_methylFASTQ:
         "envs/methylFastQ.yaml"
     shell:
         """
-        python {params.methylFastQ_path}src/methylFASTQ.py -i {input} -o {params.pipeline_path}resources/example_paired --seq paired_end --chh 1.0 --chg 1.0 --cg 0 --snp 0.0 --error 0.0 --coverage 4 
+        python {params.methylFastQ_path}src/methylFASTQ.py -i {input} -o resources/example_paired --seq paired_end --chh 1.0 --chg 1.0 --cg 0 --snp 0.0 --error 0.0 --coverage 4 
         """

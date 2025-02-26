@@ -10,8 +10,8 @@ rule download_BisSNP:
         "../envs/install_program.yaml"
     shell:
         """
-        mkdir -p {params.pipeline_path}resources/ref_tools
-        cd {params.pipeline_path}/resources/ref_tools
+        mkdir -p resources/ref_tools
+        cd /resources/ref_tools
         git clone https://github.com/dnaase/Bis-tools.git
         cd Bis-tools
         wget -O BisSNP-0.82.2.jar https://sourceforge.net/projects/bissnp/files/BisSNP-0.82.2/BisSNP-0.82.2.jar/download
