@@ -114,6 +114,7 @@ df = pd.read_parquet(tool_file, engine="pyarrow")
 
 if file_name == "varlo":
     df = df[df["prob_present"] >= float(snakemake.params["prob_pres_threshhold"])]
+    df = df[df["bias"] == "normal"] 
 cov_bin = int(snakemake.params["cov_bin"])
 if cov_bin != -1:
     df = df[df["cov_bin"] == cov_bin]
@@ -136,4 +137,5 @@ with open(snakemake.input["filtered_candidates"], 'r') as file:
     position_list = eval(file.read())
 
 df = df[df['position'].isin(position_list)]
+
 plot_meth_vals_heatmap(df, snakemake.output["plot_filtered"], file_name)

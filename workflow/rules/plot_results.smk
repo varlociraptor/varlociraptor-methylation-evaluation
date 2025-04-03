@@ -89,6 +89,8 @@ rule plot_results_cov_specific:
         # cov_bin="(?!all)"
     conda: 
         "../envs/plot.yaml",
+    log:
+        "logs/plot_results_cov_specific/{platform}_{protocol}_{method}_{cov_bin}_{plot_type}.log",
     params:
         plot_type=config["plot_type"],
         prob_pres_threshhold=config["prob_pres_threshhold"],
@@ -121,6 +123,8 @@ rule plot_results_all_cov:
         ),
     conda: 
         "../envs/plot.yaml",
+    log:
+        "logs/plot_results_all_cov/{platform}_{protocol}_{method}_{plot_type}.log",
     params:
         plot_type=config["plot_type"],
         prob_pres_threshhold=config["prob_pres_threshhold"],
@@ -153,7 +157,7 @@ rule plot_heatmap:
             category=lambda wildcards: f"{wildcards.platform} - {wildcards.protocol}",
             subcategory=lambda wildcards: f"{wildcards.method} plots",
             labels= {
-                "type": "heatmap",
+                "type": "heatmap_filtered",
                 "coverage": "all",
                 },
             ),

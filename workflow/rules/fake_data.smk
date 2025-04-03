@@ -146,6 +146,51 @@ rule fake_reads_mason:
 # That is why we need to compute the coverage on the forward and reverse strand independently.
 
 
+rule align_simulated_reads_mason:
+    input:
+        fasta=expand(
+            "resources/chromosome_{chrom}.fasta",
+            chrom=config["simulated_chrom"],
+        ),
+        fasta_index=expand(
+            "resources/chromosome_{chrom}.fasta.bwameth.c2t",
+            chrom=config["simulated_chrom"],
+        ),
+        # fasta_index="resources/test_chr.fasta.bwameth.c2t",
+        # fasta="resources/test_chr.fasta",
+        f1=expand(
+            "resources/Illumina_pe/simulated_data/chromosome_{chrom}_f1.fastq",
+            chrom=config["simulated_chrom"],
+        ),
+        f2=expand(
+            "resources/Illumina_pe/simulated_data/chromosome_{chrom}_f2.fastq",
+            chrom=config["simulated_chrom"],
+        ),
+    output:
+        "resources/Illumina_pe/simulated_data/alignment.sam",
+    conda:
+        "../envs/bwa-meth.yaml"
+    threads: 30
+    shell:
+        """
+        bwameth.py index-mem2 {input.fasta} && \
+        bwameth.py --threads {threads} --reference {input.fasta} {input.f1} {input.f2} > {output}
+        """
+
+
+rule sam_bam_mason:
+    input:
+        "resources/Illumina_pe/simulated_data/alignment.sam",
+    output:
+        "resources/Illumina_pe/simulated_data/alignment.bam",
+    conda:
+        "../envs/samtools.yaml"
+    threads: 30
+    shell:
+        """
+        samtools view -Sb {input} > {output}
+        """
+
 rule mason_alignment_forward:
     input:
         "resources/Illumina_pe/simulated_data/alignment.bam",
@@ -178,7 +223,6 @@ rule mason_alignment_reverse:
         samtools view -b -F 16 -F 64 {input} > {output.second}
         samtools merge {output.rev} {output.first} {output.second}
         """
-
 
 rule sort_mason_reads:
     input:
@@ -257,51 +301,10 @@ rule mason_truth:
 ###############################################################
 
 
-rule align_simulated_reads_mason:
-    input:
-        fasta=expand(
-            "resources/chromosome_{chrom}.fasta",
-            chrom=config["simulated_chrom"],
-        ),
-        fasta_index=expand(
-            "resources/chromosome_{chrom}.fasta.bwameth.c2t",
-            chrom=config["simulated_chrom"],
-        ),
-        # fasta_index="resources/test_chr.fasta.bwameth.c2t",
-        # fasta="resources/test_chr.fasta",
-        f1=expand(
-            "resources/Illumina_pe/simulated_data/chromosome_{chrom}_f1.fastq",
-            chrom=config["simulated_chrom"],
-        ),
-        f2=expand(
-            "resources/Illumina_pe/simulated_data/chromosome_{chrom}_f2.fastq",
-            chrom=config["simulated_chrom"],
-        ),
-    output:
-        "resources/Illumina_pe/simulated_data/alignment.sam",
-    conda:
-        "../envs/bwa-meth.yaml"
-    threads: 30
-    shell:
-        """
-        bwameth.py index-mem2 {input.fasta} && \
-        bwameth.py --threads {threads} --reference {input.fasta} {input.f1} {input.f2} > {output}
-        """
 
 
-rule sam_bam_mason:
-    input:
-        "resources/Illumina_pe/simulated_data/alignment.sam",
-    output:
-        "resources/Illumina_pe/simulated_data/alignment.bam",
-    conda:
-        "../envs/samtools.yaml"
-    threads: 30
-    shell:
-        """
-        samtools view -Sb {input} > {output}
 
-        """
+
 
 
 # mason_simulator  \
@@ -370,65 +373,65 @@ rule sam_bam_mason:
 
 ###########################################################3
 ###########################################################3
-rule index_chromosome:
-    input:
-        "resources/chromosome_{chrom}.fasta",
-    output:
-        "resources/chromosome_{chrom}.fasta.bwameth.c2t",
-    conda:
-        "../envs/bwa-meth.yaml"
-    resources:
-        mem_mb=512,
-        runtime=10,
-    shell:
-        "bwameth.py index {input}"
+# rule index_chromosome:
+#     input:
+#         "resources/chromosome_{chrom}.fasta",
+#     output:
+#         "resources/chromosome_{chrom}.fasta.bwameth.c2t",
+#     conda:
+#         "../envs/bwa-meth.yaml"
+#     resources:
+#         mem_mb=512,
+#         runtime=10,
+#     shell:
+#         "bwameth.py index {input}"
 
 
-rule align_simulated_reads:
-    input:
-        fasta=expand(
-            "resources/chromosome_{chrom}.fasta",
-            chrom=config["simulated_chrom"],
-        ),
-        fasta_index=expand(
-            "resources/chromosome_{chrom}.fasta.bwameth.c2t",
-            chrom=config["simulated_chrom"],
-        ),
-        # fasta_index="resources/test_chr.fasta.bwameth.c2t",
-        # fasta="resources/test_chr.fasta",
-        f1=expand(
-            "resources/Illumina_pe/simulated_data/chromosome_{chrom}_pe_f150r150_dir_R1.fastq",
-            chrom=config["simulated_chrom"],
-        ),
-        f2=expand(
-            "resources/Illumina_pe/simulated_data/chromosome_{chrom}_pe_f150r150_dir_R2.fastq",
-            chrom=config["simulated_chrom"],
-        ),
-    output:
-        "resources/Illumina_pe/simulated_data/no_sra/alignment.bam",
-    conda:
-        "../envs/bwa-meth.yaml"
-    threads: 30
-    shell:
-        """
-        bwameth.py index-mem2 {input.fasta} && \
-        bwameth.py --threads {threads} --reference {input.fasta} {input.f1} {input.f2}  | samtools view -S -b - > {output}
-        """
+# rule align_simulated_reads:
+#     input:
+#         fasta=expand(
+#             "resources/chromosome_{chrom}.fasta",
+#             chrom=config["simulated_chrom"],
+#         ),
+#         fasta_index=expand(
+#             "resources/chromosome_{chrom}.fasta.bwameth.c2t",
+#             chrom=config["simulated_chrom"],
+#         ),
+#         # fasta_index="resources/test_chr.fasta.bwameth.c2t",
+#         # fasta="resources/test_chr.fasta",
+#         f1=expand(
+#             "resources/Illumina_pe/simulated_data/chromosome_{chrom}_pe_f150r150_dir_R1.fastq",
+#             chrom=config["simulated_chrom"],
+#         ),
+#         f2=expand(
+#             "resources/Illumina_pe/simulated_data/chromosome_{chrom}_pe_f150r150_dir_R2.fastq",
+#             chrom=config["simulated_chrom"],
+#         ),
+#     output:
+#         "resources/Illumina_pe/simulated_data/no_sra/alignment.bam",
+#     conda:
+#         "../envs/bwa-meth.yaml"
+#     threads: 30
+#     shell:
+#         """
+#         bwameth.py index-mem2 {input.fasta} && \
+#         bwameth.py --threads {threads} --reference {input.fasta} {input.f1} {input.f2}  | samtools view -S -b - > {output}
+#         """
 
 
-rule sort_simulated_reads:
-    input:
-        "resources/Illumina_pe/simulated_data/alignment.bam",
-    output:
-        # Name it like that in order to skip filtering on qual, mark_duplicates, ...
-        "resources/Illumina_pe/simulated_data/alignment_focused_downsampled_dedup_renamed.bam",
-    conda:
-        "../envs/samtools.yaml"
-    threads: 10
-    shell:
-        """
-        samtools sort -@ {threads}  {input} -o {output}    
-        """
+# rule sort_simulated_reads:
+#     input:
+#         "resources/Illumina_pe/simulated_data/alignment.bam",
+#     output:
+#         # Name it like that in order to skip filtering on qual, mark_duplicates, ...
+#         "resources/Illumina_pe/simulated_data/alignment_focused_downsampled_dedup_renamed.bam",
+#     conda:
+#         "../envs/samtools.yaml"
+#     threads: 10
+#     shell:
+#         """
+#         samtools sort -@ {threads}  {input} -o {output}    
+#         """
 
 
 # rule compute_meth_observations:

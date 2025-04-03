@@ -6,8 +6,8 @@ import os
 
 
 def compute_rmse(df, tool_col):
-    df_rmse = df[df[tool_col] > 0]
-    # df_rmse = df
+    # df_rmse = df[df[tool_col] > 0]
+    df_rmse = df
     squared_errors = (df_rmse[tool_col] - df_rmse["true_methylation_x"]) ** 2
     mean_squared_error = squared_errors.mean()
     return np.sqrt(mean_squared_error)
