@@ -2,6 +2,7 @@ def compute_results():
     needed_inputs = []
     for platform in config["platforms"].keys():
         needed_inputs.append(scatter_plots(platform))
+        needed_inputs.append(heatmap_plots(platform))
         needed_inputs.append(diff_plots(platform))
         needed_inputs.append(precision_recall(platform))
     return needed_inputs
@@ -32,6 +33,22 @@ def scatter_plots(platform):
         for method in list(ref_methods + ["varlo"])
         for bin in list(range(0, config["cov_bins"][platform])) + ["all"]
         # for bin in list(range(0, config["cov_bins"][platform]))
+    ]
+
+
+def heatmap_plots(platform):
+    base_path = Path("results") / platform
+    protocols = list(config["data"][platform].keys())
+    ref_methods = config["ref_tools"][platform]
+    return [
+        # str(base_path / protocol / ("plots/" + method + str(bin) + snakemake.params["plot_type"]))
+        str(
+            base_path
+            / protocol
+            / ("plots/" + str(method) + "/heatmap." + config["plot_type"])
+        )
+        for protocol in protocols
+        for method in list(ref_methods + ["varlo"])
     ]
 
 

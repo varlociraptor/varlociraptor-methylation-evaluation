@@ -1,36 +1,39 @@
-
-
-rule find_candidates:
-    input:
-        "resources/chromosome_{chromosome}.fasta",
-        # chrom=chr_chromosome,
-    output:
-        "resources/{chromosome}/candidates.bcf",
-    log:
-        "logs/{chromosome}/find_candidates.log",
-    conda:
-        "../envs/varlociraptor.yaml"
-    params:
-        varlo_path=config["varlo_path"],
-        pipeline_path=config["pipeline_path"],
-    shell:
-        """ 
-        cd {params.varlo_path}
-        cargo run -- methylation-candidates {params.pipeline_path}{input} {params.pipeline_path}{output}
-        """
-
-
-rule split_candidates:
-    input:
-        "resources/{chrom}/candidates.bcf",
-    output:
-        scatter.split_candidates("resources/{{chrom}}/candidates_{scatteritem}.bcf"),
-    log:
-        "logs/{chrom}split_candidates.log",
-    conda:
-        "../envs/rbt.yaml"
-    shell:
-        "rbt vcf-split {input} {output}"
+# rule compute_meth_observations:
+#     input:
+#         chromosome=lambda wildcards: expand(
+#             "resources/chromosome_{chrom}.fasta",
+#             chrom=chromosome_by_platform[wildcards.platform],
+#         ),
+#         genome_index=lambda wildcards: expand(
+#             "resources/chromosome_{chrom}.fasta.fai",
+#             chrom=chromosome_by_platform[wildcards.platform],
+#         ),
+#         alignments="resources/{platform}/{protocol}/candidate_specific/alignment_valid_{scatteritem}.bam",
+#         alignment_index="resources/{platform}/{protocol}/candidate_specific/alignment_valid_{scatteritem}.bam.bai",
+#         candidates=lambda wildcards: expand(
+#             "resources/{{platform}}/{{protocol}}/21/candidates_{{scatteritem}}.bcf",
+#             chrom=chromosome_by_platform[wildcards.platform],
+#         ),
+#     output:
+#         "results/{platform}/{protocol}/normal_{scatteritem}.bcf",
+#     log:
+#         "logs/compute_meth_observations_{platform}_{protocol}_{scatteritem}.log",
+#     conda:
+#         "../envs/varlociraptor.yaml"
+#     params:
+#         varlo_path=config["varlo_path"],
+#         pipeline_path=config["pipeline_path"],
+#     shell:
+#         """
+#         cd {params.varlo_path}
+#         if [[ "{wildcards.platform}" == "Illumina_pe" || "{wildcards.platform}" == "Illumina_se" ]]; then
+#             PLATFORM="Illumina"
+#         else
+#             PLATFORM="{wildcards.platform}"
+#         fi
+#         echo $PLATFORM
+#         cargo run --release -- preprocess variants {params.pipeline_path}{input.chromosome} --candidates {params.pipeline_path}{input.candidates} --bam {params.pipeline_path}{input.alignments} --read-type $PLATFORM --max-depth 5000 > {params.pipeline_path}{output}
+#         """
 
 
 rule compute_meth_observations:
@@ -45,8 +48,12 @@ rule compute_meth_observations:
         ),
         alignments="resources/{platform}/{protocol}/candidate_specific/alignment_valid_{scatteritem}.bam",
         alignment_index="resources/{platform}/{protocol}/candidate_specific/alignment_valid_{scatteritem}.bam.bai",
+#         candidates=lambda wildcards: expand(
+#             "resources/{{platform}}/{{protocol}}/21/candidates_{{scatteritem}}.bcf",
+#             chrom=chromosome_by_platform[wildcards.platform],
+#         ),
         candidates=lambda wildcards: expand(
-            "resources/{chrom}/candidates_{{scatteritem}}.bcf",
+            "resources/{{platform}}/{{protocol}}/{chrom}/candidates_{{scatteritem}}.bcf",
             chrom=chromosome_by_platform[wildcards.platform],
         ),
     output:
@@ -67,8 +74,9 @@ rule compute_meth_observations:
             PLATFORM="{wildcards.platform}"
         fi
         echo $PLATFORM
-        cargo run --release -- preprocess variants {params.pipeline_path}{input.chromosome} --candidates {params.pipeline_path}{input.candidates} --bam {params.pipeline_path}{input.alignments} --read-type $PLATFORM --max-depth 5000 > {params.pipeline_path}{output}
+        cargo run --release -- preprocess variants --omit-mapq-adjustment {input.chromosome} --candidates {input.candidates} --bam {input.alignments} --read-type $PLATFORM --max-depth 5000 > {output}
         """
+        # cargo run --release -- preprocess variants {input.chromosome} --candidates {input.candidates} --bam {input.alignments} --read-type $PLATFORM --max-depth 5000 > {output}
 
 
 rule call_methylation:
@@ -87,7 +95,7 @@ rule call_methylation:
     shell:
         """ 
         cd {params.varlo_path}
-        cargo run --release -- call variants generic --scenario {params.pipeline_path}{input.scenario} --obs normal={params.pipeline_path}{input.preprocess_obs} > {params.pipeline_path}{output}
+        cargo run --release -- call variants generic --scenario {input.scenario} --obs normal={input.preprocess_obs} > {output}
         """
 
 

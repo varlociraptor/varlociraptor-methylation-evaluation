@@ -49,6 +49,7 @@ dependencies:
   - openssl
   - zlib
   - bzip2
+  - samtools=1.17
   - xz
   - clangdev
   - blis

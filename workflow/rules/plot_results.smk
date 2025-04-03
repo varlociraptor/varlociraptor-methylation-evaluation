@@ -20,25 +20,25 @@ rule ref_df:
     script:
         "../scripts/df_from_calls.py"
 
-# rule ref_df_simulated_methylfastq:
-#     input:
-#         tool="results/Illumina_pe/simulated_data/result_files/{method}.bed",
-#         simulated=expand(
-#             "resources/Illumina_pe/simulated_data/chromosome_{chrom}_pe_f150r150_dir.ch3",
-#             chrom=chromosome_by_platform["Illumina_pe"],
-#         ),
-#         # coverage="resources/Illumina_pe/simulated_data/cov.regions.bed"
-#     output:
-#         "results/Illumina_pe/simulated_data/result_files/{method}.parquet",
-#     conda:
-#         "../envs/plot.yaml"
-#     params:
-#         cov_bin_size=lambda wildcards: config["cov_bin_size"]["Illumina_pe"],
-#         cov_bins=lambda wildcards: config["cov_bins"]["Illumina_pe"],
-#         meth_type=config["meth_type"],
-#         simulated=True
-#     script:
-#         "../scripts/df_from_calls.py"
+rule ref_df_simulated_methylfastq:
+    input:
+        tool="results/Illumina_pe/simulated_data/result_files/{method}.bed",
+        simulated=expand(
+            "resources/Illumina_pe/simulated_data/chromosome_{chrom}_pe_f150r150_dir.ch3",
+            chrom=config["simulated_chrom"],
+        ),
+        # coverage="resources/Illumina_pe/simulated_data/cov.regions.bed"
+    output:
+        "results/Illumina_pe/simulated_data/result_files/{method}.parquet",
+    conda:
+        "../envs/plot.yaml"
+    params:
+        cov_bin_size=lambda wildcards: config["cov_bin_size"]["Illumina_pe"],
+        cov_bins=lambda wildcards: config["cov_bins"]["Illumina_pe"],
+        meth_type=config["meth_type"],
+        simulated=True
+    script:
+        "../scripts/df_from_calls.py"
 
 
 rule ref_df_simulated_mason:
@@ -46,7 +46,7 @@ rule ref_df_simulated_mason:
         tool="results/Illumina_pe/simulated_data/result_files/{method}.bed",
         true_meth=expand(
             "resources/Illumina_pe/simulated_data/chromosome_{chrom}_truth.bed",
-            chrom=chromosome_by_platform["Illumina_pe"],
+            chrom=config["simulated_chrom"],
         ),
         coverage="resources/Illumina_pe/simulated_data/cov.regions.bed"
     output:
@@ -127,6 +127,45 @@ rule plot_results_all_cov:
         cov_bin = -1
     script:
         "../scripts/scatter_plot.py"
+
+#TODO Remove alignemtn, index, candidates, params.filter_candidates, nachdem mapq zeug fertig gedebuggt ist
+rule plot_heatmap:
+    input:
+        tool="results/{platform}/{protocol}/result_files/{method}.parquet",
+        filtered_candidates="mapq_output.txt"
+        # alignment="resources/{platform}/{protocol}/alignment_focused_downsampled_dedup_renamed.bam",
+        # index="resources/{platform}/{protocol}/alignment_focused_downsampled_dedup_renamed.bam.bai",
+        # candidates="resources/21/candidates.bcf",
+    output:
+        plot=report(
+            "results/{platform}/{protocol}/plots/{method}/heatmap.{plot_type}",
+            # "results/{platform}/{protocol}/plots/{method}/all_scatter.{plot_type}",
+            category=lambda wildcards: f"{wildcards.platform} - {wildcards.protocol}",
+            subcategory=lambda wildcards: f"{wildcards.method} plots",
+            labels= {
+                "type": "heatmap",
+                "coverage": "all",
+                },
+            ),
+        plot_filtered=report(
+            "results/{platform}/{protocol}/plots/{method}/heatmap_filtered.{plot_type}",
+            # "results/{platform}/{protocol}/plots/{method}/all_scatter.{plot_type}",
+            category=lambda wildcards: f"{wildcards.platform} - {wildcards.protocol}",
+            subcategory=lambda wildcards: f"{wildcards.method} plots",
+            labels= {
+                "type": "heatmap",
+                "coverage": "all",
+                },
+            ),
+    conda: 
+        "../envs/plot.yaml",
+    params:
+        plot_type=config["plot_type"],
+        prob_pres_threshhold=config["prob_pres_threshhold"],
+        cov_bin = -1,
+        filter_candidates= 0
+    script:
+        "../scripts/heatmap.py"
 
 rule plot_dist_comparision:
     input:

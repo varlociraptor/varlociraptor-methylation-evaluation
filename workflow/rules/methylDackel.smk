@@ -1,11 +1,11 @@
 rule methylDackel:
     input:
-        # Wenn Probleme versuche genome statt chromosome
-        # genome="resources/genome.fasta",
-        chromosome=lambda wildcards: expand(
-            "resources/chromosome_{chrom}.fasta",
-            chrom=chromosome_by_platform["Illumina_pe"],
-        ),
+        #TODO: Wenn Probleme versuche genome statt chromosome
+        chromosome="resources/genome.fasta",
+        # chromosome=lambda wildcards: expand(
+        #     "resources/chromosome_{chrom}.fasta",
+        #     chrom=config["simulated_chrom"],
+        # ),
         alignment="resources/Illumina_pe/{protocol}/alignment_focused_downsampled_dedup_renamed.bam",
         alignment_index="resources/Illumina_pe/{protocol}/alignment_focused_downsampled_dedup_renamed.bam.bai",
     output:
@@ -21,9 +21,7 @@ rule methylDackel:
         ),
     shell:
         """
-        echo test
         OUTDIR=$(dirname {output})/alignments
-        echo $OUTDIR
         MethylDackel extract {input.chromosome} {input.alignment} -o $OUTDIR --mergeContext
         """
 

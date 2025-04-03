@@ -227,6 +227,7 @@ rule bam_to_sam:
         """
 
 
+# TODO: Die wildcard constraints koennten bei simulated reads wichtig sein
 rule rename_chromosomes_in_sam:
     input:
         sam="resources/{platform}/{protocol}/alignment_focused_downsampled_dedup.sam",
@@ -236,8 +237,8 @@ rule rename_chromosomes_in_sam:
         "logs/rename_chromosomes_in_sam_{platform}_{protocol}.log",
     conda:
         "../envs/python.yaml"
-    wildcard_constraints:
-        protocol="^(?!simulated_data$).*",
+    # wildcard_constraints:
+    #     protocol="^(?!simulated_data$).*",
     script:
         "../scripts/rename_alignment.py"
 
@@ -283,7 +284,7 @@ rule aligned_reads_candidates_region:
         alignment="resources/{platform}/{protocol}/alignment_focused_downsampled_dedup_renamed.bam",
         index="resources/{platform}/{protocol}/alignment_focused_downsampled_dedup_renamed.bam.bai",
         candidate=lambda wildcards: expand(
-            "resources/{chrom}/candidates_{{scatteritem}}.bcf",
+            "resources/{{platform}}/{{protocol}}/{chrom}/candidates_{{scatteritem}}.bcf",
             chrom=chromosome_by_platform[wildcards.platform],
         ),
     output:
@@ -324,17 +325,17 @@ rule aligned_reads_candidates_region:
 #         """
 
 
-rule valid_sam_to_bam:
-    input:
-        "resources/{platform}/{protocol}/alignment_focused_downsampled_dedup_renamed.bam",
-    output:
-        "resources/{platform}/{protocol}/alignment_focused_downsampled_dedup_renamed.sam",
-    conda:
-        "../envs/samtools.yaml"
-    shell:
-        """
-        samtools view -h -o {output} {input}
-        """
+# rule valid_bam_to_sam:
+#     input:
+#         "resources/{platform}/{protocol}/alignment_focused_downsampled_dedup_renamed.bam",
+#     output:
+#         "resources/{platform}/{protocol}/alignment_focused_downsampled_dedup_renamed.sam",
+#     conda:
+#         "../envs/samtools.yaml"
+#     shell:
+#         """
+#         samtools view -h -o {output} {input}
+#         """
 
 
 # TODO: This rule is actually unnecessary and consumes a lot of time. The problem is that Varlociraptor does not work on bam files that have no reads. Due to the previous step, it can happen that all candidates are outside the reads and the bam file therefore has no reads. Therefore we simply add the last read of the original bam file for each bam file.

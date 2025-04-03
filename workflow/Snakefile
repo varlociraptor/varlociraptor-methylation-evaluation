@@ -13,6 +13,9 @@ scattergather:
     split_candidates=config["scatter_number"],
 
 
+# inputflags:
+#     access.sequential
+
 chromosome_by_platform = config["platforms"]
 chromosomes = set(chromosome for chromosome in config["platforms"].values())
 chr_chromosome = set("chr" + str(chromosome) for chromosome in chromosomes)
@@ -37,7 +40,8 @@ include: "rules/plot_results.smk"
 include: "rules/testcase.smk"
 include: "rules/fake_data.smk"
 include: "rules/pbCpgTools.smk"
-include: "rules/varlociraptor.smk"
+include: "rules/meth_calling.smk"
+include: "rules/compute_candidates.smk"
 
 
 rule all:

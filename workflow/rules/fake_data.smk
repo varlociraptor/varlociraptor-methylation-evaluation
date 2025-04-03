@@ -126,12 +126,12 @@ rule fake_reads_mason:
     shell:
         """
         mason_simulator --input-reference {input.genome} \
-                --num-fragments 5000000 \
+                --num-fragments 10000 \
                 --out {output.f1} \
                 --out-right {output.f2} \
                 --meth-fasta-in {input.methylation} \
                 --enable-bs-seq \
-                --illumina-read-length 200 \
+                --illumina-read-length 150 \
         """
         # --seq-technology illumina \
         # --out-alignment {output.bam} \
@@ -212,7 +212,7 @@ rule mosdepth_mason_truth:
         bai="resources/Illumina_pe/simulated_data/alignment_sorted_{orientation}.bam.bai",
         bed=lambda wildcards: expand(
             "resources/{chrom}/candidates.bed",
-            chrom=chromosome_by_platform["Illumina_pe"],
+            chrom=config["simulated_chrom"],
         ),
     output:
         "resources/Illumina_pe/simulated_data/{orientation}_cov.mosdepth.global.dist.txt",
@@ -261,21 +261,21 @@ rule align_simulated_reads_mason:
     input:
         fasta=expand(
             "resources/chromosome_{chrom}.fasta",
-            chrom=chromosome_by_platform["Illumina_pe"],
+            chrom=config["simulated_chrom"],
         ),
         fasta_index=expand(
             "resources/chromosome_{chrom}.fasta.bwameth.c2t",
-            chrom=chromosome_by_platform["Illumina_pe"],
+            chrom=config["simulated_chrom"],
         ),
         # fasta_index="resources/test_chr.fasta.bwameth.c2t",
         # fasta="resources/test_chr.fasta",
         f1=expand(
             "resources/Illumina_pe/simulated_data/chromosome_{chrom}_f1.fastq",
-            chrom=chromosome_by_platform["Illumina_pe"],
+            chrom=config["simulated_chrom"],
         ),
         f2=expand(
             "resources/Illumina_pe/simulated_data/chromosome_{chrom}_f2.fastq",
-            chrom=chromosome_by_platform["Illumina_pe"],
+            chrom=config["simulated_chrom"],
         ),
     output:
         "resources/Illumina_pe/simulated_data/alignment.sam",
@@ -388,21 +388,21 @@ rule align_simulated_reads:
     input:
         fasta=expand(
             "resources/chromosome_{chrom}.fasta",
-            chrom=chromosome_by_platform["Illumina_pe"],
+            chrom=config["simulated_chrom"],
         ),
         fasta_index=expand(
             "resources/chromosome_{chrom}.fasta.bwameth.c2t",
-            chrom=chromosome_by_platform["Illumina_pe"],
+            chrom=config["simulated_chrom"],
         ),
         # fasta_index="resources/test_chr.fasta.bwameth.c2t",
         # fasta="resources/test_chr.fasta",
         f1=expand(
             "resources/Illumina_pe/simulated_data/chromosome_{chrom}_pe_f150r150_dir_R1.fastq",
-            chrom=chromosome_by_platform["Illumina_pe"],
+            chrom=config["simulated_chrom"],
         ),
         f2=expand(
             "resources/Illumina_pe/simulated_data/chromosome_{chrom}_pe_f150r150_dir_R2.fastq",
-            chrom=chromosome_by_platform["Illumina_pe"],
+            chrom=config["simulated_chrom"],
         ),
     output:
         "resources/Illumina_pe/simulated_data/no_sra/alignment.bam",

@@ -3,13 +3,13 @@
 
 rule candidate_splits_to_vcf:
     input:
-        "resources/{chro}/candidates_{scatteritem}.bcf",
+        "resources/{chrom}/candidates_{scatteritem}.bcf",
     output:
-        "resources/{chro}/candidates_{scatteritem}.vcf",
+        "resources/{chrom}/candidates_{scatteritem}.vcf",
     conda:
         "../envs/samtools.yaml"
     log:
-        "logs/{chro}/candidate_splits_to_vcf_{scatteritem}.log",
+        "logs/{chrom}/candidate_splits_to_vcf_{scatteritem}.log",
     shell:
         """
         bcftools view {input} > {output}

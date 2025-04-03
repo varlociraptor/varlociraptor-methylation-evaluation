@@ -1,1 +1,1 @@
-All files for our methylation valling with Varlociraptor!
+All files for our methylation calling with Varlociraptor!

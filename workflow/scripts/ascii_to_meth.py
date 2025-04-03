@@ -1,4 +1,5 @@
 from collections import defaultdict
+import re
 
 
 def parse_vcf(candidates):
@@ -30,20 +31,29 @@ def parse_cov(file_path, strand, coverages):
 
 def parse_fasta(meth_file):
     """Parses the ASCII FASTA file and extracts methylation levels."""
-    methylation_data = defaultdict(lambda: defaultdict(str))
     with open(meth_file, "r") as f:
-        current_seq, strand = None, None
-        for i, line in enumerate(f):
-            if i % 10000 == 0:
-                print(f"Processing line {i}", flush=True)
-            if line.startswith(">"):
-                chrom_info = line.strip().split("/")
-                current_seq, strand = chrom_info[0][1:], chrom_info[1]
-                print(line.strip(), current_seq)
-                methylation_data[current_seq][strand] = ""
-            else:
-                methylation_data[current_seq][strand] += line.strip()
-    return methylation_data
+        fasta = f.read().strip()
+
+        fasta_parts = re.split(r">|/TOP\n|/BOT\n", fasta)
+        chrom = fasta_parts[1]
+        methylation_data = defaultdict(lambda: defaultdict(str))
+        methylation_data[chrom]["TOP"] = fasta_parts[2].replace("\n", "")
+        methylation_data[chrom]["BOT"] = fasta_parts[4].replace("\n", "")
+        return methylation_data
+    # methylation_data = defaultdict(lambda: defaultdict(str))
+    # with open(meth_file, "r") as f:
+    #     current_seq, strand = None, None
+    #     for i, line in enumerate(f):
+    #         if i % 10000 == 0:
+    #             print(f"Processing line {i}", flush=True)
+    #         if line.startswith(">"):
+    #             chrom_info = line.strip().split("/")
+    #             current_seq, strand = chrom_info[0][1:], chrom_info[1]
+    #             print(line.strip(), current_seq)
+    #             methylation_data[current_seq][strand] = ""
+    #         else:
+    #             methylation_data[current_seq][strand] += line.strip()
+    # return methylation_data
 
 
 def ascii_to_methylation(char):
@@ -57,7 +67,6 @@ def ascii_to_methylation(char):
 
 def generate_bed(candidate_positions, meth_data, coverages, output_file):
     """Generates a BED file with methylation information."""
-    print(meth_data["J02459"]["TOP"][3])
     with open(output_file, "w") as out:
         for chrom, pos in candidate_positions:
             if chrom in meth_data and pos - 1 < len(meth_data[chrom]["BOT"]):
@@ -66,7 +75,6 @@ def generate_bed(candidate_positions, meth_data, coverages, output_file):
                 coverage = coverage_top + coverage_bot
                 ascii_char_bot = meth_data[chrom]["BOT"][pos]  # 1-based to 0-based
                 ascii_char_top = meth_data[chrom]["TOP"][pos - 1]  # 1-based to 0-based
-                print(pos)
                 # print(ascii_char_bot, ascii_char_top)
                 meth_level = (
                     0
