@@ -1,5 +1,4 @@
-
-
+# TODO: Remove params.pipeline, but does not work locally without
 rule find_candidates:
     input:
         "resources/chromosome_{chromosome}.fasta",

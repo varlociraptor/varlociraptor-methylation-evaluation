@@ -1,11 +1,11 @@
 rule methylDackel:
     input:
-        #TODO: Wenn Probleme versuche genome statt chromosome
-        chromosome="resources/genome.fasta",
-        # chromosome=lambda wildcards: expand(
-        #     "resources/chromosome_{chrom}.fasta",
-        #     chrom=config["simulated_chrom"],
-        # ),
+        #TODO: Wenn Probleme versuche genome statt chromosome, aber dann klappts nicht mehr mit simulated
+        # chromosome="resources/genome.fasta",
+        chromosome=lambda wildcards: expand(
+            "resources/chromosome_{chrom}.fasta",
+            chrom=config["simulated_chrom"],
+        ),
         alignment="resources/Illumina_pe/{protocol}/alignment_focused_downsampled_dedup_renamed.bam",
         alignment_index="resources/Illumina_pe/{protocol}/alignment_focused_downsampled_dedup_renamed.bam.bai",
     output:

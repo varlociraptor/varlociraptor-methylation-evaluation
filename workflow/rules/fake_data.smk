@@ -191,6 +191,7 @@ rule sam_bam_mason:
         samtools view -Sb {input} > {output}
         """
 
+
 rule mason_alignment_forward:
     input:
         "resources/Illumina_pe/simulated_data/alignment.bam",
@@ -223,6 +224,7 @@ rule mason_alignment_reverse:
         samtools view -b -F 16 -F 64 {input} > {output.second}
         samtools merge {output.rev} {output.first} {output.second}
         """
+
 
 rule sort_mason_reads:
     input:
@@ -299,12 +301,6 @@ rule mason_truth:
 
 
 ###############################################################
-
-
-
-
-
-
 
 
 # mason_simulator  \
@@ -419,19 +415,19 @@ rule mason_truth:
 #         """
 
 
-# rule sort_simulated_reads:
-#     input:
-#         "resources/Illumina_pe/simulated_data/alignment.bam",
-#     output:
-#         # Name it like that in order to skip filtering on qual, mark_duplicates, ...
-#         "resources/Illumina_pe/simulated_data/alignment_focused_downsampled_dedup_renamed.bam",
-#     conda:
-#         "../envs/samtools.yaml"
-#     threads: 10
-#     shell:
-#         """
-#         samtools sort -@ {threads}  {input} -o {output}    
-#         """
+rule sort_simulated_reads:
+    input:
+        "resources/Illumina_pe/simulated_data/alignment.bam",
+    output:
+        # Name it like that in order to skip filtering on qual, mark_duplicates, ...
+        "resources/Illumina_pe/simulated_data/alignment_focused_downsampled_dedup_renamed.bam",
+    conda:
+        "../envs/samtools.yaml"
+    threads: 10
+    shell:
+        """
+        samtools sort -@ {threads}  {input} -o {output}    
+        """
 
 
 # rule compute_meth_observations:

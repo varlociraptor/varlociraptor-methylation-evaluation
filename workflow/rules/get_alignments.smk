@@ -3,11 +3,11 @@ chromosome_by_platform = config["platforms"]
 
 rule index_genome:
     input:
-        "resources/genome.fasta",
+        "resources/{genome}.fasta",
     output:
-        "resources/genome.fasta.bwameth.c2t",
+        "resources/{genome}.fasta.bwameth.c2t",
     log:
-        "logs/index_genome.log",
+        "logs/index_genome_{genome}.log",
     conda:
         "../envs/bwa-meth.yaml"
     shell:
@@ -237,8 +237,8 @@ rule rename_chromosomes_in_sam:
         "logs/rename_chromosomes_in_sam_{platform}_{protocol}.log",
     conda:
         "../envs/python.yaml"
-    # wildcard_constraints:
-    #     protocol="^(?!simulated_data$).*",
+    wildcard_constraints:
+        protocol="^(?!simulated_data$).*",
     script:
         "../scripts/rename_alignment.py"
 
@@ -325,17 +325,17 @@ rule aligned_reads_candidates_region:
 #         """
 
 
-# rule valid_bam_to_sam:
-#     input:
-#         "resources/{platform}/{protocol}/alignment_focused_downsampled_dedup_renamed.bam",
-#     output:
-#         "resources/{platform}/{protocol}/alignment_focused_downsampled_dedup_renamed.sam",
-#     conda:
-#         "../envs/samtools.yaml"
-#     shell:
-#         """
-#         samtools view -h -o {output} {input}
-#         """
+rule valid_bam_to_sam:
+    input:
+        "resources/{platform}/{protocol}/alignment_focused_downsampled_dedup_renamed.bam",
+    output:
+        "resources/{platform}/{protocol}/alignment_focused_downsampled_dedup_renamed.sam",
+    conda:
+        "../envs/samtools.yaml"
+    shell:
+        """
+        samtools view -h -o {output} {input}
+        """
 
 
 # TODO: This rule is actually unnecessary and consumes a lot of time. The problem is that Varlociraptor does not work on bam files that have no reads. Due to the previous step, it can happen that all candidates are outside the reads and the bam file therefore has no reads. Therefore we simply add the last read of the original bam file for each bam file.
