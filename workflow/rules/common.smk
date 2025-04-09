@@ -1,14 +1,14 @@
 def compute_results():
     needed_inputs = []
     for platform in config["platforms"].keys():
-        needed_inputs.append(scatter_plots(platform))
-        needed_inputs.append(heatmap_plots(platform))
+        needed_inputs.append(plots(platform))
+        # needed_inputs.append(heatmap_plots(platform))
         needed_inputs.append(diff_plots(platform))
         needed_inputs.append(precision_recall(platform))
     return needed_inputs
 
 
-def scatter_plots(platform):
+def plots(platform):
     base_path = Path("results") / platform
     protocols = list(config["data"][platform].keys())
     ref_methods = config["ref_tools"][platform]
@@ -20,16 +20,13 @@ def scatter_plots(platform):
             / (
                 "plots/"
                 + str(method)
-                + "/"
-                + type
-                + "_"
+                + "/plots_"
                 + str(bin)
                 + "."
                 + config["plot_type"]
             )
         )
         for protocol in protocols
-        for type in ["scatter", "dist"]
         for method in list(ref_methods + ["varlo"])
         for bin in list(range(0, config["cov_bins"][platform])) + ["all"]
         # for bin in list(range(0, config["cov_bins"][platform]))
@@ -92,7 +89,7 @@ def get_protocol_sra_bismark(wildcards):
     base_path = Path("resources") / "ref_tools/bismark/alignment" / wildcards.protocol
     accession_numbers = config["data"]["Illumina_pe"][wildcards.protocol]
     return [
-        str(base_path / SRA / (SRA + "_1_trimmed_bismark_bt2_pe.deduplicated.bam"))
+        str(base_path / SRA / (SRA + "_1_trimmed_bismark_bt2_pe.bam"))
         for SRA in accession_numbers
     ]
 

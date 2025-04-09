@@ -66,9 +66,6 @@ rule sort_aligned_reads:
         "logs/sort_aligned_reads_{platform}_{protocol}_{SRA}.log",
     conda:
         "../envs/samtools.yaml"
-    params:
-        pipeline_path=config["pipeline_path"],
-    threads: 10
     shell:
         """
         samtools sort -@ {threads}  {input} -o {output}    
@@ -84,9 +81,6 @@ rule index_aligned_reads:
         "logs/aligned_reads_index_{platform}_{protocol}{SRA}.log",
     conda:
         "../envs/samtools.yaml"
-    params:
-        pipeline_path=config["pipeline_path"],
-    threads: 1
     shell:
         """
         samtools index -@ {threads} {input}
@@ -104,7 +98,6 @@ rule focus_aligned_reads_on_chromosome:
     conda:
         "../envs/samtools.yaml"
     params:
-        pipeline_path=config["pipeline_path"],
         chromosome=lambda wildcards: (
             f"chr{chromosome_by_platform[wildcards.platform]}"
             if wildcards.platform == "PacBio" or wildcards.platform == "Nanopore"
@@ -127,7 +120,6 @@ rule filter_mapping_quality:
     conda:
         "../envs/samtools.yaml"
     params:
-        pipeline_path=config["pipeline_path"],
         min_quality=60,
     threads: 1
     shell:
@@ -161,9 +153,6 @@ rule merge_bams:
         "logs/merge_bams_{platform}_{protocol}.log",
     conda:
         "../envs/samtools.yaml"
-    params:
-        pipeline_path=config["pipeline_path"],
-    threads: 1
     shell:
         """
         echo {input}
@@ -180,9 +169,6 @@ rule downsample_bams:
         "logs/downsample_bams_{platform}_{protocol}.log",
     conda:
         "../envs/samtools.yaml"
-    params:
-        pipeline_path=config["pipeline_path"],
-    threads: 1
     shell:
         """
         samtools view -s 0.99 -b -o {output} {input}
@@ -198,9 +184,6 @@ rule aligned_downsampled_index:
         "logs/aligned_downsampled_index_{platform}_{protocol}.log",
     conda:
         "../envs/samtools.yaml"
-    params:
-        pipeline_path=config["pipeline_path"],
-    threads: 1
     shell:
         """
         samtools index -@ {threads} {input}
@@ -208,57 +191,54 @@ rule aligned_downsampled_index:
 
 
 # Die Regel funktioniert nur ausserhalb von Snakemake?
-rule bam_to_sam:
-    input:
-        "resources/{platform}/{protocol}/alignment_focused_downsampled_dedup.bam",
-    output:
-        "resources/{platform}/{protocol}/alignment_focused_downsampled_dedup.sam",
-    log:
-        "logs/bam_to_sam_{platform}_{protocol}.log",
-    conda:
-        "../envs/samtools.yaml"
-    params:
-        pipeline_path=config["pipeline_path"],
-    threads: 1
-    shell:
-        """
-        samtools view -@ {threads} -h  -o /{output}  {input}   
+# rule bam_to_sam:
+#     input:
+#         "resources/{platform}/{protocol}/alignment_focused_downsampled_dedup.bam",
+#     output:
+#         "resources/{platform}/{protocol}/alignment_focused_downsampled_dedup.sam",
+#     log:
+#         "logs/bam_to_sam_{platform}_{protocol}.log",
+#     conda:
+#         "../envs/samtools.yaml"
+#     params:
+#
+#     threads: 1
+#     shell:
+#         """
+#         samtools view -@ {threads} -h  -o /{output}  {input}
 
-        """
+#         """
 
 
-# TODO: Die wildcard constraints koennten bei simulated reads wichtig sein
 rule rename_chromosomes_in_sam:
     input:
-        sam="resources/{platform}/{protocol}/alignment_focused_downsampled_dedup.sam",
+        "resources/{platform}/{protocol, [^(?!simulated_data$)]}/alignment_focused_downsampled_dedup.bam",
     output:
-        renamed="resources/{platform}/{protocol}/alignment_focused_downsampled_dedup_renamed.sam",
+        "resources/{platform}/{protocol}/alignment_focused_downsampled_dedup_renamed.bam",
     log:
         "logs/rename_chromosomes_in_sam_{platform}_{protocol}.log",
     conda:
-        "../envs/python.yaml"
-    wildcard_constraints:
-        protocol="^(?!simulated_data$).*",
+        "../envs/pysam.yaml"
     script:
         "../scripts/rename_alignment.py"
 
 
-rule sam_to_bam:
-    input:
-        "resources/{platform}/{protocol}/alignment_focused_downsampled_dedup_renamed.sam",
-    output:
-        "resources/{platform}/{protocol}/alignment_focused_downsampled_dedup_renamed.bam",
-    log:
-        "logs/sam_to_bam_{platform}_{protocol}.log",
-    conda:
-        "../envs/samtools.yaml"
-    threads: 1
-    params:
-        pipeline_path=config["pipeline_path"],
-    shell:
-        """
-        samtools view -bS {input} > {output}   
-        """
+# rule sam_to_bam:
+#     input:
+#         "resources/{platform}/{protocol}/alignment_focused_downsampled_dedup_renamed.sam",
+#     output:
+#         "resources/{platform}/{protocol}/alignment_focused_downsampled_dedup_renamed.bam",
+#     log:
+#         "logs/sam_to_bam_{platform}_{protocol}.log",
+#     conda:
+#         "../envs/samtools.yaml"
+#     threads: 1
+#     params:
+#
+#     shell:
+#         """
+#         samtools view -bS {input} > {output}
+#         """
 
 
 rule aligned_downsampled_reads_dedup_index:
@@ -270,9 +250,6 @@ rule aligned_downsampled_reads_dedup_index:
         "logs/aligned_downsampled_reads_dedup_index_{platform}_{protocol}.log",
     conda:
         "../envs/samtools.yaml"
-    params:
-        pipeline_path=config["pipeline_path"],
-    threads: 10
     shell:
         """
         samtools index -@ {threads} {input}
@@ -300,76 +277,31 @@ rule aligned_reads_candidates_region:
         """
         set +o pipefail;
         start=$(bcftools query -f '%POS\\n' {input.candidate} | head -n 1)
+        start=$((start - {params.window_size}))
         end=$(bcftools query -f '%POS\\n' {input.candidate} | tail -n 1)
         end=$((end + {params.window_size}))
+        
         samtools view -b {input.alignment} "{params.chromosome}:$start-$end" > {output}
-        """
 
-
-# # TODO: This rule is actually unnecessary and consumes a lot of time. The problem is that Varlociraptor does not work on bam files that have no reads. Due to the previous step, it can happen that all candidates are outside the reads and the bam file therefore has no reads. Therefore we simply add the last read of the original bam file for each bam file.
-# rule aligned_reads_candidates_region_valid:
-#     input:
-#         alignment_orig="resources/{platform}/{protocol}/alignment_focused_downsampled_dedup_renamed.bam",
-#         alignment_specific="resources/{platform}/{protocol}/candidate_specific/alignment_{scatteritem}.bam",
-#     output:
-#         bam="resources/{platform}/{protocol}/candidate_specific/alignment_valid_{scatteritem}.bam",
-#     log:
-#         "logs/aligned_reads_candidates_region_valid_{platform}_{protocol}_{scatteritem}.log",
-#     conda:
-#         "../envs/samtools.yaml"
-#     shell:
-#         """
-#         samtools view -h -o {output.sam} {input.alignment_specific}
-#         tail -n 1 {input.alignment_orig} >> {output.sam}
-#         samtools view -bS -o {output.bam} {output.sam}
-#         """
-
-
-rule valid_bam_to_sam:
-    input:
-        "resources/{platform}/{protocol}/alignment_focused_downsampled_dedup_renamed.bam",
-    output:
-        "resources/{platform}/{protocol}/alignment_focused_downsampled_dedup_renamed.sam",
-    conda:
-        "../envs/samtools.yaml"
-    shell:
-        """
-        samtools view -h -o {output} {input}
-        """
-
-
-# TODO: This rule is actually unnecessary and consumes a lot of time. The problem is that Varlociraptor does not work on bam files that have no reads. Due to the previous step, it can happen that all candidates are outside the reads and the bam file therefore has no reads. Therefore we simply add the last read of the original bam file for each bam file.
-rule aligned_reads_candidates_region_valid:
-    input:
-        alignment_orig="resources/{platform}/{protocol}/alignment_focused_downsampled_dedup_renamed.sam",
-        alignment_specific="resources/{platform}/{protocol}/candidate_specific/alignment_{scatteritem}.bam",
-    output:
-        sam="resources/{platform}/{protocol}/candidate_specific/alignment_valid_{scatteritem}.sam",
-        bam="resources/{platform}/{protocol}/candidate_specific/alignment_valid_{scatteritem}.bam",
-    log:
-        "logs/aligned_reads_candidates_region_valid_{platform}_{protocol}_{scatteritem}.log",
-    conda:
-        "../envs/samtools.yaml"
-    shell:
-        """
-        samtools view -h -o {output.sam} {input.alignment_specific}
-        tail -n 1 {input.alignment_orig} >> {output.sam}
-        samtools view -bS -o {output.bam} {output.sam}
+        # Sometimes there are no reads over the candidates. Varlociraptor does not work on empty bam files, so we need to add the last read of the original bam file as a dummy read to the empty bam file.
+        if [ $(samtools view -c {output}) -eq 0 ]; then
+            samtools view -H {input.alignment} > temp.sam  
+            samtools view {input.alignment} | tail -n 1 >> temp.sam  
+            samtools view -bS temp.sam > {output}
+            rm temp.sam
+        fi
         """
 
 
 rule aligned_reads_candidates_region_index:
     input:
-        "resources/{platform}/{protocol}/candidate_specific/alignment_valid_{scatteritem}.bam",
+        "resources/{platform}/{protocol}/candidate_specific/alignment_{scatteritem}.bam",
     output:
-        "resources/{platform}/{protocol}/candidate_specific/alignment_valid_{scatteritem}.bam.bai",
+        "resources/{platform}/{protocol}/candidate_specific/alignment_{scatteritem}.bam.bai",
     log:
         "logs/aligned_reads_candidates_region_index_{platform}_{protocol}_{scatteritem}.log",
     conda:
         "../envs/samtools.yaml"
-    params:
-        pipeline_path=config["pipeline_path"],
-    threads: 10
     shell:
         """
         samtools index -@ {threads} {input}

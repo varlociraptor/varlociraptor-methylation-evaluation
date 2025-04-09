@@ -1,43 +1,23 @@
-# rule compute_meth_observations:
-#     input:
-#         chromosome=lambda wildcards: expand(
-#             "resources/chromosome_{chrom}.fasta",
-#             chrom=chromosome_by_platform[wildcards.platform],
-#         ),
-#         genome_index=lambda wildcards: expand(
-#             "resources/chromosome_{chrom}.fasta.fai",
-#             chrom=chromosome_by_platform[wildcards.platform],
-#         ),
-#         alignments="resources/{platform}/{protocol}/candidate_specific/alignment_valid_{scatteritem}.bam",
-#         alignment_index="resources/{platform}/{protocol}/candidate_specific/alignment_valid_{scatteritem}.bam.bai",
-#         candidates=lambda wildcards: expand(
-#             "resources/{{platform}}/{{protocol}}/21/candidates_{{scatteritem}}.bcf",
-#             chrom=chromosome_by_platform[wildcards.platform],
-#         ),
-#     output:
-#         "results/{platform}/{protocol}/normal_{scatteritem}.bcf",
-#     log:
-#         "logs/compute_meth_observations_{platform}_{protocol}_{scatteritem}.log",
-#     conda:
-#         "../envs/varlociraptor.yaml"
-#     params:
-#         varlo_path=config["varlo_path"],
-#         pipeline_path=config["pipeline_path"],
-#     shell:
-#         """
-#         cd {params.varlo_path}
-#         if [[ "{wildcards.platform}" == "Illumina_pe" || "{wildcards.platform}" == "Illumina_se" ]]; then
-#             PLATFORM="Illumina"
-#         else
-#             PLATFORM="{wildcards.platform}"
-#         fi
-#         echo $PLATFORM
-#         cargo run --release -- preprocess variants {params.pipeline_path}{input.chromosome} --candidates {params.pipeline_path}{input.candidates} --bam {params.pipeline_path}{input.alignments} --read-type $PLATFORM --max-depth 5000 > {params.pipeline_path}{output}
-#         """
+rule download_varlociraptor:
+    output:
+        directory("resources/tools/varlociraptor"),
+    log:
+        "../logs/download_varlociraptor.log",
+    conda:
+        "../envs/install_program.yaml"
+    shell:
+        """
+        mkdir -p resources/tools
+        cd resources/tools
+        git clone https://github.com/varlociraptor/varlociraptor.git
+        cd varlociraptor
+        git checkout methylation-paired-end-master-new
+        """
 
 
 rule compute_meth_observations:
     input:
+        varlo=directory("resources/tools/varlociraptor"),
         chromosome=lambda wildcards: expand(
             "resources/chromosome_{chrom}.fasta",
             chrom=chromosome_by_platform[wildcards.platform],
@@ -46,8 +26,8 @@ rule compute_meth_observations:
             "resources/chromosome_{chrom}.fasta.fai",
             chrom=chromosome_by_platform[wildcards.platform],
         ),
-        alignments="resources/{platform}/{protocol}/candidate_specific/alignment_valid_{scatteritem}.bam",
-        alignment_index="resources/{platform}/{protocol}/candidate_specific/alignment_valid_{scatteritem}.bam.bai",
+        alignments="resources/{platform}/{protocol}/candidate_specific/alignment_{scatteritem}.bam",
+        alignment_index="resources/{platform}/{protocol}/candidate_specific/alignment_{scatteritem}.bam.bai",
 #         candidates=lambda wildcards: expand(
 #             "resources/{{platform}}/{{protocol}}/21/candidates_{{scatteritem}}.bcf",
 #             chrom=chromosome_by_platform[wildcards.platform],
@@ -62,25 +42,23 @@ rule compute_meth_observations:
         "logs/compute_meth_observations_{platform}_{protocol}_{scatteritem}.log",
     conda:
         "../envs/varlociraptor.yaml"
-    params:
-        varlo_path=config["varlo_path"],
-        pipeline_path=config["pipeline_path"],
     shell:
         """
-        cd {params.varlo_path}
+        cd {input.varlo}
         if [[ "{wildcards.platform}" == "Illumina_pe" || "{wildcards.platform}" == "Illumina_se" ]]; then
             PLATFORM="Illumina"
         else
             PLATFORM="{wildcards.platform}"
         fi
         echo $PLATFORM
-        cargo run --release -- preprocess variants {input.chromosome} --candidates {input.candidates} --bam {input.alignments} --read-type $PLATFORM --max-depth 5000 > {output}
+        cargo run --release -- preprocess variants --omit-mapq-adjustment {input.chromosome} --candidates {input.candidates} --bam {input.alignments} --read-type $PLATFORM --max-depth 5000 > {output}
         """
-        # cargo run --release -- preprocess variants --omit-mapq-adjustment {input.chromosome} --candidates {input.candidates} --bam {input.alignments} --read-type $PLATFORM --max-depth 5000 > {output}
+        # cargo run --release -- preprocess variants {input.chromosome} --candidates {input.candidates} --bam {input.alignments} --read-type $PLATFORM --max-depth 5000 > {output}
 
 
 rule call_methylation:
     input:
+        varlo=directory("resources/tools/varlociraptor"),
         preprocess_obs="results/{platform}/{protocol}/normal_{scatteritem}.bcf",
         scenario="resources/scenario.yaml",
     output:
@@ -89,12 +67,9 @@ rule call_methylation:
         "logs/call_methylation_{platform}_{protocol}_{scatteritem}.log",
     conda:
         "../envs/varlociraptor.yaml"
-    params:
-        varlo_path=config["varlo_path"],
-        pipeline_path=config["pipeline_path"],
     shell:
         """ 
-        cd {params.varlo_path}
+        cd {input.varlo}
         cargo run --release -- call variants generic --scenario {input.scenario} --obs normal={input.preprocess_obs} > {output}
         """
 
@@ -102,7 +77,8 @@ rule call_methylation:
 # TODO: Reactivate, right now it deletes too much data
 rule filter_calls:
     input:
-        "results/{platform}/{protocol}/calls_{scatteritem}.bcf",
+        varlo=directory("resources/tools/varlociraptor"),
+        bcf="results/{platform}/{protocol}/calls_{scatteritem}.bcf",
     output:
         "results/{platform}/{protocol}/calls_{scatteritem}.filtered.bcf",
     log:
@@ -110,13 +86,11 @@ rule filter_calls:
     conda:
         "../envs/varlociraptor.yaml"
     params:
-        varlo_path=config["varlo_path"],
-        pipeline_path=config["pipeline_path"],
         event="PRESENT",
     shell:
         """
-        cd {params.varlo_path}
-        cargo run --release -- filter-calls control-fdr --mode local-smart {input} --events {params.event} --fdr 0.005 > {output}
+        cd {input.varlo}
+        cargo run --release -- filter-calls control-fdr --mode local-smart {input.bcf} --events {params.event} --fdr 0.005 > {output}
         """
 
 

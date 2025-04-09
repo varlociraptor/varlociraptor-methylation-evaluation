@@ -73,8 +73,6 @@ rule genome_index:
         "logs/genome_index.log",
     conda:
         "../envs/samtools.yaml"
-    params:
-        pipeline_path=config["pipeline_path"],
     shell:
         """ 
         samtools faidx {input}
@@ -123,8 +121,6 @@ rule trim_fastq_pe:
         "../envs/fastp.yaml"
     wildcard_constraints:
         protocol="^(?!simulated_data$).*",
-    params:
-        pipeline_path=config["pipeline_path"],
     shell:
         """ 
         fastp --in1 {input.first} --in2 {input.second} --out1 {output.first} --out2 {output.second} --length_required 2 --disable_quality_filtering -z 4 --trim_poly_g --overrepresentation_analysis
@@ -140,8 +136,6 @@ rule trim_fastq_se:
         "logs/trim_fastq_se_{protocol}_{SRA}_{accession}.log",
     conda:
         "../envs/fastp.yaml"
-    params:
-        pipeline_path=config["pipeline_path"],
     shell:
         """ 
         fastp --in1 {input.first} --out1 {output.first} --length_required 2 --disable_quality_filtering -z 4 --trim_poly_g --overrepresentation_analysis
@@ -163,64 +157,83 @@ rule get_pacbio_data:
         "../scripts/get_pacbio_data.py"
 
 
-rule get_nanopore_header:
+# rule get_nanopore_header:
+#     output:
+#         header="resources/Nanopore/{protocol}/{SRA}/header.sam",
+#     params:
+#
+#         url=lambda wildcards: config[str(wildcards.SRA)],
+#     resources:
+#         mem_mb=4096,
+#     log:
+#         "logs/get_nanopore_header_{protocol}_{SRA}.log",
+#     conda:
+#         "../envs/samtools.yaml"
+#     shell:
+#         """
+#         mkdir -p $(dirname {output.header})
+#         samtools view -H {params.url} > {output.header}
+#         """
+
+
+# # Body runterladen klappt manuell genau mit diesem Befehl, aber in Snakemake schlaegt es fehl...
+# rule get_nanopore_body:
+#     output:
+#         body="resources/Nanopore/{protocol}/{SRA}/body.sam",
+#     params:
+#
+#         url=lambda wildcards: config[str(wildcards.SRA)],
+#     resources:
+#         mem_mb=4096,
+#     log:
+#         "logs/get_nanopore_body_{protocol}_{SRA}.log",
+#     conda:
+#         "../envs/samtools.yaml"
+#     shell:
+#         """
+#         samtools view {params.url} | head -n 100000 > {output.body}
+#         """
+
+
+# rule combine_nanopore_data:
+#     input:
+#         header="resources/Nanopore/{protocol}/{SRA}/header.sam",
+#         body="resources/Nanopore/{protocol}/{SRA}/body.sam",
+#     output:
+#         comb="resources/Nanopore/{protocol}/{SRA}/alignment.sam",
+#         alignment="resources/Nanopore/{protocol}/{SRA}/alignment.bam",
+#     params:
+#
+#         url=lambda wildcards: config[str(wildcards.SRA)],
+#     resources:
+#         mem_mb=4096,
+#     log:
+#         "logs/combine_nanopore_data_{protocol}_{SRA}.log",
+#     conda:
+#         "../envs/samtools.yaml"
+#     shell:
+#         """
+#         cat {input.header} {input.body} > {output.comb}
+#         samtools view -b {output.comb} > {output.alignment}
+#         """
+
+
+rule get_nanopore_header_and_body:
     output:
-        header="resources/Nanopore/{protocol}/{SRA}/header.sam",
+        "resources/Nanopore/{protocol}/{SRA}/alignment.bam",
     params:
-        pipeline_path=config["pipeline_path"],
         url=lambda wildcards: config[str(wildcards.SRA)],
     resources:
         mem_mb=4096,
     log:
-        "logs/get_nanopore_header_{protocol}_{SRA}.log",
+        "logs/get_nanopore_header_and_body_{protocol}_{SRA}.log",
     conda:
         "../envs/samtools.yaml"
     shell:
         """
-        mkdir -p $(dirname {output.header})
-        samtools view -H {params.url} > {output.header}
-        """
-
-
-# Body runterladen klappt manuell genau mit diesem Befehl, aber in Snakemake schlaegt es fehl...
-rule get_nanopore_body:
-    output:
-        body="resources/Nanopore/{protocol}/{SRA}/body.sam",
-    params:
-        pipeline_path=config["pipeline_path"],
-        url=lambda wildcards: config[str(wildcards.SRA)],
-    resources:
-        mem_mb=4096,
-    log:
-        "logs/get_nanopore_body_{protocol}_{SRA}.log",
-    conda:
-        "../envs/samtools.yaml"
-    shell:
-        """
-        samtools view {params.url} | head -n 100000 > {output.body}
-        """
-
-
-rule combine_nanopore_data:
-    input:
-        header="resources/Nanopore/{protocol}/{SRA}/header.sam",
-        body="resources/Nanopore/{protocol}/{SRA}/body.sam",
-    output:
-        comb="resources/Nanopore/{protocol}/{SRA}/alignment.sam",
-        alignment="resources/Nanopore/{protocol}/{SRA}/alignment.bam",
-    params:
-        pipeline_path=config["pipeline_path"],
-        url=lambda wildcards: config[str(wildcards.SRA)],
-    resources:
-        mem_mb=4096,
-    log:
-        "logs/combine_nanopore_data_{protocol}_{SRA}.log",
-    conda:
-        "../envs/samtools.yaml"
-    shell:
-        """
-        cat {input.header} {input.body} > {output.comb}
-        samtools view -b {output.comb} > {output.alignment}
+        set +o pipefail;
+        mkdir -p $(dirname {output})
+        samtools view -b {params.url} | head -n 200000 >> {output} 
         """
 
 
@@ -228,7 +241,6 @@ rule nanopore_bam_index:
     output:
         alignment="resources/Nanopore/{protocol}/{SRA}/alignment.bam.bai",
     params:
-        pipeline_path=config["pipeline_path"],
         url=lambda wildcards: config[str(wildcards.SRA)],
     resources:
         mem_mb=4096,
@@ -238,5 +250,5 @@ rule nanopore_bam_index:
         "logs/nanopore_bam_index_{protocol}_{SRA}.log",
     shell:
         """
-        samtools view -b https://ont-open-data.s3.amazonaws.com/gm24385_mod_2021.09/extra_analysis/all.bam | samtools index - {output}
+        samtools view -b {params.url} | samtools index - {output}
         """

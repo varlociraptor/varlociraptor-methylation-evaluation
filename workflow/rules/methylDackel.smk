@@ -1,11 +1,6 @@
 rule methylDackel:
     input:
-        #TODO: Wenn Probleme versuche genome statt chromosome, aber dann klappts nicht mehr mit simulated
-        # chromosome="resources/genome.fasta",
-        chromosome=lambda wildcards: expand(
-            "resources/chromosome_{chrom}.fasta",
-            chrom=config["simulated_chrom"],
-        ),
+        genome="resources/genome.fasta",
         alignment="resources/Illumina_pe/{protocol}/alignment_focused_downsampled_dedup_renamed.bam",
         alignment_index="resources/Illumina_pe/{protocol}/alignment_focused_downsampled_dedup_renamed.bam.bai",
     output:
@@ -15,14 +10,13 @@ rule methylDackel:
     log:
         "logs/methylDackel_{protocol}.log",
     params:
-        pipeline_path=config["pipeline_path"],
         prefix=lambda wildcards, input, output: os.path.splitext(output[0])[0].replace(
             ".combined", ".bedGraph"
         ),
     shell:
         """
         OUTDIR=$(dirname {output})/alignments
-        MethylDackel extract {input.chromosome} {input.alignment} -o $OUTDIR --mergeContext
+        MethylDackel extract {input.genome} {input.alignment} -o $OUTDIR --mergeContext
         """
 
 

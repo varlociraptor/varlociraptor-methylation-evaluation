@@ -1,38 +1,25 @@
-# TODO: Remove params.pipeline, but does not work locally without
 rule find_candidates:
     input:
-        "resources/chromosome_{chromosome}.fasta",
-        # chrom=chr_chromosome,
+        varlo=directory("resources/tools/varlociraptor"),
+        fasta="resources/chromosome_{chromosome}.fasta",
     output:
         "resources/{chromosome}/candidates.bcf",
     log:
         "logs/{chromosome}/find_candidates.log",
     conda:
         "../envs/varlociraptor.yaml"
-    params:
-        varlo_path=config["varlo_path"],
-        pipeline_path=config["pipeline_path"],
     shell:
         """ 
-        cd {params.varlo_path}
-        cargo run -- methylation-candidates {input} {output}
+        cd {input.varlo}
+        cargo run -- methylation-candidates {input.fasta} {output}
         """
 
 
-# TODO: Works manually but not with snakemake
-# Ue only those candidates, which are in the bam file
+# Use only those candidates, which are in the bam file
 rule relevant_positions:
     input:
-        bam=lambda wildcards: expand(
-            "resources/{platform}/{protocol}/alignment_focused_downsampled_dedup_renamed.bam",
-            platform=config["platforms"].keys(),
-            protocol=config["data"][wildcards.platform].keys(),
-        ),
-        index=lambda wildcards: expand(
-            "resources/{platform}/{protocol}/alignment_focused_downsampled_dedup_renamed.bam.bai",
-            platform=config["platforms"].keys(),
-            protocol=config["data"][wildcards.platform].keys(),
-        ),
+        bam="resources/{platform}/{protocol}/alignment_focused_downsampled_dedup_renamed.bam",
+        index="resources/{platform}/{protocol}/alignment_focused_downsampled_dedup_renamed.bam.bai",
         bcf="resources/{chrom}/candidates.bcf",
     output:
         "resources/{platform}/{protocol}/{chrom}/candidates_shortened.bcf",
@@ -40,13 +27,13 @@ rule relevant_positions:
         "../envs/samtools.yaml"
     shell:
         """
-        start=$(samtools depth {input.bam} | awk '$3 > 0 {{print $2}}' | head -n 1) && \
-        end=$(samtools depth {input.bam} | awk '$3 > 0 {{print $2}}' | tail -n 1) && \
-        mkdir -p $(dirname {output}) && \
-        bcftools index -f {input.bcf} && \
+        set +o pipefail;
+        start=$(samtools depth {input.bam} | awk '$3 > 0 {{print $2}}' | head -n 1)
+        end=$(samtools depth {input.bam} | awk '$3 > 0 {{print $2}}' | tail -n 1)
+        mkdir -p $(dirname {output})
+        bcftools index -f {input.bcf}
         bcftools view -r $(samtools idxstats {input.bam} | awk '$3 > 0 {{print $1}}'):${{start}}-${{end}} {input.bcf} -o {output}
         """
-
 
 rule split_candidates:
     input:
@@ -62,7 +49,7 @@ rule split_candidates:
     shell:
         "rbt vcf-split {input} {output}"
 
-
+# This is only to debug the adjusted mapq value. Will stay until completely clarified
 # rule filter_candidates_on_mapq:
 #     input:
 #         alignment="resources/{platform}/{protocol}/candidate_specific/alignment_valid_{scatteritem}.bam",

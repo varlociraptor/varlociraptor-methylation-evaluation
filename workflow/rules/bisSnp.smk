@@ -1,17 +1,16 @@
 # Newer versions of BisSNP (0.90.0 or 1.0.0) don't work
+# TODO: MissingOutputException after running
 rule download_BisSNP:
     output:
         "resources/ref_tools/Bis-tools/BisSNP-0.82.2.jar",
     log:
         "../logs/download_BisSNP.log",
-    params:
-        pipeline_path=config["pipeline_path"],
     conda:
         "../envs/install_program.yaml"
     shell:
         """
         mkdir -p resources/ref_tools
-        cd /resources/ref_tools
+        cd resources/ref_tools
         git clone https://github.com/dnaase/Bis-tools.git
         cd Bis-tools
         wget -O BisSNP-0.82.2.jar https://sourceforge.net/projects/bissnp/files/BisSNP-0.82.2/BisSNP-0.82.2.jar/download
@@ -24,8 +23,8 @@ rule prepare_bissnp:
         jar="resources/ref_tools/Bis-tools/BisSNP-0.82.2.jar",
         genome="resources/genome.fasta",
         genome_index="resources/genome.fasta.fai",
-        alignment="resources/Illumina_pe/{protocol}/alignment_focused_downsampled_dedup.bam",
-        alignment_index="resources/Illumina_pe/{protocol}/alignment_focused_downsampled_dedup.bam.bai",
+        alignment="resources/Illumina_pe/{protocol}/alignment_focused_downsampled_dedup_renamed.bam",
+        alignment_index="resources/Illumina_pe/{protocol}/alignment_focused_downsampled_dedup_renamed.bam.bai",
     output:
         jar="resources/ref_tools/Bis-tools/{protocol}/BisSNP-0.82.2.jar",
         genome="resources/ref_tools/Bis-tools/{protocol}/genome.fasta",
@@ -59,7 +58,6 @@ rule BisSNP_extract:
     conda:
         "../envs/bisSnp.yaml"
     params:
-        base_dir=config["base_dir"],
         prefix=lambda wildcards, input, output: os.path.splitext(output[0])[0].replace(
             ".combined", ""
         ),

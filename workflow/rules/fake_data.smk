@@ -27,7 +27,7 @@
 #     conda:
 #         "../envs/mason.yaml"
 #     params:
-#         pipeline_path=config["pipeline_path"],
+#
 #         # meth=lambda wildcards: 0.8 if wildcards.platform == "meth" else 1.0,
 #         # snp=lambda wildcards: 0.0 if wildcards.platform == "meth" else 0.8,
 #     shell:
@@ -49,8 +49,6 @@ rule download_mason_latest:
         mason="resources/tools/seqan/apps/mason2/methylation_levels.h",
     log:
         "../logs/download_mason.log",
-    params:
-        pipeline_path=config["pipeline_path"],
     conda:
         "../envs/install_program.yaml"
     shell:
@@ -69,10 +67,6 @@ rule fake_methylation_mason:
         methylation="resources/Illumina_pe/simulated_data/chromosome_{chrom}_meth.fa",
     conda:
         "../envs/mason.yaml"
-    params:
-        pipeline_path=config["pipeline_path"],
-        # meth=lambda wildcards: 0.8 if wildcards.platform == "meth" else 1.0,
-        # snp=lambda wildcards: 0.0 if wildcards.platform == "meth" else 0.8,
     shell:
         """
         mason_methylation --in {input.chrom} \
@@ -92,10 +86,6 @@ rule fake_variants_mason:
         "resources/Illumina_pe/simulated_data/chromosome_{chrom}_variants.vcf",
     conda:
         "../envs/mason.yaml"
-    params:
-        pipeline_path=config["pipeline_path"],
-        # meth=lambda wildcards: 0.8 if wildcards.platform == "meth" else 1.0,
-        # snp=lambda wildcards: 0.0 if wildcards.platform == "meth" else 0.8,
     shell:
         """
         mason_variator --in-reference {input.chrom} \
@@ -119,14 +109,10 @@ rule fake_reads_mason:
         # truth="resources/Illumina_pe/simulated_data/chromosome_{chrom}.fasta",
     conda:
         "../envs/mason.yaml"
-    params:
-        pipeline_path=config["pipeline_path"],
-        # meth=lambda wildcards: 0.8 if wildcards.platform == "meth" else 1.0,
-        # snp=lambda wildcards: 0.0 if wildcards.platform == "meth" else 0.8,
     shell:
         """
         mason_simulator --input-reference {input.genome} \
-                --num-fragments 10000 \
+                --num-fragments 10000000 \
                 --out {output.f1} \
                 --out-right {output.f2} \
                 --meth-fasta-in {input.methylation} \
@@ -167,63 +153,50 @@ rule align_simulated_reads_mason:
             chrom=config["simulated_chrom"],
         ),
     output:
-        "resources/Illumina_pe/simulated_data/alignment.sam",
+        "resources/Illumina_pe/simulated_data/alignment.bam",
     conda:
         "../envs/bwa-meth.yaml"
     threads: 30
     shell:
         """
-        bwameth.py index-mem2 {input.fasta} && \
-        bwameth.py --threads {threads} --reference {input.fasta} {input.f1} {input.f2} > {output}
+        bwameth.py index-mem2 {input.fasta}
+        bwameth.py --threads {threads} --reference {input.fasta} {input.f1} {input.f2} | samtools view -b - > {output}
         """
+        # bwameth.py --threads {threads} --reference {input.fasta} {input.f1} {input.f2} > {output}
 
 
-rule sam_bam_mason:
-    input:
-        "resources/Illumina_pe/simulated_data/alignment.sam",
-    output:
-        "resources/Illumina_pe/simulated_data/alignment.bam",
-    conda:
-        "../envs/samtools.yaml"
-    threads: 30
-    shell:
-        """
-        samtools view -Sb {input} > {output}
-        """
+# rule mason_alignment_forward:
+#     input:
+#         "resources/Illumina_pe/simulated_data/alignment.bam",
+#     output:
+#         first="resources/Illumina_pe/simulated_data/alignment_99.bam",
+#         second="resources/Illumina_pe/simulated_data/alignment_147.bam",
+#         forward="resources/Illumina_pe/simulated_data/alignment_forward.bam",
+#     conda:
+#         "../envs/samtools.yaml"
+#     shell:
+#         """
+#         samtools view -b -f 64 -F 16 {input} > {output.first}
+#         samtools view -b -f 16 -F 64 {input} > {output.second}
+#         samtools merge {output.forward} {output.first} {output.second}
+#         """
 
 
-rule mason_alignment_forward:
-    input:
-        "resources/Illumina_pe/simulated_data/alignment.bam",
-    output:
-        first="resources/Illumina_pe/simulated_data/alignment_99.bam",
-        second="resources/Illumina_pe/simulated_data/alignment_147.bam",
-        forward="resources/Illumina_pe/simulated_data/alignment_forward.bam",
-    conda:
-        "../envs/samtools.yaml"
-    shell:
-        """
-        samtools view -b -f 64 -F 16 {input} > {output.first}
-        samtools view -b -f 16 -F 64 {input} > {output.second}
-        samtools merge {output.forward} {output.first} {output.second}
-        """
-
-
-rule mason_alignment_reverse:
-    input:
-        "resources/Illumina_pe/simulated_data/alignment.bam",
-    output:
-        first="resources/Illumina_pe/simulated_data/alignment_83.bam",
-        second="resources/Illumina_pe/simulated_data/alignment_163.bam",
-        rev="resources/Illumina_pe/simulated_data/alignment_reverse.bam",
-    conda:
-        "../envs/samtools.yaml"
-    shell:
-        """
-        samtools view -b -f 16 -f 64 {input} > {output.first}
-        samtools view -b -F 16 -F 64 {input} > {output.second}
-        samtools merge {output.rev} {output.first} {output.second}
-        """
+# rule mason_alignment_reverse:
+#     input:
+#         "resources/Illumina_pe/simulated_data/alignment.bam",
+#     output:
+#         first="resources/Illumina_pe/simulated_data/alignment_83.bam",
+#         second="resources/Illumina_pe/simulated_data/alignment_163.bam",
+#         rev="resources/Illumina_pe/simulated_data/alignment_reverse.bam",
+#     conda:
+#         "../envs/samtools.yaml"
+#     shell:
+#         """
+#         samtools view -b -f 16 -f 64 {input} > {output.first}
+#         samtools view -b -F 16 -F 64 {input} > {output.second}
+#         samtools merge {output.rev} {output.first} {output.second}
+#         """
 
 
 rule sort_mason_reads:
@@ -300,121 +273,6 @@ rule mason_truth:
         "../scripts/ascii_to_meth.py"
 
 
-###############################################################
-
-
-# mason_simulator  \
-#                 --input-reference {input.genome} \
-#                 --meth-fasta-in {input.meth} \
-#                 --num-fragments 10000 \
-#                 --out {output.f1} \
-#                 --out-right {output.f2} \
-#                 --out-alignment {output.bam} \
-#                 --seq-technology illumina \
-#                 --methylation-levels \
-#                 --enable-bs-seq \
-
-
-###########################################################3
-# --meth-fasta-out {output.truth} \
-###########################################################3
-
-
-#########################################################
-# MethyFASTQ
-#########################################################
-
-
-# rule download_methylFastq:
-#     output:
-#         directory("resources/tools/MethylFASTQ"),
-#     log:
-#         "../logs/download_methylFastq.log",
-#     params:
-#         pipeline_path=config["pipeline_path"],
-#     conda:
-#         "../envs/install_program.yaml"
-#     shell:
-#         """
-#         mkdir -p resources/tools
-#         cd /resources/tools
-#         git clone git@github.com:qBioTurin/MethylFASTQ.git
-#         """
-
-
-# # chg and chh = 1 because we are not interested in these anyways and want them to be unchanged in the bisulfite bams
-# rule fake_meth_data:
-#     input:
-#         methylFastQ="resources/tools/MethylFASTQ/src/methylFASTQ.py",
-#         # fasta="resources/test_chr.fasta",
-#         fasta="resources/chromosome_{chrom}.fasta",
-#     output:
-#         f1="resources/Illumina_pe/simulated_data/chromosome_{chrom}_pe_f150r150_dir_R1.fastq",
-#         f2="resources/Illumina_pe/simulated_data/chromosome_{chrom}_pe_f150r150_dir_R2.fastq",
-#         ch3="resources/Illumina_pe/simulated_data/chromosome_{chrom}_pe_f150r150_dir.ch3",
-#         # direc=directory("resources/Illumina_pe/simulated_data/"),
-#     conda:
-#         "../envs/methylFastQ.yaml"
-#     params:
-#         pipeline_path=config["pipeline_path"],
-#         # meth=lambda wildcards: 0.8 if wildcards.platform == "meth" else 1.0,
-#         # snp=lambda wildcards: 0.0 if wildcards.platform == "meth" else 0.8,
-#     shell:
-#         """
-#         output_path=$(dirname "{output.f1}")
-#         python {input.methylFastQ} -i {input.fasta} -o $output_path --seq paired_end --read 150 --chh 1.0 --chg 1.0 --cg 0.5 --snp 0.01 --error 0.005 --coverage 10
-#         """
-#         # python {input.methylFastQ} -i {input.fasta} -o /projects/koesterlab/benchmark-methylation/varlociraptor-methylation-evaluation/resources/Illumina_pe/simulated_data/{wildcards.sim_mode} --seq paired_end --read 4 --chh 1.0 --chg 1.0 --cg 1.0 --snp 0.0 --error 0.0 --coverage 2
-
-
-###########################################################3
-###########################################################3
-# rule index_chromosome:
-#     input:
-#         "resources/chromosome_{chrom}.fasta",
-#     output:
-#         "resources/chromosome_{chrom}.fasta.bwameth.c2t",
-#     conda:
-#         "../envs/bwa-meth.yaml"
-#     resources:
-#         mem_mb=512,
-#         runtime=10,
-#     shell:
-#         "bwameth.py index {input}"
-
-
-# rule align_simulated_reads:
-#     input:
-#         fasta=expand(
-#             "resources/chromosome_{chrom}.fasta",
-#             chrom=config["simulated_chrom"],
-#         ),
-#         fasta_index=expand(
-#             "resources/chromosome_{chrom}.fasta.bwameth.c2t",
-#             chrom=config["simulated_chrom"],
-#         ),
-#         # fasta_index="resources/test_chr.fasta.bwameth.c2t",
-#         # fasta="resources/test_chr.fasta",
-#         f1=expand(
-#             "resources/Illumina_pe/simulated_data/chromosome_{chrom}_pe_f150r150_dir_R1.fastq",
-#             chrom=config["simulated_chrom"],
-#         ),
-#         f2=expand(
-#             "resources/Illumina_pe/simulated_data/chromosome_{chrom}_pe_f150r150_dir_R2.fastq",
-#             chrom=config["simulated_chrom"],
-#         ),
-#     output:
-#         "resources/Illumina_pe/simulated_data/no_sra/alignment.bam",
-#     conda:
-#         "../envs/bwa-meth.yaml"
-#     threads: 30
-#     shell:
-#         """
-#         bwameth.py index-mem2 {input.fasta} && \
-#         bwameth.py --threads {threads} --reference {input.fasta} {input.f1} {input.f2}  | samtools view -S -b - > {output}
-#         """
-
-
 rule sort_simulated_reads:
     input:
         "resources/Illumina_pe/simulated_data/alignment.bam",
@@ -428,53 +286,3 @@ rule sort_simulated_reads:
         """
         samtools sort -@ {threads}  {input} -o {output}    
         """
-
-
-# rule compute_meth_observations:
-#     input:
-#         chromosome="resources/chromosome_21.fasta",
-#         genome_index="resources/chromosome_21.fasta.fai",
-#         alignments="resources/{platform}/{protocol}/candidate_specific/alignment_valid_{scatteritem}.bam",
-#         alignment_index="resources/{platform}/{protocol}/candidate_specific/alignment_valid_{scatteritem}.bam.bai",
-#         candidates=lambda wildcards: expand(
-#             "resources/{chrom}/candidates_{{scatteritem}}.bcf",
-#             chrom=chromosome_by_platform[wildcards.platform],
-#         ),
-#     output:
-#         temp("results/{platform}/{protocol}/normal_{scatteritem}.bcf"),
-#     log:
-#         "logs/compute_meth_observations_{platform}_{protocol}_{scatteritem}.log",
-#     conda:
-#         "envs/varlociraptor.yaml"
-#     params:
-#         varlo_path=config["varlo_path"],
-#         pipeline_path=config["pipeline_path"],
-#     shell:
-#         """
-#         cd {params.varlo_path}
-#         if [[ "{wildcards.platform}" == "Illumina_pe" || "{wildcards.platform}" == "Illumina_se" ]]; then
-#             PLATFORM="Illumina"
-#         else
-#             PLATFORM="{wildcards.platform}"
-#         fi
-#         cargo run --release -- preprocess variants {input.chromosome} --candidates {input.candidates} --bam {input.alignments} --read-type $PLATFORM > {output}
-#         """
-# rule call_varlo_joint:
-#     input:
-#         preprocess_obs="results/Illumina_pe/fake_meth/normal_{scatteritem}.bcf",
-#         preprocess_obs="results/Illumina_pe/fake_snp/normal_{scatteritem}.bcf",
-#         scenario="resources/scenario_joint.yaml",
-#     output:
-#         temp("results/{platform}/{protocol}/calls_{scatteritem}.bcf"),
-#     log:
-#         "logs/call_methylation_{platform}_{protocol}_{scatteritem}.log",
-#     conda:
-#         "envs/varlociraptor.yaml"
-#     params:
-#         varlo_path=config["varlo_path"],
-#         pipeline_path=config["pipeline_path"],
-#     shell:
-#         """
-#         cd {params.varlo_path}
-#         cargo run --release -- call variants --omit-strand-bias generic --scenario {input.scenario} --obs normal={input.preprocess_obs} > {output}
-#         """

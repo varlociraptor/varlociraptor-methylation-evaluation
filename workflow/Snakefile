@@ -32,16 +32,16 @@ include: "rules/bsmap.smk"
 include: "rules/get_alignments.smk"
 include: "rules/get_data.smk"
 include: "rules/get_reference_begraph.smk"
-include: "rules/human_readable.smk"
 include: "rules/mosdepth.smk"
 include: "rules/methylDackel.smk"
 include: "rules/modkit.smk"
 include: "rules/plot_results.smk"
-include: "rules/testcase.smk"
 include: "rules/fake_data.smk"
 include: "rules/pbCpgTools.smk"
 include: "rules/meth_calling.smk"
 include: "rules/compute_candidates.smk"
+
+
 
 
 rule all:

@@ -20,26 +20,6 @@ rule ref_df:
     script:
         "../scripts/df_from_calls.py"
 
-rule ref_df_simulated_methylfastq:
-    input:
-        tool="results/Illumina_pe/simulated_data/result_files/{method}.bed",
-        simulated=expand(
-            "resources/Illumina_pe/simulated_data/chromosome_{chrom}_pe_f150r150_dir.ch3",
-            chrom=config["simulated_chrom"],
-        ),
-        # coverage="resources/Illumina_pe/simulated_data/cov.regions.bed"
-    output:
-        "results/Illumina_pe/simulated_data/result_files/{method}.parquet",
-    conda:
-        "../envs/plot.yaml"
-    params:
-        cov_bin_size=lambda wildcards: config["cov_bin_size"]["Illumina_pe"],
-        cov_bins=lambda wildcards: config["cov_bins"]["Illumina_pe"],
-        meth_type=config["meth_type"],
-        simulated=True
-    script:
-        "../scripts/df_from_calls.py"
-
 
 rule ref_df_simulated_mason:
     input:
@@ -66,24 +46,24 @@ rule plot_results_cov_specific:
         tool="results/{platform}/{protocol}/result_files/{method}.parquet",
     output:
         plot=report(
-            "results/{platform}/{protocol}/plots/{method}/scatter_{cov_bin, [0-9]+}.{plot_type}",
+            "results/{platform}/{protocol}/plots/{method}/plots_{cov_bin, [0-9]+}.{plot_type}",
             category=lambda wildcards: f"{wildcards.platform} - {wildcards.protocol}",
             subcategory=lambda wildcards: f"{wildcards.method} plots",
             labels= lambda wildcards: {
-                "type": "scatter plot",
+                # "type": "scatter plot",
                 "coverage": f"{int(wildcards.cov_bin) * int(config['cov_bin_size'][wildcards.platform])} - {int(wildcards.cov_bin) * int(config['cov_bin_size'][wildcards.platform]) + int(config['cov_bin_size'][wildcards.platform])}",
                 },
             ),
-        tool_dist=report(
-            "results/{platform}/{protocol}/plots/{method}/dist_{cov_bin, [0-9]+}.{plot_type}",
-                        category=lambda wildcards: f"{wildcards.platform} - {wildcards.protocol}",
+        # tool_dist=report(
+        #     "results/{platform}/{protocol}/plots/{method}/dist_{cov_bin, [0-9]+}.{plot_type}",
+        #                 category=lambda wildcards: f"{wildcards.platform} - {wildcards.protocol}",
 
-            subcategory=lambda wildcards: f"{wildcards.method} plots",
-            labels= lambda wildcards: {
-                "type": "dist plot",
-                "coverage": f"{int(wildcards.cov_bin) * int(config['cov_bin_size'][wildcards.platform])} - {int(wildcards.cov_bin) * int(config['cov_bin_size'][wildcards.platform]) + int(config['cov_bin_size'][wildcards.platform])}",
-            },
-        ),
+        #     subcategory=lambda wildcards: f"{wildcards.method} plots",
+        #     labels= lambda wildcards: {
+        #         "type": "dist plot",
+        #         "coverage": f"{int(wildcards.cov_bin) * int(config['cov_bin_size'][wildcards.platform])} - {int(wildcards.cov_bin) * int(config['cov_bin_size'][wildcards.platform]) + int(config['cov_bin_size'][wildcards.platform])}",
+        #     },
+        # ),
     # wildcard_constraints:
         # cov_bin=[A-Z]+
         # cov_bin="(?!all)"
@@ -103,24 +83,24 @@ rule plot_results_all_cov:
         tool="results/{platform}/{protocol}/result_files/{method}.parquet",
     output:
         plot=report(
-            "results/{platform}/{protocol}/plots/{method}/scatter_all.{plot_type}",
+            "results/{platform}/{protocol}/plots/{method}/plots_all.{plot_type}",
             # "results/{platform}/{protocol}/plots/{method}/all_scatter.{plot_type}",
             category=lambda wildcards: f"{wildcards.platform} - {wildcards.protocol}",
             subcategory=lambda wildcards: f"{wildcards.method} plots",
             labels= lambda wildcards: {
-                "type": "scatter plot",
+                # "type": "scatter plot",
                 "coverage": "all",
                 },
             ),
-        tool_dist=report(
-            # "results/{platform}/{protocol}/plots/{method}/dist_all.{plot_type}",
-            "results/{platform}/{protocol}/plots/{method}/dist_all.{plot_type}",
-            category=lambda wildcards: f"{wildcards.platform} - {wildcards.protocol}",
-            subcategory=lambda wildcards: f"{wildcards.method} plots",
-            labels= lambda wildcards: {
-                "type": "dist plot",
-                "coverage": "all"},
-        ),
+        # tool_dist=report(
+        #     # "results/{platform}/{protocol}/plots/{method}/dist_all.{plot_type}",
+        #     "results/{platform}/{protocol}/plots/{method}/dist_all.{plot_type}",
+        #     category=lambda wildcards: f"{wildcards.platform} - {wildcards.protocol}",
+        #     subcategory=lambda wildcards: f"{wildcards.method} plots",
+        #     labels= lambda wildcards: {
+        #         "type": "dist plot",
+        #         "coverage": "all"},
+        # ),
     conda: 
         "../envs/plot.yaml",
     log:
@@ -132,44 +112,7 @@ rule plot_results_all_cov:
     script:
         "../scripts/scatter_plot.py"
 
-#TODO Remove alignemtn, index, candidates, params.filter_candidates, nachdem mapq zeug fertig gedebuggt ist
-rule plot_heatmap:
-    input:
-        tool="results/{platform}/{protocol}/result_files/{method}.parquet",
-        filtered_candidates="mapq_output.txt"
-        # alignment="resources/{platform}/{protocol}/alignment_focused_downsampled_dedup_renamed.bam",
-        # index="resources/{platform}/{protocol}/alignment_focused_downsampled_dedup_renamed.bam.bai",
-        # candidates="resources/21/candidates.bcf",
-    output:
-        plot=report(
-            "results/{platform}/{protocol}/plots/{method}/heatmap.{plot_type}",
-            # "results/{platform}/{protocol}/plots/{method}/all_scatter.{plot_type}",
-            category=lambda wildcards: f"{wildcards.platform} - {wildcards.protocol}",
-            subcategory=lambda wildcards: f"{wildcards.method} plots",
-            labels= {
-                "type": "heatmap",
-                "coverage": "all",
-                },
-            ),
-        plot_filtered=report(
-            "results/{platform}/{protocol}/plots/{method}/heatmap_filtered.{plot_type}",
-            # "results/{platform}/{protocol}/plots/{method}/all_scatter.{plot_type}",
-            category=lambda wildcards: f"{wildcards.platform} - {wildcards.protocol}",
-            subcategory=lambda wildcards: f"{wildcards.method} plots",
-            labels= {
-                "type": "heatmap_filtered",
-                "coverage": "all",
-                },
-            ),
-    conda: 
-        "../envs/plot.yaml",
-    params:
-        plot_type=config["plot_type"],
-        prob_pres_threshhold=config["prob_pres_threshhold"],
-        cov_bin = -1,
-        filter_candidates= 0
-    script:
-        "../scripts/heatmap.py"
+
 
 rule plot_dist_comparision:
     input:
@@ -240,10 +183,9 @@ rule plot_precision_recall:
     output:
         report(
             expand(
-            "results/{{platform}}/{{protocol}}/plots/precall_{{cov_bin}}.{{plot_type}}",
+                "results/{{platform}}/{{protocol}}/plots/precall_{{cov_bin}}.{{plot_type}}",
             ),
-                        category=lambda wildcards: f"{wildcards.platform} - {wildcards.protocol}",
-
+            category=lambda wildcards: f"{wildcards.platform} - {wildcards.protocol}",
             subcategory="All Comparisions",
             labels=lambda wildcards: {
                 "type": "precision recall",

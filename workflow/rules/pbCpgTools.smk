@@ -28,18 +28,13 @@ rule pb_CpG_tools:
     log:
         "logs/pb_CpG_tools_{protocol}.log",
     params:
-        base_dir=config["base_dir"],
         prefix=lambda wildcards, input, output: os.path.splitext(output[0])[0].replace(
             ".combined", ""
         ),
     threads: 8
     shell:
         """
-        {input.runner} \
-        --bam {input.alignment} \
-        --output-prefix {params.prefix} \
-        --model {input.model} \
-        --threads {threads}
+        {input.runner} --bam {input.alignment} --output-prefix {params.prefix} --model {input.model} --threads {threads}
         """
 
 

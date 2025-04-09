@@ -9,7 +9,6 @@ rule download_bedGraphs:
     conda:
         "../envs/python.yaml"
     params:
-        pipeline_path=config["pipeline_path"],
         bedGraphs=config["bedGraphs_HG002"],
         bedgraph_path="resources/HG002",
     script:

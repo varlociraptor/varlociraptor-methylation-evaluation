@@ -4,8 +4,6 @@ rule meth_extractor:
         "resources/ref_tools/bsMap/methratio.py",
     log:
         "../logs/meth_extractor.log",
-    params:
-        pipeline_path=config["pipeline_path"],
     conda:
         "../envs/install_program.yaml"
     shell:
@@ -17,13 +15,14 @@ rule meth_extractor:
 
 
 # We have to rename the alignment file to make it shorte to not get a buffer error
+# TODO: does not work with symlinks on HPC: https://github.com/zyndagj/BSMAPz/issues/19 Filenames are too long. 
 rule bsmap:
     input:
         genome="resources/genome.fasta",
-        alignment="resources/Illumina_pe/{protocol}/alignment_focused_downsampled_dedup.bam",
-        # alignment_index="resources/Illumina_pe/{protocol}/alignment_focused_downsampled_dedup.bam.bai",
+        alignment="resources/Illumina_pe/{protocol}/alignment_focused_downsampled_dedup_renamed.bam",
+        alignment_index="resources/Illumina_pe/{protocol}/alignment_focused_downsampled_dedup_renamed.bam.bai",
     output:
-        alignment_renamed=temp("resources/Illumina_pe/{protocol}/bsmap.bam"),
+        alignment_renamed=temp("bsmap_{protocol}.bam"),
         out="results/Illumina_pe/{protocol}/result_files/out.sam",
     conda:
         "../envs/bsmap.yaml"

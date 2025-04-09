@@ -38,9 +38,8 @@ channels:
 dependencies:
   - varlociraptor =8.4
   - vega-lite-cli =5.16
-  - bcftools =1.19
   - libclang
-  - rust
+  - rust=1.86
   - pkg-config
   - make
   - cmake
@@ -49,7 +48,6 @@ dependencies:
   - openssl
   - zlib
   - bzip2
-  - samtools=1.17
   - xz
   - clangdev
   - blis
