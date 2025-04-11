@@ -90,8 +90,6 @@ rule get_fastq_pe:
     threads: 6
     wildcard_constraints:
         protocol="^(?!simulated_data$).*",
-    conda:
-        "../envs/fastq-wrapper.yaml"
     wrapper:
         "v3.0.2/bio/sra-tools/fasterq-dump"
 

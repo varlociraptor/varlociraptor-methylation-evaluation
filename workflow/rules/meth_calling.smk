@@ -5,7 +5,7 @@ rule download_varlociraptor:
     log:
         "../logs/download_varlociraptor.log",
     conda:
-        "../envs/install_program.yaml"
+        "../envs/sheel_cmds.yaml"
     shell:
         """
         mkdir -p resources/tools
@@ -120,8 +120,6 @@ rule gather_calls:
         "results/{platform}/{protocol}/varlo.vcf",
     log:
         "logs/gather_calls_{platform}_{protocol}.log",
-    conda:
-        "../envs/cat.yaml"
     shell:
         "cat {input} > {output}"
 

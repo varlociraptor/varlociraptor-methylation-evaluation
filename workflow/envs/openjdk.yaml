@@ -1,5 +1,5 @@
 channels:
   - conda-forge
+  - bioconda
 dependencies:
-  - cyvcf2=0.31
-  - pysam=0.23.0
+  - openjdk =21.0

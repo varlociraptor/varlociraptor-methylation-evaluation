@@ -218,7 +218,7 @@ rule rename_chromosomes_in_sam:
     log:
         "logs/rename_chromosomes_in_sam_{platform}_{protocol}.log",
     conda:
-        "../envs/pysam.yaml"
+        "../envs/plot.yaml"
     script:
         "../scripts/rename_alignment.py"
 

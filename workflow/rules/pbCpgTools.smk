@@ -6,7 +6,7 @@ rule download_pb_CpG_tools:
     log:
         "../logs/download_pb-CpG-tools.log",
     conda:
-        "../envs/install_program.yaml"
+        "../envs/sheel_cmds.yaml"
     shell:
         """
         mkdir -p resources/ref_tools/pb-CpG-tools

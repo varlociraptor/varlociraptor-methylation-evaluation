@@ -1,6 +1,6 @@
 channels:
   - bioconda
 dependencies:
-  - bsmap=2.90
-  - pysam=0.15.3
-  - python=2.7.15
+  - bsmap =2.90
+  - pysam =0.15
+  - python =2.7

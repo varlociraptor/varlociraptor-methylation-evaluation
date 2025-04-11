@@ -35,6 +35,7 @@ rule relevant_positions:
         bcftools view -r $(samtools idxstats {input.bam} | awk '$3 > 0 {{print $1}}'):${{start}}-${{end}} {input.bcf} -o {output}
         """
 
+
 rule split_candidates:
     input:
         "resources/{platform}/{protocol}/{chrom}/candidates_shortened.bcf",
@@ -49,6 +50,7 @@ rule split_candidates:
     shell:
         "rbt vcf-split {input} {output}"
 
+
 # This is only to debug the adjusted mapq value. Will stay until completely clarified
 # rule filter_candidates_on_mapq:
 #     input:
@@ -60,6 +62,6 @@ rule split_candidates:
 #     log:
 #         "logs/filter_candidates_on_mapq_{platform}_{protocol}_{chrom}_{scatteritem}.log",
 #     conda:
-#         "../envs/pysam.yaml"
+#         "../envs/plot.yaml"
 #     script:
 #         "../scripts/filter_candidates_on_mapq.py"

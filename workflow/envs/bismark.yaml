@@ -1,5 +1,5 @@
 channels:
   - bioconda
 dependencies:
-  - bismark=0.24.2
-  - bowtie2=2.5.3
+  - bismark =0.24
+  # - bowtie2 =2.5

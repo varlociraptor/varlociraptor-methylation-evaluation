@@ -1,0 +1,9 @@
+channels:
+  - conda-forge
+  - anaconda
+dependencies:
+  - wget =1.20
+  - tar =1.34
+  - cat =5.3
+  - gawk =5.1
+  - gzip =1.13

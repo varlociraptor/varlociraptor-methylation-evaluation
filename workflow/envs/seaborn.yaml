@@ -1,8 +1,0 @@
-name: plot-env
-channels:
-  - conda-forge
-  - defaults
-dependencies:
-  - pandas
-  - matplotlib
-  - seaborn

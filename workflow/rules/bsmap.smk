@@ -5,7 +5,7 @@ rule meth_extractor:
     log:
         "../logs/meth_extractor.log",
     conda:
-        "../envs/install_program.yaml"
+        "../envs/sheel_cmds.yaml"
     shell:
         """
         mkdir -p mkdir -p $(dirname {output})

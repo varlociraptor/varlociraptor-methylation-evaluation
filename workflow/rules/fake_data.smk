@@ -50,7 +50,7 @@ rule download_mason_latest:
     log:
         "../logs/download_mason.log",
     conda:
-        "../envs/install_program.yaml"
+        "../envs/sheel_cmds.yaml"
     shell:
         """
         mkdir -p resources/tools

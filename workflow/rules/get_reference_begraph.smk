@@ -26,7 +26,7 @@ rule extract_data:
     log:
         "logs/extract_data_{bedGraph}.log",
     conda:
-        "../envs/gunzip.yaml"
+        "../envs/sheel_cmds.yaml"
     shell:
         "gunzip -c {input} > {output}"
 
@@ -41,7 +41,7 @@ rule filter_bedGraphs:
     log:
         "logs/filter_bedGraphs_{bedGraph}_{chromosome}.log",
     conda:
-        "../envs/awk.yaml"
+        "../envs/sheel_cmds.yaml"
     shell:
         """
         awk '$1 == "{wildcards.chromosome}" {{print}}' {input} > {output}

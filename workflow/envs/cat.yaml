@@ -1,4 +1,0 @@
-channels:
-  - conda-forge
-dependencies:
-  - cat=5.3

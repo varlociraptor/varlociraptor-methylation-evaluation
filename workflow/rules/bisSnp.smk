@@ -6,7 +6,7 @@ rule download_BisSNP:
     log:
         "../logs/download_BisSNP.log",
     conda:
-        "../envs/install_program.yaml"
+        "../envs/sheel_cmds.yaml"
     shell:
         """
         mkdir -p resources/ref_tools
@@ -64,7 +64,7 @@ rule BisSNP_extract:
     log:
         "logs/pb_CpG_tools_{protocol}.log",
     conda:
-        "../envs/bisSnp.yaml"
+        "../envs/openjdk.yaml"
     params:
         prefix=lambda wildcards, input, output: os.path.splitext(output[0])[0].replace(
             ".combined", ""
@@ -90,7 +90,7 @@ rule BisSNP_bedGraph:
     log:
         "logs/BisSNP_beGraph_{protocol}.log",
     conda:
-        "../envs/bisSnp.yaml"
+        "../envs/openjdk.yaml"
     shell:
         """
         perl  {input.perl_script} {input.cpg} CG
