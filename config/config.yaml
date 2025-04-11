@@ -10,18 +10,19 @@ sample:
 
 # Choose specific chromosome for evaluation
 platforms: 
-  PacBio: 21
+  # PacBio: 21
   Illumina_pe: 21
-  Nanopore: 1
+  # Nanopore: 1
 
 # Chrom for simulated reads. Must be given even if we do not want to simulate since it is used in input files. 
 # TODO: Fix this
-simulated_chrom: 21
+# simulated_chrom: 21
 
 # Define reference tools for comparision against varlociraptor results
 ref_tools:
   # Chose from: bismark, bisSNP, methylDackel, bsMap
-  Illumina_pe: [bismark, bisSNP, methylDackel]
+  # Illumina_pe: [bismark, bsMap, methylDackel]
+  Illumina_pe: [methylDackel]
   # Chose from: pb_CpG_tools
   PacBio: [pb_CpG_tools]
   # Chose from: modkit
@@ -60,7 +61,7 @@ data:
     simulated_data: []
     # TruSeq_HG002_LAB01_REP01_omit_adj: [SRR13050995, SRR13050996, SRR13050998]
     # TruSeq_HG002_LAB01_REP01_adj: [SRR13050995, SRR13050996, SRR13050998]
-    TruSeq_HG002_LAB01_REP01: [SRR13050995, SRR13050996, SRR13050998]
+    # TruSeq_HG002_LAB01_REP01: [SRR13050995, SRR13050996, SRR13050998]
   #   TruSeq_HG002_LAB01_REP02: [SRR13050992, SRR13050993, SRR13050994]   
   #   SPLAT_HG002_LAB01_REP01_4: [SRR13051055, SRR13051056, SRR13051057, SRR13051058]
   #   SPLAT_HG002_LAB01_REP02_4:  [SRR13051050, SRR13051051, SRR13051052, SRR13051054]

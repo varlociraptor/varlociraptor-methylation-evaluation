@@ -26,7 +26,7 @@ rule ref_df_simulated_mason:
         tool="results/Illumina_pe/simulated_data/result_files/{method}.bed",
         true_meth=expand(
             "resources/Illumina_pe/simulated_data/chromosome_{chrom}_truth.bed",
-            chrom=config["simulated_chrom"],
+            chrom=config["platforms"]["Illumina_pe"],
         ),
         coverage="resources/Illumina_pe/simulated_data/cov.regions.bed"
     output:

@@ -128,75 +128,92 @@ rule fake_reads_mason:
 ########Compute truth
 
 
-# Mason has a different meth ratio for forward and reverse strands.
-# That is why we need to compute the coverage on the forward and reverse strand independently.
-
-
 rule align_simulated_reads_mason:
     input:
         fasta=expand(
             "resources/chromosome_{chrom}.fasta",
-            chrom=config["simulated_chrom"],
+            chrom=config["platforms"]["Illumina_pe"],
         ),
         fasta_index=expand(
             "resources/chromosome_{chrom}.fasta.bwameth.c2t",
-            chrom=config["simulated_chrom"],
+            chrom=config["platforms"]["Illumina_pe"],
         ),
         # fasta_index="resources/test_chr.fasta.bwameth.c2t",
         # fasta="resources/test_chr.fasta",
         f1=expand(
             "resources/Illumina_pe/simulated_data/chromosome_{chrom}_f1.fastq",
-            chrom=config["simulated_chrom"],
+            chrom=config["platforms"]["Illumina_pe"],
         ),
         f2=expand(
             "resources/Illumina_pe/simulated_data/chromosome_{chrom}_f2.fastq",
-            chrom=config["simulated_chrom"],
+            chrom=config["platforms"]["Illumina_pe"],
         ),
     output:
-        "resources/Illumina_pe/simulated_data/alignment.bam",
+        "resources/Illumina_pe/simulated_data/alignment.sam",
     conda:
         "../envs/bwa-meth.yaml"
     threads: 30
     shell:
         """
+        set -o pipefail
         bwameth.py index-mem2 {input.fasta}
-        bwameth.py --threads {threads} --reference {input.fasta} {input.f1} {input.f2} | samtools view -b - > {output}
+        bwameth.py --threads {threads} --reference {input.fasta} {input.f1} {input.f2} > {output}
         """
-        # bwameth.py --threads {threads} --reference {input.fasta} {input.f1} {input.f2} > {output}
+        # bwameth.py --threads {threads} --reference {input.fasta} {input.f1} {input.f2} | \
+        # samtools view -Sb - > {output}
+        # set +o pipefail;
+        # bwameth.py --threads {threads} --reference {input.fasta} {input.f1} {input.f2} | samtools view -b -o {output}
 
 
-# rule mason_alignment_forward:
-#     input:
-#         "resources/Illumina_pe/simulated_data/alignment.bam",
-#     output:
-#         first="resources/Illumina_pe/simulated_data/alignment_99.bam",
-#         second="resources/Illumina_pe/simulated_data/alignment_147.bam",
-#         forward="resources/Illumina_pe/simulated_data/alignment_forward.bam",
-#     conda:
-#         "../envs/samtools.yaml"
-#     shell:
-#         """
-#         samtools view -b -f 64 -F 16 {input} > {output.first}
-#         samtools view -b -f 16 -F 64 {input} > {output.second}
-#         samtools merge {output.forward} {output.first} {output.second}
-#         """
+rule sam_bam_mason:
+    input:
+        "resources/Illumina_pe/simulated_data/alignment.sam",
+    output:
+        "resources/Illumina_pe/simulated_data/alignment.bam",
+    conda:
+        "../envs/samtools.yaml"
+    threads: 30
+    shell:
+        """
+        samtools view -Sb {input} > {output}
+
+        """
 
 
-# rule mason_alignment_reverse:
-#     input:
-#         "resources/Illumina_pe/simulated_data/alignment.bam",
-#     output:
-#         first="resources/Illumina_pe/simulated_data/alignment_83.bam",
-#         second="resources/Illumina_pe/simulated_data/alignment_163.bam",
-#         rev="resources/Illumina_pe/simulated_data/alignment_reverse.bam",
-#     conda:
-#         "../envs/samtools.yaml"
-#     shell:
-#         """
-#         samtools view -b -f 16 -f 64 {input} > {output.first}
-#         samtools view -b -F 16 -F 64 {input} > {output.second}
-#         samtools merge {output.rev} {output.first} {output.second}
-#         """
+rule mason_alignment_forward:
+    input:
+        "resources/Illumina_pe/simulated_data/alignment.bam",
+    output:
+        first="resources/Illumina_pe/simulated_data/alignment_99.bam",
+        second="resources/Illumina_pe/simulated_data/alignment_147.bam",
+        forward="resources/Illumina_pe/simulated_data/alignment_forward.bam",
+    conda:
+        "../envs/samtools.yaml"
+    shell:
+        """
+        samtools view -b -f 64 -F 16 {input} > {output.first}
+        samtools view -b -f 16 -F 64 {input} > {output.second}
+        samtools merge {output.forward} {output.first} {output.second}
+        """
+
+
+# Mason has a different meth ratio for forward and reverse strands.
+# That is why we need to compute the coverage on the forward and reverse strand independently.
+rule mason_alignment_reverse:
+    input:
+        "resources/Illumina_pe/simulated_data/alignment.bam",
+    output:
+        first="resources/Illumina_pe/simulated_data/alignment_83.bam",
+        second="resources/Illumina_pe/simulated_data/alignment_163.bam",
+        rev="resources/Illumina_pe/simulated_data/alignment_reverse.bam",
+    conda:
+        "../envs/samtools.yaml"
+    shell:
+        """
+        samtools view -b -f 16 -f 64 {input} > {output.first}
+        samtools view -b -F 16 -F 64 {input} > {output.second}
+        samtools merge {output.rev} {output.first} {output.second}
+        """
 
 
 rule sort_mason_reads:
@@ -229,9 +246,9 @@ rule mosdepth_mason_truth:
     input:
         bam="resources/Illumina_pe/simulated_data/alignment_sorted_{orientation}.bam",
         bai="resources/Illumina_pe/simulated_data/alignment_sorted_{orientation}.bam.bai",
-        bed=lambda wildcards: expand(
+        bed=expand(
             "resources/{chrom}/candidates.bed",
-            chrom=config["simulated_chrom"],
+            chrom=config["platforms"]["Illumina_pe"],
         ),
     output:
         "resources/Illumina_pe/simulated_data/{orientation}_cov.mosdepth.global.dist.txt",

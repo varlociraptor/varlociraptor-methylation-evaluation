@@ -21,8 +21,16 @@ rule download_BisSNP:
 rule prepare_bissnp:
     input:
         jar="resources/ref_tools/Bis-tools/BisSNP-0.82.2.jar",
-        genome="resources/genome.fasta",
-        genome_index="resources/genome.fasta.fai",
+        genome=expand(
+            "resources/chromosome_{chrom}.fasta",
+            chrom=config["platforms"]["Illumina_pe"],
+        ),
+        genome_index=expand(
+            "resources/chromosome_{chrom}.fasta.fai",
+            chrom=config["platforms"]["Illumina_pe"],
+        ),
+        # genome="resources/genome.fasta",
+        # genome_index="resources/genome.fasta.fai",
         alignment="resources/Illumina_pe/{protocol}/alignment_focused_downsampled_dedup_renamed.bam",
         alignment_index="resources/Illumina_pe/{protocol}/alignment_focused_downsampled_dedup_renamed.bam.bai",
     output:
