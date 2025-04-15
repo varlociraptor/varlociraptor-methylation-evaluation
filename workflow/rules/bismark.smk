@@ -1,29 +1,33 @@
 
-rule copy_chromosome:
+rule bismark_copy_chromosome:
     input:
         "resources/chromosome_{chrom}.fasta",
     output:
         "resources/ref_tools/bismark/{chrom}/chromosome_{chrom}.fasta",
     conda:
         "../envs/bismark.yaml"
+    log:
+        "logs/bismark/copy_chromosome_{chrom}.log",
     shell:
         """
-        mkdir -p $(dirname {output})
-        cp {input} {output}
+        mkdir -p $(dirname {output}) 2> {log}
+        cp {input} {output} 2> {log}
         """
 
 
 # TODO: Gives missing output exception
-rule bismark_prepare:
+rule bismark_prepare_genome:
     input:
         "resources/ref_tools/bismark/{chrom}/chromosome_{chrom}.fasta",
     output:
         directory("resources/ref_tools/bismark/{chrom}/Bisulfite_Genome"),
     conda:
         "../envs/bismark.yaml"
+    log:
+        "logs/bismark/prepare_genome_{chrom}.log",
     shell:
         """
-        bismark_genome_preparation --verbose $(dirname {output})
+        bismark_genome_preparation --verbose $(dirname {output}) 2> {log}
         """
 
 
@@ -47,25 +51,29 @@ rule bismark_align:
         "resources/ref_tools/bismark/alignment/{protocol}/{SRA}/{SRA}_1_trimmed_bismark_bt2_pe.bam",
     conda:
         "../envs/bismark.yaml"
+    log:
+        "logs/bismark/{protocol}/align_{SRA}.log",
     threads: 6
     shell:
         """
-        mkdir -p $(dirname {output})
-        bismark --genome {input.chrom} -1 {input.reads1} -2 {input.reads2} -o $(dirname {output}) --parallel {threads}
+        mkdir -p $(dirname {output}) 2> {log}
+        bismark --genome {input.chrom} -1 {input.reads1} -2 {input.reads2} -o $(dirname {output}) --parallel {threads} 2> {log}
         """
 
 
-rule merge_bismark_bams:
+rule bismark_merge_bams:
     input:
         get_protocol_sra_bismark,
     output:
         "resources/ref_tools/bismark/alignment/{protocol}/alignment.bam",
     conda:
         "../envs/samtools.yaml"
+    log:
+        "logs/bismark/{protocol}/merge_bams.log",
     shell:
         """
-        echo {input}
-        samtools merge -n {output} {input}
+        echo {input} 2> {log}
+        samtools merge -n {output} {input} 2> {log}
         """
 
 
@@ -95,15 +103,17 @@ rule bismark_align_simulated:
         "resources/ref_tools/bismark/alignment/simulated_data/chromosome_{chrom}_f1_bismark_bt2_pe.bam",
     conda:
         "../envs/bismark.yaml"
+    log:
+        "logs/bismark/align_simulated_{chrom}.log",
     threads: 6
     shell:
         """
-        mkdir -p $(dirname {output})
-        bismark --genome {input.chrom} -1 {input.reads1} -2 {input.reads2} -o $(dirname {output}) --parallel {threads}
+        mkdir -p $(dirname {output}) 2> {log}
+        bismark --genome {input.chrom} -1 {input.reads1} -2 {input.reads2} -o $(dirname {output}) --parallel {threads} 2> {log}
         """
 
 
-rule rename_simulated_alignment:
+rule bismark_rename_simulated_alignment:
     input:
         expand(
             "resources/ref_tools/bismark/alignment/simulated_data/chromosome_{chrom}_f1_bismark_bt2_pe.bam",
@@ -113,9 +123,11 @@ rule rename_simulated_alignment:
         "resources/ref_tools/bismark/alignment/simulated_data/alignment.bam",
     conda:
         "../envs/bismark.yaml"
+    log:
+        "logs/bismark/rename_simulated_alignment.log",
     shell:
         """
-        mv {input} {output}
+        mv {input} {output} 2> {log}
         """
 
 
@@ -126,25 +138,28 @@ rule bismark_deduplicate:
         "resources/ref_tools/bismark/alignment/{protocol}/alignment.deduplicated.bam",
     conda:
         "../envs/bismark.yaml"
+    log:
+        "logs/bismark/{protocol}/deduplicate.log",
     shell:
         """
-        deduplicate_bismark --bam {input} --output_dir $(dirname {output})
+        deduplicate_bismark --bam {input} --output_dir $(dirname {output}) 2> {log}
         """
 
 
 # It is necessary to sort by name
-rule sort_bismark_bams:
+rule bismark_sort_bams:
     input:
         "resources/ref_tools/bismark/alignment/{protocol}/alignment.deduplicated.bam",
     output:
         "resources/ref_tools/bismark/alignment/{protocol}/alignment_bismark_sorted.bam",
     conda:
         "../envs/samtools.yaml"
+    log:
+        "logs/bismark/{protocol}/sort_bams.log",
     shell:
         """
-        echo {input}
-        samtools merge {output} {input}
-        samtools sort -n {input} -o {output}
+        samtools merge {output} {input} 2> {log}
+        samtools sort -n {input} -o {output} 2> {log}
         """
 
 
@@ -155,75 +170,52 @@ rule bismark_extract_results:
         "results/Illumina_pe/{protocol}/result_files/CpG_context_alignment_bismark_sorted.txt",
     conda:
         "../envs/bismark.yaml"
+    log:
+        "logs/bismark/{protocol}/extract_results.log",
     shell:
         """
-        mkdir -p $(dirname {output})
-        bismark_methylation_extractor {input} -o $(dirname {output}) --comprehensive --merge_non_CpG
+        mkdir -p $(dirname {output}) 2> {log}
+        bismark_methylation_extractor {input} -o $(dirname {output}) --comprehensive --merge_non_CpG 2> {log}
         """
 
 
-# rule bismark_methylation_extractor:
-#     input:
-#         "resources/ref_tools/bismark/alignment/{protocol}/alignment_bismark_sorted.bam",
-#     output:
-#         mbias_r1="qc/meth/{protocol}.M-bias_R1.png",
-#         mbias_report="resources/ref_tools/bismark/meth/{protocol}.M-bias.txt",
-#         splitting_report="resources/ref_tools/bismark/meth/{protocol}_splitting_report.txt",
-#         # 1-based start, 1-based end ('inclusive') methylation info: % and counts
-#         methylome_CpG_cov="resources/ref_tools/bismark/meth_cpg/{protocol}.bismark.cov.gz",
-#         # BedGraph with methylation percentage: 0-based start, end exclusive
-#         methylome_CpG_mlevel_bedGraph="resources/ref_tools/bismark/meth_cpg/{protocol}.bedGraph.gz",
-#         # Primary output files: methylation status at each read cytosine position: (extremely large)
-#         read_base_meth_state_cpg="resources/ref_tools/bismark/alignment/{protocol}/CpG_context.txt.gz",
-#         # * You could merge CHG, CHH using: --merge_non_CpG
-#         read_base_meth_state_chg="resources/ref_tools/bismark/meth/CHG_context_{protocol}.txt.gz",
-#         read_base_meth_state_chh="resources/ref_tools/bismark/meth/CHH_context_{protocol}.txt.gz",
-#     log:
-#         "logs/meth/{protocol}.log",
-#     params:
-#         output_dir="meth",  # optional output dir
-#         extra="--gzip --comprehensive --bedGraph",  # optional params string
-#     wrapper:
-#         "v5.5.0/bio/bismark/bismark_methylation_extractor"
-
-
-# Example for CpG only coverage
-rule bismark2bedGraph_cpg:
+rule bismark_to_bedGraph:
     input:
         "results/Illumina_pe/{protocol}/result_files/CpG_context_alignment_bismark_sorted.txt",
-        # "results/Illumina_pe/{protocol}/result_files/CpG_context_test_dataset.fastq_bismark.txt",
-        # "resources/ref_tools/bismark/alignment/{protocol}/CpG_context.txt.gz",
     output:
         bedGraph="results/Illumina_pe/{protocol}/result_files/CpG.bedGraph.gz",
         cov="results/Illumina_pe/{protocol}/result_files/CpG.bismark.cov.gz",
     log:
-        "logs/meth_cpg/{protocol}_CpG.log",
+        "logs/bismark/{protocol}/to_bedGraph.log",
     wrapper:
         "v5.5.0/bio/bismark/bismark2bedGraph"
 
 
-rule unzip_bismark_results:
+rule bismark_unzip_results:
     input:
         "results/Illumina_pe/{protocol}/result_files/CpG.bismark.cov.gz",
     output:
-        # "results/Illumina_pe/{protocol}/result_files/alignment_bismark_sorted.bedGraph",
         "results/Illumina_pe/{protocol}/result_files/CpG.bismark.cov",
     conda:
         "../envs/bismark.yaml"
+    log:
+        "logs/bismark/{protocol}/unzip_results.log",
     shell:
         """
-        gunzip {input}
+        gunzip {input} 2> {log}
         """
 
 
-rule bismark_focus_on_chromosome:
+rule bismark_focus_result_on_chromosome:
     input:
         "results/Illumina_pe/{protocol}/result_files/CpG.bismark.cov",
     output:
         "results/Illumina_pe/{protocol}/result_files/bismark.bed",
     params:
         chromosome=lambda wildcards: chromosome_by_platform["Illumina_pe"],
+    log:
+        "logs/bismark/{protocol}/focus_result_on_chromosome.log",
     shell:
         """
-        awk '$1 == "{params.chromosome}"' {input} > {output}
+        awk '$1 == "{params.chromosome}"' {input} > {output} 2> {log}
         """

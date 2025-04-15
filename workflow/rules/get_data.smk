@@ -2,7 +2,7 @@ ref_gene = config["sample"]
 chromosomes = set(chromosome for chromosome in config["platforms"].values())
 
 
-rule get_genome:
+rule download_genome:
     output:
         "resources/genome.fasta",
     params:
@@ -11,57 +11,10 @@ rule get_genome:
         build=ref_gene["build"],
         release=ref_gene["release"],
     log:
-        "logs/get_genome.log",
+        "logs/data/download_genome.log",
     cache: "omit-software"  # save space and time with between workflow caching (see docs)
     wrapper:
         "v2.3.2/bio/reference/ensembl-sequence"
-
-
-rule get_chromosome_from_genome:
-    input:
-        "resources/genome.fasta",
-    output:
-        "resources/chromosome_{chromosome}.fasta",
-    log:
-        "logs/get_chromosome_from_genome_{chromosome}.log",
-    conda:
-        "../envs/samtools.yaml"
-    threads: 10
-    shell:
-        """ 
-        samtools faidx {input} {wildcards.chromosome} > {output}
-        """
-
-
-rule chromosome_index:
-    input:
-        "resources/chromosome_{chromosome}.fasta",
-    output:
-        "resources/chromosome_{chromosome}.fasta.fai",
-    log:
-        "logs/chromosome_index_{chromosome}.log",
-    conda:
-        "../envs/samtools.yaml"
-    shell:
-        """ 
-        samtools faidx {input}
-        """
-
-
-rule add_chr_to_fasta:
-    input:
-        expand(
-            "resources/chromosome_{chromosome}.fasta",
-            chromosome=[chr for chr in chromosomes],
-        ),
-    output:
-        "resources/chr_chromosome_{chromosome}.fasta",
-    log:
-        "logs/add_chr_to_fasta_{chromosome}.log",
-    conda:
-        "../envs/python.yaml"
-    script:
-        "../scripts/rename_chromosome.py"
 
 
 rule genome_index:
@@ -70,13 +23,54 @@ rule genome_index:
     output:
         "resources/genome.fasta.fai",
     log:
-        "logs/genome_index.log",
+        "logs/data/genome_index.log",
     conda:
         "../envs/samtools.yaml"
     shell:
-        """ 
-        samtools faidx {input}
-        """
+        "samtools faidx {input} 2> {log}"
+
+
+rule focus_genome_on_chromosome:
+    input:
+        "resources/genome.fasta",
+    output:
+        "resources/chromosome_{chromosome}.fasta",
+    log:
+        "logs/data/focus_genome_on_chromosome_{chromosome}.log",
+    conda:
+        "../envs/samtools.yaml"
+    threads: 10
+    shell:
+        "samtools faidx {input} {wildcards.chromosome} > {output} 2> {log}"
+
+
+rule chromosome_index:
+    input:
+        "resources/chromosome_{chromosome}.fasta",
+    output:
+        "resources/chromosome_{chromosome}.fasta.fai",
+    log:
+        "logs/data/chromosome_index_{chromosome}.log",
+    conda:
+        "../envs/samtools.yaml"
+    shell:
+        "samtools faidx {input} 2> {log}"
+
+
+rule rename_chromosome_in_fasta:
+    input:
+        expand(
+            "resources/chromosome_{chromosome}.fasta",
+            chromosome=[chr for chr in chromosomes],
+        ),
+    output:
+        "resources/chr_chromosome_{chromosome}.fasta",
+    log:
+        "logs/data/rename_chromosome_in_fasta_{chromosome}.log",
+    conda:
+        "../envs/python.yaml"
+    script:
+        "../scripts/rename_chrom_in_fasta.py"
 
 
 rule get_fastq_pe:
@@ -84,12 +78,12 @@ rule get_fastq_pe:
         "resources/Illumina_pe/{protocol}/{SRA}/{accession}_1.fastq",
         "resources/Illumina_pe/{protocol}/{SRA}/{accession}_2.fastq",
     log:
-        "logs/get_fastq_pe_{protocol}_{SRA}_{accession}.log",
+        "logs/data/{protocol}/get_fastq_pe_{SRA}_{accession}.log",
     params:
         extra="--skip-technical",
     threads: 6
-    wildcard_constraints:
-        protocol="^(?!simulated_data$).*",
+    # wildcard_constraints:
+    #     protocol="^(?!simulated_data$).*",
     wrapper:
         "v3.0.2/bio/sra-tools/fasterq-dump"
 
@@ -98,7 +92,7 @@ rule get_fastq_se:
     output:
         "resources/Illumina_se/{protocol}/{SRA}/{accession}.fastq",
     log:
-        "logs/get_fastq_se_{protocol}_{SRA}_{accession}.log",
+        "logs/data/{protocol}/get_fastq_se_{SRA}_{accession}.log",
     params:
         extra="--skip-technical",
     threads: 6
@@ -114,15 +108,13 @@ rule trim_fastq_pe:
         first="resources/Illumina_pe/{protocol}/{SRA}/{accession}_1_trimmed.fastq",
         second="resources/Illumina_pe/{protocol}/{SRA}/{accession}_2_trimmed.fastq",
     log:
-        "logs/trim_fastq_pe_{protocol}_{SRA}_{accession}.log",
+        "logs/data/{protocol}/trim_fastq_pe_{SRA}_{accession}.log",
     conda:
         "../envs/fastp.yaml"
-    wildcard_constraints:
-        protocol="^(?!simulated_data$).*",
+    # wildcard_constraints:
+    #     protocol="^(?!simulated_data$).*",
     shell:
-        """ 
-        fastp --in1 {input.first} --in2 {input.second} --out1 {output.first} --out2 {output.second} --length_required 2 --disable_quality_filtering -z 4 --trim_poly_g --overrepresentation_analysis
-        """
+        "fastp --in1 {input.first} --in2 {input.second} --out1 {output.first} --out2 {output.second} --length_required 2 --disable_quality_filtering -z 4 --trim_poly_g --overrepresentation_analysis 2> {log}"
 
 
 rule trim_fastq_se:
@@ -131,13 +123,11 @@ rule trim_fastq_se:
     output:
         first="resources/Illumina_se/{protocol}/{SRA}/{accession}_trimmed.fastq",
     log:
-        "logs/trim_fastq_se_{protocol}_{SRA}_{accession}.log",
+        "logs/data/{protocol}/trim_fastq_se_{SRA}_{accession}.log",
     conda:
         "../envs/fastp.yaml"
     shell:
-        """ 
-        fastp --in1 {input.first} --out1 {output.first} --length_required 2 --disable_quality_filtering -z 4 --trim_poly_g --overrepresentation_analysis
-        """
+        "fastp --in1 {input.first} --out1 {output.first} --length_required 2 --disable_quality_filtering -z 4 --trim_poly_g --overrepresentation_analysis 2> {log}"
 
 
 rule get_pacbio_data:
@@ -146,7 +136,7 @@ rule get_pacbio_data:
     params:
         url=lambda wildcards: config[str(wildcards.SRA)],
     log:
-        "logs/get_pacbio_data_{protocol}_{SRA}.log",
+        "logs/data/{protocol}/get_pacbio_data_{SRA}.log",
     resources:
         mem_mb=4096,
     conda:
@@ -216,7 +206,7 @@ rule get_pacbio_data:
 #         """
 
 
-rule get_nanopore_header_and_body:
+rule get_nanopore_data:
     output:
         "resources/Nanopore/{protocol}/{SRA}/alignment.bam",
     params:
@@ -224,18 +214,18 @@ rule get_nanopore_header_and_body:
     resources:
         mem_mb=4096,
     log:
-        "logs/get_nanopore_header_and_body_{protocol}_{SRA}.log",
+        "logs/data/{protocol}/get_nanopore_data_{SRA}.log",
     conda:
         "../envs/samtools.yaml"
     shell:
         """
         set +o pipefail;
-        mkdir -p $(dirname {output})
-        samtools view -b {params.url} | head -n 200000 >> {output} 
+        mkdir -p $(dirname {output}) 2> {log}
+        samtools view -b {params.url} | head -n 200000 >> {output}  2> {log}
         """
 
 
-rule nanopore_bam_index:
+rule nanopore_index:
     output:
         alignment="resources/Nanopore/{protocol}/{SRA}/alignment.bam.bai",
     params:
@@ -245,8 +235,6 @@ rule nanopore_bam_index:
     conda:
         "../envs/samtools.yaml"
     log:
-        "logs/nanopore_bam_index_{protocol}_{SRA}.log",
+        "logs/data/{protocol}/nanopore_index_{SRA}.log",
     shell:
-        """
-        samtools view -b {params.url} | samtools index - {output}
-        """
+        "samtools view -b {params.url} | samtools index - {output} 2> {log}"

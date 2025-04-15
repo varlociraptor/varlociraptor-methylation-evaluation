@@ -5,5 +5,3 @@ channels:
 dependencies:
   - bcftools =1.17
   - samtools =1.17
-  # - bamtools =2.5.2
-  # - htslib =1.18

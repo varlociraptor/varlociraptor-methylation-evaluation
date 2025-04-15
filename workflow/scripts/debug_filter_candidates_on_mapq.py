@@ -1,6 +1,9 @@
 import pysam
 import cyvcf2
 
+# Redirect standard error to snakemake log file
+sys.stderr = open(snakemake.log[0], "w")
+
 
 def filter_variants(
     bcf_file, bam_file, output_bcf, mapq_threshold=60, min_fraction=0.5

@@ -5,14 +5,11 @@ rule find_candidates:
     output:
         "resources/{chromosome}/candidates.bcf",
     log:
-        "logs/{chromosome}/find_candidates.log",
+        "logs/candidates/find_candidates_{chromosome}.log",
     conda:
         "../envs/varlociraptor.yaml"
     shell:
-        """ 
-        cd {input.varlo}
-        cargo run -- methylation-candidates {input.fasta} {output}
-        """
+        "{input.varlo}/target/debug/varlociraptor methylation-candidates {input.fasta} {output} 2> {log}"
 
 
 # Use only those candidates, which are in the bam file
@@ -25,14 +22,16 @@ rule relevant_positions:
         "resources/{platform}/{protocol}/{chrom}/candidates_shortened.bcf",
     conda:
         "../envs/samtools.yaml"
+    log:
+        "logs/candidates/{platform}/{protocol}/relevant_positions_{chrom}.log",
     shell:
         """
         set +o pipefail;
-        start=$(samtools depth {input.bam} | awk '$3 > 0 {{print $2}}' | head -n 1)
-        end=$(samtools depth {input.bam} | awk '$3 > 0 {{print $2}}' | tail -n 1)
-        mkdir -p $(dirname {output})
-        bcftools index -f {input.bcf}
-        bcftools view -r $(samtools idxstats {input.bam} | awk '$3 > 0 {{print $1}}'):${{start}}-${{end}} {input.bcf} -o {output}
+        start=$(samtools depth {input.bam} | awk '$3 > 0 {{print $2}}' | head -n 1) 2> {log}
+        end=$(samtools depth {input.bam} | awk '$3 > 0 {{print $2}}' | tail -n 1) 2> {log}
+        mkdir -p $(dirname {output}) 2> {log}
+        bcftools index -f {input.bcf} 2> {log}
+        bcftools view -r $(samtools idxstats {input.bam} | awk '$3 > 0 {{print $1}}'):${{start}}-${{end}} {input.bcf} -o {output} 2> {log}
         """
 
 
@@ -43,16 +42,16 @@ rule split_candidates:
         scatter.split_candidates(
             "resources/{{platform}}/{{protocol}}/{{chrom}}/candidates_{scatteritem}.bcf"
         ),
-    # log:
-    #     "logs/{chrom}split_candidates.log",
+    log:
+        "logs/candidates/{platform}/{protocol}/split_candidates_{chrom}.log",
     conda:
         "../envs/rbt.yaml"
     shell:
-        "rbt vcf-split {input} {output}"
+        "rbt vcf-split {input} {output} 2> {log}"
 
 
 # This is only to debug the adjusted mapq value. Will stay until completely clarified
-# rule filter_candidates_on_mapq:
+# rule debug_filter_candidates_on_mapq:
 #     input:
 #         alignment="resources/{platform}/{protocol}/candidate_specific/alignment_valid_{scatteritem}.bam",
 #         index="resources/{platform}/{protocol}/candidate_specific/alignment_valid_{scatteritem}.bam.bai",
@@ -64,4 +63,4 @@ rule split_candidates:
 #     conda:
 #         "../envs/plot.yaml"
 #     script:
-#         "../scripts/filter_candidates_on_mapq.py"
+#         "../scripts/debug_filter_candidates_on_mapq.py"

@@ -2,7 +2,7 @@ channels:
   - conda-forge
 dependencies:
   - altair =5.1
-  - vl-convert-python =0.13
+  - vl-convert-python =0.14
   - vegafusion =1.6
   - vega_datasets =0.9
   - matplotlib =3.8

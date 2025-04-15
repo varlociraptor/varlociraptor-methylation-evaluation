@@ -1,6 +1,10 @@
 import urllib.request
 import os
 
+# Redirect standard error to snakemake log file
+sys.stderr = open(snakemake.log[0], "w")
+
+
 bedGraphs = snakemake.params["bedGraphs"]
 output_dir = snakemake.params["bedgraph_path"]
 
@@ -17,7 +21,6 @@ for bedGraph in bedGraphs:
         + ".bedGraph.gz"
     )
     output_file = os.path.join(output_dir, bedGraph + ".bedGraph.gz")
-    print("Source URL: ", source_url)
 
     download_successful = False
     for attempt in range(1, max_download_attempts + 1):
@@ -28,14 +31,14 @@ for bedGraph in bedGraphs:
         except Exception as e:
             print(
                 f"Error downloading {source_url} (attempt {
-            attempt}/{max_download_attempts}): {e}"
+            attempt} / {max_download_attempts}): {e}"
             )
             os.remove(output_file)
 
     if not download_successful:
         print(
             f"Failed to download {source_url} after {
-        max_download_attempts} attempts. Exiting."
+        max_download_attempts} attempts.Exiting."
         )
         raise Exception(
             f"Failed to download {source_url} after {

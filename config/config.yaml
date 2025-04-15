@@ -11,7 +11,7 @@ sample:
 # Choose specific chromosome for evaluation
 platforms: 
   # PacBio: 21
-  Illumina_pe: 21
+  Illumina_pe: "J02459"
   # Nanopore: 1
 
 # Chrom for simulated reads. Must be given even if we do not want to simulate since it is used in input files. 
@@ -29,6 +29,10 @@ ref_tools:
   Nanopore: [modkit]
 
 
+# Define minimum mapping quality to keep in alignment
+min_mapping_quality: 10
+# How many reads should be simulated
+num_simulated_reads: 1000000
 
 ###################################### PLOTS ##################################################
 
@@ -36,8 +40,9 @@ ref_tools:
 plot_type: html
 # Define threshhold for false positive cutoff
 prob_pres_threshhold: 0.0
+
 # Choose between "ratio" and "posterior" for different computation methods of methylation rates in the result plots
-meth_type: posterior
+meth_type: ratio
 
 # Define number of coverage bins. Pipeline will create plots for each coverage bin.
 cov_bins: 
@@ -52,7 +57,7 @@ cov_bin_size:
 
 
 # Number of scatter gather items
-scatter_number: 20
+scatter_number: 3
 # Rough estimate for maximum read length. This is use to shorten the length of the candidate files
 max_read_length: 100000
 
@@ -61,7 +66,7 @@ data:
     simulated_data: []
     # TruSeq_HG002_LAB01_REP01_omit_adj: [SRR13050995, SRR13050996, SRR13050998]
     # TruSeq_HG002_LAB01_REP01_adj: [SRR13050995, SRR13050996, SRR13050998]
-    # TruSeq_HG002_LAB01_REP01: [SRR13050995, SRR13050996, SRR13050998]
+    TruSeq_HG002_LAB01_REP01: [SRR13050995, SRR13050996, SRR13050998]
   #   TruSeq_HG002_LAB01_REP02: [SRR13050992, SRR13050993, SRR13050994]   
   #   SPLAT_HG002_LAB01_REP01_4: [SRR13051055, SRR13051056, SRR13051057, SRR13051058]
   #   SPLAT_HG002_LAB01_REP02_4:  [SRR13051050, SRR13051051, SRR13051052, SRR13051054]

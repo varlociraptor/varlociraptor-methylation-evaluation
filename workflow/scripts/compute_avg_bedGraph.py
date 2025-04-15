@@ -1,79 +1,69 @@
-import pickle
-import numpy as np
+#  Redirect standard error to snakemake log file
+sys.stderr = open(snakemake.log[0], "w")
 
 
-bedGraph_files = [snakemake.input[i] for i in range(len(snakemake.input))]
+# Gather input bedGraph files from Snakemake
+bedGraph_files = [file for file in snakemake.input]
 
+# Dictionary to store methylation data
 bedGraph_entry = {}
 
-
-all_keys = set()
-
-
+# Process each input file
 for file_path in bedGraph_files:
-    file_keys = set()
-
     with open(file_path, "r") as file:
         for line in file:
             parts = line.strip().split("\t")
+            if len(parts) != 6:
+                continue  # Skip malformed lines
+
             chrom, start, end, methylation, meth_reads, unmeth_reads = parts
-            print("Chromosomes: ", chrom, snakemake.params["chromosome"])
+
+            # Normalize chromosome format
             if (
                 chrom == snakemake.params["chromosome"]
                 or chrom == "chr" + snakemake.params["chromosome"]
             ):
-                methylation = float(methylation)
-                meth_reads = int(meth_reads)
-                unmeth_reads = int(unmeth_reads)
+                try:
+                    methylation = float(methylation)
+                    meth_reads = int(meth_reads)
+                    unmeth_reads = int(unmeth_reads)
+                except ValueError:
+                    continue  # Skip lines with conversion errors
+
                 coverage = meth_reads + unmeth_reads
-                if coverage > 0:
-                    key = (chrom, start, end)
+                if coverage == 0:
+                    continue
 
-                    file_keys.add(key)
+                key = (chrom, start, end)
+                if key not in bedGraph_entry:
+                    bedGraph_entry[key] = [[methylation], meth_reads, unmeth_reads]
+                else:
+                    bedGraph_entry[key][0].append(methylation)
+                    bedGraph_entry[key][1] += meth_reads
+                    bedGraph_entry[key][2] += unmeth_reads
 
-                    if key not in bedGraph_entry:
-                        bedGraph_entry[key] = [[methylation], meth_reads, unmeth_reads]
-                    else:
-                        bedGraph_entry[key][0].append(methylation)
-                        bedGraph_entry[key][1] += meth_reads
-                        bedGraph_entry[key][2] += unmeth_reads
-
-#     if not all_keys:
-#         all_keys = file_keys
-#     else:
-#         all_keys.intersection_update(file_keys)
-
-# keys_to_remove = set(bedGraph_entry.keys()) - all_keys
-# for key in keys_to_remove:
-#     del bedGraph_entry[key]
-
+# Filter entries with at least 12 methylation values
 bedGraph_entry = {
     key: value for key, value in bedGraph_entry.items() if len(value[0]) >= 12
 }
 
-
+# Filter entries with methylation range ≤ 20
 bedGraph_entry = {
     key: value
     for key, value in bedGraph_entry.items()
     if max(value[0]) - min(value[0]) <= 20
 }
 
-
-# with open("bedGraph_entry.pkl", "wb") as outfile:
-#     pickle.dump(bedGraph_entry, outfile)
-
-
+# Write output to file
 with open(snakemake.output[0], "w") as outfile:
     for key, values in bedGraph_entry.items():
         chrom, start, end = key
-        meth, meth_reads, unmeth_reads = values[0], values[1], values[2]
-        # if np.std(meth) / (np.mean(meth) + 0.01) > 0.2:
-        avg_methylation = (
-            (meth_reads / (meth_reads + unmeth_reads)) * 100
-            if meth_reads + unmeth_reads != 0
-            else 0
-        )
+        meth_values, meth_reads, unmeth_reads = values
+        total_reads = meth_reads + unmeth_reads
+
+        avg_methylation = (meth_reads / total_reads) * 100 if total_reads != 0 else 0
+
         outfile.write(
-            f"{chrom}\t{start}\t{end}\t{avg_methylation:.4f}\t{
-        meth_reads:.0f}\t{unmeth_reads:.0f}\n"
+            f"{chrom}\t{start}\t{end}\t{avg_methylation:.4f}\t"
+            f"{meth_reads}\t{unmeth_reads}\n"
         )

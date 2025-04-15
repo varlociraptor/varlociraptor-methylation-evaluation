@@ -1,23 +1,24 @@
-# We need the newer methylation extractor from bsmapz, since the original one is outdated
-rule meth_extractor:
+# We need the newer methylation extractor from bsmapz, since the original one is outdated:
+# https://github.com/zyndagj/BSMAPz
+rule bsmap_download:
     output:
         "resources/ref_tools/bsMap/methratio.py",
     log:
-        "../logs/meth_extractor.log",
+        "../logs/bsmap/download.log",
     conda:
-        "../envs/sheel_cmds.yaml"
+        "../envs/shell_cmds.yaml"
     shell:
         """
-        mkdir -p mkdir -p $(dirname {output})
-        cd $(dirname {output})
-        wget https://raw.githubusercontent.com/zyndagj/BSMAPz/master/methratio.py
+        mkdir -p mkdir -p $(dirname {output}) 2> {log}
+        cd $(dirname {output}) 2> {log}
+        wget https://raw.githubusercontent.com/zyndagj/BSMAPz/master/methratio.py 2> {log}
         """
 
 
 # We have to rename the alignment file to make it shorter to not get a buffer error
 # TODO: does not work with symlinks on HPC: https://github.com/zyndagj/BSMAPz/issues/19 Filenames are too long.
 # Maximum allowed number of characters in alignment name: 68
-rule bsmap:
+rule bsmap_compute_meth:
     input:
         genome=expand(
             "resources/chromosome_{chrom}.fasta",
@@ -30,19 +31,18 @@ rule bsmap:
         out="results/Illumina_pe/{protocol}/result_files/out.sam",
     conda:
         "../envs/bsmap.yaml"
+    log:
+        "logs/bsmap/{protocol}/compute_meth.log",
     threads: 8
     shell:
         """
-        cp {input.alignment} temp.bam
-        bsmap -a temp.bam -b temp.bam -d {input.genome} -o out.sam -p {threads} -w 100  -v 0.07 -m 50 -x 300
-        mv out.sam $(dirname {output.out})
+        cp {input.alignment} temp.bam 2> {log}
+        bsmap -a temp.bam -b temp.bam -d {input.genome} -o out.sam -p {threads} -w 100  -v 0.07 -m 50 -x 300 2> {log}
+        mv out.sam $(dirname {output.out}) 2> {log}
         """
-        # cp {input.alignment} {output.alignment_renamed}
-        # bsmap -a {output.alignment_renamed} -b {output.alignment_renamed} -d {input.genome} -o out.sam -p {threads} -w 100  -v 0.07 -m 50 -x 300
-        # mv out.sam $(dirname {output.out})
 
 
-rule extract_methylation:
+rule bsmap_extract_meth:
     input:
         genome=expand(
             "resources/chromosome_{chrom}.fasta",
@@ -59,19 +59,19 @@ rule extract_methylation:
     conda:
         "../envs/bsmap.yaml"
     log:
-        "logs/bsmap_{protocol}.log",
+        "logs/bsmap/{protocol}/extract_meth.log",
     params:
         chromosome=chromosome_by_platform.get("Illumina_pe"),
     shell:
-        """
-        python {input.meth_extractor} -c={params.chromosome} --ref={input.genome} --out={output} {input.bsmap_sam} -g -x CG
-        """
+        "python {input.meth_extractor} -c={params.chromosome} --ref={input.genome} --out={output} {input.bsmap_sam} -g -x CG 2> {log}"
 
 
-rule rename_bsmap_output:
+rule bsmap_rename_output:
     input:
         "results/Illumina_pe/{protocol}/result_files/methylation_ratios.bed",
     output:
         "results/Illumina_pe/{protocol}/result_files/bsMap.bed",
+    log:
+        "logs/bsmap/{protocol}/rename_output.log",
     shell:
-        "mv {input} {output}"
+        "mv {input} {output} 2> {log}"

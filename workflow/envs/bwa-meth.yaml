@@ -3,4 +3,3 @@ channels:
 dependencies:
   - bwameth =0.2
   - bwa-mem2 =2.2
-  # - samtools

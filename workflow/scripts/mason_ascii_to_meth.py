@@ -2,6 +2,10 @@ from collections import defaultdict
 import re
 
 
+# Redirect standard error to snakemake log file
+sys.stderr = open(snakemake.log[0], "w")
+
+
 def parse_vcf(candidates):
     """Parses the VCF file and extracts relevant positions."""
     positions = []
@@ -16,14 +20,14 @@ def parse_vcf(candidates):
 
 
 def parse_cov(file_path, strand, coverages):
-
+    """Parses the coverage file and extracts coverage information."""
     with open(file_path, "r") as file:
 
         for line in file:
             parts = line.strip().split("\t")
-            chrom = parts[0]  # Chromosom
-            position = int(parts[1])  # Startposition
-            coverage = float(parts[3])  # Coverage-Wert
+            chrom = parts[0]
+            position = int(parts[1])
+            coverage = float(parts[3])
 
             coverages[(chrom, position)][strand] = coverage
     return coverages
@@ -40,23 +44,10 @@ def parse_fasta(meth_file):
         methylation_data[chrom]["TOP"] = fasta_parts[2].replace("\n", "")
         methylation_data[chrom]["BOT"] = fasta_parts[4].replace("\n", "")
         return methylation_data
-    # methylation_data = defaultdict(lambda: defaultdict(str))
-    # with open(meth_file, "r") as f:
-    #     current_seq, strand = None, None
-    #     for i, line in enumerate(f):
-    #         if i % 10000 == 0:
-    #             print(f"Processing line {i}", flush=True)
-    #         if line.startswith(">"):
-    #             chrom_info = line.strip().split("/")
-    #             current_seq, strand = chrom_info[0][1:], chrom_info[1]
-    #             print(line.strip(), current_seq)
-    #             methylation_data[current_seq][strand] = ""
-    #         else:
-    #             methylation_data[current_seq][strand] += line.strip()
-    # return methylation_data
 
 
 def ascii_to_methylation(char):
+    """Compute true methylation level according to https://github.com/seqan/seqan/blob/main/apps/mason2/README.mason_methylation"""
     ascii_val = ord(char)
     if ascii_val < ord(">"):
         L = ((ascii_val - ord("!")) / 80) * 100
@@ -66,16 +57,15 @@ def ascii_to_methylation(char):
 
 
 def generate_bed(candidate_positions, meth_data, coverages, output_file):
-    """Generates a BED file with methylation information."""
+    """Generates a BED file with the collected methylation information."""
     with open(output_file, "w") as out:
         for chrom, pos in candidate_positions:
             if chrom in meth_data and pos - 1 < len(meth_data[chrom]["BOT"]):
                 coverage_top = coverages[(chrom, pos)]["TOP"]
                 coverage_bot = coverages[(chrom, pos)]["BOT"]
                 coverage = coverage_top + coverage_bot
-                ascii_char_bot = meth_data[chrom]["BOT"][pos]  # 1-based to 0-based
+                ascii_char_bot = meth_data[chrom]["BOT"][pos]
                 ascii_char_top = meth_data[chrom]["TOP"][pos - 1]  # 1-based to 0-based
-                # print(ascii_char_bot, ascii_char_top)
                 meth_level = (
                     0
                     if coverage == 0
@@ -87,7 +77,7 @@ def generate_bed(candidate_positions, meth_data, coverages, output_file):
                 )
 
                 out.write(
-                    f"{chrom}\t{pos-1}\t{pos+1}\t{meth_level:.2f}\t{ascii_char_bot}\t{ascii_char_top}\n"
+                    f"{chrom}\t{pos-1}\t{pos+1}\t{meth_level:.2f}\t{coverage}\t{ascii_char_bot}\t{ascii_char_top}\n"
                 )
 
 

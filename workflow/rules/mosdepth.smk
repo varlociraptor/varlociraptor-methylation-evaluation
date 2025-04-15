@@ -1,7 +1,5 @@
 # Computes the coverage over the input alignment in order to have a common coverage over which we can stratidfy the plots of the different tools
-
-
-rule candidate_splits_to_vcf:
+rule candidate_to_vcf:
     input:
         "resources/{chrom}/candidates_{scatteritem}.bcf",
     output:
@@ -9,26 +7,26 @@ rule candidate_splits_to_vcf:
     conda:
         "../envs/samtools.yaml"
     log:
-        "logs/{chrom}/candidate_splits_to_vcf_{scatteritem}.log",
+        "logs/mosdepth/{chrom}/candidate_to_vcf_{scatteritem}.log",
     shell:
-        """
-        bcftools view {input} > {output}
-        """
+        "bcftools view {input} > {output} 2> {log}"
 
 
-rule candidate_vcf_to_bed:
+rule vcf_to_bed:
     input:
         "resources/{chrom}/candidates.vcf",
     output:
         "resources/{chrom}/candidates.bed",
     conda:
         "../envs/plot.yaml"
+    log:
+        "logs/mosdepth/{chrom}/vcf_to_bed.log",
     script:
-        "../scripts/candidate_vcf_to_bed.py"
+        "../scripts/vcf_to_bed.py"
 
 
 # Get coverade over CpG positions
-rule mosdepth_bed:
+rule mosdepth_compute_coverage:
     input:
         bam="resources/{platform}/{protocol}/alignment_focused_downsampled_dedup_renamed.bam",
         bai="resources/{platform}/{protocol}/alignment_focused_downsampled_dedup_renamed.bam.bai",
@@ -37,7 +35,7 @@ rule mosdepth_bed:
             chrom=chromosome_by_platform[wildcards.platform],
         ),
     log:
-        "logs/mosdepth_bed/{platform}/{protocol}.log",
+        "logs/mosdepth/{platform}/{protocol}/compute_coverage.log",
     output:
         "resources/{platform}/{protocol}/cov.mosdepth.global.dist.txt",
         "resources/{platform}/{protocol}/cov.mosdepth.region.dist.txt",
@@ -51,12 +49,12 @@ rule mosdepth_bed:
         "v5.5.2/bio/mosdepth"
 
 
-rule unzip_mosdepth:
+rule mosdepth_unzip_results:
     input:
         "resources/{platform}/{protocol}/cov.regions.bed.gz",
     output:
         "resources/{platform}/{protocol}/cov.regions.bed",
+    log:
+        "logs/mosdepth/{platform}/{protocol}/unzip_results.log",
     shell:
-        """
-        gunzip {input}
-        """
+        "gunzip {input} 2> {log}"

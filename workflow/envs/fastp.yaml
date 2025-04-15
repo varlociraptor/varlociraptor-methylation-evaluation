@@ -1,4 +1,4 @@
 channels:
   - bioconda
 dependencies:
-  -  fastp =0.24
+  -  fastp

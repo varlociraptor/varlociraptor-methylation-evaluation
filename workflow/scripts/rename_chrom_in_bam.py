@@ -1,5 +1,9 @@
 import pysam
 
+# Redirect standard error to snakemake log file
+sys.stderr = open(snakemake.log[0], "w")
+
+
 def rename_chromosomes_bam(input_bam, output_bam):
     with pysam.AlignmentFile(input_bam, "rb") as infile:
         # Original-Header extrahieren und kopieren
@@ -12,7 +16,9 @@ def rename_chromosomes_bam(input_bam, output_bam):
 
         for sq in original_header.get("SQ", []):
             old_name = sq["SN"]
-            new_name = old_name.removeprefix("chr") if old_name.startswith("chr") else old_name
+            new_name = (
+                old_name.removeprefix("chr") if old_name.startswith("chr") else old_name
+            )
             new_sq.append({**sq, "SN": new_name})
             name_map[old_name] = new_name
 
@@ -41,11 +47,13 @@ def rename_chromosomes_bam(input_bam, output_bam):
                     read_dict["next_ref_id"] = ref_name_to_id[new_next_ref_name]
 
                 # Neues Read-Objekt schreiben
-                new_read = pysam.AlignedSegment.from_dict(read_dict, header=new_header_obj)
+                new_read = pysam.AlignedSegment.from_dict(
+                    read_dict, header=new_header_obj
+                )
                 outfile.write(new_read)
+
 
 if __name__ == "__main__":
     input_bam = snakemake.input[0]
     output_bam = snakemake.output[0]
     rename_chromosomes_bam(input_bam, output_bam)
-

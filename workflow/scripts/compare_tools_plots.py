@@ -4,6 +4,9 @@ import numpy as np
 import re
 import os
 
+# Redirect standard error to snakemake log file
+sys.stderr = open(snakemake.log[0], "w")
+
 
 def compute_rmse(df, tool_col):
     # df_rmse = df[df[tool_col] > 0]
@@ -83,7 +86,6 @@ def distance_plot(melted_df, df, ref_tool, output):
 def scatter_plot(df, ref_tool, output):
     rmse_varlo = round(compute_rmse(df, "varlo_methylation"), 2)
     rmse_ref = round(compute_rmse(df, "ref_tool_methylation"), 2)
-    print("Dataframe:", df.head(20))
     line = (
         alt.Chart(pd.DataFrame({"x": [0, 100], "y": [0, 100]}))
         .mark_line(color="green")
@@ -179,9 +181,6 @@ merged_outer = pd.merge(
 # Zeilen filtern, die nur in einem der beiden DataFrames enthalten sind
 not_in_merged = merged_outer[merged_outer["_merge"] != "both"]
 
-# Alle nicht enthaltenen Zeilen ausgeben
-print("Not in merged")
-print(not_in_merged.to_string())
 #####################################
 
 df.rename(

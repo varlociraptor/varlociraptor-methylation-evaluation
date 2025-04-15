@@ -1,13 +1,16 @@
 import pandas as pd
 import altair as alt
 
+# Redirect standard error to snakemake log file
+sys.stderr = open(snakemake.log[0], "w")
+
+
 pd.set_option("display.max_columns", None)
 
 csv_files = snakemake.input
 dfs = [pd.read_csv(file) for file in csv_files]
 df_combined = pd.concat(dfs, ignore_index=True)
 df_combined = df_combined.sort_values(by=["tool", "coverage", "recall"])
-print(df_combined)
 
 line_chart = (
     alt.Chart(df_combined[df_combined["tool"] == "varlo"])
