@@ -1,4 +1,6 @@
 channels:
   - bioconda
 dependencies:
-  - bismark =0.24
+# Does not work with only major versions, because we get a bowtie error then 
+  - bismark =0.24.2
+  - bowtie2 =2.5.3

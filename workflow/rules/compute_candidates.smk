@@ -1,6 +1,6 @@
 rule find_candidates:
     input:
-        varlo=directory("resources/tools/varlociraptor"),
+        varlo="resources/tools/varlociraptor/target/debug/varlociraptor",
         fasta="resources/chromosome_{chromosome}.fasta",
     output:
         "resources/{chromosome}/candidates.bcf",
@@ -9,7 +9,7 @@ rule find_candidates:
     conda:
         "../envs/varlociraptor.yaml"
     shell:
-        "{input.varlo}/target/debug/varlociraptor methylation-candidates {input.fasta} {output} 2> {log}"
+        "{input.varlo} methylation-candidates {input.fasta} {output} 2> {log}"
 
 
 # Use only those candidates, which are in the bam file

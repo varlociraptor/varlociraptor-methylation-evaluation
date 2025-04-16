@@ -17,7 +17,7 @@ rule modkit_compute_methylation:
         """
         export PATH=$PATH:~/.cargo/bin 2> {log}
         export PATH=$PATH:/homes/aprinz/.cargo/bin 2> {log}
-        modkit pileup {input.alignment} {output} --cpg --ref {input.chromosome} --force-allow-implicit --combine-strands --log-filepath log_modkit.txt 2> {log}
+        modkit pileup {input.alignment} {output} --cpg --ref {input.chromosome} --force-allow-implicit --combine-strands --log-filepath {log} 2> {log}
         """
 
 

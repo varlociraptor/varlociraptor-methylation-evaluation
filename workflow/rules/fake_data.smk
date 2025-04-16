@@ -68,7 +68,7 @@ rule mason_fake_reads:
         """
         mason_simulator --input-reference {input.genome} \
                 --input-vcf {input.variants} \
-                --num-fragments 10000 \
+                --num-fragments {params.num_fragments} \
                 --out {output.f1} \
                 --out-right {output.f2} \
                 --meth-fasta-in {input.methylation} \
