@@ -109,10 +109,17 @@ df_merged = reduce(
     ),
     tool_dfs,
 )
+df_merged.to_parquet(
+    snakemake.output["protocol_df"], engine="pyarrow", compression="snappy"
+)
 
 methylation_density_chart = density_plot(df_merged, tool_names, "methylation")
 coverage_density_chart = density_plot(df_merged, tool_names, "coverage")
+
 melted_data = compute_distances(df_merged, tool_names)
 distance_chart = distance_plot(melted_data)
+
 chart = methylation_density_chart | coverage_density_chart | distance_chart
+
+
 chart.save(snakemake.output["plot"], scale_factor=2.0)

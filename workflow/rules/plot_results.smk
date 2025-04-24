@@ -171,6 +171,7 @@ rule compare_all_tools:
             method=config["ref_tools"][wildcards.platform] + ["varlo"],
         ),
     output:
+        protocol_df="results/{platform}/{protocol}/result_files/protocol_df_{plot_type}.parquet",
         plot=report(
             "results/{platform}/{protocol}/plots/comparisions.{plot_type}",
             category=lambda wildcards: f"{wildcards.platform} - {wildcards.protocol}",
@@ -186,3 +187,27 @@ rule compare_all_tools:
         prob_pres_threshhold=config["prob_pres_threshhold"],
     script:
         "../scripts/compare_all_tools.py"
+
+
+rule compare_samples:
+    input:
+        samples=lambda wildcards: expand(
+            "results/{{platform}}/{protocol}/result_files/protocol_df_{{plot_type}}.parquet",
+            protocol=config["data"][wildcards.platform],
+        ),
+    output:
+        plot=report(
+            "results/{platform}/plots/comparisions.{plot_type}",
+            category=lambda wildcards: f"{wildcards.platform}",
+            subcategory="All Comparisions",
+            labels=lambda wildcards: {"type": "general comparisions", "method": "all"},
+        ),
+    conda:
+        "../envs/plot.yaml"
+    log:
+        "logs/plots/{platform}/compare_samples_{plot_type}.log",
+    params:
+        plot_type=config["plot_type"],
+        prob_pres_threshhold=config["prob_pres_threshhold"],
+    script:
+        "../scripts/compare_samples.py"

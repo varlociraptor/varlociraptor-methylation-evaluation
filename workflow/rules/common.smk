@@ -4,7 +4,9 @@ def compute_results():
         needed_inputs.append(plots(platform))
         needed_inputs.append(diff_plots(platform))
         needed_inputs.append(precision_recall(platform))
-        needed_inputs.append(comparision_plots(platform))
+        needed_inputs.append(comparision_plots_tools(platform))
+        needed_inputs.append(comparision_plots_samples(platform))
+
     return needed_inputs
 
 
@@ -46,7 +48,7 @@ def diff_plots(platform):
     ]
 
 
-def comparision_plots(platform):
+def comparision_plots_tools(platform):
     base_path = Path("results") / platform
     protocols = list(config["data"][platform].keys())
     ref_methods = config["ref_tools"][platform]
@@ -54,6 +56,12 @@ def comparision_plots(platform):
         str(base_path / protocol / ("plots/comparisions." + config["plot_type"]))
         for protocol in protocols
     ]
+
+
+def comparision_plots_samples(platform):
+    base_path = Path("results") / platform
+    ref_methods = config["ref_tools"][platform]
+    return [str(base_path / ("plots/comparisions." + config["plot_type"]))]
 
 
 def precision_recall(platform):
