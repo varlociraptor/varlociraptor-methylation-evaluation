@@ -4,6 +4,7 @@ def compute_results():
         needed_inputs.append(plots(platform))
         needed_inputs.append(diff_plots(platform))
         needed_inputs.append(precision_recall(platform))
+        needed_inputs.append(comparision_plots(platform))
     return needed_inputs
 
 
@@ -38,11 +39,20 @@ def diff_plots(platform):
         str(
             base_path
             / protocol
-            / ("plots/" + plot_type + "_comp_" + method + "." + config["plot_type"])
+            / ("plots/scatter_comp_" + method + "." + config["plot_type"])
         )
-        for plot_type in ["scatter", "dist"]
         for protocol in protocols
         for method in ref_methods
+    ]
+
+
+def comparision_plots(platform):
+    base_path = Path("results") / platform
+    protocols = list(config["data"][platform].keys())
+    ref_methods = config["ref_tools"][platform]
+    return [
+        str(base_path / protocol / ("plots/comparisions." + config["plot_type"]))
+        for protocol in protocols
     ]
 
 
@@ -50,9 +60,8 @@ def precision_recall(platform):
     base_path = Path("results") / platform
     protocols = list(config["data"][platform].keys())
     return [
-        f"{base_path}/{protocol}/plots/precall_{bin}.{config['plot_type']}"
+        f"{base_path}/{protocol}/plots/precall.{config['plot_type']}"
         for protocol in protocols
-        for bin in list(range(0, config["cov_bins"][platform])) + ["all"]
     ]
 
 
@@ -84,8 +93,12 @@ def get_ref_methods(wildcards):
 
 
 def get_precision_recall_csvs(wildcards):
-
     base_path = Path("results") / wildcards.platform / wildcards.protocol / "plots"
-    methods = config["ref_tools"][wildcards.platform]
-    methods.append("varlo")
-    return [str(base_path / method / "precall_{cov_bin}.csv") for method in methods]
+    methods = config["ref_tools"][wildcards.platform] + ["varlo"]
+    cov_bins = [str(i) for i in range(config["cov_bins"][wildcards.platform])] + ["all"]
+
+    return [
+        str(base_path / method / f"precall_{cov_bin}.csv")
+        for method in methods
+        for cov_bin in cov_bins
+    ]

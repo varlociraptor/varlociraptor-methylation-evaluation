@@ -1,6 +1,5 @@
 ###################################### DATA ##################################################
 
-
 # Genome information
 sample:
   species: "homo_sapiens"
@@ -11,7 +10,7 @@ sample:
 # Choose specific chromosome for evaluation
 platforms: 
   # PacBio: 21
-  Illumina_pe: 21
+  Illumina_pe: "J02459"
   # Nanopore: 1
 
 # Chrom for simulated reads. Must be given even if we do not want to simulate since it is used in input files. 
@@ -22,44 +21,11 @@ platforms:
 ref_tools:
   # Chose from: bismark, bisSNP, methylDackel, bsMap
   # Illumina_pe: [bismark, bsMap, bisSNP, methylDackel]
-  Illumina_pe: [methylDackel]
+  Illumina_pe: [methylDackel, bsMap]
   # Chose from: pb_CpG_tools
   PacBio: [pb_CpG_tools]
   # Chose from: modkit
   Nanopore: [modkit]
-
-
-# Define minimum mapping quality to keep in alignment
-min_mapping_quality: 10
-# How many reads should be simulated
-num_simulated_reads: 10000000
-
-###################################### PLOTS ##################################################
-
-# Choose frome png and html
-plot_type: html
-# Define threshhold for false positive cutoff
-prob_pres_threshhold: 0.0
-
-# Choose between "ratio" and "posterior" for different computation methods of methylation rates in the result plots
-meth_type: ratio
-
-# Define number of coverage bins. Pipeline will create plots for each coverage bin.
-cov_bins: 
-  Illumina_pe: 5
-  PacBio: 5
-  Nanopore: 5
-# Size of each coverage bin. Last bin gets all remaining coverages.
-cov_bin_size:
-  Illumina_pe: 10
-  PacBio: 20
-  Nanopore: 20
-
-
-# Number of scatter gather items
-scatter_number: 20
-# Rough estimate for maximum read length. This is use to shorten the length of the candidate files
-max_read_length: 10000000
 
 data:
   Illumina_pe:
@@ -87,11 +53,7 @@ data:
     data1: [dummySRA_pacBio]
   Nanopore:
     data1: [dummySRA_nanopore]
-    
-testcase:
-  # locus: 21:26081724 # for filtering
-  locus: 21:15799832 #for bias
-  prefix: test_prinz_bias_old
+
 
 dummySRA_pacBio: "https://downloads.pacbcloud.com/public/dataset/HG002-CpG-methylation-202202/HG002.GRCh38.haplotagged.bam"
 dummySRA_nanopore: "https://ont-open-data.s3.amazonaws.com/gm24385_mod_2021.09/extra_analysis/all.bam"
@@ -113,3 +75,37 @@ bedGraphs_HG002:
   - GSM5649567_TrueMethylBS_HG002_LAB01_REP01
   - GSM5649568_EPIC_HG002_LAB01_REP02
   - GSM5649573_EPIC_HG002_LAB01_REP01
+
+
+
+###################################### METH CALLING ##################################################
+
+# Define minimum mapping quality to keep in alignment
+min_mapping_quality: 10
+# How many reads should be simulated
+num_simulated_reads: 10000
+# Number of scatter gather items
+scatter_number: 3
+# Rough estimate for maximum read length. This is use to shorten the length of the candidate files
+max_read_length: 10000000
+
+###################################### PLOTS ##################################################
+
+# Choose frome png and html
+plot_type: html
+# Define threshhold for false positive cutoff
+prob_pres_threshhold: 0.0
+
+# Choose between "ratio" and "posterior" for different computation methods of methylation rates in the result plots
+meth_type: posterior
+
+# Define number of coverage bins. Pipeline will create plots for each coverage bin.
+cov_bins: 
+  Illumina_pe: 5
+  PacBio: 5
+  Nanopore: 5
+# Size of each coverage bin. Last bin gets all remaining coverages.
+cov_bin_size:
+  Illumina_pe: 10
+  PacBio: 20
+  Nanopore: 20

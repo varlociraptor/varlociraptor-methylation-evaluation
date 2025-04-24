@@ -46,7 +46,7 @@ def compute_precision_recall(
     if last:
         coverage_str = f"{cov_bin * cov_bin_size}-max_cov"
     elif cov_bin == "all":
-        coverage_str = "0 - max_cov"
+        coverage_str = "All coverages"
     else:
         cov_bin = int(cov_bin)
         start = cov_bin * cov_bin_size
@@ -88,6 +88,7 @@ def compute_precision_recall_thresholds(df, methylation_threshold, last=False):
         results["TP"].append(TP)
         results["FP"].append(FP)
         results["FN"].append(FN)
+    print(results)
 
     return (
         results["precision"],
@@ -152,7 +153,6 @@ cov_bin = snakemake.params["cov_bin"]
 
 if cov_bin != "all":
     df = df[df["cov_bin"] == int(cov_bin)]
-
 # Compute and save precision/recall data
 if file_name == "varlo" and snakemake.params["meth_type"] == "posterior":
     precision, recall, coverage, thresholds, num_sites, TP, FP, FN = (

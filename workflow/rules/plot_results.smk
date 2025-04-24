@@ -93,24 +93,11 @@ rule plot_results_all_cov:
         "../scripts/scatter_plot.py"
 
 
-rule plot_tool_comparisions:
+rule plot_scatter_comparision:
     input:
         varlo="results/{platform}/{protocol}/result_files/varlo.parquet",
         ref_tool="results/{platform}/{protocol}/result_files/{method}.parquet",
     output:
-        plot=report(
-            expand(
-                "results/{{platform}}/{{protocol}}/plots/dist_comp_{{method}}.{plot_type}",
-                plot_type=config["plot_type"],
-            ),
-            category=lambda wildcards: f"{wildcards.platform} - {wildcards.protocol}",
-            subcategory="All Comparisions",
-            labels=lambda wildcards: {
-                "type": "distance comparision",
-                "method": wildcards.method,
-                "coverage": "all",
-            },
-        ),
         scatter_plot=report(
             expand(
                 "results/{{platform}}/{{protocol}}/plots/scatter_comp_{{method}}.{plot_type}",
@@ -121,7 +108,6 @@ rule plot_tool_comparisions:
             labels=lambda wildcards: {
                 "type": "scatter comparision",
                 "method": wildcards.method,
-                "coverage": "all",
             },
         ),
     conda:
@@ -133,7 +119,7 @@ rule plot_tool_comparisions:
         cov_bins=config["cov_bins"],
         prob_pres_threshhold=config["prob_pres_threshhold"],
     script:
-        "../scripts/compare_tools_plots.py"
+        "../scripts/plot_scatter_compare.py"
 
 
 rule compute_precision_recall:
@@ -161,24 +147,42 @@ rule plot_precision_recall:
     output:
         report(
             expand(
-                "results/{{platform}}/{{protocol}}/plots/precall_{{cov_bin}}.{{plot_type}}",
+                "results/{{platform}}/{{protocol}}/plots/precall.{{plot_type}}",
             ),
             category=lambda wildcards: f"{wildcards.platform} - {wildcards.protocol}",
             subcategory="All Comparisions",
-            labels=lambda wildcards: {
-                "type": "precision recall",
-                "coverage": (
-                    "all"
-                    if wildcards.cov_bin == "all"
-                    else f"{int(wildcards.cov_bin) * int(config['cov_bin_size'][wildcards.platform])} - {int(wildcards.cov_bin) * int(config['cov_bin_size'][wildcards.platform]) + int(config['cov_bin_size'][wildcards.platform]) - 1}"
-                ),
-            },
+            labels=lambda wildcards: {"type": "precision recall", "method": "all"},
         ),
     conda:
         "../envs/plot.yaml"
     log:
-        "logs/plots/{platform}/{protocol}/plot_precision_recall_{cov_bin}_{plot_type}.log",
+        "logs/plots/{platform}/{protocol}/plot_precision_recall_{plot_type}.log",
     params:
+        cov_bin=lambda wildcards: config["cov_bins"][wildcards.platform],
         plot_type=config["plot_type"],
     script:
         "../scripts/plot_precision_recall.py"
+
+
+rule compare_all_tools:
+    input:
+        tools=lambda wildcards: expand(
+            "results/{{platform}}/{{protocol}}/result_files/{method}.parquet",
+            method=config["ref_tools"][wildcards.platform] + ["varlo"],
+        ),
+    output:
+        plot=report(
+            "results/{platform}/{protocol}/plots/comparisions.{plot_type}",
+            category=lambda wildcards: f"{wildcards.platform} - {wildcards.protocol}",
+            subcategory="All Comparisions",
+            labels=lambda wildcards: {"type": "general comparisions", "method": "all"},
+        ),
+    conda:
+        "../envs/plot.yaml"
+    log:
+        "logs/plots/{platform}/{protocol}/compare_all_tools_{plot_type}.log",
+    params:
+        plot_type=config["plot_type"],
+        prob_pres_threshhold=config["prob_pres_threshhold"],
+    script:
+        "../scripts/compare_all_tools.py"

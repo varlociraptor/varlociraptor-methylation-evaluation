@@ -16,73 +16,6 @@ def compute_rmse(df, tool_col):
     return np.sqrt(mean_squared_error)
 
 
-def compute_distances(df):
-    """
-    Plots the distribution of distances between predicted methylation values and truth methylation values for two tools.
-
-    Args:
-        tool1_name: Name of the first tool.
-        tool2_name: Name of the second tool.
-        true_meth: Name of the truth methylation column.
-        tool1_values: List of methylation values predicted by the first tool.
-        tool2_values: List of methylation values predicted by the second tool.
-        true_values: List of truth methylation values.
-        output: Path to the output file.
-    """
-    df["varlo_distance"] = (
-        (df["varlo_methylation"] - df["true_methylation_x"]).abs().round().astype(int)
-    )
-
-    df["ref_distance"] = (
-        (df["ref_tool_methylation"] - df["true_methylation_x"])
-        .abs()
-        .round()
-        .astype(int)
-    )
-
-    df["distance_tools"] = (df["varlo_methylation"] - df["ref_tool_methylation"]).abs()
-
-    melted_data = df.melt(
-        value_vars=["ref_distance", "varlo_distance"],
-        var_name="Tool",
-        value_name="Distanz",
-    )
-    # Tool-Namen lesbarer machen
-    melted_data["Tool"] = melted_data["Tool"].replace(
-        {"ref_distance": "Reference", "varlo_distance": "Varlo"}
-    )
-
-    return df, melted_data
-
-    # melted_data = melted_data[melted_data['Distanz'] <= 30]
-    # Base chart with shared y-axis encoding
-
-
-def distance_plot(melted_df, df, ref_tool, output):
-    rmse_varlo = round(compute_rmse(df, "varlo_methylation"), 2)
-    rmse_ref = round(compute_rmse(df, "ref_tool_methylation"), 2)
-    base = (
-        alt.Chart(melted_df)
-        .mark_line()
-        .encode(
-            x=alt.X("Distanz:Q", title="Distance in %"),
-            y=alt.Y("count():Q", title="Count"),
-            color=alt.Color("Tool:N", legend=alt.Legend(title="Tool")),
-        )
-    )
-
-    # Line chart
-    line = base.mark_line().properties(
-        title=f"Varlociraptor rmse: {str(rmse_varlo)} / {ref_tool} rmse: {str(rmse_ref)}",
-    )
-
-    # Point chart
-    # points = base.mark_point()
-    line.save(
-        output,
-    )
-
-
 def scatter_plot(df, ref_tool, output):
     rmse_varlo = round(compute_rmse(df, "varlo_methylation"), 2)
     rmse_ref = round(compute_rmse(df, "ref_tool_methylation"), 2)
@@ -192,6 +125,3 @@ df.rename(
 )
 
 scatter_plot(df, ref_tool, snakemake.output["scatter_plot"][0])
-
-df, melted_data = compute_distances(df)
-distance_plot(melted_data, df, ref_tool, snakemake.output["plot"][0])

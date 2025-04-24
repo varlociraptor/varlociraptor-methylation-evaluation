@@ -45,9 +45,9 @@ rule mason_fake_variants:
     shell:
         """
         mason_variator --in-reference {input.chrom} \
-            --snp-rate 0.01 \
             --out-vcf {output}  2> {log}
         """
+        # --snp-rate 0.01 \
 
 
 rule mason_fake_reads:
