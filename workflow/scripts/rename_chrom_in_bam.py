@@ -10,9 +10,11 @@ def rename_chromosomes_bam(input_bam, output_bam):
         original_header = infile.header.to_dict()
 
         # Neuen Header bauen (ohne 'chr')
-        new_header = {"HD": original_header.get("HD", {})}
+        new_header = {}
+        new_header["HD"] = original_header.get("HD", {})
+        new_header["RG"] = original_header.get("RG", [])
         new_sq = []
-        name_map = {}  # alt_name -> neuer Name
+        name_map = {}
 
         for sq in original_header.get("SQ", []):
             old_name = sq["SN"]

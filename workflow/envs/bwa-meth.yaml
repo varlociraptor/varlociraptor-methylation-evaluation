@@ -1,5 +1,8 @@
+# TODO: Downdate to lower versions
 channels:
   - bioconda
 dependencies:
-  - bwameth =0.2
-  - bwa-mem2 =2.2
+  - bwameth=0.2.5
+  - bwa-mem2=2.2.1
+  - ncurses=5.9
+  - python
