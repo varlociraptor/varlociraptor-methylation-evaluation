@@ -3,19 +3,18 @@
 rule bissnp_download:
     output:
         "resources/ref_tools/Bis-tools/BisSNP-0.82.2.jar",
-    log:
-        "../logs/download_BisSNP.log",
     conda:
         "../envs/shell_cmds.yaml"
     log:
         "logs/bissnp/download.log",
     shell:
         """
-        mkdir -p resources/ref_tools 2> {log}
-        cd resources/ref_tools 2> {log}
-        git clone https://github.com/dnaase/Bis-tools.git 2> {log}
-        cd Bis-tools 2> {log}
-        wget -O BisSNP-0.82.2.jar https://sourceforge.net/projects/bissnp/files/BisSNP-0.82.2/BisSNP-0.82.2.jar/download 2> {log}
+        touch {log}
+        mkdir -p resources/ref_tools
+        cd resources/ref_tools
+        git clone https://github.com/dnaase/Bis-tools.git
+        cd Bis-tools
+        wget -O BisSNP-0.82.2.jar https://sourceforge.net/projects/bissnp/files/BisSNP-0.82.2/BisSNP-0.82.2.jar/download
         """
 
 

@@ -3,6 +3,8 @@ import pandas as pd
 import numpy as np
 import re
 import os
+from scipy.stats import linregress
+
 
 # Redirect standard error to snakemake log file
 sys.stderr = open(snakemake.log[0], "w")
@@ -16,16 +18,29 @@ def compute_rmse(df, tool_col):
     return np.sqrt(mean_squared_error)
 
 
+def linear_regression_summary(x, y):
+    result = linregress(x, y)
+    slope = round(result.slope, 2)
+    intercept = round(result.intercept, 2)
+    r_value = round(result.rvalue, 2)
+    r_squared = round(result.rvalue**2, 2)
+    return slope, intercept, r_value, r_squared
+
+
 def scatter_plot(df, ref_tool, output):
     rmse_varlo = round(compute_rmse(df, "varlo_methylation"), 2)
     rmse_ref = round(compute_rmse(df, "ref_tool_methylation"), 2)
+    m, b, r, r2 = linear_regression_summary(
+        df["ref_tool_methylation"], df["varlo_methylation"]
+    )
+
     line = (
         alt.Chart(pd.DataFrame({"x": [0, 100], "y": [0, 100]}))
         .mark_line(color="green")
         .encode(x="x:Q", y="y:Q")
     )
 
-    scatter_meth = (
+    scatter_varlo = (
         alt.Chart(df)
         .mark_circle(color="blue")
         .encode(
@@ -49,8 +64,29 @@ def scatter_plot(df, ref_tool, output):
         )
         .interactive()
     )
+    scatter_both = (
+        alt.Chart(df)
+        .mark_circle(color="green")
+        .encode(
+            x="ref_tool_methylation",
+            y="varlo_methylation",
+            # color="bias:N",
+            opacity=alt.value(0.3),
+            tooltip=["chromosome:N", "position:N", "coverage_y:N"],
+        )
+        .interactive()
+    )
+    regression_line = (
+        alt.Chart(df)
+        .transform_regression(
+            "ref_tool_methylation", "varlo_methylation", method="linear"
+        )
+        .mark_line(color="black", strokeDash=[5, 5])
+        .encode(x="ref_tool_methylation:Q", y="varlo_methylation:Q")
+    )
+
     chart1 = (
-        (scatter_meth + scatter_ref + line)
+        (scatter_varlo + scatter_ref + line)
         .properties(
             width=400,
             height=400,
@@ -62,7 +98,7 @@ def scatter_plot(df, ref_tool, output):
         .interactive()
     )
     chart2 = (
-        (scatter_ref + scatter_meth + line)
+        (scatter_ref + scatter_varlo + line)
         .properties(
             width=400,
             height=400,
@@ -73,9 +109,21 @@ def scatter_plot(df, ref_tool, output):
         )
         .interactive()
     )
+    chart3 = (
+        (scatter_both + line + regression_line)
+        .properties(
+            width=400,
+            height=400,
+            title=alt.Title(
+                f"Varlo (RMSE {rmse_varlo}) vs. {ref_tool} (RMSE {rmse_ref})",
+                subtitle=f"R = {r}, R² = {r2}, y = {m}·x + {b}",
+            ),
+        )
+        .interactive()
+    )
 
     # Beide Charts nebeneinander
-    combined_chart = chart1 | chart2
+    combined_chart = chart1 | chart2 | chart3
 
     # Speichern
     combined_chart.save(output, scale_factor=2.0)
@@ -110,6 +158,11 @@ merged_outer = pd.merge(
     how="outer",
     indicator=True,  # Fügt eine Spalte "_merge" hinzu
 )
+
+print("################################")
+# print(varlo_df)
+print(ref_df)
+print("################################")
 
 # Zeilen filtern, die nur in einem der beiden DataFrames enthalten sind
 not_in_merged = merged_outer[merged_outer["_merge"] != "both"]

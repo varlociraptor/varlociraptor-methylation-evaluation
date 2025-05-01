@@ -35,7 +35,7 @@ rule mason_fake_methylation:
 
 rule mason_fake_variants:
     input:
-        chrom="resources/chromosome_{chrom}.fasta",
+        "resources/chromosome_{chrom}.fasta",
     output:
         "resources/Illumina_pe/simulated_data/chromosome_{chrom}_variants.vcf",
     conda:
@@ -44,7 +44,7 @@ rule mason_fake_variants:
         "logs/mason_variants/fake_variants_{chrom}.log",
     shell:
         """
-        mason_variator --in-reference {input.chrom} \
+        mason_variator --in-reference {input} \
             --out-vcf {output}  2> {log}
         """
         # --snp-rate 0.01 \
