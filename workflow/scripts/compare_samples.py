@@ -9,21 +9,67 @@ sys.stderr = open(snakemake.log[0], "w")
 pd.set_option("display.max_columns", None)
 
 
-def pearson_correlation_single(df, sample_name):
+def plot_correlation(df):
+    num_samples = df["Sample"].nunique()
+    num_comparisons = df["Comparison"].nunique()
+    chart_width = num_samples * 100
+    chart_height = num_comparisons * 30
+
+    # Create heatmap
+    heatmap = (
+        alt.Chart(df)
+        .mark_rect()
+        .encode(
+            x=alt.X("Sample:N", title="Sample"),
+            y=alt.Y("Comparison:N", title="Comparison"),
+            color=alt.Color(
+                "Correlation:Q",
+                scale=alt.Scale(scheme="redyellowgreen", domain=[0, 1]),
+                legend=alt.Legend(title="Spearman ρ"),
+            ),
+            tooltip=[
+                "Sample",
+                "Comparison",
+                alt.Tooltip("Correlation:Q", format=".4f"),
+            ],
+        )
+        .properties(
+            title="Spearman Correlation",
+            width=chart_width,
+            height=chart_height,
+        )
+    )
+
+    # Overlay correlation values as text
+    text = (
+        alt.Chart(df)
+        .mark_text(baseline="middle", fontSize=12)
+        .encode(
+            x="Sample:N",
+            y="Comparison:N",
+            text=alt.Text("Correlation:Q", format=".4f"),
+            color=alt.value("white"),
+        )
+    )
+
+    # Save chart
+    return heatmap + text
+
+
+def spearman_correlation_method(df, sample_name):
     """
-    Calculates Pearson correlations between 'varlo_methylation' and
+    Calculates Spearman correlations between 'varlo_methylation' and
     all other *_methylation columns for a single sample.
     """
-    methylation_cols = [
-        col
-        for col in df.columns
-        if col.endswith("_methylation") and col != "varlo_methylation"
-    ]
 
     correlations = []
-    for col in methylation_cols:
-        corr = df["varlo_methylation"].corr(df[col])
-        ref_tool = f"varlo vs. {col.replace('_methylation', '')}"
+    for method in snakemake.params["methods"]:
+        if method == "varlo":
+            continue
+        corr = df["varlo_methylation"].corr(
+            df[f"{method}_methylation"], method="spearman"
+        )
+        ref_tool = f"varlo vs. {method}"
         correlations.append(
             {
                 "Sample": sample_name,
@@ -35,57 +81,96 @@ def pearson_correlation_single(df, sample_name):
     return pd.DataFrame(correlations)
 
 
+def spearman_correlation_sample(df, sample_name):
+    """
+    Calculates Spearman correlations between 'varlo_methylation' and
+    all other *_methylation columns for a single sample.
+    """
+    print(df)
+    correlations = []
+    for method in snakemake.params["methods"]:
+        corr = df[f"{method}_methylation_rep1"].corr(
+            df[f"{method}_methylation_rep2"], method="spearman"
+        )
+        correlations.append(
+            {
+                "Sample": sample_name,
+                "Comparison": method,
+                "Correlation": corr,
+            }
+        )
+
+    return pd.DataFrame(correlations)
+
+
+def plot_scatter_replicates(df_dict):
+    scatter_plots = []
+
+    for sample_name, df in df_dict.items():
+        for method in snakemake.params["methods"]:
+            x_col = f"{method}_methylation_rep1"
+            y_col = f"{method}_methylation_rep2"
+
+            if x_col in df.columns and y_col in df.columns:
+                scatter = (
+                    alt.Chart(df)
+                    .mark_circle(size=10, opacity=0.4)
+                    .encode(
+                        x=alt.X(x_col, title=f"{method} Rep1"),
+                        y=alt.Y(y_col, title=f"{method} Rep2"),
+                        tooltip=["chromosome", "position", x_col, y_col],
+                    )
+                    .properties(
+                        title=f"{sample_name} - {method}",
+                        width=300,
+                        height=300,
+                    )
+                )
+                scatter_plots.append(scatter)
+
+    return alt.hconcat(*scatter_plots)
+
+
 # Read all sample files and compute correlations
-correlation_dfs = []
+replicate_dfs = {}
+method_correlation_dfs = []
+sample_correlation_dfs = []
+
 for sample_file in snakemake.input["samples"]:
-    sample_name = sample_file.split("/")[2]  # Extract protocol name as sample name
+    replicate_name = sample_file.split("/")[-3]  # Extract protocol name as sample name
     df = pd.read_parquet(sample_file, engine="pyarrow")
-    correlation_dfs.append(pearson_correlation_single(df, sample_name))
+    method_correlation_dfs.append(spearman_correlation_method(df, replicate_name))
+
+    # Combine replicate DataFrames
+    samplename = "_".join(replicate_name.split("_")[:-1])
+    if samplename in replicate_dfs:
+        replicate_dfs[samplename] = pd.merge(
+            replicate_dfs[samplename],
+            df,
+            on=["chromosome", "position"],
+            how="inner",
+            suffixes=("_rep1", "_rep2"),
+        )
+    else:
+        replicate_dfs[samplename] = df
+
+
+for sample_name, df in replicate_dfs.items():
+    # Calculate Spearman correlations for each sample
+    # method_correlation_dfs.append(spearman_correlation_method(df, sample_name))
+    sample_correlation_dfs.append(spearman_correlation_sample(df, sample_name))
+
 
 # Combine all correlation DataFrames
-correlation_all = pd.concat(correlation_dfs, ignore_index=True)
+correlation_all_methods = pd.concat(method_correlation_dfs, ignore_index=True)
+correlation_all_samples = pd.concat(sample_correlation_dfs, ignore_index=True)
+# print(correlation_all)
 
-num_samples = correlation_all["Sample"].nunique()
-num_comparisons = correlation_all["Comparison"].nunique()
-chart_width = num_samples * 100
-chart_height = num_comparisons * 30
-
-# Create heatmap
-heatmap = (
-    alt.Chart(correlation_all)
-    .mark_rect()
-    .encode(
-        x=alt.X("Sample:N", title="Sample"),
-        y=alt.Y("Comparison:N", title="Comparison"),
-        color=alt.Color(
-            "Correlation:Q",
-            scale=alt.Scale(scheme="redyellowgreen", domain=[0, 1]),
-            legend=alt.Legend(title="Pearson r"),
-        ),
-        tooltip=[
-            "Sample",
-            "Comparison",
-            alt.Tooltip("Correlation:Q", format=".4f"),
-        ],
-    )
-    .properties(
-        title="Pearson Correlation per Sample",
-        width=chart_width,
-        height=chart_height,
-    )
+chart_methods = plot_correlation(correlation_all_methods)
+chart_samples = plot_correlation(correlation_all_samples)
+scatter_all = plot_scatter_replicates(replicate_dfs)
+print(correlation_all_samples)
+# Save charts
+alt.vconcat(chart_methods, chart_samples, scatter_all).save(
+    snakemake.output["plot"], scale_factor=2.0
 )
-
-# Overlay correlation values as text
-text = (
-    alt.Chart(correlation_all)
-    .mark_text(baseline="middle", fontSize=12)
-    .encode(
-        x="Sample:N",
-        y="Comparison:N",
-        text=alt.Text("Correlation:Q", format=".4f"),
-        color=alt.value("white"),
-    )
-)
-
-# Save chart
-(heatmap + text).save(snakemake.output["plot"], scale_factor=2.0)

@@ -209,5 +209,6 @@ rule compare_samples:
     params:
         plot_type=config["plot_type"],
         prob_pres_threshhold=config["prob_pres_threshhold"],
+        methods=lambda wildcards: config["ref_tools"][wildcards.platform] + ["varlo"],
     script:
         "../scripts/compare_samples.py"
