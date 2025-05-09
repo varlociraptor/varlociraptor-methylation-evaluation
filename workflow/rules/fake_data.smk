@@ -81,19 +81,19 @@ rule mason_align_reads:
     input:
         fasta=expand(
             "resources/chromosome_{chrom}.fasta",
-            chrom=config["platforms"]["Illumina_pe"],
+            chrom=config["seq_platforms"]["Illumina_pe"],
         ),
         fasta_index=expand(
             "resources/chromosome_{chrom}.fasta.bwameth.c2t",
-            chrom=config["platforms"]["Illumina_pe"],
+            chrom=config["seq_platforms"]["Illumina_pe"],
         ),
         f1=expand(
             "resources/Illumina_pe/simulated_data/chromosome_{chrom}_f1.fastq",
-            chrom=config["platforms"]["Illumina_pe"],
+            chrom=config["seq_platforms"]["Illumina_pe"],
         ),
         f2=expand(
             "resources/Illumina_pe/simulated_data/chromosome_{chrom}_f2.fastq",
-            chrom=config["platforms"]["Illumina_pe"],
+            chrom=config["seq_platforms"]["Illumina_pe"],
         ),
     output:
         "resources/Illumina_pe/simulated_data/alignment.sam",
@@ -212,7 +212,7 @@ rule mason_coverage:
         bai="resources/Illumina_pe/simulated_data/alignment_sorted_{orientation}.bam.bai",
         bed=expand(
             "resources/{chrom}/candidates.bed",
-            chrom=config["platforms"]["Illumina_pe"],
+            chrom=config["seq_platforms"]["Illumina_pe"],
         ),
     output:
         "resources/Illumina_pe/simulated_data/{orientation}_cov.mosdepth.global.dist.txt",

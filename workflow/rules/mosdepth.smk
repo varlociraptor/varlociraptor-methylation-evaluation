@@ -28,19 +28,19 @@ rule vcf_to_bed:
 # Get coverade over CpG positions
 rule mosdepth_compute_coverage:
     input:
-        bam="resources/{platform}/{protocol}/alignment_focused_downsampled_dedup_renamed.bam",
-        bai="resources/{platform}/{protocol}/alignment_focused_downsampled_dedup_renamed.bam.bai",
+        bam="resources/{seq_platform}/{protocol}/alignment_focused_downsampled_dedup_renamed.bam",
+        bai="resources/{seq_platform}/{protocol}/alignment_focused_downsampled_dedup_renamed.bam.bai",
         bed=lambda wildcards: expand(
             "resources/{chrom}/candidates.bed",
-            chrom=chromosome_by_platform[wildcards.platform],
+            chrom=chromosome_by_seq_platform[wildcards.seq_platform],
         ),
     log:
-        "logs/mosdepth/{platform}/{protocol}/compute_coverage.log",
+        "logs/mosdepth/{seq_platform}/{protocol}/compute_coverage.log",
     output:
-        "resources/{platform}/{protocol}/cov.mosdepth.global.dist.txt",
-        "resources/{platform}/{protocol}/cov.mosdepth.region.dist.txt",
-        "resources/{platform}/{protocol}/cov.regions.bed.gz",
-        summary="resources/{platform}/{protocol}/cov.mosdepth.summary.txt",  # this named output is required for prefix parsing
+        "resources/{seq_platform}/{protocol}/cov.mosdepth.global.dist.txt",
+        "resources/{seq_platform}/{protocol}/cov.mosdepth.region.dist.txt",
+        "resources/{seq_platform}/{protocol}/cov.regions.bed.gz",
+        summary="resources/{seq_platform}/{protocol}/cov.mosdepth.summary.txt",  # this named output is required for prefix parsing
     params:
         extra="--no-per-base --use-median",  # optional
     # additional decompression threads through `--threads`
@@ -51,10 +51,10 @@ rule mosdepth_compute_coverage:
 
 rule mosdepth_unzip_results:
     input:
-        "resources/{platform}/{protocol}/cov.regions.bed.gz",
+        "resources/{seq_platform}/{protocol}/cov.regions.bed.gz",
     output:
-        "resources/{platform}/{protocol}/cov.regions.bed",
+        "resources/{seq_platform}/{protocol}/cov.regions.bed",
     log:
-        "logs/mosdepth/{platform}/{protocol}/unzip_results.log",
+        "logs/mosdepth/{seq_platform}/{protocol}/unzip_results.log",
     shell:
         "gunzip {input} 2> {log}"

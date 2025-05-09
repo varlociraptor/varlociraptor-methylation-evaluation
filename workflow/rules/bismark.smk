@@ -36,19 +36,19 @@ rule bismark_align:
     input:
         # bisulfite_folder=expand(
         #     "resources/ref_tools/bismark/{chrom}/Bisulfite_Genome",
-        #     chrom=config["platforms"]["Illumina_pe"],
+        #     chrom=config["seq_platforms"]["Illumina_pe"],
         # ),
         # chrom=expand(
         #     "resources/ref_tools/bismark/{chrom}/",
-        #     chrom=config["platforms"]["Illumina_pe"],
+        #     chrom=config["seq_platforms"]["Illumina_pe"],
         # ),
         # chromosome=expand(
         #     "resources/ref_tools/bismark/{chrom}/chromosome_{chrom}.fasta",
-        #     chrom=config["platforms"]["Illumina_pe"],
+        #     chrom=config["seq_platforms"]["Illumina_pe"],
         # ),
         bisulfite_folder=expand(
             "resources/ref_tools/bismark/Bisulfite_Genome",
-            chrom=config["platforms"]["Illumina_pe"],
+            chrom=config["seq_platforms"]["Illumina_pe"],
         ),
         chrom="resources/ref_tools/bismark/",
         chromosome="resources/ref_tools/bismark/genome.fasta",
@@ -88,23 +88,23 @@ rule bismark_align_simulated:
     input:
         bisulfite_folder=expand(
             "resources/ref_tools/bismark/{chrom}/Bisulfite_Genome",
-            chrom=config["platforms"]["Illumina_pe"],
+            chrom=config["seq_platforms"]["Illumina_pe"],
         ),
         chrom=expand(
             "resources/ref_tools/bismark/{chrom}/",
-            chrom=config["platforms"]["Illumina_pe"],
+            chrom=config["seq_platforms"]["Illumina_pe"],
         ),
         chromosome=expand(
             "resources/ref_tools/bismark/{chrom}/chromosome_{chrom}.fasta",
-            chrom=config["platforms"]["Illumina_pe"],
+            chrom=config["seq_platforms"]["Illumina_pe"],
         ),
         reads1=expand(
             "resources/Illumina_pe/simulated_data/chromosome_{chrom}_f1.fastq",
-            chrom=config["platforms"]["Illumina_pe"],
+            chrom=config["seq_platforms"]["Illumina_pe"],
         ),
         reads2=expand(
             "resources/Illumina_pe/simulated_data/chromosome_{chrom}_f2.fastq",
-            chrom=config["platforms"]["Illumina_pe"],
+            chrom=config["seq_platforms"]["Illumina_pe"],
         ),
     output:
         "resources/ref_tools/bismark/alignment/simulated_data/chromosome_{chrom}_f1_bismark_bt2_pe.bam",
@@ -124,7 +124,7 @@ rule bismark_rename_simulated_alignment:
     input:
         expand(
             "resources/ref_tools/bismark/alignment/simulated_data/chromosome_{chrom}_f1_bismark_bt2_pe.bam",
-            chrom=config["platforms"]["Illumina_pe"],
+            chrom=config["seq_platforms"]["Illumina_pe"],
         ),
     output:
         "resources/ref_tools/bismark/alignment/simulated_data/alignment.bam",
@@ -219,7 +219,7 @@ rule bismark_focus_result_on_chromosome:
     output:
         "results/Illumina_pe/{protocol}/result_files/bismark.bed",
     params:
-        chromosome=lambda wildcards: chromosome_by_platform["Illumina_pe"],
+        chromosome=lambda wildcards: chromosome_by_seq_platform["Illumina_pe"],
     log:
         "logs/bismark/{protocol}/focus_result_on_chromosome.log",
     shell:

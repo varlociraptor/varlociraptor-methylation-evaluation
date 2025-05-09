@@ -22,7 +22,7 @@ rule bsmap_compute_meth:
     input:
         genome=expand(
             "resources/chromosome_{chrom}.fasta",
-            chrom=config["platforms"]["Illumina_pe"],
+            chrom=config["seq_platforms"]["Illumina_pe"],
         ),
         alignment="resources/Illumina_pe/{protocol}/alignment_focused_downsampled_dedup_renamed.bam",
         alignment_index="resources/Illumina_pe/{protocol}/alignment_focused_downsampled_dedup_renamed.bam.bai",
@@ -46,11 +46,11 @@ rule bsmap_extract_meth:
     input:
         genome=expand(
             "resources/chromosome_{chrom}.fasta",
-            chrom=config["platforms"]["Illumina_pe"],
+            chrom=config["seq_platforms"]["Illumina_pe"],
         ),
         genome_index=expand(
             "resources/chromosome_{chrom}.fasta.fai",
-            chrom=config["platforms"]["Illumina_pe"],
+            chrom=config["seq_platforms"]["Illumina_pe"],
         ),
         bsmap_sam="results/Illumina_pe/{protocol}/result_files/out.sam",
         meth_extractor="resources/ref_tools/bsMap/methratio.py",
@@ -61,7 +61,7 @@ rule bsmap_extract_meth:
     log:
         "logs/bsmap/{protocol}/extract_meth.log",
     params:
-        chromosome=chromosome_by_platform.get("Illumina_pe"),
+        chromosome=chromosome_by_seq_platform.get("Illumina_pe"),
     shell:
         "python {input.meth_extractor} -c={params.chromosome} --ref={input.genome} --out={output} {input.bsmap_sam} -g -x CG 2> {log}"
 

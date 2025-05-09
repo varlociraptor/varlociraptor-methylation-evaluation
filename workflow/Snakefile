@@ -16,10 +16,10 @@ scattergather:
 # inputflags:
 #     access.sequential
 
-chromosome_by_platform = config["platforms"]
-chromosomes = set(chromosome for chromosome in config["platforms"].values())
+chromosome_by_seq_platform = config["seq_platforms"]
+chromosomes = set(chromosome for chromosome in config["seq_platforms"].values())
 chr_chromosome = set("chr" + str(chromosome) for chromosome in chromosomes)
-platform = config["data"]
+seq_platform = config["data"]
 
 
 report: "report/workflow.rst"

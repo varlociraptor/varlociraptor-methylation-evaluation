@@ -15,15 +15,15 @@ rule find_candidates:
 # Use only those candidates, which are in the bam file
 rule relevant_positions:
     input:
-        bam="resources/{platform}/{protocol}/alignment_focused_downsampled_dedup_renamed.bam",
-        index="resources/{platform}/{protocol}/alignment_focused_downsampled_dedup_renamed.bam.bai",
+        bam="resources/{seq_platform}/{protocol}/alignment_focused_downsampled_dedup_renamed.bam",
+        index="resources/{seq_platform}/{protocol}/alignment_focused_downsampled_dedup_renamed.bam.bai",
         bcf="resources/{chrom}/candidates.bcf",
     output:
-        "resources/{platform}/{protocol}/{chrom}/candidates_shortened.bcf",
+        "resources/{seq_platform}/{protocol}/{chrom}/candidates_shortened.bcf",
     conda:
         "../envs/samtools.yaml"
     log:
-        "logs/candidates/{platform}/{protocol}/relevant_positions_{chrom}.log",
+        "logs/candidates/{seq_platform}/{protocol}/relevant_positions_{chrom}.log",
     shell:
         """
         set +o pipefail;
@@ -37,13 +37,13 @@ rule relevant_positions:
 
 rule split_candidates:
     input:
-        "resources/{platform}/{protocol}/{chrom}/candidates_shortened.bcf",
+        "resources/{seq_platform}/{protocol}/{chrom}/candidates_shortened.bcf",
     output:
         scatter.split_candidates(
-            "resources/{{platform}}/{{protocol}}/{{chrom}}/candidates_{scatteritem}.bcf"
+            "resources/{{seq_platform}}/{{protocol}}/{{chrom}}/candidates_{scatteritem}.bcf"
         ),
     log:
-        "logs/candidates/{platform}/{protocol}/split_candidates_{chrom}.log",
+        "logs/candidates/{seq_platform}/{protocol}/split_candidates_{chrom}.log",
     conda:
         "../envs/rbt.yaml"
     shell:
@@ -53,13 +53,13 @@ rule split_candidates:
 # This is only to debug the adjusted mapq value. Will stay until completely clarified
 # rule debug_filter_candidates_on_mapq:
 #     input:
-#         alignment="resources/{platform}/{protocol}/candidate_specific/alignment_valid_{scatteritem}.bam",
-#         index="resources/{platform}/{protocol}/candidate_specific/alignment_valid_{scatteritem}.bam.bai",
-#         candidates="resources/{platform}/{protocol}/{chrom}/candidates_{scatteritem}.bcf",
+#         alignment="resources/{seq_platform}/{protocol}/candidate_specific/alignment_valid_{scatteritem}.bam",
+#         index="resources/{seq_platform}/{protocol}/candidate_specific/alignment_valid_{scatteritem}.bam.bai",
+#         candidates="resources/{seq_platform}/{protocol}/{chrom}/candidates_{scatteritem}.bcf",
 #     output:
-#         "resources/{platform}/{protocol}/{chrom}/candidates_filtered_mapq_{scatteritem}.bcf",
+#         "resources/{seq_platform}/{protocol}/{chrom}/candidates_filtered_mapq_{scatteritem}.bcf",
 #     log:
-#         "logs/filter_candidates_on_mapq_{platform}_{protocol}_{chrom}_{scatteritem}.log",
+#         "logs/filter_candidates_on_mapq_{seq_platform}_{protocol}_{chrom}_{scatteritem}.log",
 #     conda:
 #         "../envs/plot.yaml"
 #     script:

@@ -24,11 +24,11 @@ rule bissnp_prepare:
         jar="resources/ref_tools/Bis-tools/BisSNP-0.82.2.jar",
         genome=expand(
             "resources/chromosome_{chrom}.fasta",
-            chrom=config["platforms"]["Illumina_pe"],
+            chrom=config["seq_platforms"]["Illumina_pe"],
         ),
         genome_index=expand(
             "resources/chromosome_{chrom}.fasta.fai",
-            chrom=config["platforms"]["Illumina_pe"],
+            chrom=config["seq_platforms"]["Illumina_pe"],
         ),
         alignment="resources/Illumina_pe/{protocol}/alignment_focused_downsampled_dedup_renamed.bam",
         alignment_index="resources/Illumina_pe/{protocol}/alignment_focused_downsampled_dedup_renamed.bam.bai",
@@ -66,7 +66,7 @@ rule bissnp_extract_meth:
         prefix=lambda wildcards, input, output: os.path.splitext(output[0])[0].replace(
             ".combined", ""
         ),
-        chromosome=chromosome_by_platform.get("Illumina_pe"),
+        chromosome=chromosome_by_seq_platform.get("Illumina_pe"),
     log:
         "logs/bissnp/{protocol}/extract_meth.log",
     shell:

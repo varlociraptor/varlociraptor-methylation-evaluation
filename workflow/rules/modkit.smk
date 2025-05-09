@@ -5,7 +5,7 @@ rule modkit_compute_methylation:
         alignment_index="resources/Nanopore/{protocol}/alignment_focused_downsampled_dedup.bam.bai",
         chromosome=expand(
             "resources/chr_chromosome_{chromosome}.fasta",
-            chromosome=chromosome_by_platform.get("Nanopore"),
+            chromosome=chromosome_by_seq_platform.get("Nanopore"),
         ),
     output:
         "results/Nanopore/{protocol}/result_files/alignments_CpG.combined.bed",

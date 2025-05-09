@@ -37,44 +37,44 @@ rule compute_meth_observations:
         varlo="resources/tools/varlociraptor/target/debug/varlociraptor",
         chromosome=lambda wildcards: expand(
             "resources/chromosome_{chrom}.fasta",
-            chrom=chromosome_by_platform[wildcards.platform],
+            chrom=chromosome_by_seq_platform[wildcards.seq_platform],
         ),
         genome_index=lambda wildcards: expand(
             "resources/chromosome_{chrom}.fasta.fai",
-            chrom=chromosome_by_platform[wildcards.platform],
+            chrom=chromosome_by_seq_platform[wildcards.seq_platform],
         ),
-        alignments="resources/{platform}/{protocol}/candidate_specific/alignment_{scatteritem}.bam",
-        alignment_index="resources/{platform}/{protocol}/candidate_specific/alignment_{scatteritem}.bam.bai",
+        alignments="resources/{seq_platform}/{protocol}/candidate_specific/alignment_{scatteritem}.bam",
+        alignment_index="resources/{seq_platform}/{protocol}/candidate_specific/alignment_{scatteritem}.bam.bai",
         candidates=lambda wildcards: expand(
-            "resources/{{platform}}/{{protocol}}/{chrom}/candidates_{{scatteritem}}.bcf",
-            chrom=chromosome_by_platform[wildcards.platform],
+            "resources/{{seq_platform}}/{{protocol}}/{chrom}/candidates_{{scatteritem}}.bcf",
+            chrom=chromosome_by_seq_platform[wildcards.seq_platform],
         ),
     output:
-        "results/{platform}/{protocol}/normal_{scatteritem}.bcf",
+        "results/{seq_platform}/{protocol}/normal_{scatteritem}.bcf",
     log:
-        "logs/varlociraptor/{platform}/{protocol}/compute_meth_observations_{scatteritem}.log",
+        "logs/varlociraptor/{seq_platform}/{protocol}/compute_meth_observations_{scatteritem}.log",
     conda:
         "../envs/varlociraptor.yaml"
     shell:
         """
-        if [[ "{wildcards.platform}" == "Illumina_pe" || "{wildcards.platform}" == "Illumina_se" ]]; then
-            PLATFORM="Illumina"
+        if [[ "{wildcards.seq_platform}" == "Illumina_pe" || "{wildcards.seq_platform}" == "Illumina_se" ]]; then
+            seq_platform="Illumina"
         else
-            PLATFORM="{wildcards.platform}"
+            seq_platform="{wildcards.seq_platform}"
         fi
-        {input.varlo} preprocess variants --omit-mapq-adjustment {input.chromosome} --candidates {input.candidates} --bam {input.alignments} --read-type $PLATFORM --max-depth 5000 > {output} 2> {log}
+        {input.varlo} preprocess variants --omit-mapq-adjustment {input.chromosome} --candidates {input.candidates} --bam {input.alignments} --read-type $seq_platform --max-depth 5000 > {output} 2> {log}
         """
 
 
 rule call_methylation:
     input:
         varlo="resources/tools/varlociraptor/target/debug/varlociraptor",
-        preprocess_obs="results/{platform}/{protocol}/normal_{scatteritem}.bcf",
+        preprocess_obs="results/{seq_platform}/{protocol}/normal_{scatteritem}.bcf",
         scenario="resources/scenario.yaml",
     output:
-        "results/{platform}/{protocol}/calls_{scatteritem}.bcf",
+        "results/{seq_platform}/{protocol}/calls_{scatteritem}.bcf",
     log:
-        "logs/varlociraptor/{platform}/{protocol}/call_methylation_{scatteritem}.log",
+        "logs/varlociraptor/{seq_platform}/{protocol}/call_methylation_{scatteritem}.log",
     conda:
         "../envs/varlociraptor.yaml"
     shell:
@@ -85,11 +85,11 @@ rule call_methylation:
 rule filter_calls:
     input:
         varlo="resources/tools/varlociraptor/target/debug/varlociraptor",
-        bcf="results/{platform}/{protocol}/calls_{scatteritem}.bcf",
+        bcf="results/{seq_platform}/{protocol}/calls_{scatteritem}.bcf",
     output:
-        "results/{platform}/{protocol}/calls_{scatteritem}.filtered.bcf",
+        "results/{seq_platform}/{protocol}/calls_{scatteritem}.filtered.bcf",
     log:
-        "logs/varlociraptor/{platform}/{protocol}/filter_calls_{scatteritem}.log",
+        "logs/varlociraptor/{seq_platform}/{protocol}/filter_calls_{scatteritem}.log",
     conda:
         "../envs/varlociraptor.yaml"
     params:
@@ -101,13 +101,13 @@ rule filter_calls:
 # TODO: Skip this step, right now it would be useless since I debug so much
 rule calls_to_vcf:
     input:
-        "results/{platform}/{protocol}/calls_{scatteritem}.bcf",
+        "results/{seq_platform}/{protocol}/calls_{scatteritem}.bcf",
     output:
-        "results/{platform}/{protocol}/calls_{scatteritem}.vcf",
+        "results/{seq_platform}/{protocol}/calls_{scatteritem}.vcf",
     conda:
         "../envs/samtools.yaml"
     log:
-        "logs/varlociraptor/{platform}/{protocol}/calls_to_vcf_{scatteritem}.log",
+        "logs/varlociraptor/{seq_platform}/{protocol}/calls_to_vcf_{scatteritem}.log",
     threads: 10
     shell:
         "bcftools view --threads {threads} {input} -o {output} 2> {log}"
@@ -116,22 +116,22 @@ rule calls_to_vcf:
 rule gather_calls:
     input:
         gather.split_candidates(
-            "results/{{platform}}/{{protocol}}/calls_{scatteritem}.vcf"
+            "results/{{seq_platform}}/{{protocol}}/calls_{scatteritem}.vcf"
         ),
     output:
-        "results/{platform}/{protocol}/varlo.vcf",
+        "results/{seq_platform}/{protocol}/varlo.vcf",
     log:
-        "logs/varlociraptor/{platform}/{protocol}/gather_calls.log",
+        "logs/varlociraptor/{seq_platform}/{protocol}/gather_calls.log",
     shell:
         "cat {input} > {output} 2> {log}"
 
 
 rule rename_varlo_output:
     input:
-        "results/{platform}/{protocol}/varlo.vcf",
+        "results/{seq_platform}/{protocol}/varlo.vcf",
     output:
-        "results/{platform}/{protocol}/result_files/varlo.bed",
+        "results/{seq_platform}/{protocol}/result_files/varlo.bed",
     log:
-        "logs/varlociraptor/{platform}/{protocol}/rename_varlo_output.log",
+        "logs/varlociraptor/{seq_platform}/{protocol}/rename_varlo_output.log",
     shell:
         "mv {input} {output} 2> {log}"

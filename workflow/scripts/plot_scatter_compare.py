@@ -138,7 +138,7 @@ def scatter_plot(df, ref_tool, output):
 pd.set_option("display.max_columns", None)
 varlo_file = snakemake.input["varlo"]
 ref_file = snakemake.input["ref_tool"]
-ref_tool = os.path.splitext(os.path.basename(ref_file))[0]
+ref_tool = os.path.splitext(os.path.basename(ref_file))[0].capitalize()
 
 varlo_df = pd.read_parquet(varlo_file, engine="pyarrow")
 varlo_df = varlo_df[

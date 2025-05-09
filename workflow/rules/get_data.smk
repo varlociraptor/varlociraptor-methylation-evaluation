@@ -1,5 +1,5 @@
 ref_gene = config["sample"]
-chromosomes = set(chromosome for chromosome in config["platforms"].values())
+chromosomes = set(chromosome for chromosome in config["seq_platforms"].values())
 
 
 rule download_genome:
