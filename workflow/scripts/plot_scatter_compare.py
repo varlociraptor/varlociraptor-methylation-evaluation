@@ -30,9 +30,15 @@ def linear_regression_summary(x, y):
 def scatter_plot(df, ref_tool, output):
     rmse_varlo = round(compute_rmse(df, "varlo_methylation"), 2)
     rmse_ref = round(compute_rmse(df, "ref_tool_methylation"), 2)
-    m, b, r, r2 = linear_regression_summary(
-        df["ref_tool_methylation"], df["varlo_methylation"]
-    )
+    try:
+        m, b, r, r2 = linear_regression_summary(
+            df["ref_tool_methylation"], df["varlo_methylation"]
+        )
+    except:
+        m = "Not valid"
+        b = "Not valid"
+        r = "Not valid"
+        r2 = "Not valid"
 
     line = (
         alt.Chart(pd.DataFrame({"x": [0, 100], "y": [0, 100]}))
@@ -44,8 +50,8 @@ def scatter_plot(df, ref_tool, output):
         alt.Chart(df)
         .mark_circle(color="blue")
         .encode(
-            x="varlo_methylation",
-            y="true_methylation_x",
+            x=alt.X("varlo_methylation", title="Varlo Methylation"),
+            y=alt.Y("true_methylation_x", title=f"True Methylation"),
             # color="bias:N",
             opacity=alt.value(0.3),
             tooltip=["chromosome:N", "position:N", "coverage_x:N"],
@@ -56,8 +62,8 @@ def scatter_plot(df, ref_tool, output):
         alt.Chart(df)
         .mark_circle(color="red")
         .encode(
-            x="ref_tool_methylation",
-            y="true_methylation_x",
+            x=alt.X("ref_tool_methylation", title=f"{ref_tool} Methylation"),
+            y=alt.Y("true_methylation_x", title=f"True Methylation"),
             # color="bias:N",
             opacity=alt.value(0.3),
             tooltip=["chromosome:N", "position:N", "coverage_y:N"],
@@ -68,8 +74,8 @@ def scatter_plot(df, ref_tool, output):
         alt.Chart(df)
         .mark_circle(color="green")
         .encode(
-            x="ref_tool_methylation",
-            y="varlo_methylation",
+            x=alt.X("ref_tool_methylation", title=f"{ref_tool} Methylation"),
+            y=alt.Y("varlo_methylation", title="Varlo Methylation"),
             # color="bias:N",
             opacity=alt.value(0.3),
             tooltip=["chromosome:N", "position:N", "coverage_y:N"],
@@ -159,10 +165,6 @@ merged_outer = pd.merge(
     indicator=True,  # Fügt eine Spalte "_merge" hinzu
 )
 
-print("################################")
-# print(varlo_df)
-print(ref_df)
-print("################################")
 
 # Zeilen filtern, die nur in einem der beiden DataFrames enthalten sind
 not_in_merged = merged_outer[merged_outer["_merge"] != "both"]

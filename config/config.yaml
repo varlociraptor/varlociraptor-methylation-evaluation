@@ -20,7 +20,9 @@ platforms:
 # Define reference tools for comparision against varlociraptor results
 ref_tools:
   # Chose from: bismark, bisSNP, methylDackel, bsMap
-  Illumina_pe: [bismark, bsMap, methylDackel, bisSNP]
+  # Illumina_pe: [bismark, bsMap, methylDackel, bisSNP]
+  # Illumina_pe: [bismark, bsMap, methylDackel]
+  Illumina_pe: [bsMap, methylDackel]
   # Illumina_pe: [methylDackel]
   # Chose from: pb_CpG_tools
   PacBio: [pb_CpG_tools]
@@ -54,9 +56,6 @@ cov_bin_size:
   PacBio: 20
   Nanopore: 20
 
-
-# Number of scatter gather items
-scatter_number: 20
 # Rough estimate for maximum read length. This is use to shorten the length of the candidate files
 max_read_length: 10000000
 
@@ -118,7 +117,7 @@ min_mapping_quality: 10
 # How many reads should be simulated
 num_simulated_reads: 10000
 # Number of scatter gather items
-scatter_number: 3
+scatter_number: 20
 # Rough estimate for maximum read length. This is use to shorten the length of the candidate files
 max_read_length: 10000000
 

@@ -1,19 +1,55 @@
-rule bwameth_index_genome:
+# rule bwameth_index_genome:
+#     input:
+#         "resources/{genome}.fasta",
+#     output:
+#         "resources/{genome}.fasta.bwameth.c2t",
+#         # "resources/{genome}.fasta.bwameth.c2t.0123",
+#         # "resources/{genome}.fasta.bwameth.c2t.amb",
+#         # "resources/{genome}.fasta.bwameth.c2t.ann",
+#         # "resources/{genome}.fasta.bwameth.c2t.bwt.2bit.64",
+#         # "resources/{genome}.fasta.bwameth.c2t.pac",
+#     log:
+#         "logs/alignment/index_genome_{genome}.log",
+#     conda:
+#         "../envs/bwa-meth.yaml"
+#     shell:
+#         "bwameth.py index {input} 2> {log}"
+
+
+rule bwameth_index:
     input:
         "resources/{genome}.fasta",
+        # "genome.fasta",
     output:
-        "resources/{genome}.fasta.bwameth.c2t",
+        multiext(
+            "resources/{genome}.fasta.bwameth",
+            ".c2t",
+            ".c2t.amb",
+            ".c2t.ann",
+            ".c2t.bwt.2bit.64",
+            ".c2t.pac",
+            ".c2t.0123",
+        ),
+    cache: True  # save space and time with between workflow caching (see docs)
+    threads: 1
     log:
-        "logs/alignment/index_genome_{genome}.log",
-    conda:
-        "../envs/bwa-meth.yaml"
-    shell:
-        "bwameth.py index-mem2 {input} 2> {log}"
+        "logs/bwameth_index/{genome}.log",
+    wrapper:
+        "v6.0.1/bio/bwameth/index"
 
 
 rule align_reads_pe:
     input:
-        fasta_index="resources/genome.fasta.bwameth.c2t",
+        fasta_index=multiext(
+            "resources/genome.fasta.bwameth",
+            ".c2t",
+            ".c2t.amb",
+            ".c2t.ann",
+            ".c2t.bwt.2bit.64",
+            ".c2t.pac",
+            ".c2t.0123",
+        ),
+        # fasta_index="resources/genome.fasta.bwameth.c2t",
         fasta="resources/genome.fasta",
         reads1="resources/Illumina_pe/{protocol}/{SRA}/{SRA}_1_trimmed.fastq",
         reads2="resources/Illumina_pe/{protocol}/{SRA}/{SRA}_2_trimmed.fastq",
@@ -26,10 +62,11 @@ rule align_reads_pe:
     threads: 30
     resources:
         mem_mb=512,
-    # wildcard_constraints:
-    #     protocol="^(?!simulated_data$).*",
     shell:
-        "bwameth.py --threads {threads} --reference {input.fasta} {input.reads1} {input.reads2}  | samtools view -S -b - > {output} 2> {log}"
+        """
+        touch {input.fasta_index}
+        bwameth.py --reference {input.fasta} {input.reads1} {input.reads2} -t {threads}  | samtools view -b - > {output} 2> {log}
+        """
 
 
 rule align_reads_se:

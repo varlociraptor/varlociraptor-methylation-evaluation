@@ -1,13 +1,21 @@
 rule methylDackel_compute_meth:
     input:
         genome=expand(
-            "resources/chromosome_{chrom}.fasta",
+            "resources/genome.fasta",
             chrom=config["platforms"]["Illumina_pe"],
         ),
         genome_index=expand(
-            "resources/chromosome_{chrom}.fasta.fai",
+            "resources/genome.fasta.fai",
             chrom=config["platforms"]["Illumina_pe"],
         ),
+        #         genome=expand(
+        #     "resources/chromosome_{chrom}.fasta",
+        #     chrom=config["platforms"]["Illumina_pe"],
+        # ),
+        # genome_index=expand(
+        #     "resources/chromosome_{chrom}.fasta.fai",
+        #     chrom=config["platforms"]["Illumina_pe"],
+        # ),
         alignment="resources/Illumina_pe/{protocol}/alignment_focused_downsampled_dedup_renamed.bam",
         alignment_index="resources/Illumina_pe/{protocol}/alignment_focused_downsampled_dedup_renamed.bam.bai",
     output:

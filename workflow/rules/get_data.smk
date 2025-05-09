@@ -85,7 +85,7 @@ rule get_fastq_pe:
     # wildcard_constraints:
     #     protocol="^(?!simulated_data$).*",
     wrapper:
-        "v3.0.2/bio/sra-tools/fasterq-dump"
+        "v6.0.1/bio/sra-tools/fasterq-dump"
 
 
 rule get_fastq_se:

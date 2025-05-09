@@ -1,13 +1,13 @@
 
 rule bismark_copy_chromosome:
     input:
-        "resources/chromosome_{chrom}.fasta",
+        "resources/genome.fasta",
     output:
-        "resources/ref_tools/bismark/{chrom}/chromosome_{chrom}.fasta",
+        "resources/ref_tools/bismark/genome.fasta",
     conda:
         "../envs/bismark.yaml"
     log:
-        "logs/bismark/copy_chromosome_{chrom}.log",
+        "logs/bismark/copy_chromosome.log",
     shell:
         """
         mkdir -p $(dirname {output}) 2> {log}
@@ -18,13 +18,14 @@ rule bismark_copy_chromosome:
 # TODO: Gives missing output exception
 rule bismark_prepare_genome:
     input:
-        "resources/ref_tools/bismark/{chrom}/chromosome_{chrom}.fasta",
+        "resources/ref_tools/bismark/genome.fasta",
     output:
-        directory("resources/ref_tools/bismark/{chrom}/Bisulfite_Genome"),
+        directory("resources/ref_tools/bismark/Bisulfite_Genome"),
+        # directory("resources/ref_tools/bismark/{chrom}/Bisulfite_Genome"),
     conda:
         "../envs/bismark.yaml"
     log:
-        "logs/bismark/prepare_genome_{chrom}.log",
+        "logs/bismark/prepare_genome.log",
     shell:
         """
         bismark_genome_preparation --verbose $(dirname {output}) 2> {log}
@@ -33,18 +34,24 @@ rule bismark_prepare_genome:
 
 rule bismark_align:
     input:
+        # bisulfite_folder=expand(
+        #     "resources/ref_tools/bismark/{chrom}/Bisulfite_Genome",
+        #     chrom=config["platforms"]["Illumina_pe"],
+        # ),
+        # chrom=expand(
+        #     "resources/ref_tools/bismark/{chrom}/",
+        #     chrom=config["platforms"]["Illumina_pe"],
+        # ),
+        # chromosome=expand(
+        #     "resources/ref_tools/bismark/{chrom}/chromosome_{chrom}.fasta",
+        #     chrom=config["platforms"]["Illumina_pe"],
+        # ),
         bisulfite_folder=expand(
-            "resources/ref_tools/bismark/{chrom}/Bisulfite_Genome",
+            "resources/ref_tools/bismark/Bisulfite_Genome",
             chrom=config["platforms"]["Illumina_pe"],
         ),
-        chrom=expand(
-            "resources/ref_tools/bismark/{chrom}/",
-            chrom=config["platforms"]["Illumina_pe"],
-        ),
-        chromosome=expand(
-            "resources/ref_tools/bismark/{chrom}/chromosome_{chrom}.fasta",
-            chrom=config["platforms"]["Illumina_pe"],
-        ),
+        chrom="resources/ref_tools/bismark/",
+        chromosome="resources/ref_tools/bismark/genome.fasta",
         reads1="resources/Illumina_pe/{protocol, [^(?!simulated_data$)]}/{SRA}/{SRA}_1_trimmed.fastq",
         reads2="resources/Illumina_pe/{protocol, [^(?!simulated_data$)]}/{SRA}/{SRA}_2_trimmed.fastq",
     output:

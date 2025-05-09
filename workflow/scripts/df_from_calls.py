@@ -21,7 +21,7 @@ def get_bin(coverage):
     )
 
 
-def compute_bias(prob, format_values):
+def compute_bias(format_values):
     """Returns the bias label if present in FORMAT values, else 'normal'."""
     bias_labels = ["SB", "ROB", "RPB", "SCB", "HE", "ALB"]
     if any(value != "." for value in format_values[6:12]):
@@ -141,7 +141,7 @@ def read_tool_file(filepath, file_name):
                     )
                     continue
 
-                bias = compute_bias(info_field, values)
+                bias = compute_bias(values)
                 records.append(
                     [
                         chrom,
