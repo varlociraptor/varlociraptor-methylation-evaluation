@@ -1,4 +1,4 @@
 channels:
   - bioconda
 dependencies:
-  -  ont-modkit =0.2
+  - ont-modkit =0.2

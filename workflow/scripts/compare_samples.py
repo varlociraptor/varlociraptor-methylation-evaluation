@@ -86,11 +86,13 @@ def spearman_correlation_sample(df, sample_name):
     Calculates Spearman correlations between 'varlo_methylation' and
     all other *_methylation columns for a single sample.
     """
-    print(df)
     correlations = []
     for method in snakemake.params["methods"]:
-        corr = df[f"{method}_methylation_rep1"].corr(
-            df[f"{method}_methylation_rep2"], method="spearman"
+        df_short = df.dropna(
+            subset=[f"{method}_methylation_rep1", f"{method}_methylation_rep2"]
+        )
+        corr = df_short[f"{method}_methylation_rep1"].corr(
+            df_short[f"{method}_methylation_rep2"], method="spearman"
         )
         correlations.append(
             {
@@ -148,7 +150,7 @@ for sample_file in snakemake.input["samples"]:
             replicate_dfs[samplename],
             df,
             on=["chromosome", "position"],
-            how="inner",
+            how="outer",
             suffixes=("_rep1", "_rep2"),
         )
     else:

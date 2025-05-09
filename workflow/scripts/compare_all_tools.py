@@ -28,8 +28,9 @@ def distance_plot(melted_df):
 
 def compute_distances(df, tool_names):
     for tool in tool_names:
+        df_short = df.dropna(subset=[f"{tool}_methylation", "true_methylation"])
         df[f"{tool}_distance"] = (
-            (df[f"{tool}_methylation"] - df["true_methylation"])
+            (df_short[f"{tool}_methylation"] - df_short["true_methylation"])
             .abs()
             .round()
             .astype(int)
@@ -105,7 +106,7 @@ for tool_file in snakemake.input["tools"]:
 
 df_merged = reduce(
     lambda left, right: pd.merge(
-        left, right, on=["chromosome", "position", "true_methylation"], how="inner"
+        left, right, on=["chromosome", "position", "true_methylation"], how="outer"
     ),
     tool_dfs,
 )
