@@ -106,9 +106,11 @@ def spearman_correlation_sample(df, sample_name):
 
 
 def plot_scatter_replicates(df_dict):
-    scatter_plots = []
+    charts_per_sample = []
 
     for sample_name, df in df_dict.items():
+        sample_charts = []
+
         for method in snakemake.params["methods"]:
             x_col = f"{method}_methylation_rep1"
             y_col = f"{method}_methylation_rep2"
@@ -128,9 +130,12 @@ def plot_scatter_replicates(df_dict):
                         height=300,
                     )
                 )
-                scatter_plots.append(scatter)
+                sample_charts.append(scatter)
 
-    return alt.hconcat(*scatter_plots)
+        if sample_charts:
+            charts_per_sample.append(alt.hconcat(*sample_charts))
+
+    return alt.vconcat(*charts_per_sample)
 
 
 # Read all sample files and compute correlations

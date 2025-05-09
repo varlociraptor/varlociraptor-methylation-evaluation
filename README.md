@@ -18,7 +18,7 @@ If you use this workflow in a paper, don't forget to give credits to the authors
 
 ## Overview
 
-This workflow focuses on methylation rate estimation via Varlociraptor and compares it with other tools across multiple platforms such as:
+This workflow focuses on methylation rate estimation via Varlociraptor and compares it with other tools across multiple sequencing platforms such as:
 
 - Illumina paired-end (PE)
 - PacBio
@@ -27,7 +27,7 @@ This workflow focuses on methylation rate estimation via Varlociraptor and compa
 Key features include:
 
 - Simulation-ready configuration
-- Platform-specific reference tool comparison
+- platform-specific reference tool comparison
 - Coverage binning and statistical plots
 - Configurable thresholds and methylation types
 - Ready-to-use with GRCh38 (release 110)
