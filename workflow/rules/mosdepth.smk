@@ -49,6 +49,7 @@ rule mosdepth_compute_coverage:
         "v5.5.2/bio/mosdepth"
 
 
+# We can't just do gunzip because of symlinks from the cluster
 rule mosdepth_unzip_results:
     input:
         "resources/{seq_platform}/{protocol}/cov.regions.bed.gz",
@@ -57,4 +58,8 @@ rule mosdepth_unzip_results:
     log:
         "logs/mosdepth/{seq_platform}/{protocol}/unzip_results.log",
     shell:
-        "gunzip {input} 2> {log}"
+        """
+        cp {input} tmpfile.gz
+        gunzip -k tmpfile.gz
+        mv tmpfile {output}
+        """

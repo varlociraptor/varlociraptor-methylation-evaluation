@@ -19,6 +19,8 @@ rule compute_pandas_df:
         cov_bins=lambda wildcards: config["cov_bins"][wildcards.seq_platform],
         meth_type=config["meth_type"],
         simulated=False,
+        prob_pres_threshhold=config["prob_pres_threshhold"],
+        prob_absent_threshhold=config["prob_absent_threshhold"],
     script:
         "../scripts/df_from_calls.py"
 
@@ -54,7 +56,7 @@ rule plot_results_cov_specific:
             category=lambda wildcards: f"{wildcards.seq_platform} - {wildcards.protocol}",
             subcategory=lambda wildcards: f"{wildcards.method} plots",
             labels=lambda wildcards: {
-                "coverage": f"{int(wildcards.cov_bin) * int(config['cov_bin_size'][wildcards.seq_platform])} - {int(wildcards.cov_bin) * int(config['cov_bin_size'][wildcards.seq_platform]) + int(config['cov_bin_size'][wildcards.seq_platform])}",
+                "coverage": f"{int(wildcards.cov_bin)* int(config['cov_bin_size'][wildcards.seq_platform])} - {int(wildcards.cov_bin)* int(config['cov_bin_size'][wildcards.seq_platform])+ int(config['cov_bin_size'][wildcards.seq_platform])}",
             },
         ),
     conda:
@@ -63,7 +65,6 @@ rule plot_results_cov_specific:
         "logs/plots/{seq_platform}/{protocol}/results_cov_specific_{method}_{cov_bin}_{plot_type}.log",
     params:
         plot_type=config["plot_type"],
-        prob_pres_threshhold=config["prob_pres_threshhold"],
         cov_bin=lambda wildcards: wildcards.cov_bin,
     script:
         "../scripts/scatter_plot.py"
@@ -87,7 +88,6 @@ rule plot_results_all_cov:
         "logs/plots/{seq_platform}/{protocol}/all_cov_{method}_{plot_type}.log",
     params:
         plot_type=config["plot_type"],
-        prob_pres_threshhold=config["prob_pres_threshhold"],
         cov_bin=-1,
     script:
         "../scripts/scatter_plot.py"
@@ -117,7 +117,6 @@ rule plot_scatter_comparision:
     params:
         plot_type=config["plot_type"],
         cov_bins=config["cov_bins"],
-        prob_pres_threshhold=config["prob_pres_threshhold"],
     script:
         "../scripts/plot_scatter_compare.py"
 
@@ -133,7 +132,6 @@ rule compute_precision_recall:
         plot_type=config["plot_type"],
         cov_bin=lambda wildcards: wildcards.cov_bin,
         cov_bin_size=lambda wildcards: config["cov_bin_size"][wildcards.seq_platform],
-        prob_pres_threshhold=config["prob_pres_threshhold"],
         meth_type=config["meth_type"],
     log:
         "logs/plots/{seq_platform}/{protocol}/compute_precision_recall_{method}_{cov_bin}.log",
@@ -184,7 +182,6 @@ rule compare_all_tools:
         "logs/plots/{seq_platform}/{protocol}/compare_all_tools_{plot_type}.log",
     params:
         plot_type=config["plot_type"],
-        prob_pres_threshhold=config["prob_pres_threshhold"],
     script:
         "../scripts/compare_all_tools.py"
 
@@ -193,12 +190,12 @@ rule compare_samples:
     input:
         samples=lambda wildcards: expand(
             "results/{{seq_platform}}/{protocol}/result_files/protocol_df_{{plot_type}}.parquet",
-            protocol=config["data"][wildcards.seq_platform],
+            protocol=config["data"]["Illumina_pe"],
         ),
     output:
         plot=report(
             "results/{seq_platform}/plots/comparisions.{plot_type}",
-            category=lambda wildcards: f"{wildcards.seq_platform}",
+            category=lambda wildcards: "Illumina_pe",
             subcategory="All Comparisions",
             labels=lambda wildcards: {"type": "general comparisions", "method": "all"},
         ),
@@ -208,8 +205,8 @@ rule compare_samples:
         "logs/plots/{seq_platform}/compare_samples_{plot_type}.log",
     params:
         plot_type=config["plot_type"],
-        prob_pres_threshhold=config["prob_pres_threshhold"],
         methods=lambda wildcards: config["ref_tools"][wildcards.seq_platform]
         + ["varlo"],
+        correlation_method=config["correlation_method"],
     script:
         "../scripts/compare_samples.py"

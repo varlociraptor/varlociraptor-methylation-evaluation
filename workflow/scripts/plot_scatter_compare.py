@@ -141,9 +141,9 @@ ref_file = snakemake.input["ref_tool"]
 ref_tool = os.path.splitext(os.path.basename(ref_file))[0].capitalize()
 
 varlo_df = pd.read_parquet(varlo_file, engine="pyarrow")
-varlo_df = varlo_df[
-    varlo_df["prob_present"] >= float(snakemake.params["prob_pres_threshhold"])
-]
+# varlo_df = varlo_df[
+#     varlo_df["prob_present"] >= float(snakemake.params["prob_pres_threshhold"])
+# ]
 ref_df = pd.read_parquet(ref_file, engine="pyarrow")
 
 

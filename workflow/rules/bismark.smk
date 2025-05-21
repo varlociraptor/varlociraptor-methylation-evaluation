@@ -3,7 +3,7 @@ rule bismark_copy_chromosome:
     input:
         "resources/genome.fasta",
     output:
-        "resources/ref_tools/bismark/genome.fasta",
+        "resources/ref_tools/bismark/hg/genome.fasta",
     conda:
         "../envs/bismark.yaml"
     log:
@@ -18,9 +18,9 @@ rule bismark_copy_chromosome:
 # TODO: Gives missing output exception
 rule bismark_prepare_genome:
     input:
-        "resources/ref_tools/bismark/genome.fasta",
+        "resources/ref_tools/bismark/hg/genome.fasta",
     output:
-        directory("resources/ref_tools/bismark/Bisulfite_Genome"),
+        directory("resources/ref_tools/bismark/hg/Bisulfite_Genome"),
         # directory("resources/ref_tools/bismark/{chrom}/Bisulfite_Genome"),
     conda:
         "../envs/bismark.yaml"
@@ -34,28 +34,13 @@ rule bismark_prepare_genome:
 
 rule bismark_align:
     input:
-        # bisulfite_folder=expand(
-        #     "resources/ref_tools/bismark/{chrom}/Bisulfite_Genome",
-        #     chrom=config["seq_platforms"]["Illumina_pe"],
-        # ),
-        # chrom=expand(
-        #     "resources/ref_tools/bismark/{chrom}/",
-        #     chrom=config["seq_platforms"]["Illumina_pe"],
-        # ),
-        # chromosome=expand(
-        #     "resources/ref_tools/bismark/{chrom}/chromosome_{chrom}.fasta",
-        #     chrom=config["seq_platforms"]["Illumina_pe"],
-        # ),
-        bisulfite_folder=expand(
-            "resources/ref_tools/bismark/Bisulfite_Genome",
-            chrom=config["seq_platforms"]["Illumina_pe"],
-        ),
-        chrom="resources/ref_tools/bismark/",
-        chromosome="resources/ref_tools/bismark/genome.fasta",
-        reads1="resources/Illumina_pe/{protocol, [^(?!simulated_data$)]}/{SRA}/{SRA}_1_trimmed.fastq",
-        reads2="resources/Illumina_pe/{protocol, [^(?!simulated_data$)]}/{SRA}/{SRA}_2_trimmed.fastq",
+        bisulfite_folder="resources/ref_tools/bismark/hg/Bisulfite_Genome",
+        chrom="resources/ref_tools/bismark/hg/",
+        chromosome="resources/ref_tools/bismark/hg/genome.fasta",
+        reads1="resources/Illumina_pe/{protocol, [^(?!simulated_data$)]}/{SRA}/{SRA}_1.fastq",
+        reads2="resources/Illumina_pe/{protocol, [^(?!simulated_data$)]}/{SRA}/{SRA}_2.fastq",
     output:
-        "resources/ref_tools/bismark/alignment/{protocol}/{SRA}/{SRA}_1_trimmed_bismark_bt2_pe.bam",
+        "resources/ref_tools/bismark/alignment/{protocol}/{SRA}/{SRA}_1_bismark_bt2_pe.bam",
     conda:
         "../envs/bismark.yaml"
     log:
@@ -68,6 +53,7 @@ rule bismark_align:
         """
 
 
+# TODO: Do not accept protocol=simulated_data
 rule bismark_merge_bams:
     input:
         get_protocol_sra_bismark,
@@ -77,10 +63,45 @@ rule bismark_merge_bams:
         "../envs/samtools.yaml"
     log:
         "logs/bismark/{protocol}/merge_bams.log",
+    # wildcard_constraints:
+    #     protocol="simulated_data",
     shell:
         """
         echo {input} 2> {log}
         samtools merge -n {output} {input} 2> {log}
+        """
+
+
+rule bismark_copy_chromosome_simulated:
+    input:
+        "resources/chromosome_{chrom}.fasta",
+    output:
+        "resources/ref_tools/bismark/{chrom}/chromosome_{chrom}.fasta",
+    conda:
+        "../envs/bismark.yaml"
+    log:
+        "logs/bismark/copy_chromosome_simulated_{chrom}.log",
+    shell:
+        """
+        mkdir -p $(dirname {output}) 2> {log}
+        cp {input} {output} 2> {log}
+        """
+
+
+# TODO: Gives missing output exception
+rule bismark_prepare_genome_simulated:
+    input:
+        "resources/ref_tools/bismark/{chrom}/chromosome_{chrom}.fasta",
+    output:
+        directory("resources/ref_tools/bismark/{chrom}/Bisulfite_Genome"),
+        # directory("resources/ref_tools/bismark/{chrom}/Bisulfite_Genome"),
+    conda:
+        "../envs/bismark.yaml"
+    log:
+        "logs/bismark/prepare_genome_simulated_{chrom}.log",
+    shell:
+        """
+        bismark_genome_preparation --verbose $(dirname {output}) 2> {log}
         """
 
 

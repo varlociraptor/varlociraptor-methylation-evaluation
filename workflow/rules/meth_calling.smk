@@ -119,19 +119,19 @@ rule gather_calls:
             "results/{{seq_platform}}/{{protocol}}/calls_{scatteritem}.vcf"
         ),
     output:
-        "results/{seq_platform}/{protocol}/varlo.vcf",
+        "results/{seq_platform}/{protocol}/varlo.bed",
     log:
         "logs/varlociraptor/{seq_platform}/{protocol}/gather_calls.log",
     shell:
         "cat {input} > {output} 2> {log}"
 
 
-rule rename_varlo_output:
-    input:
-        "results/{seq_platform}/{protocol}/varlo.vcf",
-    output:
-        "results/{seq_platform}/{protocol}/result_files/varlo.bed",
-    log:
-        "logs/varlociraptor/{seq_platform}/{protocol}/rename_varlo_output.log",
-    shell:
-        "mv {input} {output} 2> {log}"
+# rule rename_varlo_output:
+#     input:
+#         "results/{seq_platform}/{protocol}/varlo.vcf",
+#     output:
+#         "results/{seq_platform}/{protocol}/result_files/varlo.bed",
+#     log:
+#         "logs/varlociraptor/{seq_platform}/{protocol}/rename_varlo_output.log",
+#     shell:
+#         "mv {input} {output}"

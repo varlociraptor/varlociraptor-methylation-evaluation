@@ -13,8 +13,8 @@ scattergather:
     split_candidates=config["scatter_number"],
 
 
-# inputflags:
-#     access.sequential
+inputflags:
+    access.sequential
 
 chromosome_by_seq_platform = config["seq_platforms"]
 chromosomes = set(chromosome for chromosome in config["seq_platforms"].values())

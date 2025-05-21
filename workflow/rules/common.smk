@@ -5,7 +5,7 @@ def compute_results():
         needed_inputs.append(diff_plots(seq_platform))
         needed_inputs.append(precision_recall(seq_platform))
         needed_inputs.append(comparision_plots_tools(seq_platform))
-        needed_inputs.append(comparision_plots_samples(seq_platform))
+    needed_inputs.append(comparision_plots_samples("Illumina_pe"))
 
     return needed_inputs
 
@@ -28,6 +28,7 @@ def plots(seq_platform):
             )
         )
         for protocol in protocols
+        # for method in list(ref_methods)
         for method in list(ref_methods + ["varlo"])
         for bin in list(range(0, config["cov_bins"][seq_platform])) + ["all"]
     ]
@@ -86,7 +87,7 @@ def get_protocol_sra_bismark(wildcards):
     base_path = Path("resources") / "ref_tools/bismark/alignment" / wildcards.protocol
     accession_numbers = config["data"]["Illumina_pe"][wildcards.protocol]
     return [
-        str(base_path / SRA / (SRA + "_1_trimmed_bismark_bt2_pe.bam"))
+        str(base_path / SRA / (SRA + "_1_bismark_bt2_pe.bam"))
         for SRA in accession_numbers
     ]
 
@@ -102,6 +103,7 @@ def get_ref_methods(wildcards):
 
 def get_precision_recall_csvs(wildcards):
     base_path = Path("results") / wildcards.seq_platform / wildcards.protocol / "plots"
+    # methods = config["ref_tools"][wildcards.seq_platform]
     methods = config["ref_tools"][wildcards.seq_platform] + ["varlo"]
     cov_bins = [str(i) for i in range(config["cov_bins"][wildcards.seq_platform])] + [
         "all"

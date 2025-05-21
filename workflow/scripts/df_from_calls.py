@@ -132,9 +132,17 @@ def read_tool_file(filepath, file_name):
                 else:
                     meth_rate = float(values[af_index]) * 100
 
-                match = re.search(r"PROB_HIGH=([\d\.]+)", info_field)
+                prob_high = re.search(r"PROB_HIGH=([\d\.]+)", info_field)
+                prob_low = re.search(r"PROB_LOW=([\d\.]+)", info_field)
+                prob_absent = re.search(r"PROB_ABSENT=([\d\.]+)", info_field)
                 try:
-                    prob_present = 10 ** (-float(match.group(1)) / 10)
+                    # TODO: Shoud I inclue PROB_LOW?
+                    prob_high = 10 ** (-float(prob_high.group(1)) / 10)
+                    prob_low = 10 ** (-float(prob_low.group(1)) / 10)
+                    prob_present = prob_high + prob_low
+                    prob_absent = 10 ** (-float(prob_absent.group(1)) / 10)
+                    if prob_present < snakemake.params["prob_pres_threshhold"] and prob_absent < snakemake.params["prob_absent_threshhold"]:
+                        continue
                 except Exception:
                     print(
                         f"Prob present not found on chrom {chrom}, position {position}"
@@ -268,8 +276,8 @@ else:
     truth_df = read_truth_file(snakemake.input["true_meth"][0])
     cov_df = read_coverage_file(snakemake.input["coverage"])
 
-df = pd.merge(truth_df, tool_df, on=["chromosome", "position"], how="left")
-df = pd.merge(df, cov_df, on=["chromosome", "position"], how="left")
+df = pd.merge(truth_df, tool_df, on=["chromosome", "position"], how="inner")
+df = pd.merge(df, cov_df, on=["chromosome", "position"], how="inner")
 df.fillna(0, inplace=True)
 df = df[df["coverage"] > 0]
 df["bias"] = df["bias"].astype(str)

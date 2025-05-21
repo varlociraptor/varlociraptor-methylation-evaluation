@@ -82,9 +82,10 @@ for tool_file in snakemake.input["tools"]:
     tool_names.append(tool_name)
 
     df = pd.read_parquet(tool_file, engine="pyarrow")
-
+    print(tool_name, df[df["position"] == 41253420], file=sys.stderr)
     if tool_name == "varlo":
-        df = df[df["prob_present"] >= float(snakemake.params["prob_pres_threshhold"])]
+        # df = df[df["prob_present"] >= float(snakemake.params["prob_pres_threshhold"])]
+        # TODO: Ist das so richtig?
         df = df[df["bias"] == "normal"]
     df = df[
         [
@@ -110,6 +111,10 @@ df_merged = reduce(
     ),
     tool_dfs,
 )
+print(
+    tool_name, "merged", df_merged[df_merged["position"] == 41253420], file=sys.stderr
+)
+
 df_merged.to_parquet(
     snakemake.output["protocol_df"], engine="pyarrow", compression="snappy"
 )
