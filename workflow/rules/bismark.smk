@@ -1,9 +1,11 @@
 
+
+
 rule bismark_copy_chromosome:
     input:
         "resources/genome.fasta",
     output:
-        "resources/ref_tools/bismark/hg/genome.fasta",
+        "resources/ref_tools/bismark/genome.fasta",
     conda:
         "../envs/bismark.yaml"
     log:
@@ -18,9 +20,9 @@ rule bismark_copy_chromosome:
 # TODO: Gives missing output exception
 rule bismark_prepare_genome:
     input:
-        "resources/ref_tools/bismark/hg/genome.fasta",
+        "resources/ref_tools/bismark/genome.fasta",
     output:
-        directory("resources/ref_tools/bismark/hg/Bisulfite_Genome"),
+        directory("resources/ref_tools/bismark/Bisulfite_Genome"),
         # directory("resources/ref_tools/bismark/{chrom}/Bisulfite_Genome"),
     conda:
         "../envs/bismark.yaml"
@@ -34,11 +36,10 @@ rule bismark_prepare_genome:
 
 rule bismark_align:
     input:
-        bisulfite_folder="resources/ref_tools/bismark/hg/Bisulfite_Genome",
-        chrom="resources/ref_tools/bismark/hg/",
-        chromosome="resources/ref_tools/bismark/hg/genome.fasta",
-        reads1="resources/Illumina_pe/{protocol, [^(?!simulated_data$)]}/{SRA}/{SRA}_1.fastq",
-        reads2="resources/Illumina_pe/{protocol, [^(?!simulated_data$)]}/{SRA}/{SRA}_2.fastq",
+        bisulfite_folder="resources/ref_tools/bismark/Bisulfite_Genome",
+        chromosome="resources/ref_tools/bismark/genome.fasta",
+        reads1="resources/Illumina_pe/{protocol, [^(?!simulated_data$)]}/{SRA}/{SRA}_1_trimmed.fastq",
+        reads2="resources/Illumina_pe/{protocol, [^(?!simulated_data$)]}/{SRA}/{SRA}_2_trimmed.fastq",
     output:
         "resources/ref_tools/bismark/alignment/{protocol}/{SRA}/{SRA}_1_bismark_bt2_pe.bam",
     conda:
@@ -49,7 +50,7 @@ rule bismark_align:
     shell:
         """
         mkdir -p $(dirname {output}) 2> {log}
-        bismark --genome {input.chrom} -1 {input.reads1} -2 {input.reads2} -o $(dirname {output}) --parallel {threads} 2> {log}
+        bismark --genome {input.chromosome} -1 {input.reads1} -2 {input.reads2} -o $(dirname {output}) --parallel {threads} 2> {log}
         """
 
 
@@ -120,11 +121,11 @@ rule bismark_align_simulated:
             chrom=config["seq_platforms"]["Illumina_pe"],
         ),
         reads1=expand(
-            "resources/Illumina_pe/simulated_data/chromosome_{chrom}_f1.fastq",
+            "resources/Illumina_pe/simulated_data/chromosome_{chrom}_f1_trimmed.fastq",
             chrom=config["seq_platforms"]["Illumina_pe"],
         ),
         reads2=expand(
-            "resources/Illumina_pe/simulated_data/chromosome_{chrom}_f2.fastq",
+            "resources/Illumina_pe/simulated_data/chromosome_{chrom}_f2_trimmed.fastq",
             chrom=config["seq_platforms"]["Illumina_pe"],
         ),
     output:

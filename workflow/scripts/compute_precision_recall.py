@@ -14,7 +14,7 @@ alt.data_transformers.enable("vegafusion")
 pd.set_option("display.max_columns", None)
 
 # Threshold for methylation (When do we say a site is methylated. 0 is bad since the truth (avg bedgraph) has nearly never meth rates of 0)
-methylation_threshold = 5
+methylation_threshold = snakemake.params["meth_threshold"]
 
 
 def compute_precision_recall(
@@ -44,7 +44,7 @@ def compute_precision_recall(
     cov_bin_size = int(snakemake.params["cov_bin_size"])
 
     if last:
-        coverage_str = f"{cov_bin * cov_bin_size}-max_cov"
+        coverage_str = f"{cov_bin* cov_bin_size}-max_cov"
     elif cov_bin == "all":
         coverage_str = "All coverages"
     else:

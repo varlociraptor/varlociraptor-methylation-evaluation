@@ -4,7 +4,7 @@ rule pb_CpG_download:
         "resources/ref_tools/pb-CpG-tools/pb-CpG-tools-v2.3.1-x86_64-unknown-linux-gnu/bin/aligned_bam_to_cpg_scores",
         "resources/ref_tools/pb-CpG-tools/pb-CpG-tools-v2.3.1-x86_64-unknown-linux-gnu/models/pileup_calling_model.v1.tflite",
     log:
-        "../logs/pb_CpG/download.log",
+        "logs/pb_CpG/download.log",
     conda:
         "../envs/shell_cmds.yaml"
     shell:

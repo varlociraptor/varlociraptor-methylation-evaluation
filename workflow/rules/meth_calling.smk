@@ -3,7 +3,7 @@ rule download_varlociraptor:
     output:
         "resources/tools/varlociraptor/Cargo.toml",
     log:
-        "../logs/varlociraptor/download.log",
+        "logs/varlociraptor/download.log",
     conda:
         "../envs/shell_cmds.yaml"
     shell:
@@ -22,7 +22,7 @@ rule build_varlociraptor:
     output:
         "resources/tools/varlociraptor/target/debug/varlociraptor",
     log:
-        "../logs/varlociraptor/build.log",
+        "logs/varlociraptor/build.log",
     conda:
         "../envs/varlociraptor.yaml"
     shell:
@@ -119,7 +119,7 @@ rule gather_calls:
             "results/{{seq_platform}}/{{protocol}}/calls_{scatteritem}.vcf"
         ),
     output:
-        "results/{seq_platform}/{protocol}/varlo.bed",
+        "results/{seq_platform}/{protocol}/result_files/varlo.bed",
     log:
         "logs/varlociraptor/{seq_platform}/{protocol}/gather_calls.log",
     shell:

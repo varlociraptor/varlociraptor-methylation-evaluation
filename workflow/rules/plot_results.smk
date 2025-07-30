@@ -133,6 +133,7 @@ rule compute_precision_recall:
         cov_bin=lambda wildcards: wildcards.cov_bin,
         cov_bin_size=lambda wildcards: config["cov_bin_size"][wildcards.seq_platform],
         meth_type=config["meth_type"],
+        meth_threshold=config["meth_threshold"],
     log:
         "logs/plots/{seq_platform}/{protocol}/compute_precision_recall_{method}_{cov_bin}.log",
     script:
@@ -188,16 +189,17 @@ rule compare_all_tools:
 
 rule compare_samples:
     input:
-        samples=lambda wildcards: expand(
+        samples=expand(
             "results/{{seq_platform}}/{protocol}/result_files/protocol_df_{{plot_type}}.parquet",
             protocol=config["data"]["Illumina_pe"],
         ),
     output:
+        table="results/{seq_platform}/plots/replicates_{plot_type}.hd5",
         plot=report(
             "results/{seq_platform}/plots/comparisions.{plot_type}",
-            category=lambda wildcards: "Illumina_pe",
+            category="Illumina_pe",
             subcategory="All Comparisions",
-            labels=lambda wildcards: {"type": "general comparisions", "method": "all"},
+            labels={"type": "general comparisions", "method": "all"},
         ),
     conda:
         "../envs/plot.yaml"
@@ -210,3 +212,30 @@ rule compare_samples:
         correlation_method=config["correlation_method"],
     script:
         "../scripts/compare_samples.py"
+
+
+rule scatter_replicates:
+    input:
+        "results/{seq_platform}/plots/replicates_{plot_type}.hd5",
+    output:
+        report(
+            "results/{seq_platform}/plots/{protocol}_scatter.{plot_type}",
+            category="Illumina_pe",
+            subcategory="All Comparisions",
+            labels=lambda wildcards: {
+                "type": "general comparisions",
+                "method": wildcards.protocol,
+            },
+        ),
+    conda:
+        "../envs/plot.yaml"
+    # log:
+    #     "logs/plots/{seq_platform}/scatter_replicates_{protocol}_{plot_type}.log",
+    params:
+        methods=lambda wildcards: config["ref_tools"][wildcards.seq_platform]
+        + ["varlo"],
+        plot_type=config["plot_type"],
+        protocol=lambda wildcards: wildcards.protocol,
+        correlation_method=config["correlation_method"],
+    script:
+        "../scripts/scatter_compare.py"

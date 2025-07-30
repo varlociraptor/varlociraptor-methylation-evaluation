@@ -12,6 +12,19 @@ rule candidate_to_vcf:
         "bcftools view {input} > {output} 2> {log}"
 
 
+rule candidates_vcf:
+    input:
+        "resources/{chrom}/candidates.bcf",
+    output:
+        "resources/{chrom}/candidates.vcf",
+    conda:
+        "../envs/samtools.yaml"
+    log:
+        "logs/mosdepth/{chrom}/candidates_vcf.log",
+    shell:
+        "bcftools view -o {output} {input} 2> {log}"
+
+
 rule vcf_to_bed:
     input:
         "resources/{chrom}/candidates.vcf",
@@ -59,7 +72,5 @@ rule mosdepth_unzip_results:
         "logs/mosdepth/{seq_platform}/{protocol}/unzip_results.log",
     shell:
         """
-        cp {input} tmpfile.gz
-        gunzip -k tmpfile.gz
-        mv tmpfile {output}
+        gunzip -c {input} > {output} 2> {log}
         """

@@ -41,7 +41,6 @@ include: "rules/pbCpgTools.smk"
 include: "rules/meth_calling.smk"
 include: "rules/compute_candidates.smk"
 
-
 rule all:
     input:
         compute_results(),

@@ -61,7 +61,15 @@ def comparision_plots_tools(seq_platform):
 
 def comparision_plots_samples(seq_platform):
     base_path = Path("results") / seq_platform
-    ref_methods = config["ref_tools"][seq_platform]
+    plot_type = config["plot_type"]
+    return [
+        f"{base_path}/plots/{protocol}_scatter.{plot_type}"
+        for protocol in config["protocols"]
+    ]
+
+
+def comparision_plots_scatter_sample(seq_platform):
+    base_path = Path("results") / seq_platform
     return [str(base_path / ("plots/comparisions." + config["plot_type"]))]
 
 

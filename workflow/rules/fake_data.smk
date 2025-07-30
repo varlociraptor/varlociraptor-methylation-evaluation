@@ -3,7 +3,7 @@ rule mason_download:
         mason_dir=directory("resources/tools/seqan/apps/mason2"),
         mason="resources/tools/seqan/apps/mason2/methylation_levels.h",
     log:
-        "../logs/mason/download.log",
+        "logs/mason/download.log",
     conda:
         "../envs/shell_cmds.yaml"
     shell:

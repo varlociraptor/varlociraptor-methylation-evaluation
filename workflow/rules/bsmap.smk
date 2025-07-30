@@ -4,7 +4,7 @@ rule bsmap_download:
     output:
         "resources/ref_tools/bsMap/methratio.py",
     log:
-        "../logs/bsmap/download.log",
+        "logs/bsmap/download.log",
     conda:
         "../envs/shell_cmds.yaml"
     shell:
@@ -37,7 +37,7 @@ rule bsmap_compute_meth:
     shell:
         """
         cp {input.alignment} temp.bam 2> {log}
-        bsmap -a temp.bam -b temp.bam -d {input.genome} -o out.sam -p {threads} -w 100  -v 0.07 -m 50 -x 300 2> {log}
+        bsmap -a temp.bam -b temp.bam -d {input.genome} -o out.sam -p {threads} -w 100  -v 0.07 -m 50 -x 300
         mv out.sam $(dirname {output.out}) 2> {log}
         """
 

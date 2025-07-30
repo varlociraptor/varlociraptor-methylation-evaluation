@@ -8,6 +8,7 @@ sys.stderr = open(snakemake.log[0], "w")
 
 # Show all columns during debugging
 pd.set_option("display.max_columns", None)
+pd.set_option("display.max_rows", 1000)
 
 
 def correlation_method(df, sample_name):
@@ -20,7 +21,6 @@ def correlation_method(df, sample_name):
     for method in snakemake.params["methods"]:
         if method == "varlo":
             continue
-        print(df)
         pearson = df["varlo_methylation"].corr(
             df[f"{method}_methylation"], method="pearson"
         )
@@ -97,11 +97,11 @@ def plot_correlation(df, corr_method):
                 scale=alt.Scale(scheme="redyellowgreen", domain=[0, 1]),
                 legend=alt.Legend(title=corr_method),
             ),
-            tooltip=[
-                "sample",
-                "comparison",
-                alt.Tooltip(f"{corr_method}_corr:Q", format=".4f"),
-            ],
+            # tooltip=[
+            #     "sample",
+            #     "comparison",
+            #     alt.Tooltip(f"{corr_method}_corr:Q", format=".4f"),
+            # ],
         )
         .properties(
             title=f"{corr_method.capitalize()} Correlation",
@@ -131,7 +131,6 @@ def plot_scatter_replicates(df_dict, corr_method):
 
     for sample_name, df in df_dict.items():
         sample_charts = []
-
         for method in snakemake.params["methods"]:
             x_col = f"{method}_methylation_rep1"
             y_col = f"{method}_methylation_rep2"
@@ -149,7 +148,7 @@ def plot_scatter_replicates(df_dict, corr_method):
                 .encode(
                     x=alt.X(x_col, title=f"{method} Rep1"),
                     y=alt.Y(y_col, title=f"{method} Rep2"),
-                    tooltip=["chromosome", "position", x_col, y_col],
+                    # tooltip=["chromosome", "position", x_col, y_col],
                 )
                 .properties(
                     title=f"Datapoints {len(df_temp)}",
@@ -181,7 +180,6 @@ for sample_file in snakemake.input["samples"]:
 
     # Combine replicate DataFrames
     samplename = "_".join(replicate_name.split("_")[:-1])
-    print(replicate_name, df[df["position"] == 41253420], file=sys.stderr)
     if samplename in replicate_dfs:
         replicate_dfs[samplename] = pd.merge(
             replicate_dfs[samplename],
@@ -211,9 +209,10 @@ chart_samples_pearson = plot_correlation(correlation_samples, "pearson")
 chart_samples_spearman = plot_correlation(correlation_samples, "spearman")
 chart_samples_rmse = plot_correlation(correlation_samples, "rmse")
 
-scatter_all_pearson = plot_scatter_replicates(replicate_dfs, "pearson")
-# scatter_all_spearman = plot_scatter_replicates(replicate_dfs, "spearman")
-# Save charts
+
+with pd.HDFStore(snakemake.output["table"]) as store:
+    for key, df in replicate_dfs.items():
+        store[key] = df
 
 # Horizontally combine method correlation charts
 charts_methods = alt.hconcat(chart_methods_pearson, chart_methods_spearman).properties(
@@ -231,9 +230,12 @@ charts_samples = alt.hconcat(
 full_chart = alt.vconcat(
     charts_methods,
     charts_samples,
-    scatter_all_pearson,
     # scatter_all_spearman,
 )
 
 # Save the full chart
-full_chart.save(snakemake.output["plot"], scale_factor=2.0)
+full_chart.save(
+    snakemake.output["plot"],
+    embed_options={"actions": False},
+    inline=False,  # <- wichtig
+)

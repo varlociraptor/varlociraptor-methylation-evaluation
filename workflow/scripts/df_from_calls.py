@@ -1,6 +1,7 @@
 import os
 import re
 import pandas as pd
+import sys
 
 
 # Redirect standard error to snakemake log file
@@ -132,20 +133,33 @@ def read_tool_file(filepath, file_name):
                 else:
                     meth_rate = float(values[af_index]) * 100
 
-                prob_high = re.search(r"PROB_HIGH=([\d\.]+)", info_field)
-                prob_low = re.search(r"PROB_LOW=([\d\.]+)", info_field)
-                prob_absent = re.search(r"PROB_ABSENT=([\d\.]+)", info_field)
+                info_dict = dict(
+                    item.split("=", 1)
+                    for item in info_field.strip().split(";")
+                    if "=" in item
+                )
+
+                # Zugriff auf Werte
+                prob_high = info_dict["PROB_HIGH"]
+                prob_low = info_dict["PROB_LOW"]
+                prob_absent = info_dict["PROB_ABSENT"]
+
+
                 try:
                     # TODO: Shoud I inclue PROB_LOW?
-                    prob_high = 10 ** (-float(prob_high.group(1)) / 10)
-                    prob_low = 10 ** (-float(prob_low.group(1)) / 10)
+                    prob_high = 10 ** (-float(prob_high) / 10)
+                    prob_low = 10 ** (-float(prob_low) / 10)
                     prob_present = prob_high + prob_low
-                    prob_absent = 10 ** (-float(prob_absent.group(1)) / 10)
-                    if prob_present < snakemake.params["prob_pres_threshhold"] and prob_absent < snakemake.params["prob_absent_threshhold"]:
+                    prob_absent = 10 ** (-float(prob_absent) / 10)
+                    if (
+                        prob_present < snakemake.params["prob_pres_threshhold"]
+                        and prob_absent < snakemake.params["prob_absent_threshhold"]
+                    ):
                         continue
                 except Exception:
                     print(
-                        f"Prob present not found on chrom {chrom}, position {position}"
+                        f"Prob present not found on chrom {chrom}, position {position}",
+                        file=sys.stderr,
                     )
                     continue
 

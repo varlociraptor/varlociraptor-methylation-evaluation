@@ -9,3 +9,5 @@ dependencies:
   - cyvcf2 =0.31
   - pysam =0.23
   - scipy =1.15
+  - altair_saver= 0.5
+  - pytables= 3.10.2

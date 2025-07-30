@@ -87,12 +87,14 @@ for tool_file in snakemake.input["tools"]:
         # df = df[df["prob_present"] >= float(snakemake.params["prob_pres_threshhold"])]
         # TODO: Ist das so richtig?
         df = df[df["bias"] == "normal"]
+    print(df, file=sys.stderr)
     df = df[
         [
             "chromosome",
             "position",
             "tool_methylation",
             "tool_coverage",
+            "prob_present",
             "true_methylation",
         ]
     ].copy()
@@ -100,6 +102,7 @@ for tool_file in snakemake.input["tools"]:
         columns={
             "tool_methylation": f"{tool_name}_methylation",
             "tool_coverage": f"{tool_name}_coverage",
+            "prob_present": f"{tool_name}_prob_present",
         }
     )
     tool_dfs.append(df)

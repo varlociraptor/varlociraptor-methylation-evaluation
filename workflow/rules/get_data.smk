@@ -85,7 +85,7 @@ rule get_fastq_pe:
     # wildcard_constraints:
     #     protocol="^(?!simulated_data$).*",
     wrapper:
-        "v6.0.1/bio/sra-tools/fasterq-dump"
+        "v7.1.0/bio/sra-tools/fasterq-dump"
 
 
 rule get_fastq_se:
@@ -97,7 +97,7 @@ rule get_fastq_se:
         extra="--skip-technical",
     threads: 6
     wrapper:
-        "v3.3.3/bio/sra-tools/fasterq-dump"
+        "v7.1.0/bio/sra-tools/fasterq-dump"
 
 
 rule trim_fastq_pe:
@@ -221,7 +221,7 @@ rule get_nanopore_data:
         """
         set +o pipefail;
         mkdir -p $(dirname {output}) 2> {log}
-        samtools view -b {params.url} | head -n 200000 >> {output}  2> {log}
+        samtools view -h {params.url} | head -n 200000 | samtools view -bo {output} - 2> {log}
         """
 
 
