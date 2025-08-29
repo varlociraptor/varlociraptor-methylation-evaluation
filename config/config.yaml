@@ -11,7 +11,7 @@ sample:
 seq_platforms: 
   PacBio: 21
   Illumina_pe: 21
-  Nanopore: 1
+  Nanopore: 21
 
 # Chrom for simulated reads. Must be given even if we do not want to simulate since it is used in input files. 
 # TODO: Fix this
@@ -60,12 +60,37 @@ data:
     # No example data found
   PacBio:
     data1: [dummySRA_pacBio]
+    replicate1: [pb_rep1]
+    replicate2: [pb_rep2]
+    replicate3: [pb_rep3]
   Nanopore:
-    data1: [dummySRA_nanopore]
+    # data1: [dummySRA_nanopore]
+    replicate1: [np_rep1]
+    replicate2: [np_rep2]
 
-
+# For more information visit: https://downloads.pacbcloud.com/public/dataset/HG002-CpG-methylation-202202/
 dummySRA_pacBio: "https://downloads.pacbcloud.com/public/dataset/HG002-CpG-methylation-202202/HG002.GRCh38.haplotagged.bam"
+
+# Here could be more pacbio data:
+# https://downloads.pacbcloud.com/public/2024Q4/Vega/HG002/
+
+# überblick PacBio Data
+
+# Here I have two pacbio replicates:
+# https://downloads.pacbcloud.com/public/revio/2024Q4/WGS/GIAB_trio/
+
+# Here I have three:
+# https://downloads.pacbcloud.com/public/revio/2022Q4/?utm_source=Website&utm_medium=webpage&utm_term=HomoSapiens-GIAB-trio-HG002-4&utm_content=datasets&utm_campaign=0000-Website-Leads
+pb_rep1: https://downloads.pacbcloud.com/public/revio/2022Q4/HG002-rep1/analysis/HG002.m84011_220902_175841_s1.GRCh38.bam
+pb_rep2: https://downloads.pacbcloud.com/public/revio/2022Q4/HG002-rep2/analysis/HG002.m84005_220919_232112_s2.GRCh38.bam
+pb_rep3: https://downloads.pacbcloud.com/public/revio/2022Q4/HG002-rep3/analysis/HG002.m84005_220827_014912_s1.GRCh38.bam
+
+# For more information look at: https://epi2me.nanoporetech.com/gm24385-5mc/
 dummySRA_nanopore: "https://ont-open-data.s3.amazonaws.com/gm24385_mod_2021.09/extra_analysis/all.bam"
+np_rep1: https://42basepairs.com/download/s3/ont-open-data/giab_2025.01/basecalling/hac/HG002/PAW70337/calls.sorted.bam
+np_rep2: https://42basepairs.com/download/s3/ont-open-data/giab_2025.01/basecalling/hac/HG002/PAW71238/calls.sorted.bam
+# Here could be another dataset:
+# https://epi2me.nanoporetech.com/giab-2025.01/
 
 bedGraphs_HG002:
   - GSM5649436_TruSeq_HG002_LAB01_REP02

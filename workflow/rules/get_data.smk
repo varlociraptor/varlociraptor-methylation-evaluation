@@ -135,14 +135,17 @@ rule get_pacbio_data:
         alignment="resources/PacBio/{protocol}/{SRA}/alignment.bam",
     params:
         url=lambda wildcards: config[str(wildcards.SRA)],
+        chromosome= "chr" + str(config["seq_platforms"]["PacBio"])
     log:
         "logs/data/{protocol}/get_pacbio_data_{SRA}.log",
     resources:
         mem_mb=4096,
     conda:
-        "../envs/python.yaml"
-    script:
-        "../scripts/get_pacbio_data.py"
+        "../envs/samtools.yaml"
+    
+    shell:
+        "samtools view -b {params.url} {params.chromosome} > {output.alignment}"
+        # "../scripts/get_pacbio_data.py"
 
 
 # rule get_nanopore_header:
@@ -206,35 +209,55 @@ rule get_pacbio_data:
 #         """
 
 
+# rule get_nanopore_data:
+#     output:
+#         "resources/Nanopore/{protocol}/{SRA}/alignment.bam",
+#     params:
+#         url=lambda wildcards: config[str(wildcards.SRA)],
+#     resources:
+#         mem_mb=4096,
+#     log:
+#         "logs/data/{protocol}/get_nanopore_data_{SRA}.log",
+#     conda:
+#         "../envs/samtools.yaml"
+#     shell:
+#         """
+#         set +o pipefail;
+#         mkdir -p $(dirname {output}) 2> {log}
+#         samtools view -h {params.url} | head -n 200000 | samtools view -bo {output} - 2> {log}
+#         """
+
+
+# rule nanopore_index:
+#     output:
+#         alignment="resources/Nanopore/{protocol}/{SRA}/alignment.bam.bai",
+#     params:
+#         url=lambda wildcards: config[str(wildcards.SRA)],
+#     resources:
+#         mem_mb=4096,
+#     conda:
+#         "../envs/samtools.yaml"
+#     log:
+#         "logs/data/{protocol}/nanopore_index_{SRA}.log",
+#     shell:
+#         "samtools view -b {params.url} | samtools index - {output} 2> {log}"
+
+# TODO: Does not work for replicate2. You have to download this manually with wget right now
 rule get_nanopore_data:
     output:
-        "resources/Nanopore/{protocol}/{SRA}/alignment.bam",
+        alignment=        "resources/Nanopore/{protocol}/{SRA}/alignment.bam",
+
     params:
         url=lambda wildcards: config[str(wildcards.SRA)],
-    resources:
-        mem_mb=4096,
+        chromosome= "chr" + str(config["seq_platforms"]["Nanopore"])
     log:
         "logs/data/{protocol}/get_nanopore_data_{SRA}.log",
-    conda:
-        "../envs/samtools.yaml"
-    shell:
-        """
-        set +o pipefail;
-        mkdir -p $(dirname {output}) 2> {log}
-        samtools view -h {params.url} | head -n 200000 | samtools view -bo {output} - 2> {log}
-        """
-
-
-rule nanopore_index:
-    output:
-        alignment="resources/Nanopore/{protocol}/{SRA}/alignment.bam.bai",
-    params:
-        url=lambda wildcards: config[str(wildcards.SRA)],
     resources:
         mem_mb=4096,
     conda:
         "../envs/samtools.yaml"
-    log:
-        "logs/data/{protocol}/nanopore_index_{SRA}.log",
+    
     shell:
-        "samtools view -b {params.url} | samtools index - {output} 2> {log}"
+        "samtools view -b {params.url} {params.chromosome} > {output.alignment}"
+
+

@@ -104,6 +104,7 @@ def read_tool_file(filepath, file_name):
     records = []
     with open(filepath, "r") as f:
         for line in f:
+            print(line)
             if line.startswith("#") or line.startswith("track"):
                 continue
             parts = line.strip().split("\t")
@@ -144,7 +145,6 @@ def read_tool_file(filepath, file_name):
                 prob_low = info_dict["PROB_LOW"]
                 prob_absent = info_dict["PROB_ABSENT"]
 
-
                 try:
                     # TODO: Shoud I inclue PROB_LOW?
                     prob_high = 10 ** (-float(prob_high) / 10)
@@ -153,7 +153,7 @@ def read_tool_file(filepath, file_name):
                     prob_absent = 10 ** (-float(prob_absent) / 10)
                     if (
                         prob_present < snakemake.params["prob_pres_threshhold"]
-                        and prob_absent < snakemake.params["prob_absent_threshhold"]
+                        or prob_absent < snakemake.params["prob_absent_threshhold"]
                     ):
                         continue
                 except Exception:
@@ -290,10 +290,17 @@ else:
     truth_df = read_truth_file(snakemake.input["true_meth"][0])
     cov_df = read_coverage_file(snakemake.input["coverage"])
 
+print("Tool DataFrame shape:", tool_df.head(), file=sys.stderr)
+print("Truth DataFrame shape:", truth_df.head(), file=sys.stderr)
 df = pd.merge(truth_df, tool_df, on=["chromosome", "position"], how="inner")
+print("DataFrame shape:", df.head(), file=sys.stderr)
+
 df = pd.merge(df, cov_df, on=["chromosome", "position"], how="inner")
+print("DataFrame2 shape:", df.head(), file=sys.stderr)
+
 df.fillna(0, inplace=True)
 df = df[df["coverage"] > 0]
 df["bias"] = df["bias"].astype(str)
 
+print("Final DataFrame shape:", df, file=sys.stderr)
 df.to_parquet(snakemake.output[0], engine="pyarrow", compression="snappy")
