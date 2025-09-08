@@ -2,6 +2,7 @@ import pandas as pd
 import altair as alt
 import sys
 import numpy as np
+import re
 
 # Redirect error output to log file
 sys.stderr = open(snakemake.log[0], "w")
@@ -45,6 +46,7 @@ def correlation_sample(df, sample_name):
     all other *_methylation columns for a single sample.
     """
     correlations = []
+    print(df.head())
     for method in snakemake.params["methods"]:
         df_short = df.dropna(
             subset=[f"{method}_methylation_rep1", f"{method}_methylation_rep2"]
@@ -173,13 +175,24 @@ replicate_dfs = {}
 method_correlation_dfs = []
 sample_correlation = []
 
+
 for sample_file in snakemake.input["samples"]:
-    replicate_name = sample_file.split("/")[-3]  # Extract protocol name as sample name
+    # extract the protocol/replicate part from path
+    replicate_name = sample_file.split("/")[-3]
     df = pd.read_parquet(sample_file, engine="pyarrow")
     method_correlation_dfs.append(correlation_method(df, replicate_name))
 
-    # Combine replicate DataFrames
-    samplename = "_".join(replicate_name.split("_")[:-1])
+    # Allgemeine Key-Bildung
+    # 1. Illumina: Entferne _REPxx am Ende
+    samplename = re.sub(r"_REP\d+$", "", replicate_name)      # Illumina
+    samplename = re.sub(r"replicate\d+$", "replicate", samplename)  # PacBio/Nanopore
+    # 2. Falls Key leer, nimm den Originalnamen
+    if not samplename:
+        samplename = replicate_name
+    print(f"Reading sample file: {sample_file} as {replicate_name}")
+    print(f"Processing sample file: {sample_file} as {samplename}")
+    print(replicate_dfs.keys())
+    # Merge Replicates
     if samplename in replicate_dfs:
         replicate_dfs[samplename] = pd.merge(
             replicate_dfs[samplename],
@@ -190,6 +203,7 @@ for sample_file in snakemake.input["samples"]:
         )
     else:
         replicate_dfs[samplename] = df
+
 
 for sample_name, df in replicate_dfs.items():
 

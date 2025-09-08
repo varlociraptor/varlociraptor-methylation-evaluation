@@ -1,11 +1,16 @@
 def compute_results():
     needed_inputs = []
-    for seq_platform in config["seq_platforms"].keys():
-        needed_inputs.append(plots(seq_platform))
-        needed_inputs.append(diff_plots(seq_platform))
-        needed_inputs.append(precision_recall(seq_platform))
-        needed_inputs.append(comparision_plots_tools(seq_platform))
-    needed_inputs.append(comparision_plots_samples("Illumina_pe"))
+    # seq_platforms = ["Nanopore",  "PacBio"]
+    seq_platforms = config["seq_platforms"].keys()
+    for seq_platform in seq_platforms:
+        # needed_inputs.append(plots(seq_platform))
+        # needed_inputs.append(diff_plots(seq_platform))
+        # needed_inputs.append(precision_recall(seq_platform))
+        
+        # needed_inputs.append(comparision_plots_tools(seq_platform))
+
+        needed_inputs.append(scatter_replicates(seq_platform))
+        needed_inputs.append(comparision_plots_scatter_sample(seq_platform))
 
     return needed_inputs
 
@@ -59,12 +64,12 @@ def comparision_plots_tools(seq_platform):
     ]
 
 
-def comparision_plots_samples(seq_platform):
+def scatter_replicates(seq_platform):
     base_path = Path("results") / seq_platform
     plot_type = config["plot_type"]
     return [
         f"{base_path}/plots/{protocol}_scatter.{plot_type}"
-        for protocol in config["protocols"]
+        for protocol in config["protocols"][seq_platform]
     ]
 
 

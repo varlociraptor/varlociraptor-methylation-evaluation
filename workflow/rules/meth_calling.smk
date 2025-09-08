@@ -18,18 +18,31 @@ rule download_varlociraptor:
 
 rule build_varlociraptor:
     input:
-        "resources/tools/varlociraptor/Cargo.toml",
+        "resources/tools/varlociraptor"
     output:
-        "resources/tools/varlociraptor/target/debug/varlociraptor",
+        "resources/tools/varlociraptor/target/debug/varlociraptor"
     log:
-        "logs/varlociraptor/build.log",
+        "logs/varlociraptor/build.log"
     conda:
         "../envs/varlociraptor.yaml"
+    resources:
+        mem_mb=8000
     shell:
         """
-        cd $(dirname {input})
-        cargo build 2> {log}
+        echo {output} >> {log}
+        cd {input}
+        CARGO_TARGET_DIR={resources.tmpdir}/cargo_target \
+            cargo build >> {log}
+        mkdir -p $(dirname {output})
+        cp {resources.tmpdir}/cargo_target/debug/varlociraptor {output}
+        echo "Show output file:" >> {log}
+        ls -ahl $(dirname {output}) >> {log}
         """
+
+
+        # mkdir -p $(dirname {output})
+        # touch {output}
+        # ls $(dirname {output}) >> {log}
 
 
 rule compute_meth_observations:
@@ -55,6 +68,8 @@ rule compute_meth_observations:
         "logs/varlociraptor/{seq_platform}/{protocol}/compute_meth_observations_{scatteritem}.log",
     conda:
         "../envs/varlociraptor.yaml"
+    resources:
+        mem_mb=16000
     shell:
         """
         if [[ "{wildcards.seq_platform}" == "Illumina_pe" || "{wildcards.seq_platform}" == "Illumina_se" ]]; then
@@ -110,6 +125,7 @@ rule calls_to_vcf:
         "logs/varlociraptor/{seq_platform}/{protocol}/calls_to_vcf_{scatteritem}.log",
     threads: 10
     shell:
+        # "touch {output} 2> {log}"
         "bcftools view --threads {threads} {input} -o {output} 2> {log}"
 
 

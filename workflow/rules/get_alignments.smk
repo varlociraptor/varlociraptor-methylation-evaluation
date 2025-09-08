@@ -251,25 +251,27 @@ rule aligned_reads_candidates_region:
         chromosome=lambda wildcards: chromosome_by_seq_platform[wildcards.seq_platform],
     shell:
         """
-        set +o pipefail;
-        start=$(bcftools query -f '%POS\\n' {input.candidate} | head -n 1) 2> {log}
-        start=$((start - {params.window_size})) 2> {log}
-        # start is not allowed to be negative
-        [ $start -lt 0 ] && start=0 2> {log}
-        end=$(bcftools query -f '%POS\\n' {input.candidate} | tail -n 1) 2> {log}
-        end=$((end + {params.window_size})) 2> {log}
+        set +o pipefail
+        start=$(bcftools query -f '%POS\\n' {input.candidate} | head -n 1)
+        echo "Start: $start" >> {log}
+        start=$((start - {params.window_size}))
+        [ $start -lt 0 ] && start=0
+        end=$(bcftools query -f '%POS\\n' {input.candidate} | tail -n 1)
+        echo "End: $end" >> {log}
+        end=$((end + {params.window_size}))
+        echo "Start window: $start" >> {log}
+        echo "End window: $end" >> {log}
         
-        samtools view -b {input.alignment} "{params.chromosome}:$start-$end" > {output} 2> {log}
+        samtools view -b {input.alignment} "{params.chromosome}:$start-$end" > {output}
 
-        # Sometimes there are no reads over the candidates. Varlociraptor does not work on empty bam files.
-        # Therefore if the candidate file is empty we need to add the last read of the original bam file as a dummy read to the empty bam file.
         if [ $(samtools view -c {output}) -eq 0 ]; then
-            samtools view -H {input.alignment} > temp.sam 2> {log}
-            samtools view {input.alignment} | tail -n 1 >> temp.sam 2> {log}
-            samtools view -bS temp.sam > {output} 2> {log}
-            rm temp.sam 2> {log}
+            samtools view -H {input.alignment} > temp.sam
+            samtools view {input.alignment} | tail -n 1 >> temp.sam
+            samtools view -bS temp.sam > {output}
+            rm temp.sam
         fi
         """
+
 
 
 rule aligned_reads_candidates_region_index:

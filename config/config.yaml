@@ -35,7 +35,11 @@ min_mapping_quality: 10
 # How many reads should be simulated
 num_simulated_reads: 100000
 
-protocols: [TruSeq_HG002_LAB01, EMSeq_HG002_LAB02, EMSeq_HG002_LAB01, TrueMethylOX_HG002_LAB01, TrueMethylBS_HG002_LAB01, SPLAT_HG002_LAB01, MethylSeq_HG002_LAB01]
+protocols: 
+  # Illumina_pe: [TruSeq_HG002_LAB01, EMSeq_HG002_LAB02, EMSeq_HG002_LAB01, TrueMethylOX_HG002_LAB01, TrueMethylBS_HG002_LAB01, SPLAT_HG002_LAB01, MethylSeq_HG002_LAB01]
+  Illumina_pe: [TruSeq_HG002_LAB01, SPLAT_HG002_LAB01]
+  PacBio: [replicate]
+  Nanopore: [replicate]
 # protocols: [TruSeq_HG002_LAB01]
 data:
   Illumina_pe:
@@ -45,21 +49,21 @@ data:
     # For downloading:  It's called SPLAT_HG002_LAB01_REP01_4 but this makes problems with the compare samples script
     SPLAT_HG002_LAB01_REP01: [SRR13051055, SRR13051056, SRR13051057, SRR13051058]
     SPLAT_HG002_LAB01_REP02:  [SRR13051050, SRR13051051, SRR13051052, SRR13051054]
-    MethylSeq_HG002_LAB01_REP01: [SRR13051104, SRR13051105, SRR13051106]
-    MethylSeq_HG002_LAB01_REP02: [SRR13051101, SRR13051102, SRR13051103]
-    # EMSeq, TrueMethylOX und TrueMEthylBS gibt es je immer nur ein SRR zu 
-    EMSeq_HG002_LAB02_REP02: [SRR13051139]
-    EMSeq_HG002_LAB02_REP01: [SRR13051140]
-    EMSeq_HG002_LAB01_REP02: [SRR13051141]
-    EMSeq_HG002_LAB01_REP01: [SRR13051142]
-    TrueMethylOX_HG002_LAB01_REP02: [SRR13051230]
-    TrueMethylOX_HG002_LAB01_REP01: [SRR13051231, SRR13051232]
-    TrueMethylBS_HG002_LAB01_REP02: [SRR13051250, SRR13051251] #2023-10-25T12:57:27 fasterq-dump.3.0.6 err: storage exhausted while writing file within file system module - system bad file descriptor error fd='4'
-    TrueMethylBS_HG002_LAB01_REP01: [SRR13051253] #2023-10-25T12:57:27 fasterq-dump.3.0.6 err: storage exhausted while writing file within file system module - system bad file descriptor error fd='4'
+    # MethylSeq_HG002_LAB01_REP01: [SRR13051104, SRR13051105, SRR13051106]
+    # MethylSeq_HG002_LAB01_REP02: [SRR13051101, SRR13051102, SRR13051103]
+    # # EMSeq, TrueMethylOX und TrueMEthylBS gibt es je immer nur ein SRR zu 
+    # EMSeq_HG002_LAB02_REP02: [SRR13051139]
+    # EMSeq_HG002_LAB02_REP01: [SRR13051140]
+    # EMSeq_HG002_LAB01_REP02: [SRR13051141]
+    # EMSeq_HG002_LAB01_REP01: [SRR13051142]
+    # TrueMethylOX_HG002_LAB01_REP02: [SRR13051230]
+    # TrueMethylOX_HG002_LAB01_REP01: [SRR13051231, SRR13051232]
+    # TrueMethylBS_HG002_LAB01_REP02: [SRR13051250, SRR13051251] #2023-10-25T12:57:27 fasterq-dump.3.0.6 err: storage exhausted while writing file within file system module - system bad file descriptor error fd='4'
+    # TrueMethylBS_HG002_LAB01_REP01: [SRR13051253] #2023-10-25T12:57:27 fasterq-dump.3.0.6 err: storage exhausted while writing file within file system module - system bad file descriptor error fd='4'
   Illumina_se:
     # No example data found
   PacBio:
-    data1: [dummySRA_pacBio]
+    # data1: [dummySRA_pacBio]
     replicate1: [pb_rep1]
     replicate2: [pb_rep2]
     replicate3: [pb_rep3]
@@ -121,7 +125,7 @@ num_simulated_reads: 10000
 # Number of scatter gather items
 scatter_number: 20
 # Rough estimate for maximum read length. This is use to shorten the length of the candidate files
-max_read_length: 10000000
+max_read_length: 50000
 
 ###################################### PLOTS ##################################################
 

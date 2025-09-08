@@ -104,7 +104,6 @@ def read_tool_file(filepath, file_name):
     records = []
     with open(filepath, "r") as f:
         for line in f:
-            print(line)
             if line.startswith("#") or line.startswith("track"):
                 continue
             parts = line.strip().split("\t")
@@ -151,11 +150,11 @@ def read_tool_file(filepath, file_name):
                     prob_low = 10 ** (-float(prob_low) / 10)
                     prob_present = prob_high + prob_low
                     prob_absent = 10 ** (-float(prob_absent) / 10)
-                    if (
-                        prob_present < snakemake.params["prob_pres_threshhold"]
-                        or prob_absent < snakemake.params["prob_absent_threshhold"]
-                    ):
-                        continue
+                    # if (
+                    #     prob_present < snakemake.params["prob_pres_threshhold"]
+                    #     or prob_absent < snakemake.params["prob_absent_threshhold"]
+                    # ):
+                    #     continue
                 except Exception:
                     print(
                         f"Prob present not found on chrom {chrom}, position {position}",
@@ -290,13 +289,9 @@ else:
     truth_df = read_truth_file(snakemake.input["true_meth"][0])
     cov_df = read_coverage_file(snakemake.input["coverage"])
 
-print("Tool DataFrame shape:", tool_df.head(), file=sys.stderr)
-print("Truth DataFrame shape:", truth_df.head(), file=sys.stderr)
 df = pd.merge(truth_df, tool_df, on=["chromosome", "position"], how="inner")
-print("DataFrame shape:", df.head(), file=sys.stderr)
 
 df = pd.merge(df, cov_df, on=["chromosome", "position"], how="inner")
-print("DataFrame2 shape:", df.head(), file=sys.stderr)
 
 df.fillna(0, inplace=True)
 df = df[df["coverage"] > 0]

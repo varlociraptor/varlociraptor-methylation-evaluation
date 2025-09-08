@@ -13,6 +13,8 @@ rule modkit_compute_methylation:
         "../envs/modkit.yaml"
     log:
         "logs/modkit/{protocol}/compute_methylation.log",
+    resources:
+        mem_mb=128000
     shell:
         """
         export PATH=$PATH:~/.cargo/bin 2> {log}
