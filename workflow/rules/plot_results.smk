@@ -1,11 +1,11 @@
 rule compute_pandas_df:
     input:
         tool="results/{seq_platform}/{protocol}/result_files/{method}.bed",
-        true_meth=lambda wildcards: expand(
-            "resources/bed_avg_{chrom}.bedGraph",
-            chrom=chromosome_by_seq_platform[wildcards.seq_platform],
-        ),
-        coverage="resources/{seq_platform}/{protocol}/cov.regions.bed",
+        # true_meth=lambda wildcards: expand(
+        #     "resources/bed_avg_{chrom}.bedGraph",
+        #     chrom=chromosome_by_seq_platform[wildcards.seq_platform],
+        # ),
+        # coverage="resources/{seq_platform}/{protocol}/cov.regions.bed",
     output:
         "results/{seq_platform}/{protocol}/result_files/{method}.parquet",
     conda:
@@ -19,8 +19,9 @@ rule compute_pandas_df:
         cov_bins=lambda wildcards: config["cov_bins"][wildcards.seq_platform],
         meth_type=config["meth_type"],
         simulated=False,
-        prob_pres_threshhold=config["prob_pres_threshhold"],
-        prob_absent_threshhold=config["prob_absent_threshhold"],
+        alpha=config["fdr_alpha"],
+        # prob_pres_threshhold=config["prob_pres_threshhold"],
+        # prob_absent_threshhold=config["prob_absent_threshhold"],
     script:
         "../scripts/df_from_calls.py"
 
@@ -166,8 +167,8 @@ rule compute_pandas_df:
 #         "../scripts/plot_precision_recall.py"
 
 
-
-rule compare_tools_single_sample:
+# Computes one common df out of all single method dfs
+rule common_tool_df:
     input:
         tools=lambda wildcards: expand(
             "results/{{seq_platform}}/{{protocol}}/result_files/{method}.parquet",
@@ -175,26 +176,28 @@ rule compare_tools_single_sample:
         ),
     output:
         protocol_df="results/{seq_platform}/{protocol}/result_files/protocol_df_{plot_type}.parquet",
-        plot=report(
-            "results/{seq_platform}/{protocol}/plots/comparisions.{plot_type}",
-            category=lambda wildcards: f"{wildcards.seq_platform} - {wildcards.protocol}",
-            subcategory="All Comparisions",
-            labels=lambda wildcards: {"type": "general comparisions", "method": "all"},
-        ),
+        # plot="results/{seq_platform}/{protocol}/plots/comparisions.{plot_type}",
+        # plot=report(
+        #     category=lambda wildcards: f"{wildcards.seq_platform} - {wildcards.protocol}",
+        #     labels=lambda wildcards: {"file": "diverse comparisions"},
+        # ),
     conda:
         "../envs/plot.yaml"
     log:
-        "logs/plots/{seq_platform}/{protocol}/compare_all_tools_{plot_type}.log",
+        "logs/plots/{seq_platform}/{protocol}/common_tool_df_{plot_type}.log",
     params:
         plot_type=config["plot_type"],
     resources:
         mem_mb=16000
     script:
-        "../scripts/compare_all_tools.py"
+        "../scripts/common_tool_df.py"
 
 
-# Important
-rule correlation_tools:
+# Plot overview tables over all samples of a sequencing platform with correlation information
+# We correlate
+# - all tools against each other on the same replicate 
+# - all replicates against each other for the same tool
+rule correlation_tables:
     input:
         samples=lambda wildcards: expand(
             "results/{seq_platform}/{protocol}/result_files/protocol_df_{{plot_type}}.parquet",
@@ -204,54 +207,49 @@ rule correlation_tools:
     output:
         table="results/{seq_platform}/plots/replicates_{plot_type}.hd5",
         plot=report(
-            "results/{seq_platform}/plots/comparisions.{plot_type}",
-            category=lambda wildcards: f"{wildcards.seq_platform}",
-            subcategory="All Comparisions",
-
-            # subcategory="All Comparisions",
-            # labels={"type": "general comparisions", "method": "all"},
+            "results/{seq_platform}/plots/correlation_table.{plot_type}",
+            category="{seq_platform}",
+            
+            labels={"file": "correlation comparision"},
         ),
     conda:
         "../envs/plot.yaml"
     log:
-        "logs/plots/{seq_platform}/compare_samples_{plot_type}.log",
+        "logs/plots/{seq_platform}/correlation_tables_{plot_type}.log",
     params:
-        plot_type=config["plot_type"],
-        methods=lambda wildcards: config["ref_tools"][wildcards.seq_platform]
+        # plot_type=config["plot_type"],
+        meth_callers=lambda wildcards: config["ref_tools"][wildcards.seq_platform]
         + ["varlo"],
-        correlation_method=config["correlation_method"],
+        correlation_methods=config["correlation_methods"],
     script:
-        "../scripts/compare_samples.py"
+        "../scripts/correlation_tables.py"
 
 
 # Important
-rule scatter_replicates:
+rule replicates_heatmap:
     input:
         "results/{seq_platform}/plots/replicates_{plot_type}.hd5",
     output:
         report(
-            "results/{seq_platform}/plots/{protocol}_scatter.{plot_type}",
-            category=lambda wildcards: f"{wildcards.seq_platform}",
-            # subcategory="All Comparisions",
-            subcategory=lambda wildcards: wildcards.protocol,
+            "results/{seq_platform}/plots/{protocol}_heatmap.{plot_type}",
+            category="{seq_platform}",
+            # subcategory=lambda wildcards: f"{wildcards.protocol}",
 
-            # labels=lambda wildcards: {
-                # "type": "general comparisions",
-                # "method": wildcards.protocol,
-                # "method": "TESt",
-            # },
+            labels={
+                "file": "heatmap",
+                "protocol": "{protocol}",
+            },
         ),
     conda:
         "../envs/plot.yaml"
     resources:
         mem_mb=32000
     log:
-        "logs/plots/{seq_platform}/scatter_replicates_{protocol}_{plot_type}.log",
+        "logs/plots/{seq_platform}/heatmap_replicates_{protocol}_{plot_type}.log",
     params:
         methods=lambda wildcards: config["ref_tools"][wildcards.seq_platform]
         + ["varlo"],
-        plot_type=config["plot_type"],
         protocol=lambda wildcards: wildcards.protocol,
-        correlation_method=config["correlation_method"],
+        # correlation_method=config["correlation_method"],
     script:
-        "../scripts/scatter_compare.py"
+        "../scripts/heatmap_replicates.py"

@@ -3,13 +3,13 @@
 
 rule bismark_copy_chromosome:
     input:
-        "resources/genome.fasta",
+        "resources/chromosome_{chrom}.fasta",
     output:
-        "resources/ref_tools/bismark/genome.fasta",
+        "resources/ref_tools/bismark/chromosome_{chrom}.fasta",
     conda:
         "../envs/bismark.yaml"
     log:
-        "logs/bismark/copy_chromosome.log",
+        "logs/bismark/copy_chromosome_{chrom}.log",
     shell:
         """
         mkdir -p $(dirname {output}) 2> {log}
@@ -20,7 +20,10 @@ rule bismark_copy_chromosome:
 # TODO: Gives missing output exception
 rule bismark_prepare_genome:
     input:
-        "resources/ref_tools/bismark/genome.fasta",
+        expand(
+            "resources/ref_tools/bismark/chromosome_{chrom}.fasta",
+            chrom=config["seq_platforms"]["Illumina_pe"],
+        )
     output:
         directory("resources/ref_tools/bismark/Bisulfite_Genome"),
         # directory("resources/ref_tools/bismark/{chrom}/Bisulfite_Genome"),
@@ -30,14 +33,18 @@ rule bismark_prepare_genome:
         "logs/bismark/prepare_genome.log",
     shell:
         """
-        bismark_genome_preparation --verbose $(dirname {output}) 2> {log}
+        bismark_genome_preparation $(dirname {input}) --verbose  2> {log}
         """
 
 
 rule bismark_align:
     input:
         bisulfite_folder="resources/ref_tools/bismark/Bisulfite_Genome",
-        chromosome="resources/ref_tools/bismark/genome.fasta",
+        # We need this iput only for cluster execution, because else it does not find the fasta file 
+        fasta=expand(
+            "resources/ref_tools/bismark/chromosome_{chrom}.fasta",
+            chrom=config["seq_platforms"]["Illumina_pe"],
+        ),
         reads1="resources/Illumina_pe/{protocol, [^(?!simulated_data$)]}/{SRA}/{SRA}_1_trimmed.fastq",
         reads2="resources/Illumina_pe/{protocol, [^(?!simulated_data$)]}/{SRA}/{SRA}_2_trimmed.fastq",
     output:
@@ -46,11 +53,13 @@ rule bismark_align:
         "../envs/bismark.yaml"
     log:
         "logs/bismark/{protocol}/align_{SRA}.log",
+    resources:
+        mem_mb=32000
     threads: 6
     shell:
         """
         mkdir -p $(dirname {output}) 2> {log}
-        bismark --genome {input.chromosome} -1 {input.reads1} -2 {input.reads2} -o $(dirname {output}) --parallel {threads} 2> {log}
+        bismark --genome $(dirname {input.bisulfite_folder}) -1 {input.reads1} -2 {input.reads2} -o $(dirname {output}) --parallel {threads} 2> {log}
         """
 
 
@@ -73,91 +82,91 @@ rule bismark_merge_bams:
         """
 
 
-rule bismark_copy_chromosome_simulated:
-    input:
-        "resources/chromosome_{chrom}.fasta",
-    output:
-        "resources/ref_tools/bismark/{chrom}/chromosome_{chrom}.fasta",
-    conda:
-        "../envs/bismark.yaml"
-    log:
-        "logs/bismark/copy_chromosome_simulated_{chrom}.log",
-    shell:
-        """
-        mkdir -p $(dirname {output}) 2> {log}
-        cp {input} {output} 2> {log}
-        """
+# rule bismark_copy_chromosome_simulated:
+#     input:
+#         "resources/chromosome_{chrom}.fasta",
+#     output:
+#         "resources/ref_tools/bismark/{chrom}/chromosome_{chrom}.fasta",
+#     conda:
+#         "../envs/bismark.yaml"
+#     log:
+#         "logs/bismark/copy_chromosome_simulated_{chrom}.log",
+#     shell:
+#         """
+#         mkdir -p $(dirname {output}) 2> {log}
+#         cp {input} {output} 2> {log}
+#         """
 
 
-# TODO: Gives missing output exception
-rule bismark_prepare_genome_simulated:
-    input:
-        "resources/ref_tools/bismark/{chrom}/chromosome_{chrom}.fasta",
-    output:
-        directory("resources/ref_tools/bismark/{chrom}/Bisulfite_Genome"),
-        # directory("resources/ref_tools/bismark/{chrom}/Bisulfite_Genome"),
-    conda:
-        "../envs/bismark.yaml"
-    log:
-        "logs/bismark/prepare_genome_simulated_{chrom}.log",
-    shell:
-        """
-        bismark_genome_preparation --verbose $(dirname {output}) 2> {log}
-        """
+# # TODO: Gives missing output exception
+# rule bismark_prepare_genome_simulated:
+#     input:
+#         "resources/ref_tools/bismark/{chrom}/chromosome_{chrom}.fasta",
+#     output:
+#         directory("resources/ref_tools/bismark/{chrom}/Bisulfite_Genome"),
+#         # directory("resources/ref_tools/bismark/{chrom}/Bisulfite_Genome"),
+#     conda:
+#         "../envs/bismark.yaml"
+#     log:
+#         "logs/bismark/prepare_genome_simulated_{chrom}.log",
+#     shell:
+#         """
+#         bismark_genome_preparation --verbose $(dirname {output}) 2> {log}
+#         """
 
 
-rule bismark_align_simulated:
-    input:
-        bisulfite_folder=expand(
-            "resources/ref_tools/bismark/{chrom}/Bisulfite_Genome",
-            chrom=config["seq_platforms"]["Illumina_pe"],
-        ),
-        chrom=expand(
-            "resources/ref_tools/bismark/{chrom}/",
-            chrom=config["seq_platforms"]["Illumina_pe"],
-        ),
-        chromosome=expand(
-            "resources/ref_tools/bismark/{chrom}/chromosome_{chrom}.fasta",
-            chrom=config["seq_platforms"]["Illumina_pe"],
-        ),
-        reads1=expand(
-            "resources/Illumina_pe/simulated_data/chromosome_{chrom}_f1_trimmed.fastq",
-            chrom=config["seq_platforms"]["Illumina_pe"],
-        ),
-        reads2=expand(
-            "resources/Illumina_pe/simulated_data/chromosome_{chrom}_f2_trimmed.fastq",
-            chrom=config["seq_platforms"]["Illumina_pe"],
-        ),
-    output:
-        "resources/ref_tools/bismark/alignment/simulated_data/chromosome_{chrom}_f1_bismark_bt2_pe.bam",
-    conda:
-        "../envs/bismark.yaml"
-    log:
-        "logs/bismark/align_simulated_{chrom}.log",
-    threads: 6
-    shell:
-        """
-        mkdir -p $(dirname {output}) 2> {log}
-        bismark --genome {input.chrom} -1 {input.reads1} -2 {input.reads2} -o $(dirname {output}) --parallel {threads} 2> {log}
-        """
+# rule bismark_align_simulated:
+#     input:
+#         bisulfite_folder=expand(
+#             "resources/ref_tools/bismark/{chrom}/Bisulfite_Genome",
+#             chrom=config["seq_platforms"]["Illumina_pe"],
+#         ),
+#         chrom=expand(
+#             "resources/ref_tools/bismark/{chrom}/",
+#             chrom=config["seq_platforms"]["Illumina_pe"],
+#         ),
+#         chromosome=expand(
+#             "resources/ref_tools/bismark/{chrom}/chromosome_{chrom}.fasta",
+#             chrom=config["seq_platforms"]["Illumina_pe"],
+#         ),
+#         reads1=expand(
+#             "resources/Illumina_pe/simulated_data/chromosome_{chrom}_f1_trimmed.fastq",
+#             chrom=config["seq_platforms"]["Illumina_pe"],
+#         ),
+#         reads2=expand(
+#             "resources/Illumina_pe/simulated_data/chromosome_{chrom}_f2_trimmed.fastq",
+#             chrom=config["seq_platforms"]["Illumina_pe"],
+#         ),
+#     output:
+#         "resources/ref_tools/bismark/alignment/simulated_data/chromosome_{chrom}_f1_bismark_bt2_pe.bam",
+#     conda:
+#         "../envs/bismark.yaml"
+#     log:
+#         "logs/bismark/align_simulated_{chrom}.log",
+#     threads: 6
+#     shell:
+#         """
+#         mkdir -p $(dirname {output}) 2> {log}
+#         bismark --genome {input.chrom} -1 {input.reads1} -2 {input.reads2} -o $(dirname {output}) --parallel {threads} 2> {log}
+#         """
 
 
-rule bismark_rename_simulated_alignment:
-    input:
-        expand(
-            "resources/ref_tools/bismark/alignment/simulated_data/chromosome_{chrom}_f1_bismark_bt2_pe.bam",
-            chrom=config["seq_platforms"]["Illumina_pe"],
-        ),
-    output:
-        "resources/ref_tools/bismark/alignment/simulated_data/alignment.bam",
-    conda:
-        "../envs/bismark.yaml"
-    log:
-        "logs/bismark/rename_simulated_alignment.log",
-    shell:
-        """
-        mv {input} {output} 2> {log}
-        """
+# rule bismark_rename_simulated_alignment:
+#     input:
+#         expand(
+#             "resources/ref_tools/bismark/alignment/simulated_data/chromosome_{chrom}_f1_bismark_bt2_pe.bam",
+#             chrom=config["seq_platforms"]["Illumina_pe"],
+#         ),
+#     output:
+#         "resources/ref_tools/bismark/alignment/simulated_data/alignment.bam",
+#     conda:
+#         "../envs/bismark.yaml"
+#     log:
+#         "logs/bismark/rename_simulated_alignment.log",
+#     shell:
+#         """
+#         mv {input} {output} 2> {log}
+#         """
 
 
 rule bismark_deduplicate:

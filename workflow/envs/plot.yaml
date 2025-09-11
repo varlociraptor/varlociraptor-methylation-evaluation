@@ -11,3 +11,4 @@ dependencies:
   - scipy =1.15
   - altair_saver= 0.5
   - pytables= 3.10.2
+  - pandas= 2.3

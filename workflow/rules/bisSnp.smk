@@ -69,6 +69,8 @@ rule bissnp_extract_meth:
         chromosome=chromosome_by_seq_platform.get("Illumina_pe"),
     log:
         "logs/bissnp/{protocol}/extract_meth.log",
+    resources:
+        mem_mb=64000
     shell:
         "java -Xmx10G -jar {input.jar} -R {input.genome} -T BisulfiteGenotyper -I {input.alignment} -vfn1 {output.cpg} -vfn2 {output.snp} -L {params.chromosome} 2> {log}"
 

@@ -9,8 +9,8 @@ def compute_results():
         
         # needed_inputs.append(comparision_plots_tools(seq_platform))
 
-        needed_inputs.append(scatter_replicates(seq_platform))
-        needed_inputs.append(comparision_plots_scatter_sample(seq_platform))
+        needed_inputs.append(heatmap_replicates(seq_platform))
+        needed_inputs.append(correlation_table(seq_platform))
 
     return needed_inputs
 
@@ -64,18 +64,18 @@ def comparision_plots_tools(seq_platform):
     ]
 
 
-def scatter_replicates(seq_platform):
+def heatmap_replicates(seq_platform):
     base_path = Path("results") / seq_platform
     plot_type = config["plot_type"]
     return [
-        f"{base_path}/plots/{protocol}_scatter.{plot_type}"
+        f"{base_path}/plots/{protocol}_heatmap.{plot_type}"
         for protocol in config["protocols"][seq_platform]
     ]
 
 
-def comparision_plots_scatter_sample(seq_platform):
+def correlation_table(seq_platform):
     base_path = Path("results") / seq_platform
-    return [str(base_path / ("plots/comparisions." + config["plot_type"]))]
+    return [str(base_path / ("plots/correlation_table." + config["plot_type"]))]
 
 
 def precision_recall(seq_platform):

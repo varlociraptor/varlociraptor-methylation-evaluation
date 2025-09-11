@@ -7,6 +7,95 @@ import sys
 # Redirect standard error to snakemake log file
 sys.stderr = open(snakemake.log[0], "w")
 
+pd.set_option("display.max_columns", None)
+pd.set_option("display.max_rows", 10)
+
+
+
+# def get_bin(coverage):
+#     """Assigns a coverage bin to the given coverage value."""
+#     return min(
+#         int(coverage / snakemake.params["cov_bin_size"]),
+#         snakemake.params["cov_bins"] - 1,
+#     )
+
+
+# def compute_bias(format_values):
+#     """Returns the bias label if present in FORMAT values, else 'normal'."""
+#     bias_labels = ["SB", "ROB", "RPB", "SCB", "HE", "ALB"]
+#     if any(value != "." for value in format_values[6:12]):
+#         return bias_labels[format_values[6:12].index(".")]
+#     return "normal"
+
+
+# def read_simulated_file(filepath):
+#     """Parses simulated truth and coverage file."""
+#     cov_records, truth_records = [], []
+#     with open(filepath, "r") as f:
+#         lines = f.readlines()
+#         i = 0
+#         while i < len(lines):
+#             parts1 = lines[i].strip().split("\t")
+#             chrom1, pos = parts1[0], (float(parts1[1]) + float(parts1[2])) / 2
+#             meth_reads1, cov1 = map(float, parts1[3:5])
+
+#             # if type1 == "CG" and i + 1 < len(lines):
+#             #     parts2 = lines[i + 1].strip().split("\t")
+#             #     type2 = parts2[3]
+#             #     if type2 == "CG":
+#             #         pos2 = int(parts2[1])
+#             #         meth_reads2, cov2 = map(float, parts2[4:6])
+#             #         coverage = (cov1 + cov2) / 2
+#             #         meth_rate = (
+#             #             ((meth_reads1 + meth_reads2) / (cov1 + cov2) * 100)
+#             #             if (cov1 + cov2)
+#             #             else 0
+#             #         )
+#             cov_records.append([chrom1, pos, cov1, get_bin(cov1)])
+#             truth_records.append([chrom1, pos, meth_reads1])
+#             # i += 2
+#             # continue
+#             i += 1
+#     return (
+#         pd.DataFrame(
+#             cov_records, columns=["chromosome", "position", "coverage", "cov_bin"]
+#         ),
+#         pd.DataFrame(
+#             truth_records, columns=["chromosome", "position", "true_methylation"]
+#         ),
+#     )
+
+
+# def read_coverage_file(filepath):
+#     """Reads general coverage data into a DataFrame."""
+#     records = []
+#     with open(filepath, "r") as f:
+#         for line in f:
+#             parts = line.strip().split("\t")
+#             chrom = parts[0]
+#             position = int(parts[1])
+#             coverage = float(parts[3])
+#             records.append([chrom, position, coverage, get_bin(coverage)])
+#     return pd.DataFrame(
+#         records, columns=["chromosome", "position", "coverage", "cov_bin"]
+#     )
+
+
+# def read_truth_file(filepath):
+#     """Reads true methylation data from BED-like format."""
+#     records = []
+#     with open(filepath, "r") as f:
+#         for line in f:
+#             if line.startswith("track"):
+#                 continue
+#             parts = line.strip().split("\t")
+#             chrom = parts[0].replace("chr", "")
+#             start, end = map(int, parts[1:3])
+#             meth_rate = float(parts[3])
+#             position = (start + end) // 2
+#             records.append([chrom, position, meth_rate])
+#     return pd.DataFrame(records, columns=["chromosome", "position", "true_methylation"])
+
 
 def cb_to_number(s):
     """Extracts all integers not preceded by 'E' or 'e' and returns their sum."""
@@ -14,100 +103,36 @@ def cb_to_number(s):
     return sum(map(int, matches))
 
 
-def get_bin(coverage):
-    """Assigns a coverage bin to the given coverage value."""
-    return min(
-        int(coverage / snakemake.params["cov_bin_size"]),
-        snakemake.params["cov_bins"] - 1,
-    )
-
-
-def compute_bias(format_values):
-    """Returns the bias label if present in FORMAT values, else 'normal'."""
-    bias_labels = ["SB", "ROB", "RPB", "SCB", "HE", "ALB"]
-    if any(value != "." for value in format_values[6:12]):
-        return bias_labels[format_values[6:12].index(".")]
-    return "normal"
-
-
-def read_simulated_file(filepath):
-    """Parses simulated truth and coverage file."""
-    cov_records, truth_records = [], []
-    with open(filepath, "r") as f:
-        lines = f.readlines()
-        i = 0
-        while i < len(lines):
-            parts1 = lines[i].strip().split("\t")
-            chrom1, pos = parts1[0], (float(parts1[1]) + float(parts1[2])) / 2
-            meth_reads1, cov1 = map(float, parts1[3:5])
-
-            # if type1 == "CG" and i + 1 < len(lines):
-            #     parts2 = lines[i + 1].strip().split("\t")
-            #     type2 = parts2[3]
-            #     if type2 == "CG":
-            #         pos2 = int(parts2[1])
-            #         meth_reads2, cov2 = map(float, parts2[4:6])
-            #         coverage = (cov1 + cov2) / 2
-            #         meth_rate = (
-            #             ((meth_reads1 + meth_reads2) / (cov1 + cov2) * 100)
-            #             if (cov1 + cov2)
-            #             else 0
-            #         )
-            cov_records.append([chrom1, pos, cov1, get_bin(cov1)])
-            truth_records.append([chrom1, pos, meth_reads1])
-            # i += 2
-            # continue
-            i += 1
-    return (
-        pd.DataFrame(
-            cov_records, columns=["chromosome", "position", "coverage", "cov_bin"]
-        ),
-        pd.DataFrame(
-            truth_records, columns=["chromosome", "position", "true_methylation"]
-        ),
-    )
-
-
-def read_coverage_file(filepath):
-    """Reads general coverage data into a DataFrame."""
-    records = []
-    with open(filepath, "r") as f:
-        for line in f:
-            parts = line.strip().split("\t")
-            chrom = parts[0]
-            position = int(parts[1])
-            coverage = float(parts[3])
-            records.append([chrom, position, coverage, get_bin(coverage)])
-    return pd.DataFrame(
-        records, columns=["chromosome", "position", "coverage", "cov_bin"]
-    )
-
-
-def read_truth_file(filepath):
-    """Reads true methylation data from BED-like format."""
-    records = []
-    with open(filepath, "r") as f:
-        for line in f:
-            if line.startswith("track"):
-                continue
-            parts = line.strip().split("\t")
-            chrom = parts[0].replace("chr", "")
-            start, end = map(int, parts[1:3])
-            meth_rate = float(parts[3])
-            position = (start + end) // 2
-            records.append([chrom, position, meth_rate])
-    return pd.DataFrame(records, columns=["chromosome", "position", "true_methylation"])
-
-
 def read_tool_file(filepath, file_name):
-    """Reads tool-specific output files and formats them."""
+    """
+    Reads tool-specific methylation output files and converts them into
+    a standardized pandas DataFrame.
+
+    Parameters
+    ----------
+    filepath : str
+        Path to the input file.
+    file_name : str
+        Name of the tool that generated the file (e.g., "varlo", "methylDackel").
+
+    Returns
+    -------
+    pd.DataFrame
+        Standardized DataFrame with methylation results across tools.
+    """
     records = []
+
     with open(filepath, "r") as f:
         for line in f:
+            # Skip comment or header lines
             if line.startswith("#") or line.startswith("track"):
                 continue
+
             parts = line.strip().split("\t")
 
+            # ----------------------------
+            # Handle Varlo tool format
+            # ----------------------------
             if file_name == "varlo":
                 chrom = parts[0]
                 position = int(parts[1])
@@ -116,186 +141,157 @@ def read_tool_file(filepath, file_name):
                 format_field = parts[8]
                 values = parts[9].split(":")
 
+                # Skip non-methylation entries
                 if alternative != "<METH>":
                     continue
 
+                # Parse FORMAT fields
                 format_fields = format_field.split(":")
-                dp_index = format_fields.index("DP")
-                af_index = format_fields.index("AF")
-                coverage = int(values[dp_index])
-
-                if snakemake.params["meth_type"] == "ratio":
-                    saobs = cb_to_number(values[format_fields.index("SAOBS")])
-                    srobs = cb_to_number(values[format_fields.index("SROBS")])
-                    meth_rate = (
-                        (saobs / (saobs + srobs) * 100) if (saobs + srobs) else 0
-                    )
-                else:
+                try:
+                    af_index = format_fields.index("AF")
                     meth_rate = float(values[af_index]) * 100
 
+                except ValueError:
+                    print(
+                        f"Allele frequency information missing for {chrom}:{position}",
+                        file=sys.stderr,
+                    )
+                    continue
+
+
+                # Parse INFO field into dictionary
                 info_dict = dict(
                     item.split("=", 1)
                     for item in info_field.strip().split(";")
                     if "=" in item
                 )
 
-                # Zugriff auf Werte
-                prob_high = info_dict["PROB_HIGH"]
-                prob_low = info_dict["PROB_LOW"]
-                prob_absent = info_dict["PROB_ABSENT"]
-
                 try:
-                    # TODO: Shoud I inclue PROB_LOW?
-                    prob_high = 10 ** (-float(prob_high) / 10)
-                    prob_low = 10 ** (-float(prob_low) / 10)
+                    alpha = snakemake.params["alpha"]
+                    # Convert Phred scores to probabilities
+                    prob_high = 10 ** (-float(info_dict["PROB_HIGH"]) / 10)
+                    prob_low = 10 ** (-float(info_dict["PROB_LOW"]) / 10)
                     prob_present = prob_high + prob_low
-                    prob_absent = 10 ** (-float(prob_absent) / 10)
-                    # if (
-                    #     prob_present < snakemake.params["prob_pres_threshhold"]
-                    #     or prob_absent < snakemake.params["prob_absent_threshhold"]
-                    # ):
-                    #     continue
+                    prob_absent = 10 ** (-float(info_dict["PROB_ABSENT"]) / 10)
+                    prob_artifact = 10 ** (-float(info_dict["PROB_ARTIFACT"]) / 10)
+
+                    # Skip low-confidence sites
+                    if max(prob_present, prob_absent + prob_artifact) < (1 - alpha):
+                        continue
                 except Exception:
                     print(
-                        f"Prob present not found on chrom {chrom}, position {position}",
+                        f"Probability information missing for {chrom}:{position}",
                         file=sys.stderr,
                     )
                     continue
 
-                bias = compute_bias(values)
-                records.append(
-                    [
-                        chrom,
-                        position,
-                        meth_rate,
-                        coverage,
-                        get_bin(coverage),
-                        bias,
-                        prob_present,
-                    ]
-                )
+                records.append([
+                    chrom, position, meth_rate
+                ])
 
+            # ----------------------------
+            # Handle methylDackel / bismark formats
+            # ----------------------------
             elif file_name in {"methylDackel", "bismark"}:
                 chrom = parts[0]
                 start, end = int(parts[1]), int(parts[2])
                 meth_rate = float(parts[3])
-                coverage = int(parts[4]) + int(parts[5])
+                # coverage = int(parts[4]) + int(parts[5])
                 position = (start + end) // 2
-                records.append(
-                    [
-                        chrom,
-                        position,
-                        meth_rate,
-                        coverage,
-                        get_bin(coverage),
-                        "normal",
-                        0,
-                    ]
-                )
 
+                records.append([
+                    chrom, position, meth_rate
+                ])
+
+            # ----------------------------
+            # Handle bsMap format
+            # ----------------------------
             elif file_name == "bsMap":
                 if parts[0].startswith("chr"):
                     continue
                 chrom = parts[0]
                 position = int(parts[1])
                 meth_rate = float(parts[4]) * 100
-                coverage = float(parts[5])
-                records.append(
-                    [
-                        chrom,
-                        position,
-                        meth_rate,
-                        coverage,
-                        get_bin(coverage),
-                        "normal",
-                        0,
-                    ]
-                )
+                print(meth_rate, file=sys.stderr)
+                # coverage = float(parts[5])
 
+                records.append([
+                    chrom, position, meth_rate
+                ])
+
+            # ----------------------------
+            # Handle bisSNP format
+            # ----------------------------
             elif file_name == "bisSNP":
                 chrom = parts[0]
                 position = int(parts[2])
                 meth_rate = float(parts[3])
-                coverage = int(parts[4])
-                records.append(
-                    [
-                        chrom,
-                        position,
-                        meth_rate,
-                        coverage,
-                        get_bin(coverage),
-                        "normal",
-                        0,
-                    ]
-                )
+                # coverage = int(parts[4])
 
+                records.append([
+                    chrom, position, meth_rate
+                ])
+
+            # ----------------------------
+            # Handle modkit format
+            # ----------------------------
             elif file_name == "modkit":
                 chrom = parts[0].removeprefix("chr")
                 position = int(parts[2])
                 details = parts[9].split()
-                coverage = int(details[0])
+                # coverage = int(details[0])
                 meth_rate = float(details[1])
-                records.append(
-                    [
-                        chrom,
-                        position,
-                        meth_rate,
-                        coverage,
-                        get_bin(coverage),
-                        "normal",
-                        0,
-                    ]
-                )
+                modified_base = parts[3]
 
+                if modified_base == 'm':  # Only consider methylated bases
+                    records.append([
+                        chrom, position, meth_rate
+                    ])
+
+            # ----------------------------
+            # Handle pb_CpG_tools format
+            # ----------------------------
             elif file_name == "pb_CpG_tools":
                 chrom = parts[0]
                 position = int(parts[2])
                 meth_rate = float(parts[3])
-                coverage = int(parts[5])
-                records.append(
-                    [
-                        chrom,
-                        position,
-                        meth_rate,
-                        coverage,
-                        get_bin(coverage),
-                        "normal",
-                        0,
-                    ]
-                )
+                # coverage = int(parts[5])
 
+                records.append([
+                    chrom, position, meth_rate
+                ])
+
+    # Standard output DataFrame
     columns = [
         "chromosome",
         "position",
         "tool_methylation",
-        "tool_coverage",
-        "tool_cov_bin",
-        "bias",
-        "prob_present",
+        # "tool_coverage",
+        # "tool_cov_bin",
+        # "bias",
+        # "prob_present",
     ]
     return pd.DataFrame(records, columns=columns)
 
 
+# ----------------------------
+# Main Execution
+# ----------------------------
 pd.set_option("display.max_columns", None)
 
 tool_file = snakemake.input["tool"]
 file_name = os.path.splitext(os.path.basename(tool_file))[0]
 
-tool_df = read_tool_file(tool_file, file_name)
+df = read_tool_file(tool_file, file_name)
 
-if snakemake.params["simulated"]:
-    cov_df, truth_df = read_simulated_file(snakemake.input["true_meth"][0])
-else:
-    truth_df = read_truth_file(snakemake.input["true_meth"][0])
-    cov_df = read_coverage_file(snakemake.input["coverage"])
-
-df = pd.merge(truth_df, tool_df, on=["chromosome", "position"], how="inner")
-
-df = pd.merge(df, cov_df, on=["chromosome", "position"], how="inner")
-
+# Fill missing values
 df.fillna(0, inplace=True)
-df = df[df["coverage"] > 0]
-df["bias"] = df["bias"].astype(str)
 
 print("Final DataFrame shape:", df, file=sys.stderr)
-df.to_parquet(snakemake.output[0], engine="pyarrow", compression="snappy")
+
+# Write output in Parquet format
+df.to_parquet(
+    snakemake.output[0],
+    engine="pyarrow",
+    compression="snappy"
+)

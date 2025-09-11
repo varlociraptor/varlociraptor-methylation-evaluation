@@ -108,9 +108,10 @@ rule filter_calls:
     conda:
         "../envs/varlociraptor.yaml"
     params:
-        event="PRESENT",
+        event="LOW",
+        fdr=config["fdr_alpha"]
     shell:
-        "{input.varlo} filter-calls control-fdr --mode local-smart {input.bcf} --events {params.event} --fdr 0.005 > {output} 2> {log}"
+        "{input.varlo} filter-calls control-fdr --mode local-smart {input.bcf} --events LOW HIGH --fdr {params.fdr_alpha} > {output} 2> {log}"
 
 
 # TODO: Skip this step, right now it would be useless since I debug so much
