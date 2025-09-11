@@ -11,128 +11,128 @@ pd.set_option("display.max_columns", None)
 pd.set_option("display.max_rows", 1000)
 
 
-# def plot_scatter_replicates(df_dict, corr_method):
-#     charts_per_sample = []
-#     sample_name = snakemake.params["protocol"]
-#     print(df_dict.keys(), file=sys.stderr)
-#     df = df_dict[sample_name]
-#     sample_charts = []
-#     for method in snakemake.params["methods"]:
-#         # for method in ["varlo"]:
-#         x_col = f"{method}_methylation_rep1"
-#         y_col = f"{method}_methylation_rep2"
-
-#         # if corr_method == "spearman":
-#         #     df[f"{method}_rank_rep1"] = df[x_col].rank()
-#         #     df[f"{method}_rank_rep2"] = df[y_col].rank()
-#         #     x_col = f"{method}_rank_rep1"
-#         #     y_col = f"{method}_rank_rep2"
-#         df_temp = df.dropna(subset=[x_col, y_col])
-#         # if x_col in df.columns and y_col in df.columns:
-#         print(df_temp.head())
-#         scatter = (
-#             alt.Chart(df_temp)
-#             .mark_rect()
-#             .encode(
-#                 x=alt.X(x_col, title=f"{method} Rep1", bin=alt.Bin(maxbins=10)),
-#                 y=alt.Y(y_col, title=f"{method} Rep2", bin=alt.Bin(maxbins=10)),
-#                 color=alt.Color(
-#                     "count()", scale=alt.Scale(type="log", scheme="viridis")
-#                 ),
-#             )
-#             .properties(
-#                 title=f"Datapoints {len(df_temp)}",
-#                 width=150,
-#                 height=150,
-#             )
-#         )
-#         print(scatter)
-#         sample_charts.append(scatter)
-
-#     if sample_charts:
-#         charts_per_sample.append(
-#             alt.hconcat(*sample_charts).properties(
-#                 title=f"{sample_name} {corr_method} Correlation",
-#             )
-#         )
-#     print(charts_per_sample)
-#     return alt.vconcat(*charts_per_sample)
-
-
 def bin_methylation(series, bin_size=10):
-    return np.round(series / bin_size) * bin_size
+    """Rundet Methylierungswerte auf die nächsten bin_size-Schritte und castet zu int"""
+    return (np.round(series / bin_size) * bin_size).astype(int)
 
 
-def plot_scatter_replicates(df_dict):
-    charts_per_sample = []
+def plot_heatmap_meth_callers(df_dict):
     sample_name = snakemake.params["protocol"]
     df = df_dict[sample_name]
-    sample_charts = []
-    for method in snakemake.params["methods"]:
-        print(method)
-        x_col = f"{method}_methylation_rep1"
-        y_col = f"{method}_methylation_rep2"
 
-        df_temp = df.dropna(subset=[x_col, y_col])
+    meth_caller_dfs = {}
 
-        df["rep1_bin"] = bin_methylation(df[x_col])
-        df["rep2_bin"] = bin_methylation(df[y_col])
+    # Counts für jede meth_callere berechnen
+    for meth_caller in snakemake.params["meth_callers"]:
+        x_col = f"{meth_caller}_methylation_rep1"
+        y_col = f"{meth_caller}_methylation_rep2"
 
-        agg = df.groupby(["rep1_bin", "rep2_bin"]).size().reset_index(name="count")
-        scatter = (
+        df_temp = df.dropna(
+            subset=[x_col, y_col]
+        ).copy()  # .copy(), um SettingWithCopyWarning zu vermeiden
+        df_temp["rep1_bin"] = bin_methylation(df_temp[x_col])
+        df_temp["rep2_bin"] = bin_methylation(df_temp[y_col])
+
+        agg = (
+            pd.crosstab(df_temp["rep1_bin"], df_temp["rep2_bin"])
+            .stack()
+            .reset_index(name="count")
+        )
+        meth_caller_dfs[meth_caller] = agg
+
+    # Wir gehen davon aus: genau 2 meth_calleren
+    m1, m2 = snakemake.params["meth_callers"]
+    df_diff = meth_caller_dfs[m1].merge(
+        meth_caller_dfs[m2], on=["rep1_bin", "rep2_bin"], suffixes=(f"_{m1}", f"_{m2}")
+    )
+    df_diff["abs_diff"] = (df_diff[f"count_{m1}"] - df_diff[f"count_{m2}"]).abs()
+    df_diff["log2FC"] = np.where(
+        (df_diff[f"count_{m1}"] != 0) & (df_diff[f"count_{m2}"] != 0),
+        np.log2(df_diff[f"count_{m1}"] / df_diff[f"count_{m2}"]).abs(),
+        0,
+    )
+    # Original Heatmaps
+    charts = []
+    for meth_caller, agg in meth_caller_dfs.items():
+        heatmap = (
             alt.Chart(agg)
             .mark_rect()
             .encode(
                 x=alt.X(
                     "rep1_bin:O",
-                    title=f"{method} Rep1",
-                    sort=sorted(agg["rep1_bin"].unique(), reverse=False),  
-                    # scale=alt.Scale(domain=[0, 100]),
+                    sort=list(range(0, 101, 10)),
+                    title=f"{meth_caller} Rep1",
                 ),
                 y=alt.Y(
                     "rep2_bin:O",
-                    title=f"{method} Rep2",
-                    sort=sorted(agg["rep2_bin"].unique(), reverse=True), 
-                    # scale=alt.Scale(domain=[0, 100]),
+                    sort=list(range(100, -1, -10)),
+                    title=f"{meth_caller} Rep2",
                 ),
                 color=alt.Color(
-                    "count:Q", scale=alt.Scale(type="log", scheme="viridis")
+                    "count:Q",
+                    scale=alt.Scale(
+                        type="log", scheme="viridis", domain=[1, agg["count"].max()]
+                    ),
                 ),
-                # color=alt.Color(
-                #     "count:Q",
-                #     scale=alt.Scale(domain=[0, agg["count"].max()], type="log", scheme="viridis"),
-                # ),
                 tooltip=["rep1_bin", "rep2_bin", "count"],
             )
-            .properties(
-                title=f"Datapoints {len(df_temp)}",
-                width=150,
-                height=150,
-            )
+            .properties(title=f"{meth_caller} Heatmap", width=150, height=150)
         )
+        charts.append(heatmap)
 
-        sample_charts.append(scatter)
-    if sample_charts:
-        charts_per_sample.append(
-            alt.hconcat(*sample_charts)
+    # Difference Heatmap
+    diff_heatmap = (
+        alt.Chart(df_diff)
+        .mark_rect()
+        .encode(
+            x=alt.X("rep1_bin:O", sort=list(range(0, 101, 10))),
+            y=alt.Y("rep2_bin:O", sort=list(range(100, -1, -10))),
+            color=alt.Color(
+                "abs_diff:Q",
+                scale=alt.Scale(
+                    type="log", scheme="viridis", domain=[1, df_diff["abs_diff"].max()]
+                ),
+            ),
+            tooltip=["rep1_bin", "rep2_bin", "abs_diff"],
         )
+        .properties(title=f"Abs Difference {m1} vs {m2}", width=150, height=150)
+    )
 
-    return alt.vconcat(*charts_per_sample)
+    # Ratio Heatmap
+    ratio_heatmap = (
+        alt.Chart(df_diff)
+        .mark_rect()
+        .encode(
+            x=alt.X("rep1_bin:O", sort=list(range(0, 101, 10))),
+            y=alt.Y("rep2_bin:O", sort=list(range(100, -1, -10))),
+            color=alt.Color(
+                "log2FC:Q",
+                scale=alt.Scale(scheme="viridis", domain=[0, df_diff["log2FC"].max()]),
+            ),
+            tooltip=["rep1_bin", "rep2_bin", "log2FC"],
+        )
+        .properties(title=f"Log2 Fold Change {m1}/{m2}", width=150, height=150)
+    )
+
+    tool_charts = alt.hconcat(*charts).resolve_scale(color="independent")
+    diff_charts = alt.hconcat(diff_heatmap, ratio_heatmap).resolve_scale(
+        color="independent"
+    )
+    return alt.vconcat(tool_charts, diff_charts).resolve_scale(color="independent")
 
 
-replicate_dfs = {}
+# Daten aus HDF5 einlesen
+meth_caller_dfs = {}
 with pd.HDFStore(snakemake.input[0], mode="r", locking=False) as store:
-
-    # with pd.HDFStore(snakemake.input[0]) as store:
     for key in store.keys():
-        # key has leading '/', so remove it
-        replicate_dfs[key.strip("/")] = store[key]
+        meth_caller_dfs[key.strip("/")] = store[key]
 
+# Heatmaps erstellen
+chart = plot_heatmap_meth_callers(meth_caller_dfs)
 
-chart = plot_scatter_replicates(replicate_dfs)
-
+# Chart speichern
 chart.save(
     snakemake.output[0],
     embed_options={"actions": False},
-    inline=False,  # <- wichtig
+    inline=False,
 )
