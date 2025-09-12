@@ -249,6 +249,7 @@ rule replicates_heatmap:
         meth_callers=lambda wildcards: config["ref_tools"][wildcards.seq_platform]
         + ["varlo"],
         protocol=lambda wildcards: wildcards.protocol,
+        bin_size=lambda wildcards: config["heatmap_bin_size"],
         # correlation_method=config["correlation_method"],
     script:
         "../scripts/heatmap_replicates.py"
@@ -279,6 +280,7 @@ rule heatmap_illumina_protocols:
         + ["varlo"],
         # protocol="all",
         protocol=lambda wildcards: config["protocols"][wildcards.seq_platform],
+        bin_size=lambda wildcards: config["heatmap_bin_size"],
         # correlation_method=config["correlation_method"],
     script:
         "../scripts/heatmap_replicates.py"

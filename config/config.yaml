@@ -129,7 +129,7 @@ max_read_length: 50000
 fdr_alpha: 0.05
 
 ###################################### PLOTS ##################################################
-
+heatmap_bin_size: 5
 # Choose frome png and html
 plot_type: html
 # Define threshhold for false positive cutoff
