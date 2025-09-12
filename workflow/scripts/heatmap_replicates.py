@@ -32,7 +32,7 @@ def plot_diff_heatmap(ref_tool, df_dict, bin_size):
     # log2 Fold Change
     df_diff["log2FC"] = np.where(
         (df_diff[f"count_varlo"] != 0) & (df_diff[f"count_{ref_tool}"] != 0),
-        np.log2(df_diff[f"count_varlo"] / df_diff[f"count_{ref_tool}"]).abs(),
+        np.log2(df_diff[f"count_varlo"] / df_diff[f"count_{ref_tool}"]),
         0,
     )
 
@@ -48,7 +48,10 @@ def plot_diff_heatmap(ref_tool, df_dict, bin_size):
     # Heatmap 1: Abs Difference
     diff_heatmap = (
         alt.Chart(
-            df_diff, title=alt.Title(f"Abs Difference", subtitle=f"{ref_tool} vs varlo")
+            df_diff,
+            title=alt.Title(
+                f"Abs Difference (log scaled)", subtitle=f"{ref_tool} vs varlo"
+            ),
         )
         .mark_rect()
         .encode(
@@ -77,7 +80,9 @@ def plot_diff_heatmap(ref_tool, df_dict, bin_size):
             y=alt.Y("rep2_bin:O", sort=list(range(100, -1, -bin_size))),
             color=alt.Color(
                 "log2FC:Q",
-                scale=alt.Scale(scheme="viridis", domain=[0, df_diff["log2FC"].max()]),
+                scale=alt.Scale(
+                    scheme="redblue", domainMid=0  # das zwingt 0 auf die Mitte (weiß)
+                ),
             ),
             tooltip=["rep1_bin", "rep2_bin", "log2FC"],
         )
@@ -88,7 +93,9 @@ def plot_diff_heatmap(ref_tool, df_dict, bin_size):
     rel_heatmap = (
         alt.Chart(
             df_diff,
-            title=alt.Title(f"Relative Difference", subtitle=f"{ref_tool} vs varlo"),
+            title=alt.Title(
+                f"Relative Difference  (log scaled)", subtitle=f"{ref_tool} vs varlo"
+            ),
         )
         .mark_rect()
         .encode(
@@ -152,6 +159,7 @@ def plot_heatmap_meth_callers(df_dict, bin_size):
             .stack()
             .reset_index(name="count")
         )
+
         ########### Histogram code
 
         def compute_dist(row):
@@ -165,7 +173,6 @@ def plot_heatmap_meth_callers(df_dict, bin_size):
         agg["dist_bin"] = (agg["dist"] / bin_size).round() * bin_size
         agg["dist_bin"] = agg["dist_bin"].astype(int)
 
-        # Gruppieren nach Distanz-Bins
         dist_df = (
             agg.groupby("dist_bin", as_index=False)["count"]
             .sum()
@@ -181,7 +188,6 @@ def plot_heatmap_meth_callers(df_dict, bin_size):
             distances_histo = distances_histo.merge(
                 dist_df, on="dist_bin", how="outer"
             ).fillna(0)
-        print(dist_df, file=sys.stderr)
         ############ Histogram code Ende
 
         meth_caller_dfs[meth_caller] = agg
@@ -196,7 +202,8 @@ def plot_heatmap_meth_callers(df_dict, bin_size):
             alt.Chart(
                 agg,
                 title=alt.Title(
-                    f"{meth_caller} Heatmap", subtitle=f"Datapoints: {len(df_temp)}"
+                    f"{meth_caller} Heatmap  (log scaled)",
+                    subtitle=f"Datapoints: {len(df_temp)}",
                 ),
             )
             .mark_rect()
@@ -233,7 +240,6 @@ def plot_heatmap_meth_callers(df_dict, bin_size):
 
         method_plots.append(heatmap)
     ## Histogram plotten
-    print(distances_histo, file=sys.stderr)
     # DataFrame ins long format bringen
     df_long = distances_histo.melt(
         id_vars="dist_bin", var_name="meth_caller", value_name="count"
@@ -244,14 +250,28 @@ def plot_heatmap_meth_callers(df_dict, bin_size):
         alt.Chart(df_long)
         .mark_bar()
         .encode(
-            x=alt.X("dist_bin:O", title="Distanz"),  # Diskrete Bins auf der x-Achse
-            y=alt.Y("count:Q", title="Count"),
-            color=alt.Color("meth_caller:N", title="Meth Caller"),
-            xOffset="meth_caller:N",  # 🔑 sorgt für nebeneinanderliegende Balken
+            x=alt.X(
+                "dist_bin:O",
+                title="Distance (%)",  # englische Achsenbeschriftung
+                sort=list(
+                    range(0, 101, bin_size)
+                ),  # gleiche Sortierung wie bei Heatmaps
+            ),
+            y=alt.Y("count:Q", title="Number of sites (%)"),  # klarer y-Achsentitel
+            color=alt.Color(
+                "meth_caller:N",
+                title="Meth caller",
+                scale=alt.Scale(scheme="category10"),  # klares Farbschema
+            ),
+            xOffset="meth_caller:N",  # sorgt für nebeneinanderliegende Balken
             tooltip=["dist_bin", "meth_caller", "count"],
         )
         .properties(
-            width=600, height=300, title="Histogramm der Distanzen pro Meth-Caller"
+            width=600,
+            height=300,
+            title=alt.TitleParams(  # Titel im Heatmap-Stil
+                "Distance histogram", subtitle="Binned distances per meth caller"
+            ),
         )
     )
 
