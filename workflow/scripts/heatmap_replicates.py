@@ -2,6 +2,7 @@ import pandas as pd
 import altair as alt
 import sys
 import numpy as np
+from functools import reduce
 
 # Redirect error output to log file
 sys.stderr = open(snakemake.log[0], "w")
@@ -16,33 +17,33 @@ def bin_methylation(series, bin_size=10):
     return (np.round(series / bin_size) * bin_size).astype(int)
 
 
-def plot_diff_heatmap(method, df_dict):
-    df1 = df_dict[method]
+def plot_diff_heatmap(ref_tool, df_dict):
+    df1 = df_dict[ref_tool]
     df2 = df_dict["varlo"]
 
     # Merge counts
     df_diff = df1.merge(
-        df2, on=["rep1_bin", "rep2_bin"], suffixes=(f"_{method}", "_varlo")
+        df2, on=["rep1_bin", "rep2_bin"], suffixes=(f"_{ref_tool}", "_varlo")
     )
 
     # Absolute Differenz
-    df_diff["abs_diff"] = (df_diff[f"count_varlo"] - df_diff[f"count_{method}"]).abs()
+    df_diff["abs_diff"] = (df_diff[f"count_varlo"] - df_diff[f"count_{ref_tool}"]).abs()
 
     # log2 Fold Change
     df_diff["log2FC"] = np.where(
-        (df_diff[f"count_varlo"] != 0) & (df_diff[f"count_{method}"] != 0),
-        np.log2(df_diff[f"count_varlo"] / df_diff[f"count_{method}"]).abs(),
+        (df_diff[f"count_varlo"] != 0) & (df_diff[f"count_{ref_tool}"] != 0),
+        np.log2(df_diff[f"count_varlo"] / df_diff[f"count_{ref_tool}"]).abs(),
         0,
     )
 
     # Normalisierte Prozentwerte
     total_varlo = df_diff[f"count_varlo"].sum()
-    total_method = df_diff[f"count_{method}"].sum()
+    total_ref_tool = df_diff[f"count_{ref_tool}"].sum()
     df_diff["rel_varlo"] = df_diff[f"count_varlo"] / total_varlo * 100
-    df_diff["rel_method"] = df_diff[f"count_{method}"] / total_method * 100
+    df_diff["rel_ref_tool"] = df_diff[f"count_{ref_tool}"] / total_ref_tool * 100
 
     # Differenz in Prozent
-    df_diff["rel_diff"] = df_diff["rel_varlo"] - df_diff["rel_method"]
+    df_diff["rel_diff"] = df_diff["rel_varlo"] - df_diff["rel_ref_tool"]
 
     # Heatmap 1: Abs Difference
     diff_heatmap = (
@@ -59,7 +60,7 @@ def plot_diff_heatmap(method, df_dict):
             ),
             tooltip=["rep1_bin", "rep2_bin", "abs_diff"],
         )
-        .properties(title=f"Abs Difference {method} vs varlo", width=150, height=150)
+        .properties(title=f"Abs Difference {ref_tool} vs varlo", width=150, height=150)
     )
 
     # Heatmap 2: Log2 Fold Change
@@ -75,7 +76,7 @@ def plot_diff_heatmap(method, df_dict):
             ),
             tooltip=["rep1_bin", "rep2_bin", "log2FC"],
         )
-        .properties(title=f"Log2 Fold Change {method}/varlo", width=150, height=150)
+        .properties(title=f"Log2 Fold Change {ref_tool}/varlo", width=150, height=150)
     )
 
     # Heatmap 3: Relative Difference (Prozent)
@@ -100,7 +101,7 @@ def plot_diff_heatmap(method, df_dict):
             tooltip=["rep1_bin", "rep2_bin", "rel_diff"],
         )
         .properties(
-            title=f"Relative Difference (Varlo - {method}) [%]", width=150, height=150
+            title=f"Relative Difference (Varlo - {ref_tool}) [%]", width=150, height=150
         )
     )
 
@@ -110,15 +111,28 @@ def plot_diff_heatmap(method, df_dict):
 
 
 def plot_heatmap_meth_callers(df_dict):
-    sample_name = snakemake.params["protocol"]
-    df = df_dict[sample_name]
 
+    protocols = snakemake.params["protocol"]
+    # We use this method to plot heatmaps for single protocols or common heatmaps over multiple protocols.
+    # This depends on the snakemake parameter "protocol", which can be a string or a list of strings.
+    if isinstance(protocols, str):
+        df = df_dict[protocols]
+    else:
+        df_list = []
+        for protocol in protocols:
+            print("Protocol:", df_dict[protocol], file=sys.stderr)
+            df_list.append(df_dict[protocol])
+        long_df = pd.concat(df_list, axis=0, ignore_index=True)
+
+        methyl_cols = [c for c in long_df.columns if "methylation" in c]
+        df = long_df.groupby(["chromosome", "position"], as_index=False)[
+            methyl_cols
+        ].mean()
     meth_caller_dfs = {}
     method_plots = []
 
     # Counts für jede meth_callere berechnen
     for meth_caller in snakemake.params["meth_callers"]:
-        print(f"Methode: {meth_caller}", file=sys.stderr)
         x_col = f"{meth_caller}_methylation_rep1"
         y_col = f"{meth_caller}_methylation_rep2"
 
@@ -165,7 +179,6 @@ def plot_heatmap_meth_callers(df_dict):
         )
 
         method_plots.append(heatmap)
-        print("Methode fertig", method_plots, file=sys.stderr)
 
     return (
         alt.hconcat(*method_plots).resolve_scale(color="independent"),
@@ -183,10 +196,10 @@ with pd.HDFStore(snakemake.input[0], mode="r", locking=False) as store:
 chart, meth_caller_dfs = plot_heatmap_meth_callers(meth_caller_dfs)
 diff_charts = []
 # Differenz-Heatmaps erstellen
-for method in snakemake.params["meth_callers"]:
-    if method == "varlo":
+for meth_caller in snakemake.params["meth_callers"]:
+    if meth_caller == "varlo":
         continue  # Differenz-Heatmap von varlo zu varlo macht keinen Sinn
-    diff_chart = plot_diff_heatmap(method, meth_caller_dfs)
+    diff_chart = plot_diff_heatmap(meth_caller, meth_caller_dfs)
     diff_charts.append(diff_chart)
 
 diff_chart_plots = alt.hconcat(*diff_charts).resolve_scale(color="independent")

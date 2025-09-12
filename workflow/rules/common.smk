@@ -6,11 +6,14 @@ def compute_results():
         # needed_inputs.append(plots(seq_platform))
         # needed_inputs.append(diff_plots(seq_platform))
         # needed_inputs.append(precision_recall(seq_platform))
-        
+
         # needed_inputs.append(comparision_plots_tools(seq_platform))
 
         needed_inputs.append(heatmap_replicates(seq_platform))
         needed_inputs.append(correlation_table(seq_platform))
+        needed_inputs.append(
+            f"results/Illumina_pe/plots/heatmap_all_protocols.{config['plot_type']}"
+        )
 
     return needed_inputs
 

@@ -225,7 +225,6 @@ rule correlation_tables:
         "../scripts/correlation_tables.py"
 
 
-# Important
 rule replicates_heatmap:
     input:
         "results/{seq_platform}/plots/replicates_{plot_type}.hd5",
@@ -250,6 +249,36 @@ rule replicates_heatmap:
         meth_callers=lambda wildcards: config["ref_tools"][wildcards.seq_platform]
         + ["varlo"],
         protocol=lambda wildcards: wildcards.protocol,
+        # correlation_method=config["correlation_method"],
+    script:
+        "../scripts/heatmap_replicates.py"
+
+# Compute common heatmap over all Illumina protocols
+rule heatmap_illumina_protocols:
+    input:
+        "results/{seq_platform}/plots/replicates_{plot_type}.hd5",
+    output:
+        report(
+            "results/{seq_platform}/plots/heatmap_all_protocols.{plot_type}",
+            category="{seq_platform}",
+            # subcategory=lambda wildcards: f"{wildcards.protocol}",
+
+            labels={
+                "file": "heatmap",
+                "protocol": "all protocols",
+            },
+        ),
+    conda:
+        "../envs/plot.yaml"
+    resources:
+        mem_mb=32000
+    log:
+        "logs/plots/{seq_platform}/heatmap_replicates_{plot_type}.log",
+    params:
+        meth_callers=lambda wildcards: config["ref_tools"][wildcards.seq_platform]
+        + ["varlo"],
+        # protocol="all",
+        protocol=lambda wildcards: config["protocols"][wildcards.seq_platform],
         # correlation_method=config["correlation_method"],
     script:
         "../scripts/heatmap_replicates.py"
