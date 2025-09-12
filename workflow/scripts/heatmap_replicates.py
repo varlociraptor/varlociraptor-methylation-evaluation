@@ -19,17 +19,32 @@ def bin_methylation(series, bin_size=10):
 def plot_diff_heatmap(method, df_dict):
     df1 = df_dict[method]
     df2 = df_dict["varlo"]
+
+    # Merge counts
     df_diff = df1.merge(
-        df2, on=["rep1_bin", "rep2_bin"], suffixes=(f"_varlo", f"_{method}")
+        df2, on=["rep1_bin", "rep2_bin"], suffixes=(f"_{method}", "_varlo")
     )
+
+    # Absolute Differenz
     df_diff["abs_diff"] = (df_diff[f"count_varlo"] - df_diff[f"count_{method}"]).abs()
+
+    # log2 Fold Change
     df_diff["log2FC"] = np.where(
         (df_diff[f"count_varlo"] != 0) & (df_diff[f"count_{method}"] != 0),
         np.log2(df_diff[f"count_varlo"] / df_diff[f"count_{method}"]).abs(),
         0,
     )
 
-    # Difference Heatmap
+    # Normalisierte Prozentwerte
+    total_varlo = df_diff[f"count_varlo"].sum()
+    total_method = df_diff[f"count_{method}"].sum()
+    df_diff["rel_varlo"] = df_diff[f"count_varlo"] / total_varlo * 100
+    df_diff["rel_method"] = df_diff[f"count_{method}"] / total_method * 100
+
+    # Differenz in Prozent
+    df_diff["rel_diff"] = df_diff["rel_varlo"] - df_diff["rel_method"]
+
+    # Heatmap 1: Abs Difference
     diff_heatmap = (
         alt.Chart(df_diff)
         .mark_rect()
@@ -47,7 +62,7 @@ def plot_diff_heatmap(method, df_dict):
         .properties(title=f"Abs Difference {method} vs varlo", width=150, height=150)
     )
 
-    # Ratio Heatmap
+    # Heatmap 2: Log2 Fold Change
     ratio_heatmap = (
         alt.Chart(df_diff)
         .mark_rect()
@@ -63,7 +78,35 @@ def plot_diff_heatmap(method, df_dict):
         .properties(title=f"Log2 Fold Change {method}/varlo", width=150, height=150)
     )
 
-    return alt.vconcat(diff_heatmap, ratio_heatmap).resolve_scale(color="independent")
+    # Heatmap 3: Relative Difference (Prozent)
+    rel_heatmap = (
+        alt.Chart(df_diff)
+        .mark_rect()
+        .encode(
+            x=alt.X("rep1_bin:O", sort=list(range(0, 101, 10))),
+            y=alt.Y("rep2_bin:O", sort=list(range(100, -1, -10))),
+            color=alt.Color(
+                "rel_diff:Q",
+                scale=alt.Scale(
+                    type="symlog",
+                    scheme="redblue",  # divergierendes Schema
+                    domain=[
+                        -max(abs(df_diff["rel_diff"])),
+                        max(abs(df_diff["rel_diff"])),
+                    ],
+                    domainMid=0,
+                ),
+            ),
+            tooltip=["rep1_bin", "rep2_bin", "rel_diff"],
+        )
+        .properties(
+            title=f"Relative Difference (Varlo - {method}) [%]", width=150, height=150
+        )
+    )
+
+    return alt.vconcat(diff_heatmap, ratio_heatmap, rel_heatmap).resolve_scale(
+        color="independent"
+    )
 
 
 def plot_heatmap_meth_callers(df_dict):
@@ -114,7 +157,11 @@ def plot_heatmap_meth_callers(df_dict):
                 ),
                 tooltip=["rep1_bin", "rep2_bin", "count"],
             )
-            .properties(title=f"{meth_caller} Heatmap", width=150, height=150)
+            .properties(
+                title=f"{meth_caller} Heatmap, Datapoints: {len(df_temp)}",
+                width=150,
+                height=150,
+            )
         )
 
         method_plots.append(heatmap)

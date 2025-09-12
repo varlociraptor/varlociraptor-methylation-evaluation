@@ -15,20 +15,24 @@ pd.set_option("display.max_rows", 10)
 
 from typing import Literal
 
+
 # https://en.wikipedia.org/wiki/Concordance_correlation_coefficient
 def compute_ccc(x, y):
 
     mean_x = x.mean()
     mean_y = y.mean()
-    
+
     var_x = x.var(ddof=0)
     var_y = y.var(ddof=0)
-    
+
     pearson = x.corr(y, method="pearson")
 
-    ccc = (2 * pearson * (var_x**0.5) * (var_y**0.5)) / (var_x + var_y + (mean_x - mean_y)**2)
+    ccc = (2 * pearson * (var_x**0.5) * (var_y**0.5)) / (
+        var_x + var_y + (mean_x - mean_y) ** 2
+    )
 
     return ccc
+
 
 def compute_correlation(
     df: pd.DataFrame,
@@ -63,20 +67,22 @@ def compute_correlation(
             raise ValueError(f"Invalid mode: {mode}")
 
         # Drop NA rows for fair comparison
-        df_short = df.dropna(subset=[col1, col2])
-        if df_short.empty:
+        df = df.dropna(subset=[col1, col2])
+        if df.empty:
             continue
-        
+
         metric_funcs = {
-            "pearson": lambda: df_short[col1].corr(df_short[col2], method="pearson"),
-            "spearman": lambda: df_short[col1].corr(df_short[col2], method="spearman"),
-            "rmse": lambda: np.sqrt(((df_short[col1] - df_short[col2]) ** 2).mean()) / 100.0,
+            "pearson": lambda: df[col1].corr(df[col2], method="pearson"),
+            "spearman": lambda: df[col1].corr(df[col2], method="spearman"),
+            "rmse": lambda: np.sqrt(((df[col1] - df[col2]) ** 2).mean()) / 100.0,
             "mape": lambda: (
-                (np.abs(df_short[col1] - df_short[col2]) /
-                df_short[[col1, col2]].replace(0, np.nan).max(axis=1))
-                .mean() * 100
+                (
+                    np.abs(df[col1] - df[col2])
+                    / df[[col1, col2]].replace(0, np.nan).max(axis=1)
+                ).mean()
+                * 100
             ),
-            "ccc": lambda: compute_ccc(df_short[col1], df_short[col2]),
+            "ccc": lambda: compute_ccc(df[col1], df[col2]),
         }
 
         correlation_entry = {
@@ -94,8 +100,10 @@ def compute_correlation(
     return pd.DataFrame(correlations)
 
 
-
-def plot_correlation(df: pd.DataFrame, corr_method: Literal["rmse", "pearson", "spearman", "mape", "ccc"] = "rmse") -> alt.Chart:
+def plot_correlation(
+    df: pd.DataFrame,
+    corr_method: Literal["rmse", "pearson", "spearman", "mape", "ccc"] = "rmse",
+) -> alt.Chart:
     """
     Create a heatmap with correlation values annotated as text.
     """
@@ -157,12 +165,13 @@ corr_methods = snakemake.params["correlation_methods"]
 ################### COMPUTE CORRELATION ####################
 
 for sample_file in snakemake.input["samples"]:
-    # Get the name of the specific sample. 
+    # Get the name of the specific sample.
     replicate_name = sample_file.split("/")[-3]
     df = pd.read_parquet(sample_file, engine="pyarrow")
 
-
-    meth_caller_correlation_dfs.append(compute_correlation(df, replicate_name, "meth_caller", corr_methods))
+    meth_caller_correlation_dfs.append(
+        compute_correlation(df, replicate_name, "meth_caller", corr_methods)
+    )
     # Take the sample + replicate name and remove the specific replicate identifier
     samplename = normalize_sample_name(replicate_name)
 
@@ -185,13 +194,13 @@ with pd.HDFStore(snakemake.output["table"]) as store:
 
 # Calculate correlations across replicates
 for sample_name, df in replicate_dfs.items():
-    sample_correlation.append(compute_correlation(df, sample_name, "replicate", corr_methods))
+    sample_correlation.append(
+        compute_correlation(df, sample_name, "replicate", corr_methods)
+    )
 
 # Combine results
 correlation_meth_callers = pd.concat(meth_caller_correlation_dfs, ignore_index=True)
 correlation_replicates = pd.concat(sample_correlation, ignore_index=True)
-
-
 
 
 ################### PLOTTING ####################
