@@ -76,11 +76,12 @@ def compute_correlation(
             "spearman": lambda: df[col1].corr(df[col2], method="spearman"),
             "rmse": lambda: np.sqrt(((df[col1] - df[col2]) ** 2).mean()) / 100.0,
             "mape": lambda: (
-                (
-                    np.abs(df[col1] - df[col2])
-                    / df[[col1, col2]].replace(0, np.nan).max(axis=1)
-                ).mean()
-                * 100
+                np.where(
+                    (df[col1] == 0) & (df[col2] == 0),
+                    0, 
+                    np.abs(df[col1] - df[col2]) /
+                    df[[col1, col2]].max(axis=1)
+                ).mean() * 100.0
             ),
             "ccc": lambda: compute_ccc(df[col1], df[col2]),
         }
