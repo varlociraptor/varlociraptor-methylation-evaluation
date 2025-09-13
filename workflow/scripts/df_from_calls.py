@@ -11,7 +11,6 @@ pd.set_option("display.max_columns", None)
 pd.set_option("display.max_rows", 10)
 
 
-
 # def get_bin(coverage):
 #     """Assigns a coverage bin to the given coverage value."""
 #     return min(
@@ -158,7 +157,6 @@ def read_tool_file(filepath, file_name):
                     )
                     continue
 
-
                 # Parse INFO field into dictionary
                 info_dict = dict(
                     item.split("=", 1)
@@ -185,9 +183,7 @@ def read_tool_file(filepath, file_name):
                     )
                     continue
 
-                records.append([
-                    chrom, position, meth_rate
-                ])
+                records.append([chrom, position, meth_rate])
 
             # ----------------------------
             # Handle methylDackel / bismark formats
@@ -199,9 +195,7 @@ def read_tool_file(filepath, file_name):
                 # coverage = int(parts[4]) + int(parts[5])
                 position = (start + end) // 2
 
-                records.append([
-                    chrom, position, meth_rate
-                ])
+                records.append([chrom, position, meth_rate])
 
             # ----------------------------
             # Handle bsMap format
@@ -215,9 +209,7 @@ def read_tool_file(filepath, file_name):
                 print(meth_rate, file=sys.stderr)
                 # coverage = float(parts[5])
 
-                records.append([
-                    chrom, position, meth_rate
-                ])
+                records.append([chrom, position, meth_rate])
 
             # ----------------------------
             # Handle bisSNP format
@@ -228,9 +220,7 @@ def read_tool_file(filepath, file_name):
                 meth_rate = float(parts[3])
                 # coverage = int(parts[4])
 
-                records.append([
-                    chrom, position, meth_rate
-                ])
+                records.append([chrom, position, meth_rate])
 
             # ----------------------------
             # Handle modkit format
@@ -243,10 +233,8 @@ def read_tool_file(filepath, file_name):
                 meth_rate = float(details[1])
                 modified_base = parts[3]
 
-                if modified_base == 'm':  # Only consider methylated bases
-                    records.append([
-                        chrom, position, meth_rate
-                    ])
+                if modified_base == "m":  # Only consider methylated bases
+                    records.append([chrom, position, meth_rate])
 
             # ----------------------------
             # Handle pb_CpG_tools format
@@ -257,9 +245,7 @@ def read_tool_file(filepath, file_name):
                 meth_rate = float(parts[3])
                 # coverage = int(parts[5])
 
-                records.append([
-                    chrom, position, meth_rate
-                ])
+                records.append([chrom, position, meth_rate])
 
     # Standard output DataFrame
     columns = [
@@ -284,14 +270,5 @@ file_name = os.path.splitext(os.path.basename(tool_file))[0]
 
 df = read_tool_file(tool_file, file_name)
 
-# Fill missing values
-df.fillna(0, inplace=True)
-
-print("Final DataFrame shape:", df, file=sys.stderr)
-
 # Write output in Parquet format
-df.to_parquet(
-    snakemake.output[0],
-    engine="pyarrow",
-    compression="snappy"
-)
+df.to_parquet(snakemake.output[0], engine="pyarrow", compression="snappy")
