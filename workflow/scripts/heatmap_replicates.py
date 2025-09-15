@@ -27,7 +27,6 @@ def plot_count_heatmap(df, meth_caller, bin_size, mapes):
     ticks = [min_count, max_count]  # legend ticks including maximum
 
     # Compute MAPE if raw data is provided
-    print(mapes, file=sys.stderr)
     heatmap = (
         alt.Chart(
             df,
@@ -67,55 +66,30 @@ def plot_count_heatmap(df, meth_caller, bin_size, mapes):
     return heatmap
 
 
-def plot_histogram_cdf(meth_callers, meth_caller_dfs, bin_size=5):
-    all_dist_dfs = []
-    cdf_dfs = []
+def plot_histogram_cdf(meth_callers, meth_caller_dfs, cdf_dfs, bin_size=5):
+    # all_dist_dfs = []
+    # for meth_caller in meth_callers:
+    #     df = meth_caller_dfs[meth_caller].copy()
+    df_hist_long = pd.concat(meth_caller_dfs.values(), axis=0, ignore_index=True)
+    print(df_hist_long, file=sys.stderr)
+    df_hist_long = df_hist_long.groupby(["dist_bin", "meth_caller"], as_index=False)[
+        "rel_count"
+    ].sum()
+    print(df_hist_long, file=sys.stderr)
 
-    for meth_caller in meth_callers:
-        df = meth_caller_dfs[meth_caller].copy()
+    #     # CDF
+    # print(meth_caller_dfs, file=sys.stderr)
+    # print(cdf_dfs, file=sys.stderr)
+    # # Merge histogram data
+    # dist_df = all_dist_dfs[0]
+    # for other in all_dist_dfs[1:]:
+    #     dist_df = pd.merge(dist_df, other, on="dist_bin", how="outer").fillna(0)
 
-        # Compute percentage distance between replicates
-        df["dist"] = df.apply(
-            lambda row: (
-                0
-                if max(row["rep1_bin"], row["rep2_bin"]) == 0
-                else abs(row["rep1_bin"] - row["rep2_bin"])
-                / max(row["rep1_bin"], row["rep2_bin"])
-                * 100
-            ),
-            axis=1,
-        )
+    # df_hist_long = dist_df.melt(
+    #     id_vars="dist_bin", var_name="meth_caller", value_name="rel_count"
+    # )
 
-        # Histogram
-        df["dist_bin"] = (df["dist"] / bin_size).round() * bin_size
-        df["dist_bin"] = df["dist_bin"].astype(int)
-
-        dist_df = (
-            df.groupby("dist_bin", as_index=False)["count"]
-            .sum()
-            .assign(rel_count=lambda d: d["count"] / d["count"].sum())
-            .sort_values("dist_bin")
-            .rename(columns={"rel_count": meth_caller})
-            .drop(columns="count")
-        )
-        all_dist_dfs.append(dist_df)
-
-        # CDF
-        df_sorted = df.sort_values("dist").reset_index(drop=True)
-        df_sorted["cdf"] = df_sorted["count"].cumsum() / df_sorted["count"].sum()
-        df_sorted["meth_caller"] = meth_caller
-        cdf_dfs.append(df_sorted[["dist", "cdf", "meth_caller"]])
-
-    # Merge histogram data
-    dist_df = all_dist_dfs[0]
-    for other in all_dist_dfs[1:]:
-        dist_df = pd.merge(dist_df, other, on="dist_bin", how="outer").fillna(0)
-
-    df_hist_long = dist_df.melt(
-        id_vars="dist_bin", var_name="meth_caller", value_name="rel_count"
-    )
-
-    df_cdf_long = pd.concat(cdf_dfs, axis=0, ignore_index=True)
+    df_cdf_long = pd.concat(cdf_dfs.values(), axis=0, ignore_index=True)
 
     # Histogram layer
     hist_chart = (
@@ -144,12 +118,8 @@ def plot_histogram_cdf(meth_callers, meth_caller_dfs, bin_size=5):
     )
 
     # Layer them
-    combined_chart = (
-        alt.layer(cdf_chart, hist_chart)
-        .resolve_scale(
-            y="independent"  # wichtig, damit Histogramm und CDF eigene Achsen haben
-        )
-        .properties(width=700, height=400, title="Distance histogram and CDF combined")
+    combined_chart = alt.layer(cdf_chart, hist_chart).properties(
+        width=700, height=400, title="Distance histogram and CDF combined"
     )
 
     return combined_chart
@@ -344,6 +314,7 @@ def compute_replicate_counts(df_dict, bin_size, relative=False):
         ].mean()
 
     meth_caller_dfs = {}
+    cdf_dfs = {}
     mapes = {}
     for meth_caller in meth_callers:
         x_col = f"{meth_caller}_methylation_rep1"
@@ -366,18 +337,49 @@ def compute_replicate_counts(df_dict, bin_size, relative=False):
         df_temp["rep1_bin"] = bin_methylation(df_temp[x_col], bin_size)
         df_temp["rep2_bin"] = bin_methylation(df_temp[y_col], bin_size)
 
-        agg = (
+        # We need all dist bin combos for our heatmap so we need to crosstab. Grouping is not enough!
+
+        # Compute df with binned distances
+        agg_histo = (
             pd.crosstab(df_temp["rep1_bin"], df_temp["rep2_bin"])
             .stack()
             .reset_index(name="count")
         )
-        agg["rel_count"] = (
-            agg["count"] / agg["count"].sum() * 100
-        )  # normalize to percentage
+        agg_histo["rel_count"] = agg_histo["count"] / agg_histo["count"].sum()
+        agg_histo["dist"] = agg_histo.apply(
+            lambda row: (
+                0
+                if max(row["rep1_bin"], row["rep2_bin"]) == 0
+                else abs(row["rep1_bin"] - row["rep2_bin"])
+                / max(row["rep1_bin"], row["rep2_bin"])
+                * 100
+            ),
+            axis=1,
+        )
 
-        meth_caller_dfs[meth_caller] = agg
+        agg_histo["dist_bin"] = (agg_histo["dist"] / bin_size).round() * bin_size
+        agg_histo["dist_bin"] = agg_histo["dist_bin"].astype(int)
+        agg_histo["meth_caller"] = meth_caller
+        meth_caller_dfs[meth_caller] = agg_histo
 
-    return meth_caller_dfs, mapes
+        # Compute df with unbinned distances
+        agg_cdf = df_temp.copy()
+        agg_cdf["dist"] = agg_cdf.apply(
+            lambda row: (
+                0
+                if max(row[x_col], row[y_col]) == 0
+                else abs(row[x_col] - row[y_col]) / max(row[x_col], row[y_col]) * 100
+            ),
+            axis=1,
+        )
+        agg_cdf = agg_cdf.groupby("dist", as_index=False).agg(count=("dist", "size"))
+
+        agg_cdf["rel_count"] = agg_cdf["count"] / agg_cdf["count"].sum() * 100
+        agg_cdf = agg_cdf.sort_values("dist").reset_index(drop=True)
+        agg_cdf["cdf"] = agg_cdf["count"].cumsum() / agg_cdf["count"].sum()
+        agg_cdf["meth_caller"] = meth_caller
+        cdf_dfs[meth_caller] = agg_cdf[["dist", "cdf", "meth_caller"]]
+    return meth_caller_dfs, cdf_dfs, mapes
 
 
 # Main execution ------------------------------------------------------
@@ -393,7 +395,7 @@ with pd.HDFStore(snakemake.input[0], mode="r", locking=False) as store:
         meth_caller_dfs[key.strip("/")] = store[key]
 
 # Compute replicate counts
-replicate_dfs, mapes = compute_replicate_counts(
+replicate_dfs, cdf_dfs, mapes = compute_replicate_counts(
     meth_caller_dfs, bin_size, relative_counts
 )
 
@@ -406,15 +408,7 @@ for meth_caller in meth_callers:
         plot_count_heatmap(replicate_dfs[meth_caller], meth_caller, bin_size, mapes)
     )
 
-    if meth_caller == "varlo":
-        continue
-    # diff_chart = plot_diff_heatmap(meth_caller, replicate_dfs, bin_size)
-    # diff_charts.append(diff_chart)
-
-# Create histogram plots
-# histogram = plot_dist_histogram(meth_callers, replicate_dfs, bin_size)
-# cdf = plot_cdf_distances(meth_callers, replicate_dfs)
-distance_plots = plot_histogram_cdf(meth_callers, replicate_dfs)
+distance_plots = plot_histogram_cdf(meth_callers, replicate_dfs, cdf_dfs)
 
 # Combine plots
 heatmap_plots = alt.hconcat(*heatmaps).resolve_scale(color="independent")
