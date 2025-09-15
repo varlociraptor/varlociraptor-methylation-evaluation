@@ -78,10 +78,10 @@ def compute_correlation(
             "mape": lambda: (
                 np.where(
                     (df[col1] == 0) & (df[col2] == 0),
-                    0, 
-                    np.abs(df[col1] - df[col2]) /
-                    df[[col1, col2]].max(axis=1)
-                ).mean() * 100.0
+                    0,
+                    np.abs(df[col1] - df[col2]) / df[[col1, col2]].max(axis=1),
+                ).mean()
+                * 100.0
             ),
             "ccc": lambda: compute_ccc(df[col1], df[col2]),
         }
@@ -112,7 +112,6 @@ def plot_correlation(
     num_comparisons = df["comparison"].nunique()
     chart_width = max(200, num_replicates * 100)
     chart_height = max(150, num_comparisons * 30)
-    print(df, corr_method, file=sys.stderr)
     heatmap = (
         alt.Chart(df)
         .mark_rect()
@@ -198,11 +197,13 @@ for sample_name, df in replicate_dfs.items():
     sample_correlation.append(
         compute_correlation(df, sample_name, "replicate", corr_methods)
     )
+print(replicate_dfs, file=sys.stderr)
 
 # Combine results
 correlation_meth_callers = pd.concat(meth_caller_correlation_dfs, ignore_index=True)
 correlation_replicates = pd.concat(sample_correlation, ignore_index=True)
 
+print(correlation_replicates, file=sys.stderr)
 
 ################### PLOTTING ####################
 
