@@ -63,6 +63,84 @@ def plot_count_heatmap(df, meth_caller, bin_size):
     return heatmap
 
 
+
+def plot_distances_combined(meth_callers, meth_caller_dfs, bin_size=5):
+    all_dist_dfs = []
+    cdf_dfs = []
+
+    for meth_caller in meth_callers:
+        df = meth_caller_dfs[meth_caller].copy()
+
+        # Compute percentage distance between replicates
+        df["dist"] = df.apply(
+            lambda row: 0 if max(row["rep1_bin"], row["rep2_bin"]) == 0
+            else abs(row["rep1_bin"] - row["rep2_bin"]) / max(row["rep1_bin"], row["rep2_bin"]) * 100,
+            axis=1
+        )
+
+        # Histogram
+        df["dist_bin"] = (df["dist"] / bin_size).round() * bin_size
+        df["dist_bin"] = df["dist_bin"].astype(int)
+
+        dist_df = (
+            df.groupby("dist_bin", as_index=False)["count"]
+            .sum()
+            .assign(rel_count=lambda d: d["count"] / d["count"].sum())
+            .sort_values("dist_bin")
+            .rename(columns={"rel_count": meth_caller})
+            .drop(columns="count")
+        )
+        all_dist_dfs.append(dist_df)
+
+        # CDF
+        df_sorted = df.sort_values("dist").reset_index(drop=True)
+        df_sorted["cdf"] = df_sorted["count"].cumsum() / df_sorted["count"].sum()
+        df_sorted["meth_caller"] = meth_caller
+        cdf_dfs.append(df_sorted[["dist", "cdf", "meth_caller"]])
+
+    # Merge histogram data
+    dist_df = all_dist_dfs[0]
+    for other in all_dist_dfs[1:]:
+        dist_df = pd.merge(dist_df, other, on="dist_bin", how="outer").fillna(0)
+
+    df_hist_long = dist_df.melt(
+        id_vars="dist_bin", var_name="meth_caller", value_name="rel_count"
+    )
+
+    df_cdf_long = pd.concat(cdf_dfs, axis=0, ignore_index=True)
+
+    # Histogram layer
+    hist_chart = (
+        alt.Chart(df_hist_long)
+        .mark_point(size=60, filled=True)
+        .encode(
+            x=alt.X("dist_bin:Q", title="Distance (%)"),
+            y=alt.Y("rel_count:Q", title="Relative number sites", axis=alt.Axis(format='%')),
+            color=alt.Color("meth_caller:N", scale=alt.Scale(scheme="category10")),
+            tooltip=["dist_bin", "meth_caller", "rel_count"]
+        )
+    )
+
+    # CDF layer (right y-axis)
+    cdf_chart = (
+        alt.Chart(df_cdf_long)
+        .mark_line()
+        .encode(
+            x=alt.X("dist:Q"),
+            y=alt.Y("cdf:Q", title="Cumulative fraction", axis=alt.Axis(format='%')),
+            color=alt.Color("meth_caller:N", scale=alt.Scale(scheme="category10")),
+            tooltip=["dist", "meth_caller", "cdf"]
+        )
+    )
+
+    # Layer them
+    combined_chart = alt.layer(cdf_chart, hist_chart).resolve_scale(
+        y='independent'  # wichtig, damit Histogramm und CDF eigene Achsen haben
+    ).properties(width=700, height=400, title="Distance histogram and CDF combined")
+
+    return combined_chart
+
+
 def plot_dist_histogram(meth_callers, meth_caller_dfs, bin_size):
     """Plot distance histograms between replicates across different methylation callers"""
     all_dist_dfs = []
@@ -70,24 +148,21 @@ def plot_dist_histogram(meth_callers, meth_caller_dfs, bin_size):
     for meth_caller in meth_callers:
         df = meth_caller_dfs[meth_caller]
 
-        def compute_dist(row):
-            a, b = row["rep1_bin"], row["rep2_bin"]
-            if max(a, b) == 0:
-                return 0
-            return abs((a - b) / max(a, b)) * 100
-
-        # Calculate relative distance (percentage difference between replicates)
-        df["dist"] = df.apply(compute_dist, axis=1)
+        df["dist"] = df.apply(
+            lambda row: 0 if max(row["rep1_bin"], row["rep2_bin"]) == 0
+            else abs(row["rep1_bin"] - row["rep2_bin"]) / max(row["rep1_bin"], row["rep2_bin"]) * 100,
+            axis=1
+        )
         df["dist_bin"] = (df["dist"] / bin_size).round() * bin_size
         df["dist_bin"] = df["dist_bin"].astype(int)
 
         dist_df = (
-            df.groupby("dist_bin", as_index=False)["count"]
+            df.groupby("dist_bin", as_index=False)["rel_count"]
             .sum()
-            .assign(pct=lambda d: d["count"])
+            .assign(pct=lambda d: d["rel_count"])
             .sort_values("dist_bin")
             .rename(columns={"pct": meth_caller})
-            .drop(columns="count")
+            .drop(columns="rel_count")
         )
         all_dist_dfs.append(dist_df)
 
@@ -98,7 +173,7 @@ def plot_dist_histogram(meth_callers, meth_caller_dfs, bin_size):
 
     # Convert to long format for plotting
     df_long = dist_df.melt(
-        id_vars="dist_bin", var_name="meth_caller", value_name="count"
+        id_vars="dist_bin", var_name="meth_caller", value_name="rel_count"
     )
 
     line_chart = (
@@ -108,17 +183,58 @@ def plot_dist_histogram(meth_callers, meth_caller_dfs, bin_size):
             x=alt.X(
                 "dist_bin:O", title="Distance (%)", sort=list(range(0, 101, bin_size))
             ),
-            y=alt.Y("count:Q", title="Number of sites (%)"),
+            y=alt.Y("rel_count:Q", title="Number of sites (%)"),
             color=alt.Color(
                 "meth_caller:N",
                 title="Meth caller",
                 scale=alt.Scale(scheme="category10"),
             ),
-            tooltip=["dist_bin", "meth_caller", "count"],
+            tooltip=["dist_bin", "meth_caller", "rel_count"],
         )
         .properties(width=600, height=300, title="Distance histogram as line chart")
     )
     return line_chart
+
+def plot_cdf_distances(meth_callers, meth_caller_dfs):
+    """Plot cumulative distribution function (CDF) of replicate distances without binning"""
+    cdf_dfs = []
+
+    for meth_caller in meth_callers:
+        df = meth_caller_dfs[meth_caller].copy()
+
+        # Compute percentage distance between replicates
+        df["dist"] = df.apply(
+            lambda row: 0 if max(row["rep1_bin"], row["rep2_bin"]) == 0
+            else abs(row["rep1_bin"] - row["rep2_bin"]) / max(row["rep1_bin"], row["rep2_bin"]) * 100,
+            axis=1
+        )
+
+        # Sort by distance
+        df = df.sort_values("dist").reset_index(drop=True)
+
+        # Compute weighted cumulative fraction
+        df["cdf"] = df["count"].cumsum() / df["count"].sum()
+        df["meth_caller"] = meth_caller
+
+        cdf_dfs.append(df[["dist", "cdf", "meth_caller"]])
+
+    # Combine all callers
+    df_cdf_long = pd.concat(cdf_dfs, axis=0, ignore_index=True)
+
+    # Plot CDF
+    cdf_chart = (
+        alt.Chart(df_cdf_long)
+        .mark_line()
+        .encode(
+            x=alt.X("dist:Q", title="Distance (%)"),
+            y=alt.Y("cdf:Q", title="Cumulative fraction"),
+            color=alt.Color("meth_caller:N", title="Meth caller", scale=alt.Scale(scheme="category10")),
+            tooltip=["dist", "meth_caller", "cdf"]
+        )
+        .properties(width=600, height=300, title="Cumulative distribution of distances")
+    )
+
+    return cdf_chart
 
 
 def plot_diff_heatmap(ref_tool, df_dict, bin_size):
@@ -132,12 +248,12 @@ def plot_diff_heatmap(ref_tool, df_dict, bin_size):
     )
 
     # Absolute difference
-    df_diff["diff"] = df_diff["count_varlo"] - df_diff[f"count_{ref_tool}"]
+    df_diff["diff"] = df_diff["rel_count_varlo"] - df_diff[f"rel_count_{ref_tool}"]
 
     # Log2 fold change
     df_diff["log2FC"] = np.where(
-        (df_diff["count_varlo"] != 0) & (df_diff[f"count_{ref_tool}"] != 0),
-        np.log2(df_diff["count_varlo"] / df_diff[f"count_{ref_tool}"]),
+        (df_diff["rel_count_varlo"] != 0) & (df_diff[f"rel_count_{ref_tool}"] != 0),
+        np.log2(df_diff["rel_count_varlo"] / df_diff[f"rel_count_{ref_tool}"]),
         0,
     )
 
@@ -213,8 +329,7 @@ def compute_replicate_counts(df_dict, bin_size, relative=False):
             .stack()
             .reset_index(name="count")
         )
-        if relative:
-            agg["count"] /= agg["count"].sum() * 100  # normalize to percentage
+        agg["rel_count"] = agg["count"] / agg["count"].sum() * 100  # normalize to percentage
 
         meth_caller_dfs[meth_caller] = agg
 
@@ -225,7 +340,7 @@ def compute_replicate_counts(df_dict, bin_size, relative=False):
 
 bin_size = snakemake.params["bin_size"]
 meth_callers = snakemake.params["meth_callers"]
-relative_counts = True
+relative_counts = False
 
 # Load data from HDF5
 meth_caller_dfs = {}
@@ -251,12 +366,13 @@ for meth_caller in meth_callers:
 
 # Create histogram plots
 histogram = plot_dist_histogram(meth_callers, meth_caller_dfs, bin_size)
-
+cdf = plot_cdf_distances(meth_callers, meth_caller_dfs)
+combined = plot_distances_combined(meth_callers, meth_caller_dfs)
 
 # Combine plots
 heatmap_plots = alt.hconcat(*heatmaps).resolve_scale(color="independent")
 diff_chart_plots = alt.hconcat(*diff_charts).resolve_scale(color="independent")
-chart = alt.vconcat(histogram, heatmap_plots, diff_chart_plots)
+chart = alt.vconcat(histogram, cdf, combined,  heatmap_plots, diff_chart_plots)
 
 # Save final chart
 chart.save(
