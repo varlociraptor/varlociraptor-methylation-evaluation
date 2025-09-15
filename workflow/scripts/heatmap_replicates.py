@@ -17,6 +17,81 @@ def bin_methylation(series, bin_size):
     return (np.round(series / bin_size) * bin_size).astype(int)
 
 
+def plot_distance_histogram_variants(df_long, bin_size):
+    """Create three alternative histogram visualizations (stepped lines, line+points, overlay bars)."""
+
+    # Variante 1: Stepped lines
+    step = (
+        alt.Chart(df_long)
+        .mark_line(interpolate="step-after", point=False)
+        .encode(
+            x=alt.X(
+                "dist_bin:O", title="Distance (%)", sort=list(range(0, 101, bin_size))
+            ),
+            y=alt.Y("count:Q", title="Number of sites (%)"),
+            color=alt.Color(
+                "meth_caller:N",
+                title="Meth caller",
+                scale=alt.Scale(scheme="category10"),
+            ),
+            tooltip=["dist_bin", "meth_caller", "count"],
+        )
+        .properties(
+            width=600,
+            height=300,
+            title=alt.TitleParams(
+                "Stepped lines", subtitle="Binned distances per meth caller"
+            ),
+        )
+    )
+
+    # Variante 2: Lines + Points
+    linepoints = (
+        alt.Chart(df_long)
+        .mark_line(point=True)
+        .encode(
+            x=alt.X(
+                "dist_bin:O", title="Distance (%)", sort=list(range(0, 101, bin_size))
+            ),
+            y=alt.Y("count:Q", title="Number of sites (%)"),
+            color=alt.Color(
+                "meth_caller:N",
+                title="Meth caller",
+                scale=alt.Scale(scheme="category10"),
+            ),
+            tooltip=["dist_bin", "meth_caller", "count"],
+        )
+        .properties(
+            width=600,
+            height=300,
+            title=alt.TitleParams(
+                "Lines + points", subtitle="Binned distances per meth caller"
+            ),
+        )
+    )
+
+    line_chart = (
+        alt.Chart(df_long)
+        .mark_point(size=60, filled=True)  # oder point=False für nur Linien
+        .encode(
+            x=alt.X(
+                "dist_bin:O", title="Distance (%)", sort=list(range(0, 101, bin_size))
+            ),
+            y=alt.Y("count:Q", title="Number of sites (%)"),
+            color=alt.Color(
+                "meth_caller:N",
+                title="Meth caller",
+                scale=alt.Scale(scheme="category10"),
+            ),
+            tooltip=["dist_bin", "meth_caller", "count"],
+        )
+        .properties(width=600, height=300, title="Distance histogram as line chart")
+    )
+
+    # Alles nebeneinander anzeigen
+    return alt.hconcat(step, linepoints, line_chart).resolve_scale(y="shared")
+
+
 def plot_diff_heatmap(ref_tool, df_dict, bin_size):
     df1 = df_dict[ref_tool]
     df2 = df_dict["varlo"]
@@ -27,30 +102,34 @@ def plot_diff_heatmap(ref_tool, df_dict, bin_size):
     )
 
     # Absolute Differenz
-    df_diff["abs_diff"] = (df_diff[f"count_varlo"] - df_diff[f"count_{ref_tool}"]).abs()
+    df_diff["diff"] = (df_diff[f"count_varlo"] - df_diff[f"count_{ref_tool}"])
 
     # log2 Fold Change
     df_diff["log2FC"] = np.where(
         (df_diff[f"count_varlo"] != 0) & (df_diff[f"count_{ref_tool}"] != 0),
         np.log2(df_diff[f"count_varlo"] / df_diff[f"count_{ref_tool}"]),
+        # np.log2(
+        #     (df_diff[f"count_varlo"] / df_diff["count_varlo"].sum() * 100)
+        #     / (df_diff[f"count_{ref_tool}"] / df_diff[f"count_{ref_tool}"].sum() * 100)
+        # ),
         0,
     )
 
     # Normalisierte Prozentwerte
-    total_varlo = df_diff[f"count_varlo"].sum()
-    total_ref_tool = df_diff[f"count_{ref_tool}"].sum()
-    df_diff["rel_varlo"] = df_diff[f"count_varlo"] / total_varlo * 100
-    df_diff["rel_ref_tool"] = df_diff[f"count_{ref_tool}"] / total_ref_tool * 100
+    # total_varlo = df_diff[f"count_varlo"].sum()
+    # total_ref_tool = df_diff[f"count_{ref_tool}"].sum()
+    # df_diff["rel_varlo"] = df_diff[f"count_varlo"] / total_varlo * 100
+    # df_diff["rel_ref_tool"] = df_diff[f"count_{ref_tool}"] / total_ref_tool * 100
 
-    # Differenz in Prozent
-    df_diff["rel_diff"] = df_diff["rel_varlo"] - df_diff["rel_ref_tool"]
+    # # Differenz in Prozent
+    # df_diff["rel_diff"] = df_diff["rel_varlo"] - df_diff["rel_ref_tool"]
 
     # Heatmap 1: Abs Difference
     diff_heatmap = (
         alt.Chart(
             df_diff,
             title=alt.Title(
-                f"Abs Difference (log scaled)", subtitle=f"{ref_tool} vs varlo"
+                f"Difference (log scaled)", subtitle=f"{ref_tool} vs varlo"
             ),
         )
         .mark_rect()
@@ -58,12 +137,12 @@ def plot_diff_heatmap(ref_tool, df_dict, bin_size):
             x=alt.X("rep1_bin:O", sort=list(range(0, 101, bin_size))),
             y=alt.Y("rep2_bin:O", sort=list(range(100, -1, -bin_size))),
             color=alt.Color(
-                "abs_diff:Q",
-                scale=alt.Scale(
-                    type="log", scheme="viridis", domain=[1, df_diff["abs_diff"].max()]
+                "diff:Q",
+                scale=alt.Scale(type="symlog",
+                    scheme="redblue", domainMid=0  # das zwingt 0 auf die Mitte (weiß)
                 ),
             ),
-            tooltip=["rep1_bin", "rep2_bin", "abs_diff"],
+            tooltip=["rep1_bin", "rep2_bin", "diff"],
         )
         .properties(width=200, height=200)
     )
@@ -89,41 +168,41 @@ def plot_diff_heatmap(ref_tool, df_dict, bin_size):
         .properties(width=200, height=200)
     )
 
-    # Heatmap 3: Relative Difference (Prozent)
-    rel_heatmap = (
-        alt.Chart(
-            df_diff,
-            title=alt.Title(
-                f"Relative Difference  (log scaled)", subtitle=f"{ref_tool} vs varlo"
-            ),
-        )
-        .mark_rect()
-        .encode(
-            x=alt.X("rep1_bin:O", sort=list(range(0, 101, bin_size))),
-            y=alt.Y("rep2_bin:O", sort=list(range(100, -1, -bin_size))),
-            color=alt.Color(
-                "rel_diff:Q",
-                scale=alt.Scale(
-                    type="symlog",
-                    scheme="redblue",  # divergierendes Schema
-                    domain=[
-                        -max(abs(df_diff["rel_diff"])),
-                        max(abs(df_diff["rel_diff"])),
-                    ],
-                    domainMid=0,
-                ),
-            ),
-            tooltip=["rep1_bin", "rep2_bin", "rel_diff"],
-        )
-        .properties(width=200, height=200)
-    )
+    # # Heatmap 3: Relative Difference (Prozent)
+    # rel_heatmap = (
+    #     alt.Chart(
+    #         df_diff,
+    #         title=alt.Title(
+    #             f"Relative Difference  (log scaled)", subtitle=f"{ref_tool} vs varlo"
+    #         ),
+    #     )
+    #     .mark_rect()
+    #     .encode(
+    #         x=alt.X("rep1_bin:O", sort=list(range(0, 101, bin_size))),
+    #         y=alt.Y("rep2_bin:O", sort=list(range(100, -1, -bin_size))),
+    #         color=alt.Color(
+    #             "rel_diff:Q",
+    #             scale=alt.Scale(
+    #                 type="symlog",
+    #                 scheme="redblue",  # divergierendes Schema
+    #                 domain=[
+    #                     -max(abs(df_diff["rel_diff"])),
+    #                     max(abs(df_diff["rel_diff"])),
+    #                 ],
+    #                 domainMid=0,
+    #             ),
+    #         ),
+    #         tooltip=["rep1_bin", "rep2_bin", "rel_diff"],
+    #     )
+    #     .properties(width=200, height=200)
+    # )
 
-    return alt.vconcat(diff_heatmap, ratio_heatmap, rel_heatmap).resolve_scale(
+    return alt.vconcat(diff_heatmap, ratio_heatmap).resolve_scale(
         color="independent"
     )
 
 
-def plot_heatmap_meth_callers(df_dict, bin_size):
+def plot_heatmap_meth_callers(df_dict, bin_size, relative = False):
 
     protocols = snakemake.params["protocol"]
     # We use this method to plot heatmaps for single protocols or common heatmaps over multiple protocols.
@@ -153,12 +232,13 @@ def plot_heatmap_meth_callers(df_dict, bin_size):
         ).copy()  # .copy(), um SettingWithCopyWarning zu vermeiden
         df_temp["rep1_bin"] = bin_methylation(df_temp[x_col], bin_size)
         df_temp["rep2_bin"] = bin_methylation(df_temp[y_col], bin_size)
-
         agg = (
             pd.crosstab(df_temp["rep1_bin"], df_temp["rep2_bin"])
             .stack()
             .reset_index(name="count")
         )
+        if relative:
+            agg["count"] = agg["count"]/agg["count"].sum()*100  # in Prozent umrechnen
 
         ########### Histogram code
 
@@ -176,12 +256,13 @@ def plot_heatmap_meth_callers(df_dict, bin_size):
         dist_df = (
             agg.groupby("dist_bin", as_index=False)["count"]
             .sum()
-            .assign(pct=lambda d: d["count"] / d["count"].sum() * 100)
+            .assign(pct=lambda d: d["count"])
+            # .assign(pct=lambda d: d["count"] / d["count"].sum() * 100)
             .sort_values("dist_bin")
             .rename(columns={"pct": meth_caller})
             .drop(columns="count")
         )
-
+        print(dist_df, file=sys.stderr)
         if distances_histo.empty:
             distances_histo = dist_df
         else:
@@ -239,41 +320,12 @@ def plot_heatmap_meth_callers(df_dict, bin_size):
         )
 
         method_plots.append(heatmap)
-    ## Histogram plotten
-    # DataFrame ins long format bringen
+
     df_long = distances_histo.melt(
         id_vars="dist_bin", var_name="meth_caller", value_name="count"
     )
 
-    # Altair Chart (Balken nebeneinander statt gestapelt)
-    distances_histo = (
-        alt.Chart(df_long)
-        .mark_bar()
-        .encode(
-            x=alt.X(
-                "dist_bin:O",
-                title="Distance (%)",  # englische Achsenbeschriftung
-                sort=list(
-                    range(0, 101, bin_size)
-                ),  # gleiche Sortierung wie bei Heatmaps
-            ),
-            y=alt.Y("count:Q", title="Number of sites (%)"),  # klarer y-Achsentitel
-            color=alt.Color(
-                "meth_caller:N",
-                title="Meth caller",
-                scale=alt.Scale(scheme="category10"),  # klares Farbschema
-            ),
-            xOffset="meth_caller:N",  # sorgt für nebeneinanderliegende Balken
-            tooltip=["dist_bin", "meth_caller", "count"],
-        )
-        .properties(
-            width=600,
-            height=300,
-            title=alt.TitleParams(  # Titel im Heatmap-Stil
-                "Distance histogram", subtitle="Binned distances per meth caller"
-            ),
-        )
-    )
+    distances_histo = plot_distance_histogram_variants(df_long, bin_size)
 
     return (
         alt.hconcat(*method_plots, distances_histo).resolve_scale(color="independent"),
@@ -289,7 +341,7 @@ with pd.HDFStore(snakemake.input[0], mode="r", locking=False) as store:
         meth_caller_dfs[key.strip("/")] = store[key]
 
 # Heatmaps erstellen
-chart, meth_caller_dfs = plot_heatmap_meth_callers(meth_caller_dfs, bin_size)
+chart, meth_caller_dfs = plot_heatmap_meth_callers(meth_caller_dfs, bin_size, False)
 diff_charts = []
 # Differenz-Heatmaps erstellen
 for meth_caller in snakemake.params["meth_callers"]:
