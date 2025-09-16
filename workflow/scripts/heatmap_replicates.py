@@ -10,6 +10,7 @@ sys.stderr = open(snakemake.log[0], "w")
 # Show all columns and many rows during debugging
 pd.set_option("display.max_columns", None)
 pd.set_option("display.max_rows", 1000)
+alt.data_transformers.enable("vegafusion")
 
 
 def bin_methylation(series, bin_size):
@@ -71,11 +72,9 @@ def plot_histogram_cdf(meth_callers, meth_caller_dfs, cdf_dfs, bin_size=5):
     # for meth_caller in meth_callers:
     #     df = meth_caller_dfs[meth_caller].copy()
     df_hist_long = pd.concat(meth_caller_dfs.values(), axis=0, ignore_index=True)
-    print(df_hist_long, file=sys.stderr)
     df_hist_long = df_hist_long.groupby(["dist_bin", "meth_caller"], as_index=False)[
         "rel_count"
     ].sum()
-    print(df_hist_long, file=sys.stderr)
 
     #     # CDF
     # print(meth_caller_dfs, file=sys.stderr)
@@ -371,7 +370,7 @@ def compute_replicate_counts(df_dict, bin_size, relative=False):
                 else abs(row[x_col] - row[y_col]) / max(row[x_col], row[y_col]) * 100
             ),
             axis=1,
-        )
+        ).round(2)
         agg_cdf = agg_cdf.groupby("dist", as_index=False).agg(count=("dist", "size"))
 
         agg_cdf["rel_count"] = agg_cdf["count"] / agg_cdf["count"].sum() * 100
