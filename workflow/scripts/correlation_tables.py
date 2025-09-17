@@ -108,6 +108,7 @@ def plot_correlation(
     """
     Create a heatmap with correlation values annotated as text.
     """
+    print(df, file=sys.stderr)
     num_replicates = df["sample"].nunique()
     num_comparisons = df["comparison"].nunique()
     chart_width = max(200, num_replicates * 100)
@@ -168,6 +169,7 @@ for sample_file in snakemake.input["samples"]:
     # Get the name of the specific sample.
     replicate_name = sample_file.split("/")[-3]
     df = pd.read_parquet(sample_file, engine="pyarrow")
+    print(df.head(), file=sys.stderr)
 
     meth_caller_correlation_dfs.append(
         compute_correlation(df, replicate_name, "meth_caller", corr_methods)
@@ -186,25 +188,22 @@ for sample_file in snakemake.input["samples"]:
         )
     else:
         replicate_dfs[samplename] = df
-
 # Save intermediate tables
 with pd.HDFStore(snakemake.output["table"]) as store:
     for key, df in replicate_dfs.items():
         store[key] = df
+print(replicate_dfs, file=sys.stderr)
+print("####################################################", file=sys.stderr)
 
 # Calculate correlations across replicates
 for sample_name, df in replicate_dfs.items():
     sample_correlation.append(
         compute_correlation(df, sample_name, "replicate", corr_methods)
     )
-print(replicate_dfs, file=sys.stderr)
 
 # Combine results
 correlation_meth_callers = pd.concat(meth_caller_correlation_dfs, ignore_index=True)
 correlation_replicates = pd.concat(sample_correlation, ignore_index=True)
-
-print(correlation_replicates, file=sys.stderr)
-
 ################### PLOTTING ####################
 
 charts_meth_callers_list = [

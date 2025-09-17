@@ -12,7 +12,8 @@ def compute_results():
         needed_inputs.append(heatmap_replicates(seq_platform))
         needed_inputs.append(correlation_table(seq_platform))
         needed_inputs.append(
-            f"results/Illumina_pe/plots/heatmap_all_protocols.{config['plot_type']}"
+            [f"results/Illumina_pe/{fdr}/plots/heatmap_all_protocols.{config['plot_type']}"
+            for fdr in config['fdr_alpha']]
         )
 
     return needed_inputs
@@ -71,14 +72,15 @@ def heatmap_replicates(seq_platform):
     base_path = Path("results") / seq_platform
     plot_type = config["plot_type"]
     return [
-        f"{base_path}/plots/{protocol}_heatmap.{plot_type}"
+        f"{base_path}/{fdr}/plots/{protocol}_heatmap.{plot_type}"
         for protocol in config["protocols"][seq_platform]
+        for fdr in config['fdr_alpha']
     ]
 
 
 def correlation_table(seq_platform):
     base_path = Path("results") / seq_platform
-    return [str(base_path / ("plots/correlation_table." + config["plot_type"]))]
+    return [f"{base_path}/{fdr}/plots/correlation_table.{config['plot_type']}" for fdr in config['fdr_alpha']]
 
 
 def precision_recall(seq_platform):

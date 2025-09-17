@@ -83,13 +83,15 @@ pd.set_option("display.max_rows", 10)
 # ---- Daten laden und zusammenführen ----
 tool_dfs = []
 tool_names = []
+tool_files = snakemake.input["tools"] + [snakemake.input["varlo"]]
 
-for tool_file in snakemake.input["tools"]:
+for tool_file in tool_files:
+    print(tool_file, file=sys.stderr)
     tool_name = os.path.splitext(os.path.basename(tool_file))[0]
     tool_names.append(tool_name)
 
     df = pd.read_parquet(tool_file, engine="pyarrow")
-
+    print(df.head(), file=sys.stderr)
     # if tool_name == "varlo":
     #     df = df[df["bias"] == "normal"]
 
@@ -120,6 +122,7 @@ df_merged = reduce(
     ),
     tool_dfs,
 )
+print(df_merged, file=sys.stderr)
 
 # Ergebnis abspeichern
 df_merged.to_parquet(

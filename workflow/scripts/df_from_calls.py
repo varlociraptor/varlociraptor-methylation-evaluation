@@ -139,11 +139,13 @@ def read_tool_file(filepath, file_name):
                 info_field = parts[7]
                 format_field = parts[8]
                 values = parts[9].split(":")
-
+                print(chrom, position, alternative, file=sys.stderr)
+                print(info_field, file=sys.stderr)
+                print(format_field, values, file=sys.stderr)
                 # Skip non-methylation entries
                 if alternative != "<METH>":
                     continue
-
+                
                 # Parse FORMAT fields
                 format_fields = format_field.split(":")
                 try:
@@ -206,7 +208,6 @@ def read_tool_file(filepath, file_name):
                 chrom = parts[0]
                 position = int(parts[1])
                 meth_rate = float(parts[4]) * 100
-                print(meth_rate, file=sys.stderr)
                 # coverage = float(parts[5])
 
                 records.append([chrom, position, meth_rate])
@@ -269,6 +270,8 @@ tool_file = snakemake.input["tool"]
 file_name = os.path.splitext(os.path.basename(tool_file))[0]
 
 df = read_tool_file(tool_file, file_name)
+print("#################################", file=sys.stderr)
+print(df.head(), file=sys.stderr)
 
 # Write output in Parquet format
 df.to_parquet(snakemake.output[0], engine="pyarrow", compression="snappy")
