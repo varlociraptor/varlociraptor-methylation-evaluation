@@ -139,25 +139,21 @@ def read_tool_file(filepath, file_name):
                 info_field = parts[7]
                 format_field = parts[8]
                 values = parts[9].split(":")
-                print(chrom, position, alternative, file=sys.stderr)
-                print(info_field, file=sys.stderr)
-                print(format_field, values, file=sys.stderr)
                 # Skip non-methylation entries
                 if alternative != "<METH>":
                     continue
-                
                 # Parse FORMAT fields
                 format_fields = format_field.split(":")
-                try:
-                    af_index = format_fields.index("AF")
-                    meth_rate = float(values[af_index]) * 100
+                # try:
+                af_index = format_fields.index("AF")
+                meth_rate = float(values[af_index]) * 100
 
-                except ValueError:
-                    print(
-                        f"Allele frequency information missing for {chrom}:{position}",
-                        file=sys.stderr,
-                    )
-                    continue
+                # except ValueError:
+                #     print(
+                #         f"Allele frequency information missing for {chrom}:{position}",
+                #         file=sys.stderr,
+                #     )
+                #     continue
 
                 # Parse INFO field into dictionary
                 info_dict = dict(
@@ -166,24 +162,24 @@ def read_tool_file(filepath, file_name):
                     if "=" in item
                 )
 
-                try:
-                    alpha = snakemake.params["alpha"]
-                    # Convert Phred scores to probabilities
-                    prob_high = 10 ** (-float(info_dict["PROB_HIGH"]) / 10)
-                    prob_low = 10 ** (-float(info_dict["PROB_LOW"]) / 10)
-                    prob_present = prob_high + prob_low
-                    prob_absent = 10 ** (-float(info_dict["PROB_ABSENT"]) / 10)
-                    prob_artifact = 10 ** (-float(info_dict["PROB_ARTIFACT"]) / 10)
-
-                    # Skip low-confidence sites
-                    if max(prob_present, prob_absent + prob_artifact) < (1 - alpha):
-                        continue
-                except Exception:
-                    print(
-                        f"Probability information missing for {chrom}:{position}",
-                        file=sys.stderr,
-                    )
+                # try:
+                alpha = float(snakemake.params["alpha"])
+                # Convert Phred scores to probabilities
+                prob_high = 10 ** (-float(info_dict["PROB_HIGH"]) / 10)
+                prob_low = 10 ** (-float(info_dict["PROB_LOW"]) / 10)
+                prob_present = prob_high + prob_low
+                prob_absent = 10 ** (-float(info_dict["PROB_ABSENT"]) / 10)
+                prob_artifact = 10 ** (-float(info_dict["PROB_ARTIFACT"]) / 10)
+                # Skip low-confidence sites
+                if max(prob_present, prob_absent + prob_artifact) < (1 - alpha):
+                    print("Position has low confidence", file=sys.stderr)
                     continue
+                # except Exception:
+                #     print(
+                #         f"Probability information missing for {chrom}:{position}",
+                #         file=sys.stderr,
+                #     )
+                #     continue
 
                 records.append([chrom, position, meth_rate])
 
@@ -270,8 +266,6 @@ tool_file = snakemake.input["tool"]
 file_name = os.path.splitext(os.path.basename(tool_file))[0]
 
 df = read_tool_file(tool_file, file_name)
-print("#################################", file=sys.stderr)
-print(df.head(), file=sys.stderr)
 
 # Write output in Parquet format
 df.to_parquet(snakemake.output[0], engine="pyarrow", compression="snappy")

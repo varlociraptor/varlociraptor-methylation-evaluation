@@ -20,7 +20,6 @@ rule compute_pandas_df:
         cov_bins=lambda wildcards: config["cov_bins"][wildcards.seq_platform],
         meth_type=config["meth_type"],
         simulated=False,
-        alpha=config["fdr_alpha"],
         # prob_pres_threshhold=config["prob_pres_threshhold"],
         # prob_absent_threshhold=config["prob_absent_threshhold"],
     script:
@@ -48,7 +47,7 @@ rule compute_varlo_df:
         cov_bins=lambda wildcards: config["cov_bins"][wildcards.seq_platform],
         meth_type=config["meth_type"],
         simulated=False,
-        alpha=config["fdr_alpha"],
+        alpha=lambda wildcards: wildcards.fdr,
         # prob_pres_threshhold=config["prob_pres_threshhold"],
         # prob_absent_threshhold=config["prob_absent_threshhold"],
     script:
@@ -218,22 +217,22 @@ rule common_tool_df:
     params:
         plot_type=config["plot_type"],
     resources:
-        mem_mb=16000
+        mem_mb=16000,
     script:
         "../scripts/common_tool_df.py"
 
 
 # Plot overview tables over all samples of a sequencing platform with correlation information
 # We correlate
-# - all tools against each other on the same replicate 
+# - all tools against each other on the same replicate
 # - all replicates against each other for the same tool
 rule correlation_tables:
     input:
         samples=lambda wildcards: expand(
             "results/{seq_platform}/{fdr}/{protocol}/result_files/protocol_df_{{plot_type}}.parquet",
-                seq_platform=wildcards.seq_platform,
-                fdr=wildcards.fdr,
-                protocol=config["data"][wildcards.seq_platform],
+            seq_platform=wildcards.seq_platform,
+            fdr=wildcards.fdr,
+            protocol=config["data"][wildcards.seq_platform],
         ),
     output:
         table="results/{seq_platform}/{fdr}/plots/replicates_{plot_type}.hd5",
@@ -264,7 +263,6 @@ rule replicates_heatmap:
             "results/{seq_platform}/{fdr}/plots/{protocol}_heatmap.{plot_type}",
             category="{seq_platform}",
             subcategory=lambda wildcards: f"{wildcards.fdr}",
-
             labels={
                 "file": "heatmap",
                 "protocol": "{protocol}",
@@ -273,7 +271,7 @@ rule replicates_heatmap:
     conda:
         "../envs/plot.yaml"
     resources:
-        mem_mb=32000
+        mem_mb=32000,
     log:
         "logs/plots/{seq_platform}/{fdr}/heatmap_replicates_{protocol}_{plot_type}.log",
     params:
@@ -285,6 +283,7 @@ rule replicates_heatmap:
     script:
         "../scripts/heatmap_replicates.py"
 
+
 # Compute common heatmap over all Illumina protocols
 rule heatmap_illumina_protocols:
     input:
@@ -294,7 +293,6 @@ rule heatmap_illumina_protocols:
             "results/{seq_platform}/{fdr}/plots/heatmap_all_protocols.{plot_type}",
             category="{seq_platform}",
             subcategory=lambda wildcards: f"{wildcards.fdr}",
-
             labels={
                 "file": "heatmap",
                 "protocol": "all protocols",
@@ -303,7 +301,7 @@ rule heatmap_illumina_protocols:
     conda:
         "../envs/plot.yaml"
     resources:
-        mem_mb=32000
+        mem_mb=32000,
     log:
         "logs/plots/{seq_platform}/{fdr}/heatmap_replicates_{plot_type}.log",
     params:
