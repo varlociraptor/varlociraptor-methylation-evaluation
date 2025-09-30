@@ -138,7 +138,6 @@ def read_tool_file(filepath, file_name):
                 alternative = parts[4]
                 info_field = parts[7]
                 format_field = parts[8]
-                values = parts[9].split(":")
                 # Skip non-methylation entries
                 if alternative != "<METH>":
                     continue
@@ -146,14 +145,16 @@ def read_tool_file(filepath, file_name):
                 format_fields = format_field.split(":")
                 # try:
                 af_index = format_fields.index("AF")
-                meth_rate = float(values[af_index]) * 100
+                sample_afs = []
+                for sample_format in parts[9:]:
+                    sample_values = sample_format.split(":")
+                    try:
+                        af = float(sample_values[af_index])
+                        sample_afs.append(af * 100)  # in Prozent
+                    except (ValueError, IndexError):
+                        pass  # fehlende oder fehlerhafte Werte ignorieren
 
-                # except ValueError:
-                #     print(
-                #         f"Allele frequency information missing for {chrom}:{position}",
-                #         file=sys.stderr,
-                #     )
-                #     continue
+                meth_rate = sum(sample_afs) / len(sample_afs) if sample_afs else 0
 
                 # Parse INFO field into dictionary
                 info_dict = dict(

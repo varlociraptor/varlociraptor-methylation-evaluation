@@ -201,14 +201,19 @@ def compute_replicate_counts(df_dict, bin_size, relative=False):
 # Main execution ------------------------------------------------------
 
 bin_size = snakemake.params["bin_size"]
-meth_callers = snakemake.params["meth_callers"]
 relative_counts = False
 
 # Load data from HDF5
 meth_caller_dfs = {}
-with pd.HDFStore(snakemake.input[0], mode="r", locking=False) as store:
-    for key in store.keys():
-        meth_caller_dfs[key.strip("/")] = store[key]
+
+if snakemake.input[0].endswith(".parquet"):
+    # Load parquet file
+    df = pd.read_parquet(snakemake.input[0])
+    meth_caller_dfs["varlo"] = df
+else:
+    with pd.HDFStore(snakemake.input[0], mode="r", locking=False) as store:
+        for key in store.keys():
+            meth_caller_dfs[key.strip("/")] = store[key]
 
 # Compute replicate counts
 replicate_dfs, cdf_dfs, mapes = compute_replicate_counts(
@@ -219,17 +224,13 @@ diff_charts = []
 heatmaps = []
 histogram_plots = []
 # Create heatmaps and difference plots
-for meth_caller in meth_callers:
-    heatmaps.append(
-        plot_count_heatmap(replicate_dfs[meth_caller], meth_caller, bin_size, mapes)
-    )
+heatmaps.append(plot_count_heatmap(replicate_dfs["varlo"], "varlo", bin_size, mapes))
 
-distance_plots = plot_histogram_cdf(meth_callers, replicate_dfs, cdf_dfs)
 
 # Combine plots
-heatmap_plots = alt.hconcat(*heatmaps).resolve_scale(color="independent")
+chart = alt.hconcat(*heatmaps).resolve_scale(color="independent")
 # diff_chart_plots = alt.hconcat(*diff_charts).resolve_scale(color="independent")
-chart = alt.vconcat(heatmap_plots, distance_plots).resolve_scale(color="independent")
+# chart = alt.vconcat(heatmap_plots, distance_plots).resolve_scale(color="independent")
 
 # Save final chart
 chart.save(
