@@ -39,6 +39,7 @@ include: "rules/plot_results.smk"
 include: "rules/fake_data.smk"
 include: "rules/pbCpgTools.smk"
 include: "rules/meth_calling.smk"
+include: "rules/meth_calling_common.smk"
 include: "rules/compute_candidates.smk"
 
 rule all:

@@ -165,9 +165,10 @@ def read_tool_file(filepath, file_name):
                 # try:
                 alpha = float(snakemake.params["alpha"])
                 # Convert Phred scores to probabilities
-                prob_high = 10 ** (-float(info_dict["PROB_HIGH"]) / 10)
-                prob_low = 10 ** (-float(info_dict["PROB_LOW"]) / 10)
-                prob_present = prob_high + prob_low
+                # prob_high = 10 ** (-float(info_dict["PROB_HIGH"]) / 10)
+                # prob_low = 10 ** (-float(info_dict["PROB_LOW"]) / 10)
+                # prob_present = prob_high + prob_low
+                prob_present = 10 ** (-float(info_dict["PROB_PRESENT"]) / 10)
                 prob_absent = 10 ** (-float(info_dict["PROB_ABSENT"]) / 10)
                 prob_artifact = 10 ** (-float(info_dict["PROB_ARTIFACT"]) / 10)
                 # Skip low-confidence sites

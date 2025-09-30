@@ -16,10 +16,10 @@ rule compute_pandas_df:
     log:
         "logs/plots/{seq_platform}/{protocol}/compute_pandas_df_{method}.log",
     params:
-        cov_bin_size=lambda wildcards: config["cov_bin_size"][wildcards.seq_platform],
-        cov_bins=lambda wildcards: config["cov_bins"][wildcards.seq_platform],
-        meth_type=config["meth_type"],
-        simulated=False,
+        # cov_bin_size=lambda wildcards: config["cov_bin_size"][wildcards.seq_platform],
+        # cov_bins=lambda wildcards: config["cov_bins"][wildcards.seq_platform],
+        # meth_type=config["meth_type"],
+        # simulated=False,
         # prob_pres_threshhold=config["prob_pres_threshhold"],
         # prob_absent_threshhold=config["prob_absent_threshhold"],
     script:
@@ -43,10 +43,10 @@ rule compute_varlo_df:
     log:
         "logs/plots/{seq_platform}/{fdr}/{protocol}/compute_pvarlo_df.log",
     params:
-        cov_bin_size=lambda wildcards: config["cov_bin_size"][wildcards.seq_platform],
-        cov_bins=lambda wildcards: config["cov_bins"][wildcards.seq_platform],
-        meth_type=config["meth_type"],
-        simulated=False,
+        # cov_bin_size=lambda wildcards: config["cov_bin_size"][wildcards.seq_platform],
+        # cov_bins=lambda wildcards: config["cov_bins"][wildcards.seq_platform],
+        # meth_type=config["meth_type"],
+        # simulated=False,
         alpha=lambda wildcards: wildcards.fdr,
         # prob_pres_threshhold=config["prob_pres_threshhold"],
         # prob_absent_threshhold=config["prob_absent_threshhold"],

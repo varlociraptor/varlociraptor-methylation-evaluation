@@ -1,14 +1,15 @@
 channels:
   - conda-forge
 dependencies:
-  - altair =5.1
-  - vl-convert-python =0.14
-  - vegafusion =1.6
-  - vega_datasets =0.9
-  - matplotlib =3.8
-  - cyvcf2 =0.31
-  - pysam =0.23
-  - scipy =1.15
-  - altair_saver= 0.5
-  - pytables= 3.10.2
-  - pandas= 2.3
+  - altair=5.1
+  - vl-convert-python=0.14
+  - vegafusion=1.6
+  - vega_datasets=0.9
+  - matplotlib=3.8
+  - cyvcf2=0.31
+  - pysam=0.23
+  - scipy=1.15
+  - altair_saver=0.5
+  - pytables=3.10.2
+  - pandas=2.2.2
+  - pyarrow=14.0.2
