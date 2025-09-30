@@ -81,49 +81,52 @@ rule compute_meth_observations:
         """
 
 
-rule call_methylation:
-    input:
-        varlo="resources/tools/varlociraptor/target/debug/varlociraptor",
-        preprocess_obs="results/{seq_platform}/{protocol}/normal_{scatteritem}.bcf",
-        scenario="resources/scenario.yaml",
-    output:
-        "results/{seq_platform}/{protocol}/calls_{scatteritem}.bcf",
-    log:
-        "logs/varlociraptor/{seq_platform}/{protocol}/call_methylation_{scatteritem}.log",
-    conda:
-        "../envs/varlociraptor.yaml"
-    shell:
-        "{input.varlo} call variants generic --scenario {input.scenario} --obs normal={input.preprocess_obs} > {output} 2> {log}"
+# rule call_methylation:
+#     input:
+#         varlo="resources/tools/varlociraptor/target/debug/varlociraptor",
+#         preprocess_obs="results/{seq_platform}/{protocol}/normal_{scatteritem}.bcf",
+#         scenario="resources/scenario.yaml",
+#     output:
+#         "results/{seq_platform}/{protocol}/calls_{scatteritem}.bcf",
+#     log:
+#         "logs/varlociraptor/{seq_platform}/{protocol}/call_methylation_{scatteritem}.log",
+#     conda:
+#         "../envs/varlociraptor.yaml"
+#     shell:
+#         "{input.varlo} call variants generic --scenario {input.scenario} --obs normal={input.preprocess_obs} > {output} 2> {log}"
+
+
+
 
 
 # TODO: Reactivate, right now it deletes too much data
-rule filter_calls:
-    input:
-        varlo="resources/tools/varlociraptor/target/debug/varlociraptor",
-        bcf="results/{seq_platform}/{protocol}/calls_{scatteritem}.bcf",
-    output:
-        "results/{seq_platform}/{fdr}/{protocol}/calls_{scatteritem}.bcf",
-    log:
-        "logs/varlociraptor/{seq_platform}/{fdr}/{protocol}/filter_calls_{scatteritem}.log",
-    conda:
-        "../envs/varlociraptor.yaml"
-    params:
-        event="LOW",
-        fdr_alpha=config["fdr_alpha"]
-    shell:
-        "{input.varlo} filter-calls control-fdr --mode local-smart {input.bcf} --events LOW HIGH --fdr {params.fdr_alpha} > {output} 2> {log}"
+# rule filter_calls:
+#     input:
+#         varlo="resources/tools/varlociraptor/target/debug/varlociraptor",
+#         bcf="results/{seq_platform}/{protocol}/calls_{scatteritem}.bcf",
+#     output:
+#         "results/{seq_platform}/{fdr}/{protocol}/calls_{scatteritem}.bcf",
+#     log:
+#         "logs/varlociraptor/{seq_platform}/{fdr}/{protocol}/filter_calls_{scatteritem}.log",
+#     conda:
+#         "../envs/varlociraptor.yaml"
+#     params:
+#         event="LOW",
+#         fdr_alpha=config["fdr_alpha"]
+#     shell:
+#         "{input.varlo} filter-calls control-fdr --mode local-smart {input.bcf} --events LOW HIGH --fdr {params.fdr_alpha} > {output} 2> {log}"
 
 
 # TODO: Skip this step, right now it would be useless since I debug so much
 rule calls_to_vcf:
     input:
-        "results/{seq_platform}/{fdr}/{protocol}/calls_{scatteritem}.bcf",
+        "results/{seq_platform}/{protocol}/calls_{scatteritem}.bcf",
     output:
-        "results/{seq_platform}/{fdr}/{protocol}/calls_{scatteritem}.vcf",
+        "results/{seq_platform}/{protocol}/calls_{scatteritem}.vcf",
     conda:
         "../envs/samtools.yaml"
     log:
-        "logs/varlociraptor/{seq_platform}/{fdr}/{protocol}/calls_to_vcf_{scatteritem}.log",
+        "logs/varlociraptor/{seq_platform}/{protocol}/calls_to_vcf_{scatteritem}.log",
     threads: 10
     shell:
         # "touch {output} 2> {log}"
@@ -133,12 +136,12 @@ rule calls_to_vcf:
 rule gather_calls:
     input:
         gather.split_candidates(
-            "results/{{seq_platform}}/{{fdr}}/{{protocol}}/calls_{scatteritem}.vcf"
+            "results/{{seq_platform}}/{{protocol}}/calls_{scatteritem}.vcf"
         ),
     output:
-        "results/{seq_platform}/{fdr}/{protocol}/result_files/varlo.bed",
+        "results/{seq_platform}/{protocol}/result_files/varlo.bed",
     log:
-        "logs/varlociraptor/{seq_platform}/{fdr}/{protocol}/gather_calls.log",
+        "logs/varlociraptor/{seq_platform}/{protocol}/gather_calls.log",
     shell:
         "cat {input} > {output} 2> {log}"
 

@@ -28,7 +28,7 @@ rule compute_pandas_df:
 
 rule compute_varlo_df:
     input:
-        tool="results/{seq_platform}/{fdr}/{protocol}/result_files/varlo.bed",
+        tool="results/{seq_platform}/{protocol}/result_files/varlo.bed",
         # true_meth=lambda wildcards: expand(
         #     "resources/bed_avg_{chrom}.bedGraph",
         #     chrom=chromosome_by_seq_platform[wildcards.seq_platform],
