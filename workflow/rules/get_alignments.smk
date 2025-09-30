@@ -237,7 +237,7 @@ rule aligned_reads_candidates_region:
         alignment="resources/{seq_platform}/{protocol}/alignment_focused_downsampled_dedup_renamed.bam",
         index="resources/{seq_platform}/{protocol}/alignment_focused_downsampled_dedup_renamed.bam.bai",
         candidate=lambda wildcards: expand(
-            "resources/{{seq_platform}}/{{protocol}}/{chrom}/candidates_{{scatteritem}}.bcf",
+            "resources/{chrom}/candidates_{{scatteritem}}.bcf",
             chrom=chromosome_by_seq_platform[wildcards.seq_platform],
         ),
     output:
