@@ -59,7 +59,7 @@ rule compute_meth_observations:
         alignments="resources/{seq_platform}/{protocol}/candidate_specific/alignment_{scatteritem}.bam",
         alignment_index="resources/{seq_platform}/{protocol}/candidate_specific/alignment_{scatteritem}.bam.bai",
         candidates=lambda wildcards: expand(
-            "resources/{{seq_platform}}/{{protocol}}/{chrom}/candidates_{{scatteritem}}.bcf",
+            "resources/{chrom}/candidates_{{scatteritem}}.bcf",
             chrom=chromosome_by_seq_platform[wildcards.seq_platform],
         ),
     output:
