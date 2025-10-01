@@ -206,6 +206,8 @@ rule common_tool_df:
         "logs/plots/{seq_platform}/{fdr}/{protocol}/common_tool_df_{plot_type}.log",
     params:
         plot_type=config["plot_type"],
+    wildcard_constraints:
+        seq_platform="(?!common_calls).*",
     resources:
         mem_mb=16000,
     script:
@@ -218,13 +220,13 @@ rule common_tool_df:
 # - all replicates against each other for the same tool
 rule correlation_tables:
     input:
-        # samples=lambda wildcards: expand(
-        #     "results/{seq_platform}/{fdr}/{protocol}/result_files/protocol_df_{{plot_type}}.parquet",
-        #     seq_platform=wildcards.seq_platform,
-        #     fdr=wildcards.fdr,
-        #     protocol=config["data"][wildcards.seq_platform],
-        # ),
-        samples="results/common_calls/{fdr}/REP/result_files/protocol_df_{plot_type}.parquet"
+        samples=lambda wildcards: expand(
+            "results/{seq_platform}/{fdr}/{protocol}/result_files/protocol_df_{{plot_type}}.parquet",
+            seq_platform=wildcards.seq_platform,
+            fdr=wildcards.fdr,
+            protocol=config["data"][wildcards.seq_platform],
+        ),
+        # samples="results/common_calls/{fdr}/REP/result_files/protocol_df_{plot_type}.parquet"
     output:
         table="results/{seq_platform}/{fdr}/plots/replicates_{plot_type}.hd5",
         plot=report(
@@ -276,31 +278,31 @@ rule replicates_heatmap:
 
 
 # Compute common heatmap over all Illumina protocols
-# rule heatmap_illumina_protocols:
-#     input:
-#         "results/{seq_platform}/{fdr}/plots/replicates_{plot_type}.hd5",
-#     output:
-#         report(
-#             "results/{seq_platform}/{fdr}/plots/heatmap_all_protocols.{plot_type}",
-#             category="{seq_platform}",
-#             subcategory=lambda wildcards: f"{wildcards.fdr}",
-#             labels={
-#                 "file": "heatmap",
-#                 "protocol": "all protocols",
-#             },
-#         ),
-#     conda:
-#         "../envs/plot.yaml"
-#     resources:
-#         mem_mb=32000,
-#     log:
-#         "logs/plots/{seq_platform}/{fdr}/heatmap_replicates_{plot_type}.log",
-#     params:
-#         meth_callers=lambda wildcards: config["ref_tools"][wildcards.seq_platform]
-#         + ["varlo"],
-#         # protocol="all",
-#         protocol=lambda wildcards: config["protocols"][wildcards.seq_platform],
-#         bin_size=lambda wildcards: config["heatmap_bin_size"],
-#         # correlation_method=config["correlation_method"],
-#     script:
-#         "../scripts/heatmap_replicates.py"
+rule heatmap_illumina_protocols:
+    input:
+        "results/{seq_platform}/{fdr}/plots/replicates_{plot_type}.hd5",
+    output:
+        report(
+            "results/{seq_platform}/{fdr}/plots/heatmap_all_protocols.{plot_type}",
+            category="{seq_platform}",
+            subcategory=lambda wildcards: f"{wildcards.fdr}",
+            labels={
+                "file": "heatmap",
+                "protocol": "all protocols",
+            },
+        ),
+    conda:
+        "../envs/plot.yaml"
+    resources:
+        mem_mb=32000,
+    log:
+        "logs/plots/{seq_platform}/{fdr}/heatmap_replicates_{plot_type}.log",
+    params:
+        meth_callers=lambda wildcards: config["ref_tools"][wildcards.seq_platform]
+        + ["varlo"],
+        # protocol="all",
+        protocol=lambda wildcards: config["protocols"][wildcards.seq_platform],
+        bin_size=lambda wildcards: config["heatmap_bin_size"],
+        # correlation_method=config["correlation_method"],
+    script:
+        "../scripts/heatmap_replicates.py"

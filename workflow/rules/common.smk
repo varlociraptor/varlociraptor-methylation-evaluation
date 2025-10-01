@@ -12,8 +12,10 @@ def compute_results():
         needed_inputs.append(heatmap_replicates(seq_platform))
         needed_inputs.append(correlation_table(seq_platform))
         needed_inputs.append(
-            [f"results/Illumina_pe/{fdr}/plots/heatmap_all_protocols.{config['plot_type']}"
-            for fdr in config['fdr_alpha']]
+            [
+                f"results/Illumina_pe/{fdr}/plots/heatmap_all_protocols.{config['plot_type']}"
+                for fdr in config["fdr_alpha"]
+            ]
         )
 
     return needed_inputs
@@ -74,13 +76,16 @@ def heatmap_replicates(seq_platform):
     return [
         f"{base_path}/{fdr}/plots/{protocol}_heatmap.{plot_type}"
         for protocol in config["protocols"][seq_platform]
-        for fdr in config['fdr_alpha']
+        for fdr in config["fdr_alpha"]
     ]
 
 
 def correlation_table(seq_platform):
     base_path = Path("results") / seq_platform
-    return [f"{base_path}/{fdr}/plots/correlation_table.{config['plot_type']}" for fdr in config['fdr_alpha']]
+    return [
+        f"{base_path}/{fdr}/plots/correlation_table.{config['plot_type']}"
+        for fdr in config["fdr_alpha"]
+    ]
 
 
 def precision_recall(seq_platform):
@@ -94,6 +99,13 @@ def precision_recall(seq_platform):
 
 def get_protocol_sra(wildcards):
     base_path = Path("resources") / wildcards.seq_platform / wildcards.protocol
+
+    # Prüfen, ob die Wildcards im Config existieren
+    if wildcards.seq_platform not in config["data"]:
+        return []  # oder raise ValueError, wenn du lieber explizit willst
+    if wildcards.protocol not in config["data"][wildcards.seq_platform]:
+        return []
+
     accession_numbers = config["data"][wildcards.seq_platform][wildcards.protocol]
     return [
         str(base_path / SRA / "alignment_focused_dedup.bam")

@@ -20,50 +20,62 @@ rule call_methylation_together:
         "{input.varlo} call variants generic --scenario {input.scenario} --obs emseq1={input.emseq1} emseq2={input.emseq2} methylseq={input.methylseq} splat={input.splat} truemethylbs={input.truemethylbs} truemethylox={input.truemethylox} trueseq={input.trueseq} > {output} 2> {log}"
 
 
-# Computes one common df out of all single method dfs
-rule df_common_calls:
+# Rename parquet to make it eligible for plotting scripts
+rule rename_varlo:
     input:
-        rep1="results/common_calls/{fdr}/REP01/result_files/varlo.parquet",
-        rep2="results/common_calls/{fdr}/REP02/result_files/varlo.parquet",
+        "results/common_calls/{fdr}/{protocol}/result_files/varlo.parquet",
     output:
-        protocol_df="results/common_calls/{fdr}/REP/result_files/protocol_df_{plot_type}.parquet",
-    conda:
-        "../envs/plot.yaml"
+        "results/common_calls/{fdr}/{protocol}/result_files/protocol_df_{plot_type}.parquet",
     log:
-        "logs/plots/common_calls/{fdr}/common_tool_df_{plot_type}.log",
-    params:
-        plot_type=config["plot_type"],
+        "logs/plots/common_calls/{fdr}/{protocol}/common_tool_df_{plot_type}.log",
     resources:
         mem_mb=16000,
-    script:
-        "../scripts/common_tool_df.py"
+    shell:
+        "cp {input} {output}"
 
 
-# Compute common heatmap over all Illumina protocols
-rule heatmap_common_calls:
-    input:
-        "results/common_calls/{fdr}/plots/replicates_{plot_type}.hd5",
-    output:
-        report(
-            "results/common_calls/{fdr}/plots/heatmap_all_protocols.{plot_type}",
-            category="common_calls",
-            subcategory=lambda wildcards: f"{wildcards.fdr}",
-            labels={
-                "file": "heatmap",
-                "protocol": "all protocols",
-            },
-        ),
-    conda:
-        "../envs/plot.yaml"
-    resources:
-        mem_mb=32000,
-    log:
-        "logs/plots/{fdr}/heatmap_replicates_{plot_type}.log",
-    params:
-        meth_callers=["varlo"],
-        # protocol="all",
-        protocol="varlo",
-        bin_size=lambda wildcards: config["heatmap_bin_size"],
-        # correlation_method=config["correlation_method"],
-    script:
-        "../scripts/heatmap_common_calls.py"
+# Computes one common df out of all single method dfs
+# rule df_common_calls:
+#     input:
+#         rep1="results/common_calls/{fdr}/REP01/result_files/varlo.parquet",
+#         rep2="results/common_calls/{fdr}/REP02/result_files/varlo.parquet",
+#     output:
+#         protocol_df="results/common_calls/{fdr}/REP/result_files/protocol_df_{plot_type}.parquet",
+#     conda:
+#         "../envs/plot.yaml"
+#     log:
+#         "logs/plots/common_calls/{fdr}/common_tool_df_{plot_type}.log",
+#     params:
+#         plot_type=config["plot_type"],
+#     resources:
+#         mem_mb=16000,
+#     script:
+#         "../scripts/common_tool_df.py"
+# # Compute common heatmap over all Illumina protocols
+# rule heatmap_common_calls:
+#     input:
+#         "results/common_calls/{fdr}/plots/replicates_{plot_type}.hd5",
+#     output:
+#         report(
+#             "results/common_calls/{fdr}/plots/heatmap_all_protocols.{plot_type}",
+#             category="common_calls",
+#             subcategory=lambda wildcards: f"{wildcards.fdr}",
+#             labels={
+#                 "file": "heatmap",
+#                 "protocol": "all protocols",
+#             },
+#         ),
+#     conda:
+#         "../envs/plot.yaml"
+#     resources:
+#         mem_mb=32000,
+#     log:
+#         "logs/plots/{fdr}/heatmap_replicates_{plot_type}.log",
+#     params:
+#         meth_callers=["varlo"],
+#         # protocol="all",
+#         protocol="varlo",
+#         bin_size=lambda wildcards: config["heatmap_bin_size"],
+#         # correlation_method=config["correlation_method"],
+#     script:
+#         "../scripts/heatmap_common_calls.py"

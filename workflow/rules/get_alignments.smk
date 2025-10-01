@@ -176,6 +176,8 @@ rule aligned_reads_merge_sras:
         "logs/alignment/{seq_platform}/{protocol}/merge_sras.log",
     conda:
         "../envs/samtools.yaml"
+    wildcard_constraints:
+        seq_platform="(?!common_calls).*",
     shell:
         "samtools merge {output} {input} 2> {log}"
 
@@ -271,7 +273,6 @@ rule aligned_reads_candidates_region:
             rm temp.sam
         fi
         """
-
 
 
 rule aligned_reads_candidates_region_index:

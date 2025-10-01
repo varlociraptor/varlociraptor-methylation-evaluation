@@ -18,15 +18,15 @@ rule download_varlociraptor:
 
 rule build_varlociraptor:
     input:
-        "resources/tools/varlociraptor"
+        "resources/tools/varlociraptor",
     output:
-        "resources/tools/varlociraptor/target/debug/varlociraptor"
+        "resources/tools/varlociraptor/target/debug/varlociraptor",
     log:
-        "logs/varlociraptor/build.log"
+        "logs/varlociraptor/build.log",
     conda:
         "../envs/varlociraptor.yaml"
     resources:
-        mem_mb=8000
+        mem_mb=8000,
     shell:
         """
         echo {output} >> {log}
@@ -38,8 +38,6 @@ rule build_varlociraptor:
         echo "Show output file:" >> {log}
         ls -ahl $(dirname {output}) >> {log}
         """
-
-
         # mkdir -p $(dirname {output})
         # touch {output}
         # ls $(dirname {output}) >> {log}
@@ -69,7 +67,7 @@ rule compute_meth_observations:
     conda:
         "../envs/varlociraptor.yaml"
     resources:
-        mem_mb=16000
+        mem_mb=16000,
     shell:
         """
         if [[ "{wildcards.seq_platform}" == "Illumina_pe" || "{wildcards.seq_platform}" == "Illumina_se" ]]; then
@@ -81,22 +79,21 @@ rule compute_meth_observations:
         """
 
 
-# rule call_methylation:
-#     input:
-#         varlo="resources/tools/varlociraptor/target/debug/varlociraptor",
-#         preprocess_obs="results/{seq_platform}/{protocol}/normal_{scatteritem}.bcf",
-#         scenario="resources/scenario.yaml",
-#     output:
-#         "results/{seq_platform}/{protocol}/calls_{scatteritem}.bcf",
-#     log:
-#         "logs/varlociraptor/{seq_platform}/{protocol}/call_methylation_{scatteritem}.log",
-#     conda:
-#         "../envs/varlociraptor.yaml"
-#     shell:
-#         "{input.varlo} call variants generic --scenario {input.scenario} --obs normal={input.preprocess_obs} > {output} 2> {log}"
-
-
-
+rule call_methylation:
+    input:
+        varlo="resources/tools/varlociraptor/target/debug/varlociraptor",
+        preprocess_obs="results/{seq_platform}/{protocol}/normal_{scatteritem}.bcf",
+        scenario="resources/scenario.yaml",
+    output:
+        "results/{seq_platform}/{protocol}/calls_{scatteritem}.bcf",
+    log:
+        "logs/varlociraptor/{seq_platform}/{protocol}/call_methylation_{scatteritem}.log",
+    conda:
+        "../envs/varlociraptor.yaml"
+    wildcard_constraints:
+        seq_platform="(?!common_calls).*",
+    shell:
+        "{input.varlo} call variants generic --scenario {input.scenario} --obs normal={input.preprocess_obs} > {output} 2> {log}"
 
 
 # TODO: Reactivate, right now it deletes too much data
