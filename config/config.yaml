@@ -37,7 +37,7 @@ min_mapping_quality: 10
 num_simulated_reads: 100000
 
 protocols: 
-  common_calls: [REP]
+  common_calls: [replicate]
   Illumina_pe: [TruSeq_HG002_LAB01, EMSeq_HG002_LAB02, EMSeq_HG002_LAB01, TrueMethylOX_HG002_LAB01, TrueMethylBS_HG002_LAB01, SPLAT_HG002_LAB01, MethylSeq_HG002_LAB01]
   # Illumina_pe: [TruSeq_HG002_LAB01, SPLAT_HG002_LAB01]
   PacBio: [replicate]
@@ -74,8 +74,8 @@ data:
     replicate1: [np_rep1]
     replicate2: [np_rep2]
   common_calls:
-    REP01: [dummy_rep1]
-    REP02: [dummy_rep2]
+    replicate1: [dummy_rep1]
+    replicate2: [dummy_rep2]
 
 # For more information visit: https://downloads.pacbcloud.com/public/dataset/HG002-CpG-methylation-202202/
 dummySRA_pacBio: "https://downloads.pacbcloud.com/public/dataset/HG002-CpG-methylation-202202/HG002.GRCh38.haplotagged.bam"

@@ -39,6 +39,26 @@ rule common_meth_calling_df:
         "../scripts/common_tool_df.py"
 
 
+rule compute_correlation_tables:
+    input:
+        samples=lambda wildcards: expand(
+            "results/common_calls/{fdr}/{protocol}/result_files/protocol_df_{{plot_type}}.parquet",
+            fdr=wildcards.fdr,
+            protocol=config["data"]["common_calls"],
+        ),
+    output:
+        table="results/common_calls/{fdr}/plots/replicates_{plot_type}.hd5",
+    conda:
+        "../envs/plot.yaml"
+    log:
+        "logs/plots/common_calls/{fdr}/correlation_tables_{plot_type}.log",
+    params:
+        # plot_type=config["plot_type"],
+        meth_callers=lambda wildcards: config["ref_tools"]["common_calls"] + ["varlo"],
+        correlation_methods=config["correlation_methods"],
+    script:
+        "../scripts/compute_correlation_tables.py"
+
 
 # Computes one common df out of all single method dfs
 # rule df_common_calls:

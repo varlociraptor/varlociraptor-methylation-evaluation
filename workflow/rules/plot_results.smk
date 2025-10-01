@@ -214,11 +214,14 @@ rule common_tool_df:
         "../scripts/common_tool_df.py"
 
 
+
+
+
 # Plot overview tables over all samples of a sequencing platform with correlation information
 # We correlate
 # - all tools against each other on the same replicate
 # - all replicates against each other for the same tool
-rule correlation_tables:
+rule plot_correlation_tables:
     input:
         samples=lambda wildcards: expand(
             "results/{seq_platform}/{fdr}/{protocol}/result_files/protocol_df_{{plot_type}}.parquet",
@@ -226,26 +229,27 @@ rule correlation_tables:
             fdr=wildcards.fdr,
             protocol=config["data"][wildcards.seq_platform],
         ),
-        # samples="results/common_calls/{fdr}/REP/result_files/protocol_df_{plot_type}.parquet"
     output:
-        table="results/{seq_platform}/{fdr}/plots/replicates_{plot_type}.hd5",
         plot=report(
             "results/{seq_platform}/{fdr}/plots/correlation_table.{plot_type}",
             category="{seq_platform}",
             subcategory=lambda wildcards: f"{wildcards.fdr}",
             labels={"file": "correlation comparision"},
         ),
+        table="results/{seq_platform}/{fdr}/plots/replicates_{plot_type}.hd5",
     conda:
         "../envs/plot.yaml"
     log:
         "logs/plots/{seq_platform}/{fdr}/correlation_tables_{plot_type}.log",
+    wildcard_constraints:
+        seq_platform="(?!common_calls).*",
     params:
         # plot_type=config["plot_type"],
         meth_callers=lambda wildcards: config["ref_tools"][wildcards.seq_platform]
         + ["varlo"],
         correlation_methods=config["correlation_methods"],
     script:
-        "../scripts/correlation_tables.py"
+        "../scripts/plot_correlation_tables.py"
 
 
 rule replicates_heatmap:
