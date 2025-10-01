@@ -169,7 +169,6 @@ for sample_file in snakemake.input["samples"]:
     # Get the name of the specific sample.
     replicate_name = sample_file.split("/")[-3]
     df = pd.read_parquet(sample_file, engine="pyarrow")
-    print(df.head(), file=sys.stderr)
 
     meth_caller_correlation_dfs.append(
         compute_correlation(df, replicate_name, "meth_caller", corr_methods)
@@ -194,6 +193,7 @@ with pd.HDFStore(snakemake.output["table"]) as store:
         store[key] = df
 print(replicate_dfs, file=sys.stderr)
 print("####################################################", file=sys.stderr)
+
 
 # Calculate correlations across replicates
 for sample_name, df in replicate_dfs.items():

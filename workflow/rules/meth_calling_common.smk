@@ -21,17 +21,23 @@ rule call_methylation_together:
 
 
 # Rename parquet to make it eligible for plotting scripts
-rule rename_varlo:
+rule common_meth_calling_df:
     input:
-        "results/common_calls/{fdr}/{protocol}/result_files/varlo.parquet",
+        tools=[],
+        varlo="results/common_calls/{fdr}/{protocol}/result_files/varlo.parquet",
     output:
-        "results/common_calls/{fdr}/{protocol}/result_files/protocol_df_{plot_type}.parquet",
+        protocol_df="results/common_calls/{fdr}/{protocol}/result_files/protocol_df_{plot_type}.parquet",
+    conda:
+        "../envs/plot.yaml"
     log:
         "logs/plots/common_calls/{fdr}/{protocol}/common_tool_df_{plot_type}.log",
+    params:
+        plot_type=config["plot_type"],
     resources:
         mem_mb=16000,
-    shell:
-        "cp {input} {output}"
+    script:
+        "../scripts/common_tool_df.py"
+
 
 
 # Computes one common df out of all single method dfs

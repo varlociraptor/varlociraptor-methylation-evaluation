@@ -17,8 +17,7 @@ pd.set_option("display.max_rows", 10)
 # ---- Daten laden und zusammenführen ----
 tool_dfs = []
 tool_names = []
-# tool_files = snakemake.input["tools"] + [snakemake.input["varlo"]]
-tool_files = [snakemake.input["rep1"], snakemake.input["rep2"]]
+tool_files = snakemake.input["tools"] + [snakemake.input["varlo"]]
 
 for tool_file in tool_files:
     print(tool_file, file=sys.stderr)
