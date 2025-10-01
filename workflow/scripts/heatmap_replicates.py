@@ -119,7 +119,6 @@ def compute_replicate_counts(df_dict, bin_size, relative=False):
     meth_callers = snakemake.params["meth_callers"]
 
     # Allow heatmaps to be created per protocol or across multiple protocols by building the mean over all protocols
-    print(df_dict, file=sys.stderr)
     if isinstance(protocols, str):
         df = df_dict[protocols]
     else:
@@ -133,6 +132,7 @@ def compute_replicate_counts(df_dict, bin_size, relative=False):
     meth_caller_dfs = {}
     cdf_dfs = {}
     mapes = {}
+    print(df.to_string(), file=sys.stderr)
     for meth_caller in meth_callers:
         x_col = f"{meth_caller}_methylation_rep1"
         y_col = f"{meth_caller}_methylation_rep2"
@@ -149,7 +149,7 @@ def compute_replicate_counts(df_dict, bin_size, relative=False):
                 * 100
             )
             mapes[meth_caller] = f"{mape:.2f}%"
-
+        print(meth_caller, temp_df.head(), file=sys.stderr)
         df_temp = df.dropna(subset=[x_col, y_col]).copy()
         df_temp["rep1_bin"] = bin_methylation(df_temp[x_col], bin_size)
         df_temp["rep2_bin"] = bin_methylation(df_temp[y_col], bin_size)
@@ -195,7 +195,10 @@ def compute_replicate_counts(df_dict, bin_size, relative=False):
         agg_cdf = agg_cdf.sort_values("dist").reset_index(drop=True)
         agg_cdf["cdf"] = agg_cdf["count"].cumsum() / agg_cdf["count"].sum()
         agg_cdf["meth_caller"] = meth_caller
+        print(agg_cdf.head(), file=sys.stderr)
         cdf_dfs[meth_caller] = agg_cdf[["dist", "cdf", "meth_caller"]]
+    print(mapes, file=sys.stderr)
+    
     return meth_caller_dfs, cdf_dfs, mapes
 
 

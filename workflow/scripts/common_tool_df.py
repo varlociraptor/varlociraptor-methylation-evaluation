@@ -25,7 +25,6 @@ for tool_file in tool_files:
     tool_names.append(tool_name)
 
     df = pd.read_parquet(tool_file, engine="pyarrow")
-    print(df.head(), file=sys.stderr)
     # if tool_name == "varlo":
     #     df = df[df["bias"] == "normal"]
 
@@ -56,8 +55,7 @@ df_merged = reduce(
     ),
     tool_dfs,
 )
-print(df_merged, file=sys.stderr)
-
+print(df_merged.head(), file=sys.stderr)
 # Ergebnis abspeichern
 df_merged.to_parquet(
     snakemake.output["protocol_df"], engine="pyarrow", compression="snappy"

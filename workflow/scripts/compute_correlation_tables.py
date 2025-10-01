@@ -153,6 +153,7 @@ def normalize_sample_name(replicate_name: str) -> str:
     """
     name = re.sub(r"_REP\d+$", "", replicate_name)  # Illumina
     name = re.sub(r"replicate\d+$", "replicate", name)  # PacBio/Nanopore
+    name = re.sub(r"REP\d+$", "REP", name)  # common_calls
     return name or replicate_name
 
 

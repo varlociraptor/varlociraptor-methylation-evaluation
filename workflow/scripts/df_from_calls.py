@@ -166,15 +166,27 @@ def read_tool_file(filepath, file_name):
                 # try:
                 alpha = float(snakemake.params["alpha"])
                 # Convert Phred scores to probabilities
-                # prob_high = 10 ** (-float(info_dict["PROB_HIGH"]) / 10)
-                # prob_low = 10 ** (-float(info_dict["PROB_LOW"]) / 10)
-                # prob_present = prob_high + prob_low
-                if info_dict["PROB_PRESENT"] == "." or info_dict["PROB_ABSENT"] == "." or info_dict["PROB_ARTIFACT"] == ".":
-                    print(f"Probability information missing for {chrom}:{position}", file=sys.stderr)
-                    continue
-                prob_present = 10 ** (-float(info_dict["PROB_PRESENT"]) / 10)
-                prob_absent = 10 ** (-float(info_dict["PROB_ABSENT"]) / 10)
-                prob_artifact = 10 ** (-float(info_dict["PROB_ARTIFACT"]) / 10)
+                def phred_to_prob(score):
+                    return 10 ** (-float(score) / 10)
+
+                def is_missing(value):
+                    return value is None or value == "."
+                # This is for common_calls
+                if is_missing(info_dict.get("PROB_PRESENT")):
+                    if is_missing(info_dict.get("PROB_HIGH")) or is_missing(info_dict.get("PROB_LOW")):
+                        print(f"Probability information missing for {chrom}:{position}", file=sys.stderr)
+                        continue
+                    prob_present = phred_to_prob(info_dict["PROB_HIGH"]) + phred_to_prob(info_dict["PROB_LOW"])
+                # This is for varlociraptor methylation calls on single events
+                else:
+                    if is_missing(info_dict.get("PROB_PRESENT")) or is_missing(info_dict.get("PROB_ABSENT")) or is_missing(info_dict.get("PROB_ARTIFACT")):
+                        print(f"Probability information missing for {chrom}:{position}", file=sys.stderr)
+                        continue
+                    prob_present = phred_to_prob(info_dict["PROB_PRESENT"])
+
+                # immer berechnen, sofern vorhanden
+                prob_absent = phred_to_prob(info_dict["PROB_ABSENT"])
+                prob_artifact = phred_to_prob(info_dict["PROB_ARTIFACT"])
                 # Skip low-confidence sites
                 if max(prob_present, prob_absent + prob_artifact) < (1 - alpha):
                     print("Position has low confidence", file=sys.stderr)

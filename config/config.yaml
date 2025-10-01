@@ -22,7 +22,7 @@ ref_tools:
   # Chose from: bismark, bisSNP, methylDackel, bsMap
   # Illumina_pe: [bismark, bsMap, methylDackel, bisSNP]
   common_calls: []
-  Illumina_pe: [bsMap, methylDackel]
+  Illumina_pe: [methylDackel]
   # Illumina_pe: [methylDackel]
   # Illumina_pe: [bismark]
   # Chose from: pb_CpG_tools
@@ -37,12 +37,13 @@ min_mapping_quality: 10
 num_simulated_reads: 100000
 
 protocols: 
-  common_calls: [replicate]
+  common_calls: [REP]
   Illumina_pe: [TruSeq_HG002_LAB01, EMSeq_HG002_LAB02, EMSeq_HG002_LAB01, TrueMethylOX_HG002_LAB01, TrueMethylBS_HG002_LAB01, SPLAT_HG002_LAB01, MethylSeq_HG002_LAB01]
   # Illumina_pe: [TruSeq_HG002_LAB01, SPLAT_HG002_LAB01]
-  PacBio: [replicate]
-  Nanopore: [replicate]
+  PacBio: [REP]
+  Nanopore: [REP]
 # protocols: [TruSeq_HG002_LAB01]
+# protocol replicates must end on "REP01" and "REP02"
 data:
   Illumina_pe:
     # simulated_data: []
@@ -66,16 +67,16 @@ data:
     # No example data found
   PacBio:
     # data1: [dummySRA_pacBio]
-    replicate1: [pb_rep1]
-    replicate2: [pb_rep2]
-    replicate3: [pb_rep3]
+    REP01: [pb_rep1]
+    REP02: [pb_rep2]
+    REP03: [pb_rep3]
   Nanopore:
     # data1: [dummySRA_nanopore]
-    replicate1: [np_rep1]
-    replicate2: [np_rep2]
+    REP01: [np_rep1]
+    REP02: [np_rep2]
   common_calls:
-    replicate1: [dummy_rep1]
-    replicate2: [dummy_rep2]
+    REP01: [dummy_rep1]
+    REP02: [dummy_rep2]
 
 # For more information visit: https://downloads.pacbcloud.com/public/dataset/HG002-CpG-methylation-202202/
 dummySRA_pacBio: "https://downloads.pacbcloud.com/public/dataset/HG002-CpG-methylation-202202/HG002.GRCh38.haplotagged.bam"

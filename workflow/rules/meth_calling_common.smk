@@ -9,7 +9,8 @@ rule call_methylation_together:
         truemethylbs="results/Illumina_pe/TrueMethylBS_HG002_LAB01_{replicate}/normal_{scatteritem}.bcf",
         truemethylox="results/Illumina_pe/TrueMethylOX_HG002_LAB01_{replicate}/normal_{scatteritem}.bcf",
         trueseq="results/Illumina_pe/TruSeq_HG002_LAB01_{replicate}/normal_{scatteritem}.bcf",
-        scenario="resources/scenario_common.yaml",
+        nanopore="results/Nanopore/{replicate}/normal_{scatteritem}.bcf",
+        scenario="resources/scenario_common_nanopore.yaml",
     output:
         "results/common_calls/{replicate}/calls_{scatteritem}.bcf",
     log:
@@ -17,7 +18,7 @@ rule call_methylation_together:
     conda:
         "../envs/varlociraptor.yaml"
     shell:
-        "{input.varlo} call variants generic --scenario {input.scenario} --obs emseq1={input.emseq1} emseq2={input.emseq2} methylseq={input.methylseq} splat={input.splat} truemethylbs={input.truemethylbs} truemethylox={input.truemethylox} trueseq={input.trueseq} > {output} 2> {log}"
+        "{input.varlo} call variants generic --scenario {input.scenario} --obs emseq1={input.emseq1} emseq2={input.emseq2} methylseq={input.methylseq} splat={input.splat} truemethylbs={input.truemethylbs} truemethylox={input.truemethylox} trueseq={input.trueseq} nanopore={input.nanopore} > {output} 2> {log}"
 
 
 # Rename parquet to make it eligible for plotting scripts

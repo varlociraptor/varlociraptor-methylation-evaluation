@@ -11,12 +11,19 @@ def compute_results():
 
         needed_inputs.append(heatmap_replicates(seq_platform))
         needed_inputs.append(correlation_table(seq_platform))
-        needed_inputs.append(
-            [
-                f"results/Illumina_pe/{fdr}/plots/heatmap_all_protocols.{config['plot_type']}"
-                for fdr in config["fdr_alpha"]
-            ]
-        )
+        
+
+
+
+    needed_inputs.append(
+        [
+            f"results/Illumina_pe/{fdr}/plots/heatmap_all_protocols.{config['plot_type']}"
+            for fdr in config["fdr_alpha"]
+        ]
+    )
+    needed_inputs.append(
+        heatmap_replicates("common_calls")
+    )
 
     return needed_inputs
 

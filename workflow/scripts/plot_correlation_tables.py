@@ -108,7 +108,6 @@ def plot_correlation(
     """
     Create a heatmap with correlation values annotated as text.
     """
-    print(df, file=sys.stderr)
     num_replicates = df["sample"].nunique()
     num_comparisons = df["comparison"].nunique()
     chart_width = max(200, num_replicates * 100)
@@ -187,13 +186,15 @@ for sample_file in snakemake.input["samples"]:
         )
     else:
         replicate_dfs[samplename] = df
+    if samplename.startswith("TrueMethylBS_HG002_LAB01"):
+        print(replicate_name, file=sys.stderr)
+        print(replicate_dfs[samplename].head(), file=sys.stderr)
+        print(df.head(), file=sys.stderr)
 # Save intermediate tables
 with pd.HDFStore(snakemake.output["table"]) as store:
     for key, df in replicate_dfs.items():
         store[key] = df
-print(meth_caller_correlation_dfs, file=sys.stderr)
-print(replicate_dfs, file=sys.stderr)
-print("####################################################", file=sys.stderr)
+
 
 
 # Calculate correlations across replicates
