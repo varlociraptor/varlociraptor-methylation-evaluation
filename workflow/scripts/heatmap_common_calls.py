@@ -135,7 +135,7 @@ def compute_replicate_counts(df_dict, bin_size, relative=False):
     for meth_caller in meth_callers:
         x_col = f"{meth_caller}_methylation_rep1"
         y_col = f"{meth_caller}_methylation_rep2"
-
+        print(df.head(), file=sys.stderr)
         temp_df = df.dropna(subset=[x_col, y_col])
         if not temp_df.empty:
             mape = (
@@ -206,20 +206,16 @@ relative_counts = False
 # Load data from HDF5
 meth_caller_dfs = {}
 
-if snakemake.input[0].endswith(".parquet"):
-    # Load parquet file
-    df = pd.read_parquet(snakemake.input[0])
-    meth_caller_dfs["varlo"] = df
-else:
-    with pd.HDFStore(snakemake.input[0], mode="r", locking=False) as store:
-        for key in store.keys():
-            meth_caller_dfs[key.strip("/")] = store[key]
+
+with pd.HDFStore(snakemake.input[0], mode="r", locking=False) as store:
+    for key in store.keys():
+        meth_caller_dfs[key.strip("/")] = store[key]
+
 
 # Compute replicate counts
 replicate_dfs, cdf_dfs, mapes = compute_replicate_counts(
     meth_caller_dfs, bin_size, relative_counts
 )
-
 diff_charts = []
 heatmaps = []
 histogram_plots = []

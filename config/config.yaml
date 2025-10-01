@@ -21,6 +21,7 @@ seq_platforms:
 ref_tools:
   # Chose from: bismark, bisSNP, methylDackel, bsMap
   # Illumina_pe: [bismark, bsMap, methylDackel, bisSNP]
+  common_calls: []
   Illumina_pe: [bsMap, methylDackel]
   # Illumina_pe: [methylDackel]
   # Illumina_pe: [bismark]

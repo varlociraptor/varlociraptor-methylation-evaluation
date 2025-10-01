@@ -26,11 +26,11 @@ rule df_common_calls:
         rep1="results/common_calls/{fdr}/REP01/result_files/varlo.parquet",
         rep2="results/common_calls/{fdr}/REP02/result_files/varlo.parquet",
     output:
-        protocol_df="results/common_calls/{fdr}/result_files/varlo.parquet",
+        protocol_df="results/common_calls/{fdr}/REP/result_files/protocol_df_{plot_type}.parquet",
     conda:
         "../envs/plot.yaml"
     log:
-        "logs/plots/common_calls/{fdr}/common_tool_df.log",
+        "logs/plots/common_calls/{fdr}/common_tool_df_{plot_type}.log",
     params:
         plot_type=config["plot_type"],
     resources:
@@ -42,7 +42,7 @@ rule df_common_calls:
 # Compute common heatmap over all Illumina protocols
 rule heatmap_common_calls:
     input:
-        "results/common_calls/{fdr}/result_files/varlo.parquet",
+        "results/common_calls/{fdr}/plots/replicates_{plot_type}.hd5",
     output:
         report(
             "results/common_calls/{fdr}/plots/heatmap_all_protocols.{plot_type}",
@@ -60,9 +60,9 @@ rule heatmap_common_calls:
     log:
         "logs/plots/{fdr}/heatmap_replicates_{plot_type}.log",
     params:
-        meth_callers="varlo",
+        meth_callers=["varlo"],
         # protocol="all",
-        protocol="?",
+        protocol="varlo",
         bin_size=lambda wildcards: config["heatmap_bin_size"],
         # correlation_method=config["correlation_method"],
     script:
