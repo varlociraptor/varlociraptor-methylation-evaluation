@@ -97,7 +97,7 @@ def compute_correlation(
             correlation_entry[f"{method}_corr"] = metric_funcs[method]()
 
         correlations.append(correlation_entry)
-
+        print(correlations, file=sys.stderr)
     return pd.DataFrame(correlations)
 
 
@@ -108,7 +108,6 @@ def plot_correlation(
     """
     Create a heatmap with correlation values annotated as text.
     """
-    print(df, file=sys.stderr)
     num_replicates = df["sample"].nunique()
     num_comparisons = df["comparison"].nunique()
     chart_width = max(200, num_replicates * 100)
@@ -152,7 +151,6 @@ def normalize_sample_name(replicate_name: str) -> str:
     - PacBio/Nanopore: normalize trailing replicate numbers
     """
     name = re.sub(r"_REP\d+$", "", replicate_name)  # Illumina
-    name = re.sub(r"replicate\d+$", "replicate", name)  # PacBio/Nanopore
     name = re.sub(r"REP\d+$", "REP", name)  # common_calls
     return name or replicate_name
 
@@ -191,4 +189,57 @@ for sample_file in snakemake.input["samples"]:
 # Save intermediate tables
 with pd.HDFStore(snakemake.output["table"]) as store:
     for key, df in replicate_dfs.items():
+        
+        
+        # Filterbedingung:
+        # varlo Rep1 und Rep2 = 100
+        varlo_100 = (df["varlo_methylation_rep1"] == 100) & (df["varlo_methylation_rep2"] == 100)
+        # modkit Rep1 oder Rep2 ≠ 100
+        modkit_not_100 = (df["modkit_methylation_rep1"] != 100) | (df["modkit_methylation_rep2"] != 100)
+
+        # Kombinieren
+        filtered = df[varlo_100 & modkit_not_100]
+
+        # Ausgabe
+        if not filtered.empty:
+            print(f"Sample: {key}", file=sys.stderr)
+            print(filtered, file=sys.stderr)
+
+
         store[key] = df
+
+
+
+# # Calculate correlations across replicates
+# for sample_name, df in replicate_dfs.items():
+#     sample_correlation.append(
+#         compute_correlation(df, sample_name, "replicate", corr_methods)
+#     )
+
+# # Combine results
+# correlation_meth_callers = pd.concat(meth_caller_correlation_dfs, ignore_index=True)
+# correlation_replicates = pd.concat(sample_correlation, ignore_index=True)
+# ################### PLOTTING ####################
+
+# charts_meth_callers_list = [
+#     plot_correlation(correlation_meth_callers, method) for method in corr_methods
+# ]
+# charts_replicates_list = [
+#     plot_correlation(correlation_replicates, method) for method in corr_methods
+# ]
+
+# charts_meth_callers = alt.hconcat(*charts_meth_callers_list).properties(
+#     title="Correlation of Varlo with Reference Tools"
+# )
+# charts_replicates = alt.hconcat(*charts_replicates_list).properties(
+#     title="Correlation of Replicates"
+# )
+
+# full_chart = alt.vconcat(charts_meth_callers, charts_replicates)
+
+# # Save final chart
+# full_chart.save(
+#     snakemake.output["plot"],
+#     embed_options={"actions": False},
+#     inline=False,
+# )

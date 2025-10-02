@@ -119,6 +119,7 @@ def compute_replicate_counts(df_dict, bin_size, relative=False):
     meth_callers = snakemake.params["meth_callers"]
 
     # Allow heatmaps to be created per protocol or across multiple protocols by building the mean over all protocols
+    print(df_dict.keys(), file=sys.stderr)
     if isinstance(protocols, str):
         df = df_dict[protocols]
     else:

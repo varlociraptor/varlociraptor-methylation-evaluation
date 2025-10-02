@@ -221,7 +221,7 @@ rule common_tool_df:
 # We correlate
 # - all tools against each other on the same replicate
 # - all replicates against each other for the same tool
-rule plot_correlation_tables:
+rule compute_correlation_tables:
     input:
         samples=lambda wildcards: expand(
             "results/{seq_platform}/{fdr}/{protocol}/result_files/protocol_df_{{plot_type}}.parquet",
@@ -230,12 +230,12 @@ rule plot_correlation_tables:
             protocol=config["data"][wildcards.seq_platform],
         ),
     output:
-        plot=report(
-            "results/{seq_platform}/{fdr}/plots/correlation_table.{plot_type}",
-            category="{seq_platform}",
-            subcategory=lambda wildcards: f"{wildcards.fdr}",
-            labels={"file": "correlation comparision"},
-        ),
+        # plot=report(
+        #     "results/{seq_platform}/{fdr}/plots/correlation_table.{plot_type}",
+        #     category="{seq_platform}",
+        #     subcategory=lambda wildcards: f"{wildcards.fdr}",
+        #     labels={"file": "correlation comparision"},
+        # ),
         table="results/{seq_platform}/{fdr}/plots/replicates_{plot_type}.hd5",
     conda:
         "../envs/plot.yaml"
@@ -249,7 +249,7 @@ rule plot_correlation_tables:
         + ["varlo"],
         correlation_methods=config["correlation_methods"],
     script:
-        "../scripts/plot_correlation_tables.py"
+        "../scripts/compute_correlation_tables.py"
 
 
 rule replicates_heatmap:

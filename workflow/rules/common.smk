@@ -10,7 +10,7 @@ def compute_results():
         # needed_inputs.append(comparision_plots_tools(seq_platform))
 
         needed_inputs.append(heatmap_replicates(seq_platform))
-        needed_inputs.append(correlation_table(seq_platform))
+        # needed_inputs.append(correlation_table(seq_platform))
         
 
 
