@@ -21,7 +21,6 @@ seq_platforms:
 ref_tools:
   # Chose from: bismark, bisSNP, methylDackel, bsMap
   # Illumina_pe: [bismark, bsMap, methylDackel, bisSNP]
-  common_calls: []
   Illumina_pe: [methylDackel]
   # Illumina_pe: [methylDackel]
   # Illumina_pe: [bismark]
@@ -85,6 +84,7 @@ dummySRA_pacBio: "https://downloads.pacbcloud.com/public/dataset/HG002-CpG-methy
 # https://downloads.pacbcloud.com/public/2024Q4/Vega/HG002/
 
 # überblick PacBio Data
+# https://www.pacb.com/connect/datasets/ Diese geben mir die folgenden datasets:
 
 # Here I have two pacbio replicates:
 # https://downloads.pacbcloud.com/public/revio/2024Q4/WGS/GIAB_trio/
@@ -136,7 +136,7 @@ fdr_alpha: [0.01, 0.05, 0.1, 1.0]
 
 ###################################### PLOTS ##################################################
 heatmap_bin_size: 5
-# Choose frome png and html
+# Choose frome png, svg, html
 plot_type: html
 # Define threshhold for false positive cutoff
 prob_pres_threshhold: 0.95

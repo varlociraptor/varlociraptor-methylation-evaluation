@@ -32,6 +32,8 @@ rule pb_CpG_compute_methylation:
             ".combined", ""
         ),
     threads: 8
+    benchmark:
+        "benchmarks/pb_CpG_tools/{protocol}.bwa.benchmark.txt"
     shell:
         "{input.runner} --bam {input.alignment} --output-prefix {params.prefix} --model {input.model} --threads {threads} 2> {log}"
 
@@ -40,7 +42,7 @@ rule pb_CpG_rename_output:
     input:
         "results/PacBio/{protocol}/result_files/alignments_CpG.combined.bed",
     output:
-        "results/PacBio/{protocol}/result_files/pb_CpG_tools.bed",
+        "results/single_calls/PacBio/{protocol}/result_files/pb_CpG_tools.bed",
     log:
         "logs/pb_CpG/{protocol}/rename_output.log",
     shell:

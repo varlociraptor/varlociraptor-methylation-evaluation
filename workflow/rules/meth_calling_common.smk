@@ -1,28 +1,57 @@
 # TODO: Do I have to hardcode the inputs, since the shell command uses each of them individually?
-rule call_methylation_together:
+rule call_methylation_together_np_pb:
     input:
         varlo="resources/tools/varlociraptor/target/debug/varlociraptor",
-        emseq1="results/Illumina_pe/EMSeq_HG002_LAB01_{replicate}/normal_{scatteritem}.bcf",
-        emseq2="results/Illumina_pe/EMSeq_HG002_LAB02_{replicate}/normal_{scatteritem}.bcf",
-        methylseq="results/Illumina_pe/MethylSeq_HG002_LAB01_{replicate}/normal_{scatteritem}.bcf",
-        splat="results/Illumina_pe/SPLAT_HG002_LAB01_{replicate}/normal_{scatteritem}.bcf",
-        truemethylbs="results/Illumina_pe/TrueMethylBS_HG002_LAB01_{replicate}/normal_{scatteritem}.bcf",
-        truemethylox="results/Illumina_pe/TrueMethylOX_HG002_LAB01_{replicate}/normal_{scatteritem}.bcf",
-        trueseq="results/Illumina_pe/TruSeq_HG002_LAB01_{replicate}/normal_{scatteritem}.bcf",
         pacbio="results/PacBio/{replicate}/normal_{scatteritem}.bcf",
-        # nanopore="results/Nanopore/{replicate}/normal_{scatteritem}.bcf",
-        scenario="resources/scenario_common_pacbio.yaml",
+        nanopore="results/Nanopore/{replicate}/normal_{scatteritem}.bcf",
+        scenario="resources/scenario_common_nanopore_pacbio.yaml",
     output:
-        "results/common_calls/{replicate}/calls_{scatteritem}.bcf",
+        "results/common_calls/np_pb/{replicate}/calls_{scatteritem}.bcf",
     log:
-        "logs/varlociraptor/common_calls/{replicate}/call_methylation_{scatteritem}.log",
+        "logs/varlociraptor/common_calls/np_pb/{replicate}/call_methylation_{scatteritem}.log",
+    benchmark:
+        "benchmarks/calling/common_calls/np_pb/{replicate}_{scatteritem}.bwa.benchmark.txt"
     conda:
         "../envs/varlociraptor.yaml"
     shell:
-        "{input.varlo} call variants generic --scenario {input.scenario} --obs emseq1={input.emseq1} emseq2={input.emseq2} methylseq={input.methylseq} splat={input.splat} truemethylbs={input.truemethylbs} truemethylox={input.truemethylox} trueseq={input.trueseq} pacbio={input.pacbio} > {output} 2> {log}"
+        "{input.varlo} call variants generic --scenario {input.scenario} --obs  pacbio={input.pacbio}  nanopore={input.nanopore} > {output} 2> {log}"
 
 
-# Rename parquet to make it eligible for plotting scripts
+rule call_methylation_together_np_trueOX:
+    input:
+        varlo="resources/tools/varlociraptor/target/debug/varlociraptor",
+        trueOX="results/Illumina_pe/TrueMethylOX_HG002_LAB01_{replicate}/normal_{scatteritem}.bcf",
+        nanopore="results/Nanopore/{replicate}/normal_{scatteritem}.bcf",
+        scenario="resources/scenario_common_nanopore_trueOX.yaml",
+    output:
+        "results/common_calls/np_trueOX/{replicate}/calls_{scatteritem}.bcf",
+    log:
+        "logs/varlociraptor/common_calls/np_trueOX/{replicate}/call_methylation_{scatteritem}.log",
+    benchmark:
+        "benchmarks/calling/common_calls/np_trueOX/{replicate}_{scatteritem}.bwa.benchmark.txt"
+    conda:
+        "../envs/varlociraptor.yaml"
+    shell:
+        "{input.varlo} call variants generic --scenario {input.scenario} --obs  trueOX={input.trueOX}  nanopore={input.nanopore} > {output} 2> {log}"
+
+rule call_methylation_together_pb_trueOX:
+    input:
+        varlo="resources/tools/varlociraptor/target/debug/varlociraptor",
+        trueOX="results/Illumina_pe/TrueMethylOX_HG002_LAB01_{replicate}/normal_{scatteritem}.bcf",
+        pacbio="results/PacBio/{replicate}/normal_{scatteritem}.bcf",
+        scenario="resources/scenario_common_pacbio_trueOX.yaml",
+    output:
+        "results/common_calls/pb_trueOX/{replicate}/calls_{scatteritem}.bcf",
+    log:
+        "logs/varlociraptor/common_calls/pb_trueOX/{replicate}/call_methylation_{scatteritem}.log",
+    benchmark:
+        "benchmarks/calling/common_calls/pb_trueOX/{replicate}_{scatteritem}.bwa.benchmark.txt"
+    conda:
+        "../envs/varlociraptor.yaml"
+    shell:
+        "{input.varlo} call variants generic --scenario {input.scenario} --obs  trueOX={input.trueOX}  pacbio={input.pacbio} > {output} 2> {log}"
+
+
 rule common_meth_calling_df:
     input:
         tools=[],
@@ -56,7 +85,7 @@ rule compute_correlation_tables_common:
         "logs/plots/common_calls/{fdr}/correlation_tables_{plot_type}.log",
     params:
         # plot_type=config["plot_type"],
-        meth_callers=lambda wildcards: config["ref_tools"]["common_calls"] + ["varlo"],
+        meth_callers=lambda wildcards: config["ref_tools"].get("common_calls", []) + ["varlo"],
         correlation_methods=config["correlation_methods"],
     script:
         "../scripts/compute_correlation_tables.py"

@@ -1,20 +1,20 @@
 rule compute_pandas_df:
     input:
-        tool="results/{seq_platform}/{protocol}/result_files/{method}.bed",
+        tool="results/{call_type}/{seq_platform}/{protocol}/result_files/{method}.bed",
         # true_meth=lambda wildcards: expand(
         #     "resources/bed_avg_{chrom}.bedGraph",
         #     chrom=chromosome_by_seq_platform[wildcards.seq_platform],
         # ),
-        # coverage="resources/{seq_platform}/{protocol}/cov.regions.bed",
+        # coverage="resources/{call_type}/{seq_platform}/{protocol}/cov.regions.bed",
     output:
-        "results/{seq_platform}/{protocol}/result_files/{method}.parquet",
+        "results/{call_type}/{seq_platform}/{protocol}/result_files/{method}.parquet",
     conda:
         "../envs/plot.yaml"
     wildcard_constraints:
         protocol="(?!simulated_data).*",
         method="(?!varlo).*",
     log:
-        "logs/plots/{seq_platform}/{protocol}/compute_pandas_df_{method}.log",
+        "logs/plots/{call_type}/{seq_platform}/{protocol}/compute_pandas_df_{method}.log",
     params:
         # cov_bin_size=lambda wildcards: config["cov_bin_size"][wildcards.seq_platform],
         # cov_bins=lambda wildcards: config["cov_bins"][wildcards.seq_platform],
@@ -28,15 +28,15 @@ rule compute_pandas_df:
 
 rule compute_varlo_df:
     input:
-        tool="results/{seq_platform}/{protocol}/result_files/varlo.bed",
+        tool="results/{call_type}/{seq_platform}/{protocol}/result_files/varlo.bed",
     output:
-        "results/{seq_platform}/{fdr}/{protocol}/result_files/varlo.parquet",
+        "results/{call_type}/{seq_platform}/{fdr}/{protocol}/result_files/varlo.parquet",
     conda:
         "../envs/plot.yaml"
     wildcard_constraints:
         protocol="(?!simulated_data).*",
     log:
-        "logs/plots/{seq_platform}/{fdr}/{protocol}/compute_pvarlo_df.log",
+        "logs/plots/{call_type}/{seq_platform}/{fdr}/{protocol}/compute_pvarlo_df.log",
     params:
         # cov_bin_size=lambda wildcards: config["cov_bin_size"][wildcards.seq_platform],
         # cov_bins=lambda wildcards: config["cov_bins"][wildcards.seq_platform],
@@ -73,10 +73,10 @@ rule compute_varlo_df:
 
 # rule plot_results_cov_specific:
 #     input:
-#         tool="results/{seq_platform}/{protocol}/result_files/{method}.parquet",
+#         tool="results/{call_type}/{seq_platform}/{protocol}/result_files/{method}.parquet",
 #     output:
 #         plot=report(
-#             "results/{seq_platform}/{protocol}/plots/{method}/plots_{cov_bin, [0-9]+}.{plot_type}",
+#             "results/{call_type}/{seq_platform}/{protocol}/plots/{method}/plots_{cov_bin, [0-9]+}.{plot_type}",
 #             category=lambda wildcards: f"{wildcards.seq_platform} - {wildcards.protocol}",
 #             subcategory=lambda wildcards: f"{wildcards.method} plots",
 #             labels=lambda wildcards: {
@@ -86,7 +86,7 @@ rule compute_varlo_df:
 #     conda:
 #         "../envs/plot.yaml"
 #     log:
-#         "logs/plots/{seq_platform}/{protocol}/results_cov_specific_{method}_{cov_bin}_{plot_type}.log",
+#         "logs/plots/{call_type}/{seq_platform}/{protocol}/results_cov_specific_{method}_{cov_bin}_{plot_type}.log",
 #     params:
 #         plot_type=config["plot_type"],
 #         cov_bin=lambda wildcards: wildcards.cov_bin,
@@ -96,10 +96,10 @@ rule compute_varlo_df:
 
 # rule plot_results_all_cov:
 #     input:
-#         tool="results/{seq_platform}/{protocol}/result_files/{method}.parquet",
+#         tool="results/{call_type}/{seq_platform}/{protocol}/result_files/{method}.parquet",
 #     output:
 #         plot=report(
-#             "results/{seq_platform}/{protocol}/plots/{method}/plots_all.{plot_type}",
+#             "results/{call_type}/{seq_platform}/{protocol}/plots/{method}/plots_all.{plot_type}",
 #             category=lambda wildcards: f"{wildcards.seq_platform} - {wildcards.protocol}",
 #             subcategory=lambda wildcards: f"{wildcards.method} plots",
 #             labels=lambda wildcards: {
@@ -109,7 +109,7 @@ rule compute_varlo_df:
 #     conda:
 #         "../envs/plot.yaml"
 #     log:
-#         "logs/plots/{seq_platform}/{protocol}/all_cov_{method}_{plot_type}.log",
+#         "logs/plots/{call_type}/{seq_platform}/{protocol}/all_cov_{method}_{plot_type}.log",
 #     params:
 #         plot_type=config["plot_type"],
 #         cov_bin=-1,
@@ -120,8 +120,8 @@ rule compute_varlo_df:
 # # TODO: Catch JavaScript out of Memory exception and give advise to use html for bigger datasets
 # rule scatter_ref_method:
 #     input:
-#         varlo="results/{seq_platform}/{protocol}/result_files/varlo.parquet",
-#         ref_tool="results/{seq_platform}/{protocol}/result_files/{method}.parquet",
+#         varlo="results/{call_type}/{seq_platform}/{protocol}/result_files/varlo.parquet",
+#         ref_tool="results/{call_type}/{seq_platform}/{protocol}/result_files/{method}.parquet",
 #     output:
 #         scatter_plot=report(
 #             expand(
@@ -138,7 +138,7 @@ rule compute_varlo_df:
 #     conda:
 #         "../envs/plot.yaml"
 #     log:
-#         "logs/plots/{seq_platform}/{protocol}/tool_comparision_{method}.log",
+#         "logs/plots/{call_type}/{seq_platform}/{protocol}/tool_comparision_{method}.log",
 #     params:
 #         plot_type=config["plot_type"],
 #         cov_bins=config["cov_bins"],
@@ -150,9 +150,9 @@ rule compute_varlo_df:
 
 # rule compute_precision_recall:
 #     input:
-#         tool="results/{seq_platform}/{protocol}/result_files/{method}.parquet",
+#         tool="results/{call_type}/{seq_platform}/{protocol}/result_files/{method}.parquet",
 #     output:
-#         precall="results/{seq_platform}/{protocol}/plots/{method}/precall_{cov_bin}.csv",
+#         precall="results/{call_type}/{seq_platform}/{protocol}/plots/{method}/precall_{cov_bin}.csv",
 #     conda:
 #         "../envs/plot.yaml"
 #     params:
@@ -162,7 +162,7 @@ rule compute_varlo_df:
 #         meth_type=config["meth_type"],
 #         meth_threshold=config["meth_threshold"],
 #     log:
-#         "logs/plots/{seq_platform}/{protocol}/compute_precision_recall_{method}_{cov_bin}.log",
+#         "logs/plots/{call_type}/{seq_platform}/{protocol}/compute_precision_recall_{method}_{cov_bin}.log",
 #     script:
 #         "../scripts/compute_precision_recall.py"
 
@@ -182,7 +182,7 @@ rule compute_varlo_df:
 #     conda:
 #         "../envs/plot.yaml"
 #     log:
-#         "logs/plots/{seq_platform}/{protocol}/plot_precision_recall_{plot_type}.log",
+#         "logs/plots/{call_type}/{seq_platform}/{protocol}/plot_precision_recall_{plot_type}.log",
 #     params:
 #         cov_bin=lambda wildcards: config["cov_bins"][wildcards.seq_platform],
 #         plot_type=config["plot_type"],
@@ -194,20 +194,20 @@ rule compute_varlo_df:
 rule common_tool_df:
     input:
         tools=lambda wildcards: expand(
-            "results/{{seq_platform}}/{{protocol}}/result_files/{method}.parquet",
+            "results/{{call_type}}/{{seq_platform}}/{{protocol}}/result_files/{method}.parquet",
             method=config["ref_tools"][wildcards.seq_platform],
         ),
-        varlo="results/{seq_platform}/{fdr}/{protocol}/result_files/varlo.parquet",
+        varlo="results/{call_type}/{seq_platform}/{fdr}/{protocol}/result_files/varlo.parquet",
     output:
-        protocol_df="results/{seq_platform}/{fdr}/{protocol}/result_files/protocol_df_{plot_type}.parquet",
+        protocol_df="results/{call_type}/{seq_platform}/{fdr}/{protocol}/result_files/protocol_df_{plot_type}.parquet",
     conda:
         "../envs/plot.yaml"
     log:
-        "logs/plots/{seq_platform}/{fdr}/{protocol}/common_tool_df_{plot_type}.log",
+        "logs/plots/{call_type}/{seq_platform}/{fdr}/{protocol}/common_tool_df_{plot_type}.log",
     params:
         plot_type=config["plot_type"],
     wildcard_constraints:
-        seq_platform="(?!common_calls).*",
+        call_type="(?!common_calls).*",
     resources:
         mem_mb=16000,
     script:
@@ -224,29 +224,29 @@ rule common_tool_df:
 rule compute_correlation_tables:
     input:
         samples=lambda wildcards: expand(
-            "results/{seq_platform}/{fdr}/{protocol}/result_files/protocol_df_{{plot_type}}.parquet",
+            "results/{call_type}/{seq_platform}/{fdr}/{protocol}/result_files/protocol_df_{{plot_type}}.parquet",
+            call_type=wildcards.call_type,
             seq_platform=wildcards.seq_platform,
             fdr=wildcards.fdr,
             protocol=config["data"][wildcards.seq_platform],
         ),
     output:
         # plot=report(
-        #     "results/{seq_platform}/{fdr}/plots/correlation_table.{plot_type}",
+        #     "results/{call_type}/{seq_platform}/{fdr}/plots/correlation_table.{plot_type}",
         #     category="{seq_platform}",
         #     subcategory=lambda wildcards: f"{wildcards.fdr}",
         #     labels={"file": "correlation comparision"},
         # ),
-        table="results/{seq_platform}/{fdr}/plots/replicates_{plot_type}.hd5",
+        table="results/{call_type}/{seq_platform}/{fdr}/plots/replicates_{plot_type}.hd5",
     conda:
         "../envs/plot.yaml"
     log:
-        "logs/plots/{seq_platform}/{fdr}/correlation_tables_{plot_type}.log",
+        "logs/plots/{call_type}/{seq_platform}/{fdr}/correlation_tables_{plot_type}.log",
     wildcard_constraints:
-        seq_platform="(?!common_calls).*",
+        call_type="(?!common_calls).*",
     params:
         # plot_type=config["plot_type"],
-        meth_callers=lambda wildcards: config["ref_tools"][wildcards.seq_platform]
-        + ["varlo"],
+        meth_callers=lambda wildcards: config["ref_tools"].get(wildcards.seq_platform, []) + ["varlo"],
         correlation_methods=config["correlation_methods"],
     script:
         "../scripts/compute_correlation_tables.py"
@@ -254,15 +254,16 @@ rule compute_correlation_tables:
 
 rule replicates_heatmap:
     input:
-        "results/{seq_platform}/{fdr}/plots/replicates_{plot_type}.hd5",
+        "results/{call_type}/{seq_platform}/{fdr}/plots/replicates_{plot_type}.hd5",
     output:
         report(
-            "results/{seq_platform}/{fdr}/plots/{protocol}_heatmap.{plot_type}",
-            category="{seq_platform}",
-            subcategory=lambda wildcards: f"{wildcards.fdr}",
+            "results/{call_type}/{seq_platform}/{fdr}/plots/{protocol}_heatmap.{plot_type}",
+            category="{call_type}",
+            subcategory=lambda wildcards: f"{wildcards.seq_platform}",
             labels={
                 "file": "heatmap",
                 "protocol": "{protocol}",
+                "fdr": "{fdr}",
             },
         ),
     conda:
@@ -270,10 +271,9 @@ rule replicates_heatmap:
     resources:
         mem_mb=32000,
     log:
-        "logs/plots/{seq_platform}/{fdr}/heatmap_replicates_{protocol}_{plot_type}.log",
+        "logs/plots/{call_type}/{seq_platform}/{fdr}/heatmap_replicates_{protocol}_{plot_type}.log",
     params:
-        meth_callers=lambda wildcards: config["ref_tools"][wildcards.seq_platform]
-        + ["varlo"],
+        meth_callers = lambda wildcards: config["ref_tools"].get(wildcards.seq_platform, []) + ["varlo"],
         protocol=lambda wildcards: wildcards.protocol,
         bin_size=lambda wildcards: config["heatmap_bin_size"],
         # correlation_method=config["correlation_method"],
@@ -284,15 +284,16 @@ rule replicates_heatmap:
 # Compute common heatmap over all Illumina protocols
 rule heatmap_illumina_protocols:
     input:
-        "results/{seq_platform}/{fdr}/plots/replicates_{plot_type}.hd5",
+        "results/{call_type}/{seq_platform}/{fdr}/plots/replicates_{plot_type}.hd5",
     output:
         report(
-            "results/{seq_platform}/{fdr}/plots/heatmap_all_protocols.{plot_type}",
-            category="{seq_platform}",
-            subcategory=lambda wildcards: f"{wildcards.fdr}",
+            "results/{call_type}/{seq_platform}/{fdr}/plots/heatmap_all_protocols.{plot_type}",
+            category="{call_type}",
+            subcategory=lambda wildcards: f"{wildcards.seq_platform}",
             labels={
                 "file": "heatmap",
                 "protocol": "all protocols",
+                "fdr": "{fdr}",
             },
         ),
     conda:
@@ -300,7 +301,7 @@ rule heatmap_illumina_protocols:
     resources:
         mem_mb=32000,
     log:
-        "logs/plots/{seq_platform}/{fdr}/heatmap_replicates_{plot_type}.log",
+        "logs/plots/{call_type}/{seq_platform}/{fdr}/heatmap_replicates_{plot_type}.log",
     params:
         meth_callers=lambda wildcards: config["ref_tools"][wildcards.seq_platform]
         + ["varlo"],

@@ -190,20 +190,7 @@ for sample_file in snakemake.input["samples"]:
 with pd.HDFStore(snakemake.output["table"]) as store:
     for key, df in replicate_dfs.items():
         
-        
-        # Filterbedingung:
-        # varlo Rep1 und Rep2 = 100
-        varlo_100 = (df["varlo_methylation_rep1"] == 100) & (df["varlo_methylation_rep2"] == 100)
-        # modkit Rep1 oder Rep2 ≠ 100
-        modkit_not_100 = (df["modkit_methylation_rep1"] != 100) | (df["modkit_methylation_rep2"] != 100)
-
-        # Kombinieren
-        filtered = df[varlo_100 & modkit_not_100]
-
-        # Ausgabe
-        if not filtered.empty:
-            print(f"Sample: {key}", file=sys.stderr)
-            print(filtered, file=sys.stderr)
+    
 
 
         store[key] = df

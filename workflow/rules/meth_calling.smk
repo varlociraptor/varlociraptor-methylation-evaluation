@@ -64,6 +64,8 @@ rule compute_meth_observations:
         "results/{seq_platform}/{protocol}/normal_{scatteritem}.bcf",
     log:
         "logs/varlociraptor/{seq_platform}/{protocol}/compute_meth_observations_{scatteritem}.log",
+    benchmark:
+        "benchmarks/preprocessing/{seq_platform}/{protocol}_{scatteritem}.bwa.benchmark.txt"
     conda:
         "../envs/varlociraptor.yaml"
     resources:
@@ -85,9 +87,11 @@ rule call_methylation:
         preprocess_obs="results/{seq_platform}/{protocol}/normal_{scatteritem}.bcf",
         scenario="resources/scenario.yaml",
     output:
-        "results/{seq_platform}/{protocol}/calls_{scatteritem}.bcf",
+        "results/single_calls/{seq_platform}/{protocol}/calls_{scatteritem}.bcf",
     log:
         "logs/varlociraptor/{seq_platform}/{protocol}/call_methylation_{scatteritem}.log",
+    benchmark:
+        "benchmarks/calling/single_calls/{seq_platform}/{protocol}_{scatteritem}.bwa.benchmark.txt"
     conda:
         "../envs/varlociraptor.yaml"
     wildcard_constraints:
@@ -117,13 +121,13 @@ rule call_methylation:
 # TODO: Skip this step, right now it would be useless since I debug so much
 rule calls_to_vcf:
     input:
-        "results/{seq_platform}/{protocol}/calls_{scatteritem}.bcf",
+        "results/{call_type}/{seq_platform}/{protocol}/calls_{scatteritem}.bcf",
     output:
-        "results/{seq_platform}/{protocol}/calls_{scatteritem}.vcf",
+        "results/{call_type}/{seq_platform}/{protocol}/calls_{scatteritem}.vcf",
     conda:
         "../envs/samtools.yaml"
     log:
-        "logs/varlociraptor/{seq_platform}/{protocol}/calls_to_vcf_{scatteritem}.log",
+        "logs/varlociraptor/{call_type}/{seq_platform}/{protocol}/calls_to_vcf_{scatteritem}.log",
     threads: 10
     shell:
         # "touch {output} 2> {log}"
@@ -133,12 +137,12 @@ rule calls_to_vcf:
 rule gather_calls:
     input:
         gather.split_candidates(
-            "results/{{seq_platform}}/{{protocol}}/calls_{scatteritem}.vcf"
+            "results/{{call_type}}/{{seq_platform}}/{{protocol}}/calls_{scatteritem}.vcf"
         ),
     output:
-        "results/{seq_platform}/{protocol}/result_files/varlo.bed",
+        "results/{call_type}/{seq_platform}/{protocol}/result_files/varlo.bed",
     log:
-        "logs/varlociraptor/{seq_platform}/{protocol}/gather_calls.log",
+        "logs/varlociraptor/{call_type}/{seq_platform}/{protocol}/gather_calls.log",
     shell:
         "cat {input} > {output} 2> {log}"
 

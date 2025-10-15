@@ -26,14 +26,15 @@ def plot_count_heatmap(df, meth_caller, bin_size, mapes):
     max_count = df["count"].max()
     min_count = 1  # lower bound for log scale
     ticks = [min_count, max_count]  # legend ticks including maximum
+    title = f"Varlociraptor" if meth_caller == "varlo" else meth_caller.capitalize()
 
     # Compute MAPE if raw data is provided
     heatmap = (
         alt.Chart(
             df,
             title=alt.Title(
-                f"Absolute count {meth_caller} (log scaled)",
-                subtitle=f"Datapoints: {df['count'].sum()} | D = {mapes[meth_caller]}",
+                title,
+                subtitle=f"N = {df['count'].sum()} | D = {mapes[meth_caller]}",
             ),
         )
         .mark_rect()
@@ -41,12 +42,12 @@ def plot_count_heatmap(df, meth_caller, bin_size, mapes):
             x=alt.X(
                 "rep1_bin:O",
                 sort=list(range(0, 101, bin_size)),
-                title=f"{meth_caller} Rep1",
+                title="replicate 1",
             ),
             y=alt.Y(
                 "rep2_bin:O",
                 sort=list(range(100, -1, -bin_size)),
-                title=f"{meth_caller} Rep2",
+                title="replicate 2",
             ),
             color=alt.Color(
                 "count:Q",
@@ -229,15 +230,14 @@ for meth_caller in meth_callers:
         plot_count_heatmap(replicate_dfs[meth_caller], meth_caller, bin_size, mapes)
     )
 
-distance_plots = plot_histogram_cdf(meth_callers, replicate_dfs, cdf_dfs)
 
-# Combine plots
 heatmap_plots = alt.hconcat(*heatmaps).resolve_scale(color="independent")
-# diff_chart_plots = alt.hconcat(*diff_charts).resolve_scale(color="independent")
-chart = alt.vconcat(heatmap_plots, distance_plots).resolve_scale(color="independent")
+
+# distance_plots = plot_histogram_cdf(meth_callers, replicate_dfs, cdf_dfs)
+# chart = alt.vconcat(heatmap_plots, distance_plots).resolve_scale(color="independent")
 
 # Save final chart
-chart.save(
+heatmap_plots.save(
     snakemake.output[0],
     embed_options={"actions": False},
     inline=False,

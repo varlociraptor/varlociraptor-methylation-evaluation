@@ -17,13 +17,14 @@ def compute_results():
 
     needed_inputs.append(
         [
-            f"results/Illumina_pe/{fdr}/plots/heatmap_all_protocols.{config['plot_type']}"
+            f"results/single_calls/Illumina_pe/{fdr}/plots/heatmap_all_protocols.{config['plot_type']}"
             for fdr in config["fdr_alpha"]
         ]
     )
     needed_inputs.append(
-        heatmap_replicates("common_calls")
+        heatmap_replicates_common()
     )
+
 
     return needed_inputs
 
@@ -78,11 +79,23 @@ def comparision_plots_tools(seq_platform):
 
 
 def heatmap_replicates(seq_platform):
-    base_path = Path("results") / seq_platform
+    base_path = Path("results/single_calls") / seq_platform 
     plot_type = config["plot_type"]
     return [
         f"{base_path}/{fdr}/plots/{protocol}_heatmap.{plot_type}"
         for protocol in config["protocols"][seq_platform]
+        for fdr in config["fdr_alpha"]
+    ]
+
+
+def heatmap_replicates_common():
+
+    base_path = Path("results/common_calls")
+    plot_type = config["plot_type"]
+    return [
+        f"{base_path}/{comp}/{fdr}/plots/{protocol}_heatmap.{plot_type}"
+        for comp in ["np_pb", "pb_trueOX", "np_trueOX"]
+        for protocol in config["protocols"]["common_calls"]
         for fdr in config["fdr_alpha"]
     ]
 

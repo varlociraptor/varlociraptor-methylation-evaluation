@@ -15,6 +15,8 @@ rule modkit_compute_methylation:
         "logs/modkit/{protocol}/compute_methylation.log",
     resources:
         mem_mb=128000
+    benchmark:
+        "benchmarks/modkit/{protocol}.bwa.benchmark.txt"
     shell:
         """
         export PATH=$PATH:~/.cargo/bin 2> {log}
@@ -27,7 +29,7 @@ rule modkit_rename_output:
     input:
         "results/Nanopore/{protocol}/result_files/alignments_CpG.combined.bed",
     output:
-        "results/Nanopore/{protocol}/result_files/modkit.bed",
+        "results/single_calls/Nanopore/{protocol}/result_files/modkit.bed",
     log:
         "logs/modkit/{protocol}/rename_output.log",
     shell:

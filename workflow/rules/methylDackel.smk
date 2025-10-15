@@ -24,6 +24,8 @@ rule methylDackel_compute_meth:
         "../envs/methylDackel.yaml"
     log:
         "logs/methylDackel/{protocol}/compute_meth.log",
+    benchmark:
+        "benchmarks/methylDackel/{protocol}.bwa.benchmark.txt"
     params:
         prefix=lambda wildcards, input, output: os.path.splitext(output[0])[0].replace(
             ".combined", ".bedGraph"
@@ -39,7 +41,7 @@ rule methylDackel_rename_output:
     input:
         "results/Illumina_pe/{protocol}/result_files/alignments_CpG.bedGraph",
     output:
-        "results/Illumina_pe/{protocol}/result_files/methylDackel.bed",
+        "results/single_calls/Illumina_pe/{protocol}/result_files/methylDackel.bed",
     log:
         "logs/methylDackel/{protocol}/rename_output.log",
     shell:
