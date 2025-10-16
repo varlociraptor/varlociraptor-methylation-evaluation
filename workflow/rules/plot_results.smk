@@ -310,3 +310,15 @@ rule heatmap_illumina_protocols:
         # correlation_method=config["correlation_method"],
     script:
         "../scripts/heatmap_replicates.py"
+
+
+rule plot_runtime_comparison:
+    input:
+        benchmarks="benchmarks"
+    output:
+        "results/runtime_comparison.html",
+        # memory="results/memory_comparison.html"
+    conda:
+        "../envs/plot.yaml"
+    script:
+        "../scripts/plot_runtime_comparisons.py"
