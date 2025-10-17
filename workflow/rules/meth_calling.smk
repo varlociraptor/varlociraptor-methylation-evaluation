@@ -65,7 +65,7 @@ rule compute_meth_observations:
     log:
         "logs/varlociraptor/{seq_platform}/{protocol}/compute_meth_observations_{scatteritem}.log",
     benchmark:
-        "benchmarks/preprocessing/{seq_platform}/{protocol}_{scatteritem}.bwa.benchmark.txt"
+        "benchmarks/{seq_platform}/preprocessing/{protocol}_{scatteritem}.bwa.benchmark.txt"
     conda:
         "../envs/varlociraptor.yaml"
     resources:
@@ -87,11 +87,11 @@ rule call_methylation:
         preprocess_obs="results/{seq_platform}/{protocol}/normal_{scatteritem}.bcf",
         scenario="resources/scenario.yaml",
     output:
-        "results/single_calls/{seq_platform}/{protocol}/calls_{scatteritem}.bcf",
+        "results/single_sample/{seq_platform}/{protocol}/calls_{scatteritem}.bcf",
     log:
         "logs/varlociraptor/{seq_platform}/{protocol}/call_methylation_{scatteritem}.log",
     benchmark:
-        "benchmarks/calling/single_calls/{seq_platform}/{protocol}_{scatteritem}.bwa.benchmark.txt"
+        "benchmarks/{seq_platform}/calling/single_sample/{protocol}_{scatteritem}.bwa.benchmark.txt"
     conda:
         "../envs/varlociraptor.yaml"
     wildcard_constraints:

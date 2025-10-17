@@ -8,7 +8,7 @@ rule modkit_compute_methylation:
             chromosome=chromosome_by_seq_platform.get("Nanopore"),
         ),
     output:
-        "results/Nanopore/{protocol}/result_files/alignments_CpG.combined.bed",
+        "results/single_sample/Nanopore/{protocol}/result_files/alignments_CpG.combined.bed",
     conda:
         "../envs/modkit.yaml"
     log:
@@ -16,7 +16,7 @@ rule modkit_compute_methylation:
     resources:
         mem_mb=128000
     benchmark:
-        "benchmarks/modkit/{protocol}.bwa.benchmark.txt"
+        "benchmarks/Nanopore/modkit/{protocol}.bwa.benchmark.txt"
     shell:
         """
         export PATH=$PATH:~/.cargo/bin 2> {log}
@@ -27,9 +27,9 @@ rule modkit_compute_methylation:
 
 rule modkit_rename_output:
     input:
-        "results/Nanopore/{protocol}/result_files/alignments_CpG.combined.bed",
+        "results/single_sample/Nanopore/{protocol}/result_files/alignments_CpG.combined.bed",
     output:
-        "results/single_calls/Nanopore/{protocol}/result_files/modkit.bed",
+        "results/single_sample/Nanopore/{protocol}/result_files/modkit.bed",
     log:
         "logs/modkit/{protocol}/rename_output.log",
     shell:

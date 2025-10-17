@@ -26,8 +26,8 @@ def plot_count_heatmap(df, meth_caller, bin_size, mapes):
     max_count = df["count"].max()
     min_count = 1  # lower bound for log scale
     ticks = [min_count, max_count]  # legend ticks including maximum
-    title = f"Varlociraptor" if meth_caller == "varlo" else meth_caller.capitalize()
-
+    # title = f"Varlociraptor" if meth_caller == "varlo" else meth_caller.capitalize()
+    title = "PacBio and TrueMEthylOX"
     # Compute MAPE if raw data is provided
     heatmap = (
         alt.Chart(
@@ -42,12 +42,12 @@ def plot_count_heatmap(df, meth_caller, bin_size, mapes):
             x=alt.X(
                 "rep1_bin:O",
                 sort=list(range(0, 101, bin_size)),
-                title="replicate 1",
+                title="replicates 1",
             ),
             y=alt.Y(
                 "rep2_bin:O",
                 sort=list(range(100, -1, -bin_size)),
-                title="replicate 2",
+                title="replicates 2",
             ),
             color=alt.Color(
                 "count:Q",

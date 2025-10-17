@@ -199,11 +199,11 @@ rule common_tool_df:
         ),
         varlo="results/{call_type}/{seq_platform}/{fdr}/{protocol}/result_files/varlo.parquet",
     output:
-        protocol_df="results/{call_type}/{seq_platform}/{fdr}/{protocol}/result_files/protocol_df_{plot_type}.parquet",
+        protocol_df="results/{call_type}/{seq_platform}/{fdr}/{protocol}/result_files/protocol_df.parquet",
     conda:
         "../envs/plot.yaml"
     log:
-        "logs/plots/{call_type}/{seq_platform}/{fdr}/{protocol}/common_tool_df_{plot_type}.log",
+        "logs/plots/{call_type}/{seq_platform}/{fdr}/{protocol}/common_tool_df.log",
     params:
         plot_type=config["plot_type"],
     wildcard_constraints:
@@ -224,7 +224,7 @@ rule common_tool_df:
 rule compute_correlation_tables:
     input:
         samples=lambda wildcards: expand(
-            "results/{call_type}/{seq_platform}/{fdr}/{protocol}/result_files/protocol_df_{{plot_type}}.parquet",
+            "results/{call_type}/{seq_platform}/{fdr}/{protocol}/result_files/protocol_df.parquet",
             call_type=wildcards.call_type,
             seq_platform=wildcards.seq_platform,
             fdr=wildcards.fdr,
@@ -237,11 +237,11 @@ rule compute_correlation_tables:
         #     subcategory=lambda wildcards: f"{wildcards.fdr}",
         #     labels={"file": "correlation comparision"},
         # ),
-        table="results/{call_type}/{seq_platform}/{fdr}/plots/replicates_{plot_type}.hd5",
+        table="results/{call_type}/{seq_platform}/{fdr}/plots/replicates.hd5",
     conda:
         "../envs/plot.yaml"
     log:
-        "logs/plots/{call_type}/{seq_platform}/{fdr}/correlation_tables_{plot_type}.log",
+        "logs/plots/{call_type}/{seq_platform}/{fdr}/correlation_tables.log",
     wildcard_constraints:
         call_type="(?!common_calls).*",
     params:
@@ -254,7 +254,7 @@ rule compute_correlation_tables:
 
 rule replicates_heatmap:
     input:
-        "results/{call_type}/{seq_platform}/{fdr}/plots/replicates_{plot_type}.hd5",
+        "results/{call_type}/{seq_platform}/{fdr}/plots/replicates.hd5",
     output:
         report(
             "results/{call_type}/{seq_platform}/{fdr}/plots/{protocol}_heatmap.{plot_type}",
@@ -273,7 +273,8 @@ rule replicates_heatmap:
     log:
         "logs/plots/{call_type}/{seq_platform}/{fdr}/heatmap_replicates_{protocol}_{plot_type}.log",
     params:
-        meth_callers = lambda wildcards: config["ref_tools"].get(wildcards.seq_platform, []) + ["varlo"],
+        # meth_callers = lambda wildcards: config["ref_tools"].get(wildcards.seq_platform, []) + ["varlo"],
+        meth_callers=["varlo"],
         protocol=lambda wildcards: wildcards.protocol,
         bin_size=lambda wildcards: config["heatmap_bin_size"],
         # correlation_method=config["correlation_method"],
@@ -284,7 +285,7 @@ rule replicates_heatmap:
 # Compute common heatmap over all Illumina protocols
 rule heatmap_illumina_protocols:
     input:
-        "results/{call_type}/{seq_platform}/{fdr}/plots/replicates_{plot_type}.hd5",
+        "results/{call_type}/{seq_platform}/{fdr}/plots/replicates.hd5",
     output:
         report(
             "results/{call_type}/{seq_platform}/{fdr}/plots/heatmap_all_protocols.{plot_type}",
@@ -311,3 +312,14 @@ rule heatmap_illumina_protocols:
         # correlation_method=config["correlation_method"],
     script:
         "../scripts/heatmap_replicates.py"
+
+
+rule plot_runtime_comparison:
+    input:
+        "benchmarks"
+    output:
+        "runtime_comparison.html"
+    conda:
+        "envs/plot.yaml"
+    shell:
+        "../scripts/plot_runtime_comparison.py"

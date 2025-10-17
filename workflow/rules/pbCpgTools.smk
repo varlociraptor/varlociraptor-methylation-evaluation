@@ -24,7 +24,7 @@ rule pb_CpG_compute_methylation:
         alignment_index="resources/PacBio/{protocol}/alignment_focused_downsampled_dedup_renamed.bam.bai",
         genome="resources/genome.fasta",
     output:
-        "results/PacBio/{protocol}/result_files/alignments_CpG.combined.bed",
+        "results/single_sample/PacBio/{protocol}/result_files/alignments_CpG.combined.bed",
     log:
         "logs/pb_CpG/{protocol}/compute_methylation.log",
     params:
@@ -33,16 +33,16 @@ rule pb_CpG_compute_methylation:
         ),
     threads: 8
     benchmark:
-        "benchmarks/pb_CpG_tools/{protocol}.bwa.benchmark.txt"
+        "benchmarks/PacBio/pb_CpG_tools/{protocol}.bwa.benchmark.txt"
     shell:
         "{input.runner} --bam {input.alignment} --output-prefix {params.prefix} --model {input.model} --threads {threads} 2> {log}"
 
 
 rule pb_CpG_rename_output:
     input:
-        "results/PacBio/{protocol}/result_files/alignments_CpG.combined.bed",
+        "results/single_sample/PacBio/{protocol}/result_files/alignments_CpG.combined.bed",
     output:
-        "results/single_calls/PacBio/{protocol}/result_files/pb_CpG_tools.bed",
+        "results/single_sample/PacBio/{protocol}/result_files/pb_CpG_tools.bed",
     log:
         "logs/pb_CpG/{protocol}/rename_output.log",
     shell:

@@ -10,7 +10,7 @@ rule call_methylation_together_np_pb:
     log:
         "logs/varlociraptor/common_calls/np_pb/{replicate}/call_methylation_{scatteritem}.log",
     benchmark:
-        "benchmarks/calling/common_calls/np_pb/{replicate}_{scatteritem}.bwa.benchmark.txt"
+        "benchmarks/common_calls/np_pb/{replicate}_{scatteritem}.bwa.benchmark.txt"
     conda:
         "../envs/varlociraptor.yaml"
     shell:
@@ -28,7 +28,7 @@ rule call_methylation_together_np_trueOX:
     log:
         "logs/varlociraptor/common_calls/np_trueOX/{replicate}/call_methylation_{scatteritem}.log",
     benchmark:
-        "benchmarks/calling/common_calls/np_trueOX/{replicate}_{scatteritem}.bwa.benchmark.txt"
+        "benchmarks/common_calls/np_trueOX/{replicate}_{scatteritem}.bwa.benchmark.txt"
     conda:
         "../envs/varlociraptor.yaml"
     shell:
@@ -45,7 +45,7 @@ rule call_methylation_together_pb_trueOX:
     log:
         "logs/varlociraptor/common_calls/pb_trueOX/{replicate}/call_methylation_{scatteritem}.log",
     benchmark:
-        "benchmarks/calling/common_calls/pb_trueOX/{replicate}_{scatteritem}.bwa.benchmark.txt"
+        "benchmarks/common_calls/pb_trueOX/{replicate}_{scatteritem}.bwa.benchmark.txt"
     conda:
         "../envs/varlociraptor.yaml"
     shell:
@@ -57,11 +57,11 @@ rule common_meth_calling_df:
         tools=[],
         varlo="results/common_calls/{fdr}/{protocol}/result_files/varlo.parquet",
     output:
-        protocol_df="results/common_calls/{fdr}/{protocol}/result_files/protocol_df_{plot_type}.parquet",
+        protocol_df="results/common_calls/{fdr}/{protocol}/result_files/protocol_df.parquet",
     conda:
         "../envs/plot.yaml"
     log:
-        "logs/plots/common_calls/{fdr}/{protocol}/common_tool_df_{plot_type}.log",
+        "logs/plots/common_calls/{fdr}/{protocol}/common_tool_d.log",
     params:
         plot_type=config["plot_type"],
     resources:
@@ -73,16 +73,16 @@ rule common_meth_calling_df:
 rule compute_correlation_tables_common:
     input:
         samples=lambda wildcards: expand(
-            "results/common_calls/{fdr}/{protocol}/result_files/protocol_df_{{plot_type}}.parquet",
+            "results/common_calls/{fdr}/{protocol}/result_files/protocol_df.parquet",
             fdr=wildcards.fdr,
             protocol=config["data"]["common_calls"],
         ),
     output:
-        table="results/common_calls/{fdr}/plots/replicates_{plot_type}.hd5",
+        table="results/common_calls/{fdr}/plots/replicates.hd5",
     conda:
         "../envs/plot.yaml"
     log:
-        "logs/plots/common_calls/{fdr}/correlation_tables_{plot_type}.log",
+        "logs/plots/common_calls/{fdr}/correlation_tables.log",
     params:
         # plot_type=config["plot_type"],
         meth_callers=lambda wildcards: config["ref_tools"].get("common_calls", []) + ["varlo"],

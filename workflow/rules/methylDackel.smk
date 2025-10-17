@@ -19,13 +19,13 @@ rule methylDackel_compute_meth:
         alignment="resources/Illumina_pe/{protocol}/alignment_focused_downsampled_dedup_renamed.bam",
         alignment_index="resources/Illumina_pe/{protocol}/alignment_focused_downsampled_dedup_renamed.bam.bai",
     output:
-        "results/Illumina_pe/{protocol}/result_files/alignments_CpG.bedGraph",
+        "results/single_sample/Illumina_pe/{protocol}/result_files/alignments_CpG.bedGraph",
     conda:
         "../envs/methylDackel.yaml"
     log:
         "logs/methylDackel/{protocol}/compute_meth.log",
     benchmark:
-        "benchmarks/methylDackel/{protocol}.bwa.benchmark.txt"
+        "benchmarks/Illumina_pe/methylDackel/{protocol}.bwa.benchmark.txt"
     params:
         prefix=lambda wildcards, input, output: os.path.splitext(output[0])[0].replace(
             ".combined", ".bedGraph"
@@ -39,10 +39,10 @@ rule methylDackel_compute_meth:
 
 rule methylDackel_rename_output:
     input:
-        "results/Illumina_pe/{protocol}/result_files/alignments_CpG.bedGraph",
+        "results/single_sample/Illumina_pe/{protocol}/result_files/alignments_CpG.bedGraph",
     output:
-        "results/single_calls/Illumina_pe/{protocol}/result_files/methylDackel.bed",
+        "results/single_sample/Illumina_pe/{protocol}/result_files/methylDackel.bed",
     log:
         "logs/methylDackel/{protocol}/rename_output.log",
     shell:
-        "mv {input} {output} 2> {log}"
+        "mkdir -p $(dirname {output}) && mv {input} {output} 2> {log}"
