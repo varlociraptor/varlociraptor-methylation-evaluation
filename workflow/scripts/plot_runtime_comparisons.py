@@ -1,14 +1,30 @@
 import os
-import pandas as pd
 import re
+import pandas as pd
 import altair as alt
 
+def boxplot_with_points(df, x, y, color, x_title, y_title, title):
+    """Reusable Altair boxplot + scatter overlay."""
+    base = alt.Chart(df).encode(
+        x=alt.X(f"{x}:N", title=x_title),
+        y=alt.Y(f"{y}:Q", title=y_title, scale=alt.Scale(type="log")),
+        color=f"{color}:N"
+    )
 
-all_data = []
+    box = base.mark_boxplot(extent="min-max")
+    points = base.mark_point(filled=True, size=50).encode(tooltip=[x, y])
 
+    return (box + points).properties(width=600, height=400, title=title)
+
+
+# -----------------------
+# 🧠 Collect benchmark data
+# -----------------------
+
+records = []
 path = snakemake.input.benchmarks
 
-for root, dirs, files in os.walk(path):
+for root, _, files in os.walk(path):
     for f in files:
         if not f.endswith(".benchmark.txt"):
             continue
@@ -16,102 +32,94 @@ for root, dirs, files in os.walk(path):
         full_path = os.path.join(root, f)
         df = pd.read_csv(full_path, sep="\t", usecols=["s", "max_rss"])
 
-        # Plattform und Methode
+        # Extract metadata
         df["meth_caller"] = os.path.basename(os.path.dirname(full_path))
         df["platform"] = os.path.basename(os.path.dirname(os.path.dirname(full_path)))
 
-        # Sample-Name: _x-of-y entfernen
-        base_name = os.path.basename(f)
-        base_name = re.sub(r"_\d+-of-\d+", "", base_name)
-        sample_name = base_name.replace(".benchmark.txt", "")
-        df["replicate"] = sample_name
+        # Clean sample name
+        replicate = re.sub(r"_\d+-of-\d+", "", f.replace(".benchmark.txt", ""))
+        df["replicate"] = replicate
 
-        all_data.append(df)
+        records.append(df)
 
-# Alle Files zusammenführen
-df_all = pd.concat(all_data, ignore_index=True)
+df_all = pd.concat(records, ignore_index=True)
 
-# Zusammenfassen nach Platform, Methode und Sample
-df_summary = df_all.groupby(
-    ["platform", "meth_caller", "replicate"], as_index=False
-).agg({"s": "sum", "max_rss": "max"})
+# -----------------------
+# 🔧 Aggregate results
+# -----------------------
 
-print(df_summary.to_string())
-
-# Tool zusammenfassen: calling + preprocessing → Varlociraptor
-df_summary["tool"] = df_summary["meth_caller"].replace(
-    {"calling": "Varlociraptor", "preprocessing": "Varlociraptor"}
+df_summary = (
+    df_all.groupby(["platform", "meth_caller", "replicate"], as_index=False)
+    .agg(s=("s", "sum"), max_rss=("max_rss", "max"))
 )
 
-# Aggregieren: s summieren, max_rss maximal
-df_agg = df_summary.groupby(["platform", "tool", "replicate"], as_index=False).agg(
-    {"s": "sum", "max_rss": "max"}
-)
+# -----------------------
+# 🧩 Compare tools
+# -----------------------
 
-# Minuten und GB berechnen
-df_agg["minutes"] = df_agg["s"] / 60
-df_agg["max_rss_gb"] = df_agg["max_rss"] / 1024
-
-# Neue x-Achse: Plattform + Tool
-df_agg["platform_tool"] = df_agg["platform"] + " - " + df_agg["tool"]
-
-# Tooltip: Substeps kann man weglassen, da aggregiert
-df_agg["replicate_tool"] = df_agg["replicate"] + " (" + df_agg["tool"] + ")"
-
-# Runtime Boxplot
-runtime_plot = (
-    alt.Chart(df_agg)
-    .mark_boxplot(extent="min-max")
-    .encode(
-        x=alt.X("platform_tool:N", title="Platform - Tool"),
-        y=alt.Y("minutes:Q", title="Runtime (min)", scale=alt.Scale(type="log")),
-        color="platform:N",
+# Instead of replace() on Series, use np.where (faster and simpler)
+df_compare_tools = (
+    df_summary.query("platform != 'multi_sample'")
+    .assign(
+        tool=lambda x: x["meth_caller"].replace(
+            {"calling": "Varlociraptor", "preprocessing": "Varlociraptor"}
+        ),
+        minutes=lambda x: x["s"] / 60,
+        max_rss_gb=lambda x: x["max_rss"] / 1024,
     )
-    .properties(width=600, height=400, title="Runtime by Platform and Tool")
+    .groupby(["platform", "tool", "replicate"], as_index=False) .agg({"minutes": "sum", "max_rss_gb": "max"})
+    .assign(platform_tool=lambda x: x["platform"] + " - " + x["tool"])
 )
 
-runtime_points = (
-    alt.Chart(df_agg)
-    .mark_point(filled=True, size=50)
-    .encode(
-        x="platform_tool:N",
-        y="minutes:Q",
-        color="platform:N",
-        tooltip=["replicate_tool", "minutes"],
+df_compare_varlo = (
+    df_summary.query("meth_caller in ['calling', 'preprocessing']")
+    .assign(
+        minutes=lambda x: x["s"] / 60,
+        max_rss_gb=lambda x: x["max_rss"] / 1024,
+        platform_tool=lambda x: x["platform"] + " - " + x["meth_caller"],
     )
 )
 
-runtime_chart = runtime_plot + runtime_points
+# -----------------------
+# 📊 Plot charts
+# -----------------------
+print(df_compare_tools.to_string())
 
-# Memory Boxplot
-memory_plot = (
-    alt.Chart(df_agg)
-    .mark_boxplot(extent="min-max")
-    .encode(
-        x=alt.X("platform_tool:N", title="Platform - Tool"),
-        y=alt.Y("max_rss_gb:Q", title="Max RSS (GB)", scale=alt.Scale(type="log")),
-        color="platform:N",
-    )
-    .properties(width=600, height=400, title="Memory Usage by Platform and Tool")
+runtime_chart = boxplot_with_points(
+    df_compare_tools,
+    x="platform_tool", y="minutes", color="platform",
+    x_title="Platform - Tool", y_title="Runtime (min)",
+    title="Runtime of methylation calling tools"
 )
 
-memory_points = (
-    alt.Chart(df_agg)
-    .mark_point(filled=True, size=50)
-    .encode(
-        x="platform_tool:N",
-        y="max_rss_gb:Q",
-        color="platform:N",
-        tooltip=["replicate_tool", "max_rss_gb"],
-    )
+memory_chart = boxplot_with_points(
+    df_compare_tools,
+    x="platform_tool", y="max_rss_gb", color="platform",
+    x_title="Platform - Tool", y_title="Max RSS (GB)",
+    title="Memory usage of methylation calling tools"
 )
 
-memory_chart = memory_plot + memory_points
+runtime_varlo_chart = boxplot_with_points(
+    df_compare_varlo,
+    x="platform_tool", y="minutes", color="platform",
+    x_title="Platform - Step", y_title="Runtime (min)",
+    title="Runtime of Varlociraptor steps"
+)
 
-# Charts zusammenführen
-chart = alt.hconcat(runtime_chart, memory_chart).resolve_scale(color="independent")
+memory_varlo_chart = boxplot_with_points(
+    df_compare_varlo,
+    x="platform_tool", y="max_rss_gb", color="platform",
+    x_title="Platform - Step", y_title="Max RSS (GB)",
+    title="Memory usage of Varlociraptor steps"
+)
 
-# Chart speichern
+# Combine charts
+chart = alt.vconcat(
+    alt.hconcat(runtime_chart, memory_chart),
+    alt.hconcat(runtime_varlo_chart, memory_varlo_chart)
+).resolve_scale(color="independent")
+
+# Save
 chart.save(
     snakemake.output[0],
     embed_options={"actions": False},

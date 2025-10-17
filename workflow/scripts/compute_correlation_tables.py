@@ -151,7 +151,7 @@ def normalize_sample_name(replicate_name: str) -> str:
     - PacBio/Nanopore: normalize trailing replicate numbers
     """
     name = re.sub(r"_REP\d+$", "", replicate_name)  # Illumina
-    name = re.sub(r"REP\d+$", "REP", name)  # common_calls
+    name = re.sub(r"REP\d+$", "REP", name)  # multi_sample
     return name or replicate_name
 
 
@@ -189,13 +189,16 @@ for sample_file in snakemake.input["samples"]:
 # Save intermediate tables
 with pd.HDFStore(snakemake.output["table"]) as store:
     for key, df in replicate_dfs.items():
-        
-        
+
         # Filterbedingung:
         # varlo Rep1 und Rep2 = 100
-        varlo_100 = (df["varlo_methylation_rep1"] == 100) & (df["varlo_methylation_rep2"] == 100)
+        varlo_100 = (df["varlo_methylation_rep1"] == 100) & (
+            df["varlo_methylation_rep2"] == 100
+        )
         # modkit Rep1 oder Rep2 ≠ 100
-        modkit_not_100 = (df["modkit_methylation_rep1"] != 100) | (df["modkit_methylation_rep2"] != 100)
+        modkit_not_100 = (df["modkit_methylation_rep1"] != 100) | (
+            df["modkit_methylation_rep2"] != 100
+        )
 
         # Kombinieren
         filtered = df[varlo_100 & modkit_not_100]
@@ -205,9 +208,7 @@ with pd.HDFStore(snakemake.output["table"]) as store:
             print(f"Sample: {key}", file=sys.stderr)
             print(filtered, file=sys.stderr)
 
-
         store[key] = df
-
 
 
 # # Calculate correlations across replicates
@@ -236,7 +237,6 @@ with pd.HDFStore(snakemake.output["table"]) as store:
 # )
 
 # full_chart = alt.vconcat(charts_meth_callers, charts_replicates)
-
 # # Save final chart
 # full_chart.save(
 #     snakemake.output["plot"],

@@ -207,7 +207,7 @@ rule common_tool_df:
     params:
         plot_type=config["plot_type"],
     wildcard_constraints:
-        seq_platform="(?!common_calls).*",
+        seq_platform="(?!multi_sample).*",
     resources:
         mem_mb=16000,
     script:
@@ -242,7 +242,7 @@ rule compute_correlation_tables:
     log:
         "logs/plots/{seq_platform}/{fdr}/correlation_tables_{plot_type}.log",
     wildcard_constraints:
-        seq_platform="(?!common_calls).*",
+        seq_platform="(?!multi_sample).*",
     params:
         # plot_type=config["plot_type"],
         meth_callers=lambda wildcards: config["ref_tools"][wildcards.seq_platform]

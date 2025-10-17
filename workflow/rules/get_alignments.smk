@@ -177,7 +177,7 @@ rule aligned_reads_merge_sras:
     conda:
         "../envs/samtools.yaml"
     wildcard_constraints:
-        seq_platform="(?!common_calls).*",
+        seq_platform="(?!multi_sample).*",
     shell:
         "samtools merge {output} {input} 2> {log}"
 

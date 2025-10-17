@@ -13,9 +13,9 @@ rule call_methylation_together:
         # nanopore="results/Nanopore/{replicate}/normal_{scatteritem}.bcf",
         scenario="resources/scenario_common_pacbio.yaml",
     output:
-        "results/common_calls/{replicate}/calls_{scatteritem}.bcf",
+        "results/multi_sample/{replicate}/calls_{scatteritem}.bcf",
     log:
-        "logs/varlociraptor/common_calls/{replicate}/call_methylation_{scatteritem}.log",
+        "logs/varlociraptor/multi_sample/{replicate}/call_methylation_{scatteritem}.log",
     conda:
         "../envs/varlociraptor.yaml"
     shell:
@@ -26,13 +26,13 @@ rule call_methylation_together:
 rule common_meth_calling_df:
     input:
         tools=[],
-        varlo="results/common_calls/{fdr}/{protocol}/result_files/varlo.parquet",
+        varlo="results/multi_sample/{fdr}/{protocol}/result_files/varlo.parquet",
     output:
-        protocol_df="results/common_calls/{fdr}/{protocol}/result_files/protocol_df_{plot_type}.parquet",
+        protocol_df="results/multi_sample/{fdr}/{protocol}/result_files/protocol_df_{plot_type}.parquet",
     conda:
         "../envs/plot.yaml"
     log:
-        "logs/plots/common_calls/{fdr}/{protocol}/common_tool_df_{plot_type}.log",
+        "logs/plots/multi_sample/{fdr}/{protocol}/common_tool_df_{plot_type}.log",
     params:
         plot_type=config["plot_type"],
     resources:
@@ -44,35 +44,35 @@ rule common_meth_calling_df:
 rule compute_correlation_tables_common:
     input:
         samples=lambda wildcards: expand(
-            "results/common_calls/{fdr}/{protocol}/result_files/protocol_df_{{plot_type}}.parquet",
+            "results/multi_sample/{fdr}/{protocol}/result_files/protocol_df_{{plot_type}}.parquet",
             fdr=wildcards.fdr,
-            protocol=config["data"]["common_calls"],
+            protocol=config["data"]["multi_sample"],
         ),
     output:
-        table="results/common_calls/{fdr}/plots/replicates_{plot_type}.hd5",
+        table="results/multi_sample/{fdr}/plots/replicates_{plot_type}.hd5",
     conda:
         "../envs/plot.yaml"
     log:
-        "logs/plots/common_calls/{fdr}/correlation_tables_{plot_type}.log",
+        "logs/plots/multi_sample/{fdr}/correlation_tables_{plot_type}.log",
     params:
         # plot_type=config["plot_type"],
-        meth_callers=lambda wildcards: config["ref_tools"]["common_calls"] + ["varlo"],
+        meth_callers=lambda wildcards: config["ref_tools"]["multi_sample"] + ["varlo"],
         correlation_methods=config["correlation_methods"],
     script:
         "../scripts/compute_correlation_tables.py"
 
 
 # Computes one common df out of all single method dfs
-# rule df_common_calls:
+# rule df_multi_sample:
 #     input:
-#         rep1="results/common_calls/{fdr}/REP01/result_files/varlo.parquet",
-#         rep2="results/common_calls/{fdr}/REP02/result_files/varlo.parquet",
+#         rep1="results/multi_sample/{fdr}/REP01/result_files/varlo.parquet",
+#         rep2="results/multi_sample/{fdr}/REP02/result_files/varlo.parquet",
 #     output:
-#         protocol_df="results/common_calls/{fdr}/REP/result_files/protocol_df_{plot_type}.parquet",
+#         protocol_df="results/multi_sample/{fdr}/REP/result_files/protocol_df_{plot_type}.parquet",
 #     conda:
 #         "../envs/plot.yaml"
 #     log:
-#         "logs/plots/common_calls/{fdr}/common_tool_df_{plot_type}.log",
+#         "logs/plots/multi_sample/{fdr}/common_tool_df_{plot_type}.log",
 #     params:
 #         plot_type=config["plot_type"],
 #     resources:
@@ -80,13 +80,13 @@ rule compute_correlation_tables_common:
 #     script:
 #         "../scripts/common_tool_df.py"
 # # Compute common heatmap over all Illumina protocols
-# rule heatmap_common_calls:
+# rule heatmap_multi_sample:
 #     input:
-#         "results/common_calls/{fdr}/plots/replicates_{plot_type}.hd5",
+#         "results/multi_sample/{fdr}/plots/replicates_{plot_type}.hd5",
 #     output:
 #         report(
-#             "results/common_calls/{fdr}/plots/heatmap_all_protocols.{plot_type}",
-#             category="common_calls",
+#             "results/multi_sample/{fdr}/plots/heatmap_all_protocols.{plot_type}",
+#             category="multi_sample",
 #             subcategory=lambda wildcards: f"{wildcards.fdr}",
 #             labels={
 #                 "file": "heatmap",
@@ -106,4 +106,4 @@ rule compute_correlation_tables_common:
 #         bin_size=lambda wildcards: config["heatmap_bin_size"],
 #         # correlation_method=config["correlation_method"],
 #     script:
-#         "../scripts/heatmap_common_calls.py"
+#         "../scripts/heatmap_multi_sample.py"

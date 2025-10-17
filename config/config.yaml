@@ -21,7 +21,7 @@ seq_platforms:
 ref_tools:
   # Chose from: bismark, bisSNP, methylDackel, bsMap
   # Illumina_pe: [bismark, bsMap, methylDackel, bisSNP]
-  common_calls: []
+  multi_sample: []
   Illumina_pe: [methylDackel]
   # Illumina_pe: [methylDackel]
   # Illumina_pe: [bismark]
@@ -37,7 +37,7 @@ min_mapping_quality: 10
 num_simulated_reads: 100000
 
 protocols: 
-  common_calls: [REP]
+  multi_sample: [REP]
   Illumina_pe: [TruSeq_HG002_LAB01, EMSeq_HG002_LAB02, EMSeq_HG002_LAB01, TrueMethylOX_HG002_LAB01, TrueMethylBS_HG002_LAB01, SPLAT_HG002_LAB01, MethylSeq_HG002_LAB01]
   # Illumina_pe: [TruSeq_HG002_LAB01, SPLAT_HG002_LAB01]
   PacBio: [REP]
@@ -74,7 +74,7 @@ data:
     # data1: [dummySRA_nanopore]
     REP01: [np_rep1]
     REP02: [np_rep2]
-  common_calls:
+  multi_sample:
     REP01: [dummy_rep1]
     REP02: [dummy_rep2]
 
