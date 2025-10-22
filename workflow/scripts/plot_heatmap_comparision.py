@@ -4,31 +4,53 @@ import sys
 import numpy as np
 from functools import reduce
 
-# Redirect error output to log file
+# -----------------------------
+# Logging and display options
+# -----------------------------
 sys.stderr = open(snakemake.log[0], "w")
-
-# Show all columns and many rows during debugging
 pd.set_option("display.max_columns", None)
 pd.set_option("display.max_rows", 1000)
 alt.data_transformers.enable("vegafusion")
 
 
-def bin_methylation(series, bin_size):
-    """Round methylation values to nearest bin_size step and cast to int"""
+# -----------------------------
+# Helper functions
+# -----------------------------
+def bin_methylation(series: pd.Series, bin_size: int) -> pd.Series:
+    """
+    Round methylation values to the nearest bin_size and cast to int.
+    """
     return (np.round(series / bin_size) * bin_size).astype(int)
 
 
-def plot_count_heatmap(df, meth_caller, bin_size, mapes):
+def plot_count_heatmap(
+    df: pd.DataFrame, meth_caller: str, bin_size: int, mapes: dict
+) -> alt.Chart:
     """
     Create a log-scaled heatmap for replicate methylation values.
-    Optionally compute MAPE if `raw_df` is provided (original methylation values).
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Binned methylation counts with 'rep1_bin', 'rep2_bin', 'count'.
+    meth_caller : str
+        Name of the methylation caller.
+    bin_size : int
+        Bin size for methylation percentages.
+    mapes : dict
+        Mean absolute percentage errors per methylation caller.
+
+    Returns
+    -------
+    alt.Chart
+        Altair heatmap chart.
     """
     max_count = df["count"].max()
-    min_count = 1  # lower bound for log scale
-    ticks = [min_count, max_count]  # legend ticks including maximum
-    # title = f"Varlociraptor" if meth_caller == "varlo" else meth_caller.capitalize()
+    min_count = 1
+    ticks = [min_count, max_count]
+
     title = "PacBio"
-    # Compute MAPE if raw data is provided
+
     heatmap = (
         alt.Chart(
             df,
@@ -51,14 +73,9 @@ def plot_count_heatmap(df, meth_caller, bin_size, mapes):
             ),
             color=alt.Color(
                 "count:Q",
-                scale=alt.Scale(
-                    type="log", scheme="viridis", domain=[1, df["count"].max()]
-                ),
+                scale=alt.Scale(type="log", scheme="viridis", domain=[1, max_count]),
                 legend=alt.Legend(
-                    title="Count",
-                    orient="right",
-                    values=ticks,
-                    format=",",
+                    title="Count", orient="right", values=ticks, format=","
                 ),
             ),
             tooltip=["rep1_bin", "rep2_bin", "count"],
@@ -69,16 +86,19 @@ def plot_count_heatmap(df, meth_caller, bin_size, mapes):
 
 
 def plot_histogram_cdf(meth_callers, meth_caller_dfs, cdf_dfs):
-    df_hist_long = pd.concat(meth_caller_dfs.values(), axis=0, ignore_index=True)
+    """
+    Combine histogram of binned distances and CDF of unbinned distances
+    for multiple methylation callers.
+    """
+    # Prepare long-form data
+    df_hist_long = pd.concat(meth_caller_dfs.values(), ignore_index=True)
     df_hist_long = df_hist_long.groupby(["dist_bin", "meth_caller"], as_index=False)[
         "rel_count"
     ].sum()
-    # Make varlo always the same color
     domain = ["varlo"] + [c for c in meth_callers if c != "varlo"]
+    df_cdf_long = pd.concat(cdf_dfs.values(), ignore_index=True)
 
-    df_cdf_long = pd.concat(cdf_dfs.values(), axis=0, ignore_index=True)
-
-    # Histogram layer
+    # Histogram points
     hist_chart = (
         alt.Chart(df_hist_long)
         .mark_point(size=60, filled=True)
@@ -92,7 +112,7 @@ def plot_histogram_cdf(meth_callers, meth_caller_dfs, cdf_dfs):
         )
     )
 
-    # CDF layer (right y-axis)
+    # CDF line
     cdf_chart = (
         alt.Chart(df_cdf_long)
         .mark_line()
@@ -106,35 +126,35 @@ def plot_histogram_cdf(meth_callers, meth_caller_dfs, cdf_dfs):
         )
     )
 
-    # Layer them
     combined_chart = alt.layer(cdf_chart, hist_chart).properties(
         width=700, height=400, title="CDF + Histogram of distances"
     )
-
     return combined_chart
 
 
-def compute_replicate_counts(df_dict, bin_size, relative=False):
-    """Compute replicate counts for each methylation caller"""
+def compute_replicate_counts(df_dict: dict, bin_size: int, relative=False):
+    """
+    Compute replicate counts and binned/unbinned distances for each methylation caller.
+    Returns:
+        meth_caller_dfs: DataFrame per caller with binned counts
+        cdf_dfs: DataFrame per caller for CDFs
+        mapes: mean absolute percentage error per caller
+    """
     protocols = snakemake.params["protocol"]
     meth_callers = snakemake.params["meth_callers"]
 
-    # Allow heatmaps to be created per protocol or across multiple protocols by building the mean over all protocols
-    print(df_dict.keys(), file=sys.stderr)
+    # Merge across protocols if needed
     if isinstance(protocols, str):
         df = df_dict[protocols]
     else:
-        df_list = [df_dict[p] for p in protocols]
-        long_df = pd.concat(df_list, axis=0, ignore_index=True)
-        methyl_cols = [c for c in long_df.columns if "methylation" in c]
-        df = long_df.groupby(["chromosome", "position"], as_index=False)[
-            methyl_cols
-        ].mean()
+        df = pd.concat([df_dict[p] for p in protocols], ignore_index=True)
+        methyl_cols = [c for c in df.columns if "methylation" in c]
+        df = df.groupby(["chromosome", "position"], as_index=False)[methyl_cols].mean()
 
     meth_caller_dfs = {}
     cdf_dfs = {}
     mapes = {}
-    print(df.to_string(), file=sys.stderr)
+
     for meth_caller in meth_callers:
         x_col = f"{meth_caller}_methylation_rep1"
         y_col = f"{meth_caller}_methylation_rep2"
@@ -151,14 +171,12 @@ def compute_replicate_counts(df_dict, bin_size, relative=False):
                 * 100
             )
             mapes[meth_caller] = f"{mape:.2f}%"
-        print(meth_caller, temp_df.head(), file=sys.stderr)
-        df_temp = df.dropna(subset=[x_col, y_col]).copy()
+
+        df_temp = temp_df.copy()
         df_temp["rep1_bin"] = bin_methylation(df_temp[x_col], bin_size)
         df_temp["rep2_bin"] = bin_methylation(df_temp[y_col], bin_size)
 
-        # We need all dist bin combos for our heatmap so we need to crosstab. Grouping is not enough!
-
-        # Compute df with binned distances
+        # Binned counts for heatmap
         agg_histo = (
             pd.crosstab(df_temp["rep1_bin"], df_temp["rep2_bin"])
             .stack()
@@ -175,13 +193,12 @@ def compute_replicate_counts(df_dict, bin_size, relative=False):
             ),
             axis=1,
         )
-
         agg_histo["dist_bin"] = (agg_histo["dist"] / bin_size).round() * bin_size
         agg_histo["dist_bin"] = agg_histo["dist_bin"].astype(int)
         agg_histo["meth_caller"] = meth_caller
         meth_caller_dfs[meth_caller] = agg_histo
 
-        # Compute df with unbinned distances
+        # Unbinned distances for CDF
         agg_cdf = df_temp.copy()
         agg_cdf["dist"] = agg_cdf.apply(
             lambda row: (
@@ -192,53 +209,33 @@ def compute_replicate_counts(df_dict, bin_size, relative=False):
             axis=1,
         ).round(2)
         agg_cdf = agg_cdf.groupby("dist", as_index=False).agg(count=("dist", "size"))
-
         agg_cdf["rel_count"] = agg_cdf["count"] / agg_cdf["count"].sum() * 100
-        agg_cdf = agg_cdf.sort_values("dist").reset_index(drop=True)
         agg_cdf["cdf"] = agg_cdf["count"].cumsum() / agg_cdf["count"].sum()
         agg_cdf["meth_caller"] = meth_caller
-        print(agg_cdf.head(), file=sys.stderr)
         cdf_dfs[meth_caller] = agg_cdf[["dist", "cdf", "meth_caller"]]
-    print(mapes, file=sys.stderr)
 
     return meth_caller_dfs, cdf_dfs, mapes
 
 
-# Main execution ------------------------------------------------------
-
+# -----------------------------
+# Main execution
+# -----------------------------
 bin_size = snakemake.params["bin_size"]
 meth_callers = snakemake.params["meth_callers"]
-relative_counts = False
 
-# Load data from HDF5
+# Load HDF5 input
 meth_caller_dfs = {}
 with pd.HDFStore(snakemake.input[0], mode="r", locking=False) as store:
     for key in store.keys():
         meth_caller_dfs[key.strip("/")] = store[key]
 
-# Compute replicate counts
-replicate_dfs, cdf_dfs, mapes = compute_replicate_counts(
-    meth_caller_dfs, bin_size, relative_counts
-)
+replicate_dfs, cdf_dfs, mapes = compute_replicate_counts(meth_caller_dfs, bin_size)
 
-diff_charts = []
-heatmaps = []
-histogram_plots = []
-# Create heatmaps and difference plots
-for meth_caller in meth_callers:
-    heatmaps.append(
-        plot_count_heatmap(replicate_dfs[meth_caller], meth_caller, bin_size, mapes)
-    )
-
-
+# Create heatmaps for each methylation caller
+heatmaps = [
+    plot_count_heatmap(replicate_dfs[m], m, bin_size, mapes) for m in meth_callers
+]
 heatmap_plots = alt.hconcat(*heatmaps).resolve_scale(color="independent")
 
-# distance_plots = plot_histogram_cdf(meth_callers, replicate_dfs, cdf_dfs)
-# chart = alt.vconcat(heatmap_plots, distance_plots).resolve_scale(color="independent")
-
-# Save final chart
-heatmap_plots.save(
-    snakemake.output[0],
-    embed_options={"actions": False},
-    inline=False,
-)
+# Save heatmap output
+heatmap_plots.save(snakemake.output[0], embed_options={"actions": False}, inline=False)

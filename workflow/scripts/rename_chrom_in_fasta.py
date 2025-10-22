@@ -1,13 +1,12 @@
 import sys
 
-# Redirect standard error to snakemake log file
+# Rename chromosome names in a FASTA file by adding 'chr' prefix.
+
 sys.stderr = open(snakemake.log[0], "w")
 
-# Einlesen der Eingabe- und Ausgabedateipfade aus den Snakemake-Argumenten
 input_file = snakemake.input[0]
 output_file = snakemake.output[0]
 
-# Öffnen und Bearbeiten der Datei
 with open(input_file, "r") as infile, open(output_file, "w") as outfile:
     for line in infile:
         if line.startswith(">"):

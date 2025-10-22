@@ -253,24 +253,16 @@ rule aligned_reads_candidates_region:
         chromosome=lambda wildcards: chromosome_by_seq_platform[wildcards.seq_platform],
     shell:
         """
-        set +o pipefail
-        start=$(bcftools query -f '%POS\\n' {input.candidate} | head -n 1)
-        echo "Start: $start" >> {log}
-        start=$((start - {params.window_size}))
-        [ $start -lt 0 ] && start=0
-        end=$(bcftools query -f '%POS\\n' {input.candidate} | tail -n 1)
-        echo "End: $end" >> {log}
-        end=$((end + {params.window_size}))
-        echo "Start window: $start" >> {log}
-        echo "End window: $end" >> {log}
-        
+        # Get the minimum and maximum positions from the candidate BCF
+        start=$(bcftools query -f '%POS\n' {input.candidate} | head -n1)
+        end=$(bcftools query -f '%POS\n' {input.candidate} | tail -n1)
+
+        # Extract reads from the BAM file within the candidate region
         samtools view -b {input.alignment} "{params.chromosome}:$start-$end" > {output}
 
-        if [ $(samtools view -c {output}) -eq 0 ]; then
-            samtools view -H {input.alignment} > temp.sam
-            samtools view {input.alignment} | tail -n 1 >> temp.sam
-            samtools view -bS temp.sam > {output}
-            rm temp.sam
+        # If the resulting BAM is empty, create a BAM containing only the header
+        if [ ! -s {output} ]; then
+            samtools view -H {input.alignment} | samtools view -bS - > {output}
         fi
         """
 

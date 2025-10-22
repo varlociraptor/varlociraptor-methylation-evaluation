@@ -1,32 +1,44 @@
+import sys
 import requests
 import logging
 
-# Redirect standard error to snakemake log file
+# Redirect stderr to Snakemake log file
 sys.stderr = open(snakemake.log[0], "w")
 
-
+# Parameters from Snakemake
 url = snakemake.params.url
-output_path = snakemake.output.alignment
+output_file = snakemake.output.alignment
 
-logging.basicConfig(level=logging.INFO)
+# Configure logging
+logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 
-try:
-    response = requests.get(url, stream=True)
 
-    if response.status_code == 200:
-        with open(output_path, "wb") as file:
-            for chunk in response.iter_content(chunk_size=1024):
-                if chunk:
-                    file.write(chunk)
-        print("The file was successfully downloaded.")
-    else:
-        print(
-            f"Error downloading the file.Status code: {
-        response.status_code}"
-        )
+def download_file(url: str, destination: str) -> None:
+    """
+    Download a file from a given URL and save it locally.
 
-except requests.exceptions.RequestException as e:
-    print(f"An error occurred during the request: {e}")
+    Parameters:
+        url (str): Remote file URL.
+        destination (str): Local path where the file will be saved.
+    """
+    try:
+        logging.info(f"Starting download: {url}")
+        with requests.get(url, stream=True) as response:
+            response.raise_for_status()  # Raise exception for HTTP errors
+            with open(destination, "wb") as f:
+                for chunk in response.iter_content(chunk_size=8192):
+                    if chunk:
+                        f.write(chunk)
+        logging.info(f"File successfully downloaded to: {destination}")
 
-except Exception as e:
-    print(f"An unexpected error occurred: {e}")
+    except requests.exceptions.RequestException as e:
+        logging.error(f"Download failed: {e}")
+        raise
+
+    except Exception as e:
+        logging.error(f"Unexpected error: {e}")
+        raise
+
+
+if __name__ == "__main__":
+    download_file(url, output_file)

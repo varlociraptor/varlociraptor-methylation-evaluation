@@ -1,88 +1,42 @@
-def compute_results():
-    needed_inputs = []
-    # seq_platforms = ["Nanopore",  "PacBio"]
-    seq_platforms = config["seq_platforms"].keys()
-    for seq_platform in seq_platforms:
-        # needed_inputs.append(plots(seq_platform))
-        # needed_inputs.append(diff_plots(seq_platform))
-        # needed_inputs.append(precision_recall(seq_platform))
+from pathlib import Path
+from typing import List, Union
 
-        # needed_inputs.append(comparision_plots_tools(seq_platform))
 
-        needed_inputs.append(heatmap_replicates(seq_platform))
-        # needed_inputs.append(correlation_table(seq_platform))
+def compute_results() -> List[List[str]]:
+    """
+    Collect all input file paths required for the workflow.
+    """
+    inputs: List[List[str]] = []
 
-    needed_inputs.append(
+    # Heatmaps per sequencing platform
+    for platform in config["seq_platforms"].keys():
+        inputs.append(heatmap_replicates(platform))
+
+    # Single-sample heatmaps across all FDR thresholds
+    inputs.append(
         [
             f"results/single_sample/Illumina_pe/{fdr}/plots/heatmap_all_protocols.{config['plot_type']}"
             for fdr in config["fdr_alpha"]
         ]
     )
-    needed_inputs.append(
-        heatmap_replicates_common()
-    )
-    needed_inputs.append(
-        [f"results/runtime_comparison_tools.{config['plot_type']}"]
-    )
 
-    needed_inputs.append(
-        [f"results/runtime_comparison_varlo.{config['plot_type']}"]
-    )
-    return needed_inputs
+    # Multi-sample common heatmaps
+    inputs.append(heatmap_replicates_common())
+
+    # Runtime comparison plots
+    inputs.append([f"results/runtime_comparison_tools.{config['plot_type']}"])
+    inputs.append([f"results/runtime_comparison_varlo.{config['plot_type']}"])
+
+    return inputs
 
 
-def plots(seq_platform):
-    base_path = Path("results") / seq_platform
-    protocols = list(config["data"][seq_platform].keys())
-    ref_methods = config["ref_tools"][seq_platform]
-    return [
-        str(
-            base_path
-            / protocol
-            / (
-                "plots/"
-                + str(method)
-                + "/plots_"
-                + str(bin)
-                + "."
-                + config["plot_type"]
-            )
-        )
-        for protocol in protocols
-        # for method in list(ref_methods)
-        for method in list(ref_methods + ["varlo"])
-        for bin in list(range(0, config["cov_bins"][seq_platform])) + ["all"]
-    ]
-
-
-def diff_plots(seq_platform):
-    base_path = Path("results") / seq_platform
-    protocols = list(config["data"][seq_platform].keys())
-    ref_methods = config["ref_tools"][seq_platform]
-    return [
-        str(
-            base_path
-            / protocol
-            / ("plots/scatter_comp_" + method + "." + config["plot_type"])
-        )
-        for protocol in protocols
-        for method in ref_methods
-    ]
-
-
-def comparision_plots_tools(seq_platform):
-    base_path = Path("results") / seq_platform
-    protocols = list(config["data"][seq_platform].keys())
-    ref_methods = config["ref_tools"][seq_platform]
-    return [
-        str(base_path / protocol / ("plots/comparisions." + config["plot_type"]))
-        for protocol in protocols
-    ]
-
-
-def heatmap_replicates(seq_platform):
-    base_path = Path("results/single_sample") / seq_platform 
+def heatmap_replicates(seq_platform: str) -> List[str]:
+    """
+    Return file paths for replicate heatmaps for a given sequencing platform.
+    """
+    base_path = Path("results/single_sample") / seq_platform
     plot_type = config["plot_type"]
+
     return [
         f"{base_path}/{fdr}/plots/{protocol}_heatmap.{plot_type}"
         for protocol in config["protocols"][seq_platform]
@@ -90,79 +44,49 @@ def heatmap_replicates(seq_platform):
     ]
 
 
-def heatmap_replicates_common():
-
+def heatmap_replicates_common() -> List[str]:
+    """
+    Return file paths for multi-sample common heatmaps across comparisons.
+    """
     base_path = Path("results/multi_sample")
     plot_type = config["plot_type"]
+
+    comparisons = ["np_pb", "pb_trueOX", "np_trueOX"]
+
     return [
         f"{base_path}/{comp}/{fdr}/plots/{protocol}_heatmap.{plot_type}"
-        for comp in ["np_pb", "pb_trueOX", "np_trueOX"]
+        for comp in comparisons
         for protocol in config["protocols"]["multi_sample"]
         for fdr in config["fdr_alpha"]
     ]
 
 
-def correlation_table(seq_platform):
-    base_path = Path("results") / seq_platform
-    return [
-        f"{base_path}/{fdr}/plots/correlation_table.{config['plot_type']}"
-        for fdr in config["fdr_alpha"]
-    ]
-
-
-def precision_recall(seq_platform):
-    base_path = Path("results") / seq_platform
-    protocols = list(config["data"][seq_platform].keys())
-    return [
-        f"{base_path}/{protocol}/plots/precall.{config['plot_type']}"
-        for protocol in protocols
-    ]
-
-
-def get_protocol_sra(wildcards):
+def get_protocol_sra(wildcards) -> List[str]:
+    """
+    Return BAM file paths for a given platform and protocol, based on the config.
+    """
     base_path = Path("resources") / wildcards.seq_platform / wildcards.protocol
 
-    # Prüfen, ob die Wildcards im Config existieren
     if wildcards.seq_platform not in config["data"]:
-        return []  # oder raise ValueError, wenn du lieber explizit willst
+        return []
     if wildcards.protocol not in config["data"][wildcards.seq_platform]:
         return []
 
     accession_numbers = config["data"][wildcards.seq_platform][wildcards.protocol]
     return [
-        str(base_path / SRA / "alignment_focused_dedup.bam")
-        for SRA in accession_numbers
+        str(base_path / sra / "alignment_focused_dedup.bam")
+        for sra in accession_numbers
     ]
 
 
-def get_protocol_sra_bismark(wildcards):
-    base_path = Path("resources") / "ref_tools/bismark/alignment" / wildcards.protocol
+def get_protocol_sra_bismark(wildcards) -> List[str]:
+    """
+    Return Bismark alignment BAM file paths for a given protocol.
+    """
+    base_path = Path("resources/ref_tools/bismark/alignment") / wildcards.protocol
     accession_numbers = config["data"]["Illumina_pe"][wildcards.protocol]
-    return [
-        str(base_path / SRA / (SRA + "_1_bismark_bt2_pe.bam"))
-        for SRA in accession_numbers
-    ]
-
-
-def get_ref_methods(wildcards):
-    base_path = Path("results") / "ref_tools/"
-    ref_methods = config["ref_tools"][wildcards.seq_platform]
-    return [
-        str(base_path / method / wildcards.protocol / (method + ".bed"))
-        for method in ref_methods
-    ]
-
-
-def get_precision_recall_csvs(wildcards):
-    base_path = Path("results") / wildcards.seq_platform / wildcards.protocol / "plots"
-    # methods = config["ref_tools"][wildcards.seq_platform]
-    methods = config["ref_tools"][wildcards.seq_platform] + ["varlo"]
-    cov_bins = [str(i) for i in range(config["cov_bins"][wildcards.seq_platform])] + [
-        "all"
-    ]
 
     return [
-        str(base_path / method / f"precall_{cov_bin}.csv")
-        for method in methods
-        for cov_bin in cov_bins
+        str(base_path / sra / f"{sra}_1_bismark_bt2_pe.bam")
+        for sra in accession_numbers
     ]
