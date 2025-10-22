@@ -22,8 +22,8 @@ rule bismark_prepare_genome:
     input:
         expand(
             "resources/ref_tools/bismark/chromosome_{chrom}.fasta",
-            chrom=config["seq_platforms"]["Illumina_pe"],
-        )
+            chrom=config["seq_platforms"].get("Illumina_pe"),
+        ),
     output:
         directory("resources/ref_tools/bismark/Bisulfite_Genome"),
         # directory("resources/ref_tools/bismark/{chrom}/Bisulfite_Genome"),
@@ -43,18 +43,18 @@ rule bismark_align:
         # We need this iput only for cluster execution, because else it does not find the fasta file 
         fasta=expand(
             "resources/ref_tools/bismark/chromosome_{chrom}.fasta",
-            chrom=config["seq_platforms"]["Illumina_pe"],
+            chrom=config["seq_platforms"].get("Illumina_pe"),
         ),
-        reads1="resources/Illumina_pe/{protocol, [^(?!simulated_data$)]}/{SRA}/{SRA}_1_trimmed.fastq",
-        reads2="resources/Illumina_pe/{protocol, [^(?!simulated_data$)]}/{SRA}/{SRA}_2_trimmed.fastq",
+        reads1="resources/Illumina_pe/{sample, [^(?!simulated_data$)]}/{SRA}/{SRA}_1_trimmed.fastq",
+        reads2="resources/Illumina_pe/{sample, [^(?!simulated_data$)]}/{SRA}/{SRA}_2_trimmed.fastq",
     output:
-        "resources/ref_tools/bismark/alignment/{protocol}/{SRA}/{SRA}_1_bismark_bt2_pe.bam",
+        "resources/ref_tools/bismark/alignment/{sample}/{SRA}/{SRA}_1_bismark_bt2_pe.bam",
     conda:
         "../envs/bismark.yaml"
     log:
-        "logs/bismark/{protocol}/align_{SRA}.log",
+        "logs/bismark/{sample}/align_{SRA}.log",
     resources:
-        mem_mb=32000
+        mem_mb=32000,
     threads: 6
     shell:
         """
@@ -63,18 +63,18 @@ rule bismark_align:
         """
 
 
-# TODO: Do not accept protocol=simulated_data
+# TODO: Do not accept sample=simulated_data
 rule bismark_merge_bams:
     input:
-        get_protocol_sra_bismark,
+        get_sample_sra_bismark,
     output:
-        "resources/ref_tools/bismark/alignment/{protocol}/alignment.bam",
+        "resources/ref_tools/bismark/alignment/{sample}/alignment.bam",
     conda:
         "../envs/samtools.yaml"
     log:
-        "logs/bismark/{protocol}/merge_bams.log",
+        "logs/bismark/{sample}/merge_bams.log",
     # wildcard_constraints:
-    #     protocol="simulated_data",
+    #     sample="simulated_data",
     shell:
         """
         echo {input} 2> {log}
@@ -119,23 +119,23 @@ rule bismark_merge_bams:
 #     input:
 #         bisulfite_folder=expand(
 #             "resources/ref_tools/bismark/{chrom}/Bisulfite_Genome",
-#             chrom=config["seq_platforms"]["Illumina_pe"],
+#             chrom=config["seq_platforms"].get("Illumina_pe"),
 #         ),
 #         chrom=expand(
 #             "resources/ref_tools/bismark/{chrom}/",
-#             chrom=config["seq_platforms"]["Illumina_pe"],
+#             chrom=config["seq_platforms"].get("Illumina_pe"),
 #         ),
 #         chromosome=expand(
 #             "resources/ref_tools/bismark/{chrom}/chromosome_{chrom}.fasta",
-#             chrom=config["seq_platforms"]["Illumina_pe"],
+#             chrom=config["seq_platforms"].get("Illumina_pe"),
 #         ),
 #         reads1=expand(
 #             "resources/Illumina_pe/simulated_data/chromosome_{chrom}_f1_trimmed.fastq",
-#             chrom=config["seq_platforms"]["Illumina_pe"],
+#             chrom=config["seq_platforms"].get("Illumina_pe"),
 #         ),
 #         reads2=expand(
 #             "resources/Illumina_pe/simulated_data/chromosome_{chrom}_f2_trimmed.fastq",
-#             chrom=config["seq_platforms"]["Illumina_pe"],
+#             chrom=config["seq_platforms"].get("Illumina_pe"),
 #         ),
 #     output:
 #         "resources/ref_tools/bismark/alignment/simulated_data/chromosome_{chrom}_f1_bismark_bt2_pe.bam",
@@ -155,7 +155,7 @@ rule bismark_merge_bams:
 #     input:
 #         expand(
 #             "resources/ref_tools/bismark/alignment/simulated_data/chromosome_{chrom}_f1_bismark_bt2_pe.bam",
-#             chrom=config["seq_platforms"]["Illumina_pe"],
+#             chrom=config["seq_platforms"].get("Illumina_pe"),
 #         ),
 #     output:
 #         "resources/ref_tools/bismark/alignment/simulated_data/alignment.bam",
@@ -171,13 +171,13 @@ rule bismark_merge_bams:
 
 rule bismark_deduplicate:
     input:
-        "resources/ref_tools/bismark/alignment/{protocol}/alignment.bam",
+        "resources/ref_tools/bismark/alignment/{sample}/alignment.bam",
     output:
-        "resources/ref_tools/bismark/alignment/{protocol}/alignment.deduplicated.bam",
+        "resources/ref_tools/bismark/alignment/{sample}/alignment.deduplicated.bam",
     conda:
         "../envs/bismark.yaml"
     log:
-        "logs/bismark/{protocol}/deduplicate.log",
+        "logs/bismark/{sample}/deduplicate.log",
     shell:
         """
         deduplicate_bismark --bam {input} --output_dir $(dirname {output}) 2> {log}
@@ -187,13 +187,13 @@ rule bismark_deduplicate:
 # It is necessary to sort by name
 rule bismark_sort_bams:
     input:
-        "resources/ref_tools/bismark/alignment/{protocol}/alignment.deduplicated.bam",
+        "resources/ref_tools/bismark/alignment/{sample}/alignment.deduplicated.bam",
     output:
-        "resources/ref_tools/bismark/alignment/{protocol}/alignment_bismark_sorted.bam",
+        "resources/ref_tools/bismark/alignment/{sample}/alignment_bismark_sorted.bam",
     conda:
         "../envs/samtools.yaml"
     log:
-        "logs/bismark/{protocol}/sort_bams.log",
+        "logs/bismark/{sample}/sort_bams.log",
     shell:
         """
         samtools merge {output} {input} 2> {log}
@@ -203,13 +203,13 @@ rule bismark_sort_bams:
 
 rule bismark_extract_results:
     input:
-        "resources/ref_tools/bismark/alignment/{protocol}/alignment_bismark_sorted.bam",
+        "resources/ref_tools/bismark/alignment/{sample}/alignment_bismark_sorted.bam",
     output:
-        "results/Illumina_pe/{protocol}/result_files/CpG_context_alignment_bismark_sorted.txt",
+        "results/Illumina_pe/{sample}/result_files/CpG_context_alignment_bismark_sorted.txt",
     conda:
         "../envs/bismark.yaml"
     log:
-        "logs/bismark/{protocol}/extract_results.log",
+        "logs/bismark/{sample}/extract_results.log",
     shell:
         """
         mkdir -p $(dirname {output}) 2> {log}
@@ -219,25 +219,25 @@ rule bismark_extract_results:
 
 rule bismark_to_bedGraph:
     input:
-        "results/Illumina_pe/{protocol}/result_files/CpG_context_alignment_bismark_sorted.txt",
+        "results/Illumina_pe/{sample}/result_files/CpG_context_alignment_bismark_sorted.txt",
     output:
-        bedGraph="results/Illumina_pe/{protocol}/result_files/CpG.bedGraph.gz",
-        cov="results/Illumina_pe/{protocol}/result_files/CpG.bismark.cov.gz",
+        bedGraph="results/Illumina_pe/{sample}/result_files/CpG.bedGraph.gz",
+        cov="results/Illumina_pe/{sample}/result_files/CpG.bismark.cov.gz",
     log:
-        "logs/bismark/{protocol}/to_bedGraph.log",
+        "logs/bismark/{sample}/to_bedGraph.log",
     wrapper:
         "v5.5.0/bio/bismark/bismark2bedGraph"
 
 
 rule bismark_unzip_results:
     input:
-        "results/Illumina_pe/{protocol}/result_files/CpG.bismark.cov.gz",
+        "results/Illumina_pe/{sample}/result_files/CpG.bismark.cov.gz",
     output:
-        "results/Illumina_pe/{protocol}/result_files/CpG.bismark.cov",
+        "results/Illumina_pe/{sample}/result_files/CpG.bismark.cov",
     conda:
         "../envs/bismark.yaml"
     log:
-        "logs/bismark/{protocol}/unzip_results.log",
+        "logs/bismark/{sample}/unzip_results.log",
     shell:
         """
         gunzip {input} 2> {log}
@@ -246,13 +246,13 @@ rule bismark_unzip_results:
 
 rule bismark_focus_result_on_chromosome:
     input:
-        "results/Illumina_pe/{protocol}/result_files/CpG.bismark.cov",
+        "results/Illumina_pe/{sample}/result_files/CpG.bismark.cov",
     output:
-        "results/single_sample/Illumina_pe/{protocol}/result_files/bismark.bed",
+        "results/single_sample/Illumina_pe/called/{sample}/result_files/bismark.bed",
     params:
         chromosome=lambda wildcards: chromosome_by_seq_platform["Illumina_pe"],
     log:
-        "logs/bismark/{protocol}/focus_result_on_chromosome.log",
+        "logs/bismark/{sample}/focus_result_on_chromosome.log",
     shell:
         """
         awk '$1 == "{params.chromosome}"' {input} > {output} 2> {log}

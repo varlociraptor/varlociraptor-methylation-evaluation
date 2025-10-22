@@ -22,17 +22,17 @@ rule bsmap_compute_meth:
     input:
         genome=expand(
             "resources/chromosome_{chrom}.fasta",
-            chrom=config["seq_platforms"]["Illumina_pe"],
+            chrom=config["seq_platforms"].get("Illumina_pe"),
         ),
-        alignment="resources/Illumina_pe/{protocol}/alignment_focused_downsampled_dedup_renamed.bam",
-        alignment_index="resources/Illumina_pe/{protocol}/alignment_focused_downsampled_dedup_renamed.bam.bai",
+        alignment="resources/Illumina_pe/{sample}/alignment_focused_downsampled_dedup_renamed.bam",
+        alignment_index="resources/Illumina_pe/{sample}/alignment_focused_downsampled_dedup_renamed.bam.bai",
     output:
         # alignment_renamed=temp("bsmap.bam"),
-        out="results/Illumina_pe/{protocol}/result_files/out.sam",
+        out="results/Illumina_pe/{sample}/result_files/out.sam",
     conda:
         "../envs/bsmap.yaml"
     log:
-        "logs/bsmap/{protocol}/compute_meth.log",
+        "logs/bsmap/{sample}/compute_meth.log",
     threads: 8
     shell:
         """
@@ -46,20 +46,20 @@ rule bsmap_extract_meth:
     input:
         genome=expand(
             "resources/chromosome_{chrom}.fasta",
-            chrom=config["seq_platforms"]["Illumina_pe"],
+            chrom=config["seq_platforms"].get("Illumina_pe"),
         ),
         genome_index=expand(
             "resources/chromosome_{chrom}.fasta.fai",
-            chrom=config["seq_platforms"]["Illumina_pe"],
+            chrom=config["seq_platforms"].get("Illumina_pe"),
         ),
-        bsmap_sam="results/Illumina_pe/{protocol}/result_files/out.sam",
+        bsmap_sam="results/Illumina_pe/{sample}/result_files/out.sam",
         meth_extractor="resources/ref_tools/bsMap/methratio.py",
     output:
-        "results/Illumina_pe/{protocol}/result_files/methylation_ratios.bed",
+        "results/Illumina_pe/{sample}/result_files/methylation_ratios.bed",
     conda:
         "../envs/bsmap.yaml"
     log:
-        "logs/bsmap/{protocol}/extract_meth.log",
+        "logs/bsmap/{sample}/extract_meth.log",
     params:
         chromosome=chromosome_by_seq_platform.get("Illumina_pe"),
     shell:
@@ -68,10 +68,10 @@ rule bsmap_extract_meth:
 
 rule bsmap_rename_output:
     input:
-        "results/Illumina_pe/{protocol}/result_files/methylation_ratios.bed",
+        "results/Illumina_pe/{sample}/result_files/methylation_ratios.bed",
     output:
-        "results/single_sample/Illumina_pe/{protocol}/result_files/bsMap.bed",
+        "results/single_sample/Illumina_pe/called/{sample}/result_files/bsMap.bed",
     log:
-        "logs/bsmap/{protocol}/rename_output.log",
+        "logs/bsmap/{sample}/rename_output.log",
     shell:
         "mv {input} {output} 2> {log}"

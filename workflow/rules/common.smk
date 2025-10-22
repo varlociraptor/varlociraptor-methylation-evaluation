@@ -13,19 +13,20 @@ def compute_results() -> List[List[str]]:
         inputs.append(heatmap_replicates(platform))
 
     # Single-sample heatmaps across all FDR thresholds
-    inputs.append(
-        [
-            f"results/single_sample/Illumina_pe/{fdr}/plots/heatmap_all_protocols.{config['plot_type']}"
-            for fdr in config["fdr_alpha"]
-        ]
-    )
+    if "Illumina_pe" in config["seq_platforms"]:
+        inputs.append(
+            [
+                f"results/single_sample/Illumina_pe/{fdr}/plots/heatmap_all_samples.{config['plot_type']}"
+                for fdr in config["fdr_alpha"]
+            ]
+        )
 
     # Multi-sample common heatmaps
     inputs.append(heatmap_replicates_common())
 
     # Runtime comparison plots
-    inputs.append([f"results/runtime_comparison_tools.{config['plot_type']}"])
-    inputs.append([f"results/runtime_comparison_varlo.{config['plot_type']}"])
+    # inputs.append([f"results/runtime_comparison_tools.{config['plot_type']}"])
+    # inputs.append([f"results/runtime_comparison_varlo.{config['plot_type']}"])
 
     return inputs
 
@@ -38,8 +39,8 @@ def heatmap_replicates(seq_platform: str) -> List[str]:
     plot_type = config["plot_type"]
 
     return [
-        f"{base_path}/{fdr}/plots/{protocol}_heatmap.{plot_type}"
-        for protocol in config["protocols"][seq_platform]
+        f"{base_path}/{fdr}/plots/{sample}_heatmap.{plot_type}"
+        for sample in config["samples"][seq_platform]
         for fdr in config["fdr_alpha"]
     ]
 
@@ -54,37 +55,39 @@ def heatmap_replicates_common() -> List[str]:
     comparisons = ["np_pb", "pb_trueOX", "np_trueOX"]
 
     return [
-        f"{base_path}/{comp}/{fdr}/plots/{protocol}_heatmap.{plot_type}"
+        f"{base_path}/{comp}/{fdr}/plots/{sample}_heatmap.{plot_type}"
         for comp in comparisons
-        for protocol in config["protocols"]["multi_sample"]
+        for sample in config["samples"].get("multi_sample", [])
         for fdr in config["fdr_alpha"]
     ]
 
 
-def get_protocol_sra(wildcards) -> List[str]:
+def get_sample_sra(wildcards) -> List[str]:
     """
-    Return BAM file paths for a given platform and protocol, based on the config.
+    Return BAM file paths for a given platform and sample, based on the config.
     """
-    base_path = Path("resources") / wildcards.seq_platform / wildcards.protocol
+    base_path = Path("resources") / wildcards.seq_platform / wildcards.sample
 
     if wildcards.seq_platform not in config["data"]:
         return []
-    if wildcards.protocol not in config["data"][wildcards.seq_platform]:
+    if wildcards.sample not in config["data"].get(wildcards.seq_platform, {}):
         return []
 
-    accession_numbers = config["data"][wildcards.seq_platform][wildcards.protocol]
+    accession_numbers = (
+        config["data"].get(wildcards.seq_platform, {}).get(wildcards.sample, [])
+    )
     return [
         str(base_path / sra / "alignment_focused_dedup.bam")
         for sra in accession_numbers
     ]
 
 
-def get_protocol_sra_bismark(wildcards) -> List[str]:
+def get_sample_sra_bismark(wildcards) -> List[str]:
     """
-    Return Bismark alignment BAM file paths for a given protocol.
+    Return Bismark alignment BAM file paths for a given sample.
     """
-    base_path = Path("resources/ref_tools/bismark/alignment") / wildcards.protocol
-    accession_numbers = config["data"]["Illumina_pe"][wildcards.protocol]
+    base_path = Path("resources/ref_tools/bismark/alignment") / wildcards.sample
+    accession_numbers = config["data"]["Illumina_pe"][wildcards.sample]
 
     return [
         str(base_path / sra / f"{sra}_1_bismark_bt2_pe.bam")

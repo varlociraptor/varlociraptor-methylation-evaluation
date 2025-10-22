@@ -83,7 +83,7 @@ def compute_correlation(
             "spearman": lambda: clean_df[col1].corr(clean_df[col2], method="spearman"),
             "rmse": lambda: np.sqrt(((clean_df[col1] - clean_df[col2]) ** 2).mean())
             / 100.0,
-            "adjusted_mape": lambda: (
+            "mape": lambda: (
                 np.where(
                     (clean_df[col1] == 0) & (clean_df[col2] == 0),
                     0,
@@ -112,7 +112,10 @@ def normalize_sample_name(replicate_name: str) -> str:
     Normalize replicate names to a sample identifier.
     """
     name = re.sub(r"_REP\d+$", "", replicate_name)  # Illumina pattern
-    name = re.sub(r"REP\d+$", "REP", name)  # PacBio/ Nanopore / multi-sample pattern
+    name = re.sub(
+        r"minimal\d+$", "minimal", name
+    )  # PacBio/ Nanopore / multi-sample pattern
+    name = re.sub(r"minimal\d+$", "minimal", name)  # minimal toy example
     return name or replicate_name
 
 

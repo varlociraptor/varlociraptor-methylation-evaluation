@@ -48,15 +48,15 @@ def plot_count_heatmap(
     max_count = df["count"].max()
     min_count = 1
     ticks = [min_count, max_count]
-
-    title = "PacBio"
-
+    title = f"Varlociraptor" if meth_caller == "varlo" else meth_caller.capitalize()
+    # title = "PacBio"
+    print(mapes, file=sys.stderr)
     heatmap = (
         alt.Chart(
             df,
             title=alt.Title(
                 title,
-                subtitle=f"N = {df['count'].sum()} | D = {mapes[meth_caller]}",
+                subtitle=f"N = {df['count'].sum()} | D = {mapes.get(meth_caller,0)}",
             ),
         )
         .mark_rect()
@@ -140,14 +140,15 @@ def compute_replicate_counts(df_dict: dict, bin_size: int, relative=False):
         cdf_dfs: DataFrame per caller for CDFs
         mapes: mean absolute percentage error per caller
     """
-    protocols = snakemake.params["protocol"]
+    samples = snakemake.params["sample"]
     meth_callers = snakemake.params["meth_callers"]
 
-    # Merge across protocols if needed
-    if isinstance(protocols, str):
-        df = df_dict[protocols]
+    # Merge across samples if needed
+    if isinstance(samples, str):
+        print(df_dict, file=sys.stderr)
+        df = df_dict[samples]
     else:
-        df = pd.concat([df_dict[p] for p in protocols], ignore_index=True)
+        df = pd.concat([df_dict[p] for p in samples], ignore_index=True)
         methyl_cols = [c for c in df.columns if "methylation" in c]
         df = df.groupby(["chromosome", "position"], as_index=False)[methyl_cols].mean()
 

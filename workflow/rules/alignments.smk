@@ -1,3 +1,5 @@
+# TODO: Change chromosome from hardcoded 21 to also work with other chromosomes and the minimal config
+
 # rule bwameth_index_genome:
 #     input:
 #         "resources/{genome}.fasta",
@@ -51,14 +53,14 @@ rule align_reads_pe:
         ),
         # fasta_index="resources/genome.fasta.bwameth.c2t",
         fasta="resources/genome.fasta",
-        reads1="resources/Illumina_pe/{protocol}/{SRA}/{SRA}_1_trimmed.fastq",
-        reads2="resources/Illumina_pe/{protocol}/{SRA}/{SRA}_2_trimmed.fastq",
+        reads1="resources/Illumina_pe/{sample}/{SRA}/{SRA}_1_trimmed.fastq",
+        reads2="resources/Illumina_pe/{sample}/{SRA}/{SRA}_2_trimmed.fastq",
     output:
-        "resources/Illumina_pe/{protocol}/{SRA}/alignment.bam",
+        "resources/Illumina_pe/{sample}/{SRA}/alignment.bam",
     conda:
         "../envs/bwa-meth.yaml"
     log:
-        "logs/alignment/{protocol}/align_reads_pe_{SRA}.log",
+        "logs/alignment/{sample}/align_reads_pe_{SRA}.log",
     threads: 30
     resources:
         mem_mb=512,
@@ -73,13 +75,13 @@ rule align_reads_se:
     input:
         fasta_index="resources/genome.fasta.bwameth.c2t",
         fasta="resources/genome.fasta",
-        reads1="resources/Illumina_se/{protocol}/{SRA}/{SRA}_trimmed.fastq",
+        reads1="resources/Illumina_se/{sample}/{SRA}/{SRA}_trimmed.fastq",
     output:
-        "resources/Illumina_se/{protocol}/{SRA}/alignment.bam",
+        "resources/Illumina_se/{sample}/{SRA}/alignment.bam",
     conda:
         "../envs/bwa-meth.yaml"
     log:
-        "logs/alignment/{protocol}/align_reads_se_{SRA}.log",
+        "logs/alignment/{sample}/align_reads_se_{SRA}.log",
     threads: 30
     resources:
         mem_mb=512,
@@ -89,11 +91,11 @@ rule align_reads_se:
 
 rule aligned_reads_sort:
     input:
-        "resources/{seq_platform}/{protocol}/{SRA}/alignment.bam",
+        "resources/{seq_platform}/{sample}/{SRA}/alignment.bam",
     output:
-        "resources/{seq_platform}/{protocol}/{SRA}/alignment_sorted.bam",
+        "resources/{seq_platform}/{sample}/{SRA}/alignment_sorted.bam",
     log:
-        "logs/alignment/{seq_platform}/{protocol}/sort_reads_{SRA}.log",
+        "logs/alignment/{seq_platform}/{sample}/sort_reads_{SRA}.log",
     conda:
         "../envs/samtools.yaml"
     shell:
@@ -102,11 +104,11 @@ rule aligned_reads_sort:
 
 rule aligned_reads_index:
     input:
-        "resources/{seq_platform}/{protocol}/{SRA}/alignment_sorted.bam",
+        "resources/{seq_platform}/{sample}/{SRA}/alignment_sorted.bam",
     output:
-        "resources/{seq_platform}/{protocol}/{SRA}/alignment_sorted.bam.bai",
+        "resources/{seq_platform}/{sample}/{SRA}/alignment_sorted.bam.bai",
     log:
-        "logs/alignment/{seq_platform}/{protocol}/index_sort_reads_{SRA}.log",
+        "logs/alignment/{seq_platform}/{sample}/index_sort_reads_{SRA}.log",
     conda:
         "../envs/samtools.yaml"
     shell:
@@ -115,12 +117,12 @@ rule aligned_reads_index:
 
 rule aligned_reads_focus_on_chromosome:
     input:
-        bam="resources/{seq_platform}/{protocol}/{SRA}/alignment_sorted.bam",
-        index="resources/{seq_platform}/{protocol}/{SRA}/alignment_sorted.bam.bai",
+        bam="resources/{seq_platform}/{sample}/{SRA}/alignment_sorted.bam",
+        index="resources/{seq_platform}/{sample}/{SRA}/alignment_sorted.bam.bai",
     output:
-        bam="resources/{seq_platform}/{protocol}/{SRA}/alignment_focused.bam",
+        bam="resources/{seq_platform}/{sample}/{SRA}/alignment_focused.bam",
     log:
-        "logs/alignment/{seq_platform}/{protocol}/focus_on_chromosome_{SRA}.log",
+        "logs/alignment/{seq_platform}/{sample}/focus_on_chromosome_{SRA}.log",
     conda:
         "../envs/samtools.yaml"
     params:
@@ -132,16 +134,16 @@ rule aligned_reads_focus_on_chromosome:
         ),
     threads: 1
     shell:
-        "samtools view -b -o {output.bam} {input} {params.chromosome} 2> {log}"
+        "samtools view -b -o {output.bam} {input} 21 2> {log}"
 
 
 rule aligned_reads_filter_on_mapq:
     input:
-        "resources/{seq_platform}/{protocol}/{SRA}/alignment_focused.bam",
+        "resources/{seq_platform}/{sample}/{SRA}/alignment_focused.bam",
     output:
-        "resources/{seq_platform}/{protocol}/{SRA}/alignment_focused_filtered.bam",
+        "resources/{seq_platform}/{sample}/{SRA}/alignment_focused_filtered.bam",
     log:
-        "logs/alignment/{seq_platform}/{protocol}/filter_on_mapq_{SRA}.log",
+        "logs/alignment/{seq_platform}/{sample}/filter_on_mapq_{SRA}.log",
     conda:
         "../envs/samtools.yaml"
     params:
@@ -153,12 +155,12 @@ rule aligned_reads_filter_on_mapq:
 
 rule aligned_reads_markduplicates:
     input:
-        bams="resources/{seq_platform}/{protocol}/{SRA}/alignment_focused_filtered.bam",
+        bams="resources/{seq_platform}/{sample}/{SRA}/alignment_focused_filtered.bam",
     output:
-        bam="resources/{seq_platform}/{protocol}/{SRA}/alignment_focused_dedup.bam",
-        metrics="resources/{seq_platform}/{protocol}/{SRA}/alignment_focused_dedup.metrics.txt",
+        bam="resources/{seq_platform}/{sample}/{SRA}/alignment_focused_dedup.bam",
+        metrics="resources/{seq_platform}/{sample}/{SRA}/alignment_focused_dedup.metrics.txt",
     log:
-        "logs/alignment/{seq_platform}/{protocol}/markduplicates_{SRA}.log",
+        "logs/alignment/{seq_platform}/{sample}/markduplicates_{SRA}.log",
     params:
         extra="--REMOVE_DUPLICATES true",
     resources:
@@ -169,11 +171,11 @@ rule aligned_reads_markduplicates:
 
 rule aligned_reads_merge_sras:
     input:
-        get_protocol_sra,
+        get_sample_sra,
     output:
-        "resources/{seq_platform, [^/]+}/{protocol,[^/]+}/alignment_focused_dedup.bam",
+        "resources/{seq_platform, [^/]+}/{sample,[^/]+}/alignment_focused_dedup.bam",
     log:
-        "logs/alignment/{seq_platform}/{protocol}/merge_sras.log",
+        "logs/alignment/{seq_platform}/{sample}/merge_sras.log",
     conda:
         "../envs/samtools.yaml"
     wildcard_constraints:
@@ -184,11 +186,11 @@ rule aligned_reads_merge_sras:
 
 rule aligned_reads_downsample:
     input:
-        "resources/{seq_platform}/{protocol}/alignment_focused_dedup.bam",
+        "resources/{seq_platform}/{sample}/alignment_focused_dedup.bam",
     output:
-        "resources/{seq_platform}/{protocol}/alignment_focused_downsampled_dedup.bam",
+        "resources/{seq_platform}/{sample}/alignment_focused_downsampled_dedup.bam",
     log:
-        "logs/alignment/{seq_platform}/{protocol}/downsample.log",
+        "logs/alignment/{seq_platform}/{sample}/downsample.log",
     conda:
         "../envs/samtools.yaml"
     shell:
@@ -197,11 +199,11 @@ rule aligned_reads_downsample:
 
 rule aligned_reads_downsampled_index:
     input:
-        "resources/{seq_platform}/{protocol}/alignment_focused_downsampled_dedup.bam",
+        "resources/{seq_platform}/{sample}/alignment_focused_downsampled_dedup.bam",
     output:
-        "resources/{seq_platform}/{protocol}/alignment_focused_downsampled_dedup.bam.bai",
+        "resources/{seq_platform}/{sample}/alignment_focused_downsampled_dedup.bam.bai",
     log:
-        "logs/alignment/{seq_platform}/{protocol}/downsample_index.log",
+        "logs/alignment/{seq_platform}/{sample}/downsample_index.log",
     conda:
         "../envs/samtools.yaml"
     shell:
@@ -210,11 +212,11 @@ rule aligned_reads_downsampled_index:
 
 rule aligned_reads_rename_chromosomes:
     input:
-        "resources/{seq_platform}/{protocol, [^(?!simulated_data$)]}/alignment_focused_downsampled_dedup.bam",
+        "resources/{seq_platform}/{sample, [^(?!simulated_data$)]}/alignment_focused_downsampled_dedup.bam",
     output:
-        "resources/{seq_platform}/{protocol}/alignment_focused_downsampled_dedup_renamed.bam",
+        "resources/{seq_platform}/{sample}/alignment_focused_downsampled_dedup_renamed.bam",
     log:
-        "logs/alignment/{seq_platform}/{protocol}/rename_chromosome.log",
+        "logs/alignment/{seq_platform}/{sample}/rename_chromosome.log",
     conda:
         "../envs/plot.yaml"
     script:
@@ -223,11 +225,11 @@ rule aligned_reads_rename_chromosomes:
 
 rule aligned_reads_renamed_index:
     input:
-        "resources/{seq_platform}/{protocol}/alignment_focused_downsampled_dedup_renamed.bam",
+        "resources/{seq_platform}/{sample}/alignment_focused_downsampled_dedup_renamed.bam",
     output:
-        "resources/{seq_platform}/{protocol}/alignment_focused_downsampled_dedup_renamed.bam.bai",
+        "resources/{seq_platform}/{sample}/alignment_focused_downsampled_dedup_renamed.bam.bai",
     log:
-        "logs/alignment/{seq_platform}/{protocol}/renamed_index.log",
+        "logs/alignment/{seq_platform}/{sample}/renamed_index.log",
     conda:
         "../envs/samtools.yaml"
     shell:
@@ -236,44 +238,45 @@ rule aligned_reads_renamed_index:
 
 rule aligned_reads_candidates_region:
     input:
-        alignment="resources/{seq_platform}/{protocol}/alignment_focused_downsampled_dedup_renamed.bam",
-        index="resources/{seq_platform}/{protocol}/alignment_focused_downsampled_dedup_renamed.bam.bai",
-        candidate=lambda wildcards: expand(
-            "resources/{chrom}/candidates_{{scatteritem}}.bcf",
-            chrom=chromosome_by_seq_platform[wildcards.seq_platform],
-        ),
+        alignment="resources/{seq_platform}/{sample}/alignment_focused_downsampled_dedup_renamed.bam",
+        index="resources/{seq_platform}/{sample}/alignment_focused_downsampled_dedup_renamed.bam.bai",
+        candidate=lambda wildcards: f"resources/{chromosome_by_seq_platform.get(wildcards.seq_platform)}/candidates_{wildcards.scatteritem}.bcf",
     output:
-        "resources/{seq_platform}/{protocol}/candidate_specific/alignment_{scatteritem}.bam",
+        "resources/{seq_platform}/{sample}/candidate_specific/alignment_{scatteritem}.bam",
     log:
-        "logs/alignment/{seq_platform}/{protocol}/candidates_region_{scatteritem}.log",
+        "logs/alignment/{seq_platform}/{sample}/candidates_region_{scatteritem}.log",
     conda:
         "../envs/samtools.yaml"
     params:
-        window_size=config["max_read_length"],
-        chromosome=lambda wildcards: chromosome_by_seq_platform[wildcards.seq_platform],
+        chromosome=lambda wildcards: chromosome_by_seq_platform.get(
+            wildcards.seq_platform
+        ),
     shell:
         """
-        # Get the minimum and maximum positions from the candidate BCF
+        set +o pipefail
+
+        mkdir -p $(dirname {output})
+
         start=$(bcftools query -f '%POS\n' {input.candidate} | head -n1)
         end=$(bcftools query -f '%POS\n' {input.candidate} | tail -n1)
+        samtools view -b {input.alignment} "21:$start-$end" > {output}
 
-        # Extract reads from the BAM file within the candidate region
-        samtools view -b {input.alignment} "{params.chromosome}:$start-$end" > {output}
-
-        # If the resulting BAM is empty, create a BAM containing only the header
-        if [ ! -s {output} ]; then
-            samtools view -H {input.alignment} | samtools view -bS - > {output}
+        if [ $(samtools view -c {output}) -eq 0 ]; then
+            samtools view -H {input.alignment} > temp.sam
+            samtools view {input.alignment} | tail -n 1 >> temp.sam
+            samtools view -bS temp.sam > {output}
+            rm temp.sam
         fi
         """
 
 
 rule aligned_reads_candidates_region_index:
     input:
-        "resources/{seq_platform}/{protocol}/candidate_specific/alignment_{scatteritem}.bam",
+        "resources/{seq_platform}/{sample}/candidate_specific/alignment_{scatteritem}.bam",
     output:
-        "resources/{seq_platform}/{protocol}/candidate_specific/alignment_{scatteritem}.bam.bai",
+        "resources/{seq_platform}/{sample}/candidate_specific/alignment_{scatteritem}.bam.bai",
     log:
-        "logs/alignment/{seq_platform}/{protocol}/candidates_region_index_{scatteritem}.log",
+        "logs/alignment/{seq_platform}/{sample}/candidates_region_index_{scatteritem}.log",
     conda:
         "../envs/samtools.yaml"
     shell:

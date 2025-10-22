@@ -24,22 +24,22 @@ rule bissnp_prepare:
         jar="resources/ref_tools/Bis-tools/BisSNP-0.82.2.jar",
         genome=expand(
             "resources/chromosome_{chrom}.fasta",
-            chrom=config["seq_platforms"]["Illumina_pe"],
+            chrom=config["seq_platforms"].get("Illumina_pe"),
         ),
         genome_index=expand(
             "resources/chromosome_{chrom}.fasta.fai",
-            chrom=config["seq_platforms"]["Illumina_pe"],
+            chrom=config["seq_platforms"].get("Illumina_pe"),
         ),
-        alignment="resources/Illumina_pe/{protocol}/alignment_focused_downsampled_dedup_renamed.bam",
-        alignment_index="resources/Illumina_pe/{protocol}/alignment_focused_downsampled_dedup_renamed.bam.bai",
+        alignment="resources/Illumina_pe/{sample}/alignment_focused_downsampled_dedup_renamed.bam",
+        alignment_index="resources/Illumina_pe/{sample}/alignment_focused_downsampled_dedup_renamed.bam.bai",
     output:
-        jar="resources/ref_tools/Bis-tools/{protocol}/BisSNP-0.82.2.jar",
-        genome="resources/ref_tools/Bis-tools/{protocol}/genome.fasta",
-        genome_index="resources/ref_tools/Bis-tools/{protocol}/genome.fasta.fai",
-        alignment="resources/ref_tools/Bis-tools/{protocol}/alignment.bam",
-        alignment_index="resources/ref_tools/Bis-tools/{protocol}/alignment.bam.bai",
+        jar="resources/ref_tools/Bis-tools/{sample}/BisSNP-0.82.2.jar",
+        genome="resources/ref_tools/Bis-tools/{sample}/genome.fasta",
+        genome_index="resources/ref_tools/Bis-tools/{sample}/genome.fasta.fai",
+        alignment="resources/ref_tools/Bis-tools/{sample}/alignment.bam",
+        alignment_index="resources/ref_tools/Bis-tools/{sample}/alignment.bam.bai",
     log:
-        "logs/bissnp/{protocol}/prepare.log",
+        "logs/bissnp/{sample}/prepare.log",
     shell:
         """
         cp {input.jar} {output.jar} 2> {log}
@@ -52,14 +52,14 @@ rule bissnp_prepare:
 
 rule bissnp_extract_meth:
     input:
-        jar="resources/ref_tools/Bis-tools/{protocol}/BisSNP-0.82.2.jar",
-        genome="resources/ref_tools/Bis-tools/{protocol}/genome.fasta",
-        genome_index="resources/ref_tools/Bis-tools/{protocol}/genome.fasta.fai",
-        alignment="resources/ref_tools/Bis-tools/{protocol}/alignment.bam",
-        alignment_index="resources/ref_tools/Bis-tools/{protocol}/alignment.bam.bai",
+        jar="resources/ref_tools/Bis-tools/{sample}/BisSNP-0.82.2.jar",
+        genome="resources/ref_tools/Bis-tools/{sample}/genome.fasta",
+        genome_index="resources/ref_tools/Bis-tools/{sample}/genome.fasta.fai",
+        alignment="resources/ref_tools/Bis-tools/{sample}/alignment.bam",
+        alignment_index="resources/ref_tools/Bis-tools/{sample}/alignment.bam.bai",
     output:
-        cpg="results/Illumina_pe/{protocol}/result_files/cpg.raw.vcf",
-        snp="results/Illumina_pe/{protocol}/result_files/snp.raw.vcf",
+        cpg="results/Illumina_pe/{sample}/result_files/cpg.raw.vcf",
+        snp="results/Illumina_pe/{sample}/result_files/snp.raw.vcf",
     conda:
         "../envs/openjdk.yaml"
     params:
@@ -68,9 +68,9 @@ rule bissnp_extract_meth:
         ),
         chromosome=chromosome_by_seq_platform.get("Illumina_pe"),
     log:
-        "logs/bissnp/{protocol}/extract_meth.log",
+        "logs/bissnp/{sample}/extract_meth.log",
     resources:
-        mem_mb=64000
+        mem_mb=64000,
     shell:
         "java -Xmx10G -jar {input.jar} -R {input.genome} -T BisulfiteGenotyper -I {input.alignment} -vfn1 {output.cpg} -vfn2 {output.snp} -L {params.chromosome} 2> {log}"
 
@@ -83,11 +83,11 @@ rule bissnp_extract_meth:
 rule bissnp_create_bedgraph:
     input:
         perl_script="workflow/scripts/bssnp_bedGraph.pl",
-        cpg="results/Illumina_pe/{protocol}/result_files/cpg.raw.vcf",
+        cpg="results/Illumina_pe/{sample}/result_files/cpg.raw.vcf",
     output:
-        "results/Illumina_pe/{protocol}/result_files/cpg.raw.CG.bedgraph",
+        "results/Illumina_pe/{sample}/result_files/cpg.raw.CG.bedgraph",
     log:
-        "logs/bissnp/{protocol}/create_bedgraph.log",
+        "logs/bissnp/{sample}/create_bedgraph.log",
     conda:
         "../envs/openjdk.yaml"
     shell:
@@ -96,10 +96,10 @@ rule bissnp_create_bedgraph:
 
 rule bissnp_rename_output:
     input:
-        "results/Illumina_pe/{protocol}/result_files/cpg.raw.CG.bedgraph",
+        "results/Illumina_pe/{sample}/result_files/cpg.raw.CG.bedgraph",
     output:
-        "results/single_sample/Illumina_pe/{protocol}/result_files/bisSNP.bed",
+        "results/single_sample/Illumina_pe/called/{sample}/result_files/bisSNP.bed",
     log:
-        "logs/bissnp/{protocol}/rename_output.log",
+        "logs/bissnp/{sample}/rename_output.log",
     shell:
         "mv {input} {output} 2> {log}"

@@ -29,43 +29,42 @@ rule build_varlociraptor:
         mem_mb=8000,
     shell:
         """
-        echo {output} >> {log}
+
         cd {input}
-        CARGO_TARGET_DIR={resources.tmpdir}/cargo_target \
-            cargo build >> {log}
-        mkdir -p $(dirname {output})
-        cp {resources.tmpdir}/cargo_target/debug/varlociraptor {output}
-        echo "Show output file:" >> {log}
-        ls -ahl $(dirname {output}) >> {log}
+        cargo build
         """
         # mkdir -p $(dirname {output})
+        # CARGO_TARGET_DIR={resources.tmpdir}/cargo_target \
+        #     cargo build
+        # mkdir -p $(dirname {output})
+        # cp {resources.tmpdir}/cargo_target/debug/varlociraptor {output}
         # touch {output}
         # ls $(dirname {output}) >> {log}
 
 
-rule compute_meth_observations:
+rule varlociraptor_preprocess:
     input:
         varlo="resources/tools/varlociraptor/target/debug/varlociraptor",
         chromosome=lambda wildcards: expand(
             "resources/chromosome_{chrom}.fasta",
-            chrom=chromosome_by_seq_platform[wildcards.seq_platform],
+            chrom=chromosome_by_seq_platform.get(wildcards.seq_platform),
         ),
         genome_index=lambda wildcards: expand(
             "resources/chromosome_{chrom}.fasta.fai",
-            chrom=chromosome_by_seq_platform[wildcards.seq_platform],
+            chrom=chromosome_by_seq_platform.get(wildcards.seq_platform),
         ),
-        alignments="resources/{seq_platform}/{protocol}/candidate_specific/alignment_{scatteritem}.bam",
-        alignment_index="resources/{seq_platform}/{protocol}/candidate_specific/alignment_{scatteritem}.bam.bai",
+        alignments="resources/{seq_platform}/{sample}/candidate_specific/alignment_{scatteritem}.bam",
+        alignment_index="resources/{seq_platform}/{sample}/candidate_specific/alignment_{scatteritem}.bam.bai",
         candidates=lambda wildcards: expand(
             "resources/{chrom}/candidates_{{scatteritem}}.bcf",
-            chrom=chromosome_by_seq_platform[wildcards.seq_platform],
+            chrom=chromosome_by_seq_platform.get(wildcards.seq_platform),
         ),
     output:
-        "results/{seq_platform}/{protocol}/normal_{scatteritem}.bcf",
+        "results/preprocessed/{seq_platform}/{sample}/normal_{scatteritem}.bcf",
     log:
-        "logs/varlociraptor/{seq_platform}/{protocol}/compute_meth_observations_{scatteritem}.log",
+        "logs/varlociraptor/{seq_platform}/{sample}/compute_meth_observations_{scatteritem}.log",
     benchmark:
-        "benchmarks/{seq_platform}/preprocessing/{protocol}_{scatteritem}.bwa.benchmark.txt"
+        "benchmarks/{seq_platform}/preprocessing/{sample}_{scatteritem}.bwa.benchmark.txt"
     conda:
         "../envs/varlociraptor.yaml"
     resources:
@@ -84,14 +83,14 @@ rule compute_meth_observations:
 rule call_methylation:
     input:
         varlo="resources/tools/varlociraptor/target/debug/varlociraptor",
-        preprocess_obs="results/{seq_platform}/{protocol}/normal_{scatteritem}.bcf",
-        scenario="resources/scenario.yaml",
+        preprocess_obs="results/preprocessed/{seq_platform}/{sample}/normal_{scatteritem}.bcf",
+        scenario="resources/scenarios/scenario.yaml",
     output:
-        "results/single_sample/{seq_platform}/{protocol}/calls_{scatteritem}.bcf",
+        "results/single_sample/{seq_platform}/called/{sample}/calls_{scatteritem}.bcf",
     log:
-        "logs/varlociraptor/{seq_platform}/{protocol}/call_methylation_{scatteritem}.log",
+        "logs/varlociraptor/{seq_platform}/called/{sample}/call_methylation_{scatteritem}.log",
     benchmark:
-        "benchmarks/{seq_platform}/calling/single_sample/{protocol}_{scatteritem}.bwa.benchmark.txt"
+        "benchmarks/{seq_platform}/calling/single_sample/{sample}_{scatteritem}.bwa.benchmark.txt"
     conda:
         "../envs/varlociraptor.yaml"
     wildcard_constraints:
@@ -104,11 +103,11 @@ rule call_methylation:
 # rule filter_calls:
 #     input:
 #         varlo="resources/tools/varlociraptor/target/debug/varlociraptor",
-#         bcf="results/{seq_platform}/{protocol}/calls_{scatteritem}.bcf",
+#         bcf="results/{seq_platform}/{sample}/calls_{scatteritem}.bcf",
 #     output:
-#         "results/{seq_platform}/{fdr}/{protocol}/calls_{scatteritem}.bcf",
+#         "results/{seq_platform}/{fdr}/{sample}/calls_{scatteritem}.bcf",
 #     log:
-#         "logs/varlociraptor/{seq_platform}/{fdr}/{protocol}/filter_calls_{scatteritem}.log",
+#         "logs/varlociraptor/{seq_platform}/{fdr}/{sample}/filter_calls_{scatteritem}.log",
 #     conda:
 #         "../envs/varlociraptor.yaml"
 #     params:
@@ -121,13 +120,13 @@ rule call_methylation:
 # TODO: Skip this step, right now it would be useless since I debug so much
 rule calls_to_vcf:
     input:
-        "results/{call_type}/{seq_platform}/{protocol}/calls_{scatteritem}.bcf",
+        "results/{call_type}/{seq_platform}/{sample}/calls_{scatteritem}.bcf",
     output:
-        "results/{call_type}/{seq_platform}/{protocol}/calls_{scatteritem}.vcf",
+        "results/{call_type}/{seq_platform}/{sample}/calls_{scatteritem}.vcf",
     conda:
         "../envs/samtools.yaml"
     log:
-        "logs/varlociraptor/{call_type}/{seq_platform}/{protocol}/calls_to_vcf_{scatteritem}.log",
+        "logs/varlociraptor/{call_type}/{seq_platform}/{sample}/calls_to_vcf_{scatteritem}.log",
     threads: 10
     shell:
         # "touch {output} 2> {log}"
@@ -137,22 +136,22 @@ rule calls_to_vcf:
 rule gather_calls:
     input:
         gather.split_candidates(
-            "results/{{call_type}}/{{seq_platform}}/{{protocol}}/calls_{scatteritem}.vcf"
+            "results/{{call_type}}/{{seq_platform}}/{{sample}}/calls_{scatteritem}.vcf"
         ),
     output:
-        "results/{call_type}/{seq_platform}/{protocol}/result_files/varlo.bed",
+        "results/{call_type}/{seq_platform}/{sample}/result_files/varlo.bed",
     log:
-        "logs/varlociraptor/{call_type}/{seq_platform}/{protocol}/gather_calls.log",
+        "logs/varlociraptor/{call_type}/{seq_platform}/{sample}/gather_calls.log",
     shell:
         "cat {input} > {output} 2> {log}"
 
 
 # rule rename_varlo_output:
 #     input:
-#         "results/{seq_platform}/{protocol}/varlo.vcf",
+#         "results/{seq_platform}/{sample}/varlo.vcf",
 #     output:
-#         "results/{seq_platform}/{protocol}/result_files/varlo.bed",
+#         "results/{seq_platform}/{sample}/result_files/varlo.bed",
 #     log:
-#         "logs/varlociraptor/{seq_platform}/{protocol}/rename_varlo_output.log",
+#         "logs/varlociraptor/{seq_platform}/{sample}/rename_varlo_output.log",
 #     shell:
 #         "mv {input} {output}"

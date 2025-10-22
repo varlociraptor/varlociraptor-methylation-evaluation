@@ -36,5 +36,5 @@ df_merged = reduce(
 )
 
 df_merged.to_parquet(
-    snakemake.output["protocol_df"], engine="pyarrow", compression="snappy"
+    snakemake.output["sample_df"], engine="pyarrow", compression="snappy"
 )

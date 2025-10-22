@@ -30,9 +30,9 @@ ref_tools:
   multi_sample: []
 
 
-protocols: 
+samples: 
   Illumina_pe: [TruSeq_HG002_LAB01, EMSeq_HG002_LAB02, EMSeq_HG002_LAB01, TrueMethylOX_HG002_LAB01, TrueMethylBS_HG002_LAB01, SPLAT_HG002_LAB01, MethylSeq_HG002_LAB01]
-  # Since we only have one sample for PacBio and Nanopore data, we use REP as protocol name 
+  # Since we only have one sample for PacBio and Nanopore data, we use REP as sample name 
   PacBio: [REP]
   Nanopore: [REP]
   multi_sample: [REP]

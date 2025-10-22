@@ -1,4 +1,6 @@
 ###################################### DATA ##################################################
+# bcftools view -r 21:7800000-8000000 resources/minimal/candidates.bcf -Oz -o resources/minimal/candidates_new.bcf
+# samtools view -b     /projects/koesterlab/benchmark-methylation/varlociraptor-methylation-evaluation/resources/PacBio/REP01/pb_rep1/alignment.bam     chr21:7800000-8000000     > /projects/koesterlab/benchmark-methylation/varlociraptor-methylation-evaluation/resources/PacBio/REP01/pb_rep1/alignment_minimal.bam
 
 # Genome information
 sample:
@@ -9,13 +11,9 @@ sample:
 
 # Choose specific chromosome for evaluation
 seq_platforms: 
-  PacBio: 21
-  Illumina_pe: 21
-  Nanopore: 21
-
-# Chrom for simulated reads. Must be given even if we do not want to simulate since it is used in input files. 
-# TODO: Fix this
-# simulated_chrom: 21
+  Illumina_pe: minimal
+  PacBio: minimal
+  # Nanopore: 21
 
 # Define reference tools for comparision against varlociraptor results
 ref_tools:
@@ -25,53 +23,30 @@ ref_tools:
   # Chose from: pb_CpG_tools
   PacBio: [pb_CpG_tools]
   # Chose from: modkit
-  Nanopore: [modkit]
+  # Nanopore: [modkit]
   # This needs to be an empty list
-  multi_sample: []
+  # multi_sample: []
 
 
-protocols: 
-  Illumina_pe: [TruSeq_HG002_LAB01, EMSeq_HG002_LAB02, EMSeq_HG002_LAB01, TrueMethylOX_HG002_LAB01, TrueMethylBS_HG002_LAB01, SPLAT_HG002_LAB01, MethylSeq_HG002_LAB01]
-  # Since we only have one sample for PacBio and Nanopore data, we use REP as protocol name 
-  PacBio: [REP]
-  Nanopore: [REP]
-  multi_sample: [REP]
+samples: 
+  Illumina_pe: [minimal]
+  PacBio: [minimal]
+  # Nanopore: [minimal]
+  # multi_sample: [minimal]
 data:
-  # We use SRA accessions for Illumina data
   Illumina_pe:
-    TruSeq_HG002_LAB01_REP01: [SRR13050995, SRR13050996, SRR13050998]
-    TruSeq_HG002_LAB01_REP02: [SRR13050992, SRR13050993, SRR13050994]
-    # For downloading:  It's called SPLAT_HG002_LAB01_REP01_4 but this makes problems with the compare samples script
-    SPLAT_HG002_LAB01_REP01: [SRR13051055, SRR13051056, SRR13051057, SRR13051058]
-    SPLAT_HG002_LAB01_REP02:  [SRR13051050, SRR13051051, SRR13051052, SRR13051054]
-    MethylSeq_HG002_LAB01_REP01: [SRR13051104, SRR13051105, SRR13051106]
-    MethylSeq_HG002_LAB01_REP02: [SRR13051101, SRR13051102, SRR13051103]
-    EMSeq_HG002_LAB02_REP02: [SRR13051139]
-    EMSeq_HG002_LAB02_REP01: [SRR13051140]
-    EMSeq_HG002_LAB01_REP02: [SRR13051141]
-    EMSeq_HG002_LAB01_REP01: [SRR13051142]
-    TrueMethylOX_HG002_LAB01_REP02: [SRR13051230]
-    TrueMethylOX_HG002_LAB01_REP01: [SRR13051231, SRR13051232]
-    TrueMethylBS_HG002_LAB01_REP02: [SRR13051250, SRR13051251] 
-    TrueMethylBS_HG002_LAB01_REP01: [SRR13051253] 
-  # For PacBio and Nanopore data we use direct download links since there are no SRA accessions. We use dummy names for the replicates since we only have one sample.
+    minimal01: [rep01]
+    minimal02: [rep02]
   PacBio:
-    REP01: [pb_rep1]
-    REP02: [pb_rep2]
-  Nanopore:
-    REP01: [np_rep1]
-    REP02: [np_rep2]
-  multi_sample:
-    REP01: [dummy_rep1]
-    REP02: [dummy_rep2]
+    minimal01: [rep01]
+    minimal02: [rep02]
+  # Nanopore:
+  #   REP01: [minimal_rep1]
+  #   REP02: [minimal_rep2]
+  # multi_sample:
+  #   REP01: [minimal_rep1]
+  #   REP02: [minimal_rep2]
 
-# Download of PacBio data:
-pb_rep1: https://downloads.pacbcloud.com/public/revio/2022Q4/HG002-rep1/analysis/HG002.m84011_220902_175841_s1.GRCh38.bam
-pb_rep2: https://downloads.pacbcloud.com/public/revio/2022Q4/HG002-rep2/analysis/HG002.m84005_220919_232112_s2.GRCh38.bam
-
-# Download of Nanopore data:
-np_rep1: https://42basepairs.com/download/s3/ont-open-data/giab_2025.01/basecalling/hac/HG002/PAW70337/calls.sorted.bam
-np_rep2: https://42basepairs.com/download/s3/ont-open-data/giab_2025.01/basecalling/hac/HG002/PAW71238/calls.sorted.bam
 
 
 ###################################### METH CALLING ##################################################
@@ -79,15 +54,15 @@ np_rep2: https://42basepairs.com/download/s3/ont-open-data/giab_2025.01/basecall
 # Define minimum mapping quality to keep in alignment
 min_mapping_quality: 10
 # Number of scatter gather items (used for parallelization of varlociraptor methylation calling)
-scatter_number: 20
+scatter_number: 1
 # Define FDR alpha levels for varlociraptor methylation filtering
-fdr_alpha: [0.01, 0.05, 0.1, 1.0]
+fdr_alpha: [0.01]
 
 ###################################### PLOTS ##################################################
+
 heatmap_bin_size: 5
 # Choose frome png, svg, html
-plot_type: svg
-
+plot_type: png
 # Define the correlation method for the comparision of the different samples
 # Choose any number from: pearson, spearman, rmse, ccc (concordance correlation coefficient), adjusted_mape
-correlation_methods: [adjusted_mape]
+correlation_methods: [mape]

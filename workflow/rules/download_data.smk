@@ -1,4 +1,4 @@
-ref_gene = config["sample"]
+ref_gene = config.get("sample")
 chromosomes = set(chromosome for chromosome in config["seq_platforms"].values())
 
 
@@ -75,24 +75,24 @@ rule rename_chromosome_in_fasta:
 
 rule get_fastq_pe:
     output:
-        "resources/Illumina_pe/{protocol}/{SRA}/{accession}_1.fastq",
-        "resources/Illumina_pe/{protocol}/{SRA}/{accession}_2.fastq",
+        "resources/Illumina_pe/{sample}/{SRA}/{accession}_1.fastq",
+        "resources/Illumina_pe/{sample}/{SRA}/{accession}_2.fastq",
     log:
-        "logs/data/{protocol}/get_fastq_pe_{SRA}_{accession}.log",
+        "logs/data/{sample}/get_fastq_pe_{SRA}_{accession}.log",
     params:
         extra="--skip-technical",
     threads: 6
     # wildcard_constraints:
-    #     protocol="^(?!simulated_data$).*",
+    #     sample="^(?!simulated_data$).*",
     wrapper:
         "v7.1.0/bio/sra-tools/fasterq-dump"
 
 
 rule get_fastq_se:
     output:
-        "resources/Illumina_se/{protocol}/{SRA}/{accession}.fastq",
+        "resources/Illumina_se/{sample}/{SRA}/{accession}.fastq",
     log:
-        "logs/data/{protocol}/get_fastq_se_{SRA}_{accession}.log",
+        "logs/data/{sample}/get_fastq_se_{SRA}_{accession}.log",
     params:
         extra="--skip-technical",
     threads: 6
@@ -102,28 +102,28 @@ rule get_fastq_se:
 
 rule trim_fastq_pe:
     input:
-        first="resources/Illumina_pe/{protocol}/{SRA}/{accession}_1.fastq",
-        second="resources/Illumina_pe/{protocol}/{SRA}/{accession}_2.fastq",
+        first="resources/Illumina_pe/{sample}/{SRA}/{accession}_1.fastq",
+        second="resources/Illumina_pe/{sample}/{SRA}/{accession}_2.fastq",
     output:
-        first="resources/Illumina_pe/{protocol}/{SRA}/{accession}_1_trimmed.fastq",
-        second="resources/Illumina_pe/{protocol}/{SRA}/{accession}_2_trimmed.fastq",
+        first="resources/Illumina_pe/{sample}/{SRA}/{accession}_1_trimmed.fastq",
+        second="resources/Illumina_pe/{sample}/{SRA}/{accession}_2_trimmed.fastq",
     log:
-        "logs/data/{protocol}/trim_fastq_pe_{SRA}_{accession}.log",
+        "logs/data/{sample}/trim_fastq_pe_{SRA}_{accession}.log",
     conda:
         "../envs/fastp.yaml"
     # wildcard_constraints:
-    #     protocol="^(?!simulated_data$).*",
+    #     sample="^(?!simulated_data$).*",
     shell:
         "fastp --in1 {input.first} --in2 {input.second} --out1 {output.first} --out2 {output.second} --length_required 2 --disable_quality_filtering -z 4 --trim_poly_g --overrepresentation_analysis 2> {log}"
 
 
 rule trim_fastq_se:
     input:
-        first="resources/Illumina_se/{protocol}/{SRA}/{accession}.fastq",
+        first="resources/Illumina_se/{sample}/{SRA}/{accession}.fastq",
     output:
-        first="resources/Illumina_se/{protocol}/{SRA}/{accession}_trimmed.fastq",
+        first="resources/Illumina_se/{sample}/{SRA}/{accession}_trimmed.fastq",
     log:
-        "logs/data/{protocol}/trim_fastq_se_{SRA}_{accession}.log",
+        "logs/data/{sample}/trim_fastq_se_{SRA}_{accession}.log",
     conda:
         "../envs/fastp.yaml"
     shell:
@@ -132,17 +132,16 @@ rule trim_fastq_se:
 
 rule get_pacbio_data:
     output:
-        alignment="resources/PacBio/{protocol}/{SRA}/alignment.bam",
+        alignment="resources/PacBio/{sample}/{SRA}/alignment.bam",
     params:
-        url=lambda wildcards: config[str(wildcards.SRA)],
-        chromosome= "chr" + str(config["seq_platforms"]["PacBio"])
+        url=lambda wildcards: config.get(str(wildcards.SRA)),
+        chromosome="chr" + str(config["seq_platforms"].get("PacBio")),
     log:
-        "logs/data/{protocol}/get_pacbio_data_{SRA}.log",
+        "logs/data/{sample}/get_pacbio_data_{SRA}.log",
     resources:
         mem_mb=4096,
     conda:
         "../envs/samtools.yaml"
-    
     shell:
         "samtools view -b {params.url} {params.chromosome} > {output.alignment}"
         # "../scripts/get_pacbio_data.py"
@@ -150,14 +149,14 @@ rule get_pacbio_data:
 
 # rule get_nanopore_header:
 #     output:
-#         header="resources/Nanopore/{protocol}/{SRA}/header.sam",
+#         header="resources/Nanopore/{sample}/{SRA}/header.sam",
 #     params:
 #
 #         url=lambda wildcards: config[str(wildcards.SRA)],
 #     resources:
 #         mem_mb=4096,
 #     log:
-#         "logs/get_nanopore_header_{protocol}_{SRA}.log",
+#         "logs/get_nanopore_header_{sample}_{SRA}.log",
 #     conda:
 #         "../envs/samtools.yaml"
 #     shell:
@@ -170,14 +169,14 @@ rule get_pacbio_data:
 # # Body runterladen klappt manuell genau mit diesem Befehl, aber in Snakemake schlaegt es fehl...
 # rule get_nanopore_body:
 #     output:
-#         body="resources/Nanopore/{protocol}/{SRA}/body.sam",
+#         body="resources/Nanopore/{sample}/{SRA}/body.sam",
 #     params:
 #
 #         url=lambda wildcards: config[str(wildcards.SRA)],
 #     resources:
 #         mem_mb=4096,
 #     log:
-#         "logs/get_nanopore_body_{protocol}_{SRA}.log",
+#         "logs/get_nanopore_body_{sample}_{SRA}.log",
 #     conda:
 #         "../envs/samtools.yaml"
 #     shell:
@@ -188,18 +187,18 @@ rule get_pacbio_data:
 
 # rule combine_nanopore_data:
 #     input:
-#         header="resources/Nanopore/{protocol}/{SRA}/header.sam",
-#         body="resources/Nanopore/{protocol}/{SRA}/body.sam",
+#         header="resources/Nanopore/{sample}/{SRA}/header.sam",
+#         body="resources/Nanopore/{sample}/{SRA}/body.sam",
 #     output:
-#         comb="resources/Nanopore/{protocol}/{SRA}/alignment.sam",
-#         alignment="resources/Nanopore/{protocol}/{SRA}/alignment.bam",
+#         comb="resources/Nanopore/{sample}/{SRA}/alignment.sam",
+#         alignment="resources/Nanopore/{sample}/{SRA}/alignment.bam",
 #     params:
 #
 #         url=lambda wildcards: config[str(wildcards.SRA)],
 #     resources:
 #         mem_mb=4096,
 #     log:
-#         "logs/combine_nanopore_data_{protocol}_{SRA}.log",
+#         "logs/combine_nanopore_data_{sample}_{SRA}.log",
 #     conda:
 #         "../envs/samtools.yaml"
 #     shell:
@@ -211,13 +210,13 @@ rule get_pacbio_data:
 
 # rule get_nanopore_data:
 #     output:
-#         "resources/Nanopore/{protocol}/{SRA}/alignment.bam",
+#         "resources/Nanopore/{sample}/{SRA}/alignment.bam",
 #     params:
 #         url=lambda wildcards: config[str(wildcards.SRA)],
 #     resources:
 #         mem_mb=4096,
 #     log:
-#         "logs/data/{protocol}/get_nanopore_data_{SRA}.log",
+#         "logs/data/{sample}/get_nanopore_data_{SRA}.log",
 #     conda:
 #         "../envs/samtools.yaml"
 #     shell:
@@ -230,7 +229,7 @@ rule get_pacbio_data:
 
 # rule nanopore_index:
 #     output:
-#         alignment="resources/Nanopore/{protocol}/{SRA}/alignment.bam.bai",
+#         alignment="resources/Nanopore/{sample}/{SRA}/alignment.bam.bai",
 #     params:
 #         url=lambda wildcards: config[str(wildcards.SRA)],
 #     resources:
@@ -238,26 +237,23 @@ rule get_pacbio_data:
 #     conda:
 #         "../envs/samtools.yaml"
 #     log:
-#         "logs/data/{protocol}/nanopore_index_{SRA}.log",
+#         "logs/data/{sample}/nanopore_index_{SRA}.log",
 #     shell:
 #         "samtools view -b {params.url} | samtools index - {output} 2> {log}"
+
 
 # TODO: Does not work for replicate2. You have to download this manually with wget right now
 rule get_nanopore_data:
     output:
-        alignment=        "resources/Nanopore/{protocol}/{SRA}/alignment.bam",
-
+        alignment="resources/Nanopore/{sample}/{SRA}/alignment.bam",
     params:
         url=lambda wildcards: config[str(wildcards.SRA)],
-        chromosome= "chr" + str(config["seq_platforms"]["Nanopore"])
+        chromosome="chr" + str(config["seq_platforms"].get("Nanopore")),
     log:
-        "logs/data/{protocol}/get_nanopore_data_{SRA}.log",
+        "logs/data/{sample}/get_nanopore_data_{SRA}.log",
     resources:
         mem_mb=4096,
     conda:
         "../envs/samtools.yaml"
-    
     shell:
         "samtools view -b {params.url} {params.chromosome} > {output.alignment}"
-
-

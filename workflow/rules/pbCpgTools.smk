@@ -9,10 +9,11 @@ rule pb_CpG_download:
         "../envs/shell_cmds.yaml"
     shell:
         """
-        mkdir -p resources/ref_tools/pb-CpG-tools 2> {log}
-        cd resources/ref_tools/pb-CpG-tools 2> {log}
-        wget https://github.com/PacificBiosciences/pb-CpG-tools/releases/download/v2.3.1/pb-CpG-tools-v2.3.1-x86_64-unknown-linux-gnu.tar.gz 2> {log}
-        tar -xzf pb-CpG-tools-v2.3.1-x86_64-unknown-linux-gnu.tar.gz 2> {log}
+
+        mkdir -p resources/ref_tools/pb-CpG-tools
+        cd resources/ref_tools/pb-CpG-tools
+        wget https://github.com/PacificBiosciences/pb-CpG-tools/releases/download/v2.3.1/pb-CpG-tools-v2.3.1-x86_64-unknown-linux-gnu.tar.gz
+        tar -xzf pb-CpG-tools-v2.3.1-x86_64-unknown-linux-gnu.tar.gz
         """
 
 
@@ -20,30 +21,30 @@ rule pb_CpG_compute_methylation:
     input:
         runner="resources/ref_tools/pb-CpG-tools/pb-CpG-tools-v2.3.1-x86_64-unknown-linux-gnu/bin/aligned_bam_to_cpg_scores",
         model="resources/ref_tools/pb-CpG-tools/pb-CpG-tools-v2.3.1-x86_64-unknown-linux-gnu/models/pileup_calling_model.v1.tflite",
-        alignment="resources/PacBio/{protocol}/alignment_focused_downsampled_dedup_renamed.bam",
-        alignment_index="resources/PacBio/{protocol}/alignment_focused_downsampled_dedup_renamed.bam.bai",
+        alignment="resources/PacBio/{sample}/alignment_focused_downsampled_dedup_renamed.bam",
+        alignment_index="resources/PacBio/{sample}/alignment_focused_downsampled_dedup_renamed.bam.bai",
         genome="resources/genome.fasta",
     output:
-        "results/single_sample/PacBio/{protocol}/result_files/alignments_CpG.combined.bed",
+        "results/single_sample/PacBio/called/{sample}/result_files/alignments_CpG.combined.bed",
     log:
-        "logs/pb_CpG/{protocol}/compute_methylation.log",
+        "logs/pb_CpG/{sample}/compute_methylation.log",
     params:
         prefix=lambda wildcards, input, output: os.path.splitext(output[0])[0].replace(
             ".combined", ""
         ),
     threads: 8
     benchmark:
-        "benchmarks/PacBio/pb_CpG_tools/{protocol}.bwa.benchmark.txt"
+        "benchmarks/PacBio/pb_CpG_tools/{sample}.bwa.benchmark.txt"
     shell:
         "{input.runner} --bam {input.alignment} --output-prefix {params.prefix} --model {input.model} --threads {threads} 2> {log}"
 
 
 rule pb_CpG_rename_output:
     input:
-        "results/single_sample/PacBio/{protocol}/result_files/alignments_CpG.combined.bed",
+        "results/single_sample/PacBio/called/{sample}/result_files/alignments_CpG.combined.bed",
     output:
-        "results/single_sample/PacBio/{protocol}/result_files/pb_CpG_tools.bed",
+        "results/single_sample/PacBio/called/{sample}/result_files/pb_CpG_tools.bed",
     log:
-        "logs/pb_CpG/{protocol}/rename_output.log",
+        "logs/pb_CpG/{sample}/rename_output.log",
     shell:
         "mv {input} {output} 2> {log}"
