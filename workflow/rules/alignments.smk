@@ -134,7 +134,7 @@ rule aligned_reads_focus_on_chromosome:
         ),
     threads: 1
     shell:
-        "samtools view -b -o {output.bam} {input} 21 2> {log}"
+        "samtools view -b -o {output.bam} {input} chr21 2> {log}"
 
 
 rule aligned_reads_filter_on_mapq:

@@ -13,7 +13,7 @@ sample:
 seq_platforms: 
   Illumina_pe: minimal
   PacBio: minimal
-  # Nanopore: 21
+  Nanopore: minimal
 
 # Define reference tools for comparision against varlociraptor results
 ref_tools:
@@ -23,16 +23,14 @@ ref_tools:
   # Chose from: pb_CpG_tools
   PacBio: [pb_CpG_tools]
   # Chose from: modkit
-  # Nanopore: [modkit]
+  Nanopore: [modkit]
   # This needs to be an empty list
-  # multi_sample: []
 
 
 samples: 
   Illumina_pe: [minimal]
   PacBio: [minimal]
-  # Nanopore: [minimal]
-  # multi_sample: [minimal]
+  Nanopore: [minimal]
 data:
   Illumina_pe:
     minimal01: [rep01]
@@ -40,12 +38,10 @@ data:
   PacBio:
     minimal01: [rep01]
     minimal02: [rep02]
-  # Nanopore:
-  #   REP01: [minimal_rep1]
-  #   REP02: [minimal_rep2]
-  # multi_sample:
-  #   REP01: [minimal_rep1]
-  #   REP02: [minimal_rep2]
+  Nanopore:
+    minimal01: [rep01]
+    minimal02: [rep02]
+
 
 
 
@@ -56,7 +52,7 @@ min_mapping_quality: 10
 # Number of scatter gather items (used for parallelization of varlociraptor methylation calling)
 scatter_number: 1
 # Define FDR alpha levels for varlociraptor methylation filtering
-fdr_alpha: [0.01]
+fdr_alpha: [0.01, 1.0]
 
 ###################################### PLOTS ##################################################
 

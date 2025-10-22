@@ -2,7 +2,7 @@ rule compute_pandas_df:
     input:
         tool="results/{call_type}/{seq_platform}/called/{sample}/result_files/{method}.bed",
     output:
-        "results/{call_type}/{seq_platform}/{sample}/result_files/{method}.parquet",
+        "results/{call_type}/{seq_platform}/called/{sample}/result_files/{method}.parquet",
     conda:
         "../envs/plot.yaml"
     wildcard_constraints:
@@ -35,7 +35,7 @@ rule compute_varlo_df:
 rule common_tool_df:
     input:
         tools=lambda wildcards: expand(
-            "results/{{call_type}}/{{seq_platform}}/{{sample}}/result_files/{method}.parquet",
+            "results/{{call_type}}/{{seq_platform}}/called/{{sample}}/result_files/{method}.parquet",
             method=config["ref_tools"].get(wildcards.seq_platform, []),
         ),
         varlo="results/{call_type}/{seq_platform}/{fdr}/{sample}/result_files/varlo.parquet",

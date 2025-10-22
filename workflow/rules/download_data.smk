@@ -247,7 +247,7 @@ rule get_nanopore_data:
     output:
         alignment="resources/Nanopore/{sample}/{SRA}/alignment.bam",
     params:
-        url=lambda wildcards: config[str(wildcards.SRA)],
+        url=lambda wildcards: config.get(str(wildcards.SRA)),
         chromosome="chr" + str(config["seq_platforms"].get("Nanopore")),
     log:
         "logs/data/{sample}/get_nanopore_data_{SRA}.log",

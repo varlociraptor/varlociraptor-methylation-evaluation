@@ -2,7 +2,9 @@ results/**
 results_safe/**
 results_ratio/**
 resources/**
-!resources/scenarios/scenarios/**
+!resources/
+!resources/**/
+!resources/scenarios/**
 
 !resources/Illumina_pe/minimal01/rep01/alignment.bam
 !resources/Illumina_pe/minimal02/rep02/alignment.bam
