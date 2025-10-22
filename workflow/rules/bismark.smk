@@ -248,7 +248,7 @@ rule bismark_focus_result_on_chromosome:
     input:
         "results/Illumina_pe/{protocol}/result_files/CpG.bismark.cov",
     output:
-        "results/Illumina_pe/{protocol}/result_files/bismark.bed",
+        "results/single_sample/Illumina_pe/{protocol}/result_files/bismark.bed",
     params:
         chromosome=lambda wildcards: chromosome_by_seq_platform["Illumina_pe"],
     log:

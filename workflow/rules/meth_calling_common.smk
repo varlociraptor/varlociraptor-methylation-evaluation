@@ -24,11 +24,11 @@ rule call_methylation_together_np_trueOX:
         nanopore="results/Nanopore/{replicate}/normal_{scatteritem}.bcf",
         scenario="resources/scenario_common_nanopore_trueOX.yaml",
     output:
-        "results/common_calls/np_trueOX/{replicate}/calls_{scatteritem}.bcf",
+        "results/multi_sample/np_trueOX/{replicate}/calls_{scatteritem}.bcf",
     log:
-        "logs/varlociraptor/common_calls/np_trueOX/{replicate}/call_methylation_{scatteritem}.log",
+        "logs/varlociraptor/multi_sample/np_trueOX/{replicate}/call_methylation_{scatteritem}.log",
     benchmark:
-        "benchmarks/common_calls/np_trueOX/{replicate}_{scatteritem}.bwa.benchmark.txt"
+        "benchmarks/multi_sample/np_trueOX/{replicate}_{scatteritem}.bwa.benchmark.txt"
     conda:
         "../envs/varlociraptor.yaml"
     shell:
@@ -41,11 +41,11 @@ rule call_methylation_together_pb_trueOX:
         pacbio="results/PacBio/{replicate}/normal_{scatteritem}.bcf",
         scenario="resources/scenario_common_pacbio_trueOX.yaml",
     output:
-        "results/common_calls/pb_trueOX/{replicate}/calls_{scatteritem}.bcf",
+        "results/multi_sample/pb_trueOX/{replicate}/calls_{scatteritem}.bcf",
     log:
-        "logs/varlociraptor/common_calls/pb_trueOX/{replicate}/call_methylation_{scatteritem}.log",
+        "logs/varlociraptor/multi_sample/pb_trueOX/{replicate}/call_methylation_{scatteritem}.log",
     benchmark:
-        "benchmarks/common_calls/pb_trueOX/{replicate}_{scatteritem}.bwa.benchmark.txt"
+        "benchmarks/multi_sample/pb_trueOX/{replicate}_{scatteritem}.bwa.benchmark.txt"
     conda:
         "../envs/varlociraptor.yaml"
     shell:

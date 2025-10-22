@@ -138,7 +138,7 @@ fdr_alpha: [0.01, 0.05, 0.1, 1.0]
 ###################################### PLOTS ##################################################
 heatmap_bin_size: 5
 # Choose frome png, svg, html
-plot_type: png
+plot_type: svg
 # Define threshhold for false positive cutoff
 prob_pres_threshhold: 0.95
 prob_absent_threshhold: 0.95

@@ -98,7 +98,7 @@ rule bissnp_rename_output:
     input:
         "results/Illumina_pe/{protocol}/result_files/cpg.raw.CG.bedgraph",
     output:
-        "results/Illumina_pe/{protocol}/result_files/bisSNP.bed",
+        "results/single_sample/Illumina_pe/{protocol}/result_files/bisSNP.bed",
     log:
         "logs/bissnp/{protocol}/rename_output.log",
     shell:

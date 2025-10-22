@@ -12,7 +12,7 @@ rule compute_pandas_df:
         "../envs/plot.yaml"
     wildcard_constraints:
         protocol="(?!simulated_data).*",
-        method="(?!varlo).*",
+        method="(?!varlo|protocol_df).*",
     log:
         "logs/plots/{call_type}/{seq_platform}/{protocol}/compute_pandas_df_{method}.log",
     params:
@@ -200,6 +200,7 @@ rule common_tool_df:
         varlo="results/{call_type}/{seq_platform}/{fdr}/{protocol}/result_files/varlo.parquet",
     output:
         protocol_df="results/{call_type}/{seq_platform}/{fdr}/{protocol}/result_files/protocol_df.parquet",
+
     conda:
         "../envs/plot.yaml"
     log:
@@ -318,7 +319,8 @@ rule plot_runtime_comparison:
     input:
         benchmarks="benchmarks"
     output:
-        "results/runtime_comparison.html",
+        tools="results/runtime_comparison_tools.{plot_type}",
+        varlo="results/runtime_comparison_varlo.{plot_type}",
         # memory="results/memory_comparison.html"
     conda:
         "../envs/plot.yaml"

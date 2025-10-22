@@ -106,22 +106,27 @@ runtime_varlo_chart = boxplot_with_points(
     title="Runtime of Varlociraptor steps"
 )
 
-memory_varlo_chart = boxplot_with_points(
-    df_compare_varlo,
-    x="platform_tool", y="max_rss_gb", color="platform",
-    x_title="Platform - Step", y_title="Max RSS (GB)",
-    title="Memory usage of Varlociraptor steps"
-)
+# memory_varlo_chart = boxplot_with_points(
+#     df_compare_varlo,
+#     x="platform_tool", y="max_rss_gb", color="platform",
+#     x_title="Platform - Step", y_title="Max RSS (GB)",
+#     title="Memory usage of Varlociraptor steps"
+# )
 
 # Combine charts
-chart = alt.vconcat(
-    alt.hconcat(runtime_chart, memory_chart),
-    alt.hconcat(runtime_varlo_chart, memory_varlo_chart)
-).resolve_scale(color="independent")
+tool_chart = alt.hconcat(runtime_chart, memory_chart)
 
 # Save
-chart.save(
-    snakemake.output[0],
+tool_chart.save(
+    snakemake.output["tools"],
     embed_options={"actions": False},
     inline=False,
 )
+
+
+runtime_varlo_chart.save(
+    snakemake.output["varlo"],
+    embed_options={"actions": False},
+    inline=False,
+)
+

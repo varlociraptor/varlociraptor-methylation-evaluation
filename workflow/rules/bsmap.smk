@@ -70,7 +70,7 @@ rule bsmap_rename_output:
     input:
         "results/Illumina_pe/{protocol}/result_files/methylation_ratios.bed",
     output:
-        "results/Illumina_pe/{protocol}/result_files/bsMap.bed",
+        "results/single_sample/Illumina_pe/{protocol}/result_files/bsMap.bed",
     log:
         "logs/bsmap/{protocol}/rename_output.log",
     shell:
