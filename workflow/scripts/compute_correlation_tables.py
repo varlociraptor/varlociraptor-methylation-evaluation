@@ -151,7 +151,7 @@ def normalize_sample_name(replicate_name: str) -> str:
     - PacBio/Nanopore: normalize trailing replicate numbers
     """
     name = re.sub(r"_REP\d+$", "", replicate_name)  # Illumina
-    name = re.sub(r"REP\d+$", "REP", name)  # common_calls
+    name = re.sub(r"REP\d+$", "REP", name)  # multi_sample
     return name or replicate_name
 
 
@@ -189,12 +189,7 @@ for sample_file in snakemake.input["samples"]:
 # Save intermediate tables
 with pd.HDFStore(snakemake.output["table"]) as store:
     for key, df in replicate_dfs.items():
-        
-    
-
-
         store[key] = df
-
 
 
 # # Calculate correlations across replicates
@@ -223,7 +218,6 @@ with pd.HDFStore(snakemake.output["table"]) as store:
 # )
 
 # full_chart = alt.vconcat(charts_meth_callers, charts_replicates)
-
 # # Save final chart
 # full_chart.save(
 #     snakemake.output["plot"],

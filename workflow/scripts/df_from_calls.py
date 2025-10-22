@@ -165,22 +165,38 @@ def read_tool_file(filepath, file_name):
 
                 # try:
                 alpha = float(snakemake.params["alpha"])
+
                 # Convert Phred scores to probabilities
                 def phred_to_prob(score):
                     return 10 ** (-float(score) / 10)
 
                 def is_missing(value):
                     return value is None or value == "."
-                # This is for common_calls
+
+                # This is for multi_sample
                 if is_missing(info_dict.get("PROB_PRESENT")):
-                    if is_missing(info_dict.get("PROB_HIGH")) or is_missing(info_dict.get("PROB_LOW")):
-                        print(f"Probability information missing for {chrom}:{position}", file=sys.stderr)
+                    if is_missing(info_dict.get("PROB_HIGH")) or is_missing(
+                        info_dict.get("PROB_LOW")
+                    ):
+                        print(
+                            f"Probability information missing for {chrom}:{position}",
+                            file=sys.stderr,
+                        )
                         continue
-                    prob_present = phred_to_prob(info_dict["PROB_HIGH"]) + phred_to_prob(info_dict["PROB_LOW"])
+                    prob_present = phred_to_prob(
+                        info_dict["PROB_HIGH"]
+                    ) + phred_to_prob(info_dict["PROB_LOW"])
                 # This is for varlociraptor methylation calls on single events
                 else:
-                    if is_missing(info_dict.get("PROB_PRESENT")) or is_missing(info_dict.get("PROB_ABSENT")) or is_missing(info_dict.get("PROB_ARTIFACT")):
-                        print(f"Probability information missing for {chrom}:{position}", file=sys.stderr)
+                    if (
+                        is_missing(info_dict.get("PROB_PRESENT"))
+                        or is_missing(info_dict.get("PROB_ABSENT"))
+                        or is_missing(info_dict.get("PROB_ARTIFACT"))
+                    ):
+                        print(
+                            f"Probability information missing for {chrom}:{position}",
+                            file=sys.stderr,
+                        )
                         continue
                     prob_present = phred_to_prob(info_dict["PROB_PRESENT"])
 

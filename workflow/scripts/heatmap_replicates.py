@@ -200,7 +200,7 @@ def compute_replicate_counts(df_dict, bin_size, relative=False):
         print(agg_cdf.head(), file=sys.stderr)
         cdf_dfs[meth_caller] = agg_cdf[["dist", "cdf", "meth_caller"]]
     print(mapes, file=sys.stderr)
-    
+
     return meth_caller_dfs, cdf_dfs, mapes
 
 

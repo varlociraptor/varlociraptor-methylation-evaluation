@@ -207,7 +207,7 @@ rule common_tool_df:
     params:
         plot_type=config["plot_type"],
     wildcard_constraints:
-        call_type="(?!common_calls).*",
+        call_type="(?!multi_sample).*",
     resources:
         mem_mb=16000,
     script:
@@ -243,7 +243,7 @@ rule compute_correlation_tables:
     log:
         "logs/plots/{call_type}/{seq_platform}/{fdr}/correlation_tables.log",
     wildcard_constraints:
-        call_type="(?!common_calls).*",
+        call_type="(?!multi_sample).*",
     params:
         # plot_type=config["plot_type"],
         meth_callers=lambda wildcards: config["ref_tools"].get(wildcards.seq_platform, []) + ["varlo"],
@@ -316,10 +316,11 @@ rule heatmap_illumina_protocols:
 
 rule plot_runtime_comparison:
     input:
-        "benchmarks"
+        benchmarks="benchmarks"
     output:
-        "runtime_comparison.html"
+        "results/runtime_comparison.html",
+        # memory="results/memory_comparison.html"
     conda:
-        "envs/plot.yaml"
-    shell:
-        "../scripts/plot_runtime_comparison.py"
+        "../envs/plot.yaml"
+    script:
+        "../scripts/plot_runtime_comparisons.py"

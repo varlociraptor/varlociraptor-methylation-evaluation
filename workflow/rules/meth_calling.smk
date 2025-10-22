@@ -95,7 +95,7 @@ rule call_methylation:
     conda:
         "../envs/varlociraptor.yaml"
     wildcard_constraints:
-        seq_platform="(?!common_calls).*",
+        seq_platform="(?!multi_sample).*",
     shell:
         "{input.varlo} call variants generic --scenario {input.scenario} --obs normal={input.preprocess_obs} > {output} 2> {log}"
 
