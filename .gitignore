@@ -2,8 +2,6 @@ results/**
 results_safe/**
 results_ratio/**
 resources/**
-!resources/
-!resources/**/
 !resources/scenarios/**
 
 # !resources/Illumina_pe/minimal01/rep01/alignment.bam
@@ -21,4 +19,4 @@ local/**
 report.zip
 benchmarks/**
 .vscode/**
-report**
+report/**
