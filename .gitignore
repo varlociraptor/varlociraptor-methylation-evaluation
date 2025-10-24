@@ -20,3 +20,5 @@ logs/**
 local/**
 report.zip
 benchmarks/**
+.vscode/**
+report**
