@@ -2,6 +2,7 @@ results/**
 results_safe/**
 results_ratio/**
 resources/**
+!resources/scenarios
 !resources/scenarios/**
 
 # !resources/Illumina_pe/minimal01/rep01/alignment.bam
