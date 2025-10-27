@@ -9,9 +9,9 @@ sample:
 
 # Choose specific chromosome for evaluation
 seq_platforms: 
-  PacBio: 21
+  # PacBio: 21
   Illumina_pe: 21
-  Nanopore: 21
+  # Nanopore: 21
 
 # Chrom for simulated reads. Must be given even if we do not want to simulate since it is used in input files. 
 # TODO: Fix this
@@ -20,40 +20,41 @@ seq_platforms:
 # Define reference tools for comparision against varlociraptor results
 ref_tools:
   # Chose from: bismark, bisSNP, methylDackel, bsMap
-  # Illumina_pe: [bismark, bsMap, methylDackel, bisSNP]
-  Illumina_pe: [methylDackel]
+  Illumina_pe: [bismark, bsMap, methylDackel, bisSNP]
+  # Illumina_pe: [methylDackel]
   # Chose from: pb_CpG_tools
-  PacBio: [pb_CpG_tools]
+  # PacBio: [pb_CpG_tools]
   # Chose from: modkit
-  Nanopore: [modkit]
+  # Nanopore: [modkit]
   # This needs to be an empty list
-  multi_sample: []
+  # multi_sample: []
 
 
 samples: 
-  Illumina_pe: [TruSeq_HG002_LAB01, EMSeq_HG002_LAB02, EMSeq_HG002_LAB01, TrueMethylOX_HG002_LAB01, TrueMethylBS_HG002_LAB01, SPLAT_HG002_LAB01, MethylSeq_HG002_LAB01]
+  Illumina_pe: [EMSeq_HG002_LAB01]
+  # Illumina_pe: [TruSeq_HG002_LAB01, EMSeq_HG002_LAB02, EMSeq_HG002_LAB01, TrueMethylOX_HG002_LAB01, TrueMethylBS_HG002_LAB01, SPLAT_HG002_LAB01, MethylSeq_HG002_LAB01]
   # Since we only have one sample for PacBio and Nanopore data, we use REP as sample name 
-  PacBio: [REP]
-  Nanopore: [REP]
-  multi_sample: [REP]
+  # PacBio: [REP]
+  # Nanopore: [REP]
+  # multi_sample: [REP]
 data:
   # We use SRA accessions for Illumina data
   Illumina_pe:
-    TruSeq_HG002_LAB01_REP01: [SRR13050995, SRR13050996, SRR13050998]
-    TruSeq_HG002_LAB01_REP02: [SRR13050992, SRR13050993, SRR13050994]
-    # For downloading:  It's called SPLAT_HG002_LAB01_REP01_4 but this makes problems with the compare samples script
-    SPLAT_HG002_LAB01_REP01: [SRR13051055, SRR13051056, SRR13051057, SRR13051058]
-    SPLAT_HG002_LAB01_REP02:  [SRR13051050, SRR13051051, SRR13051052, SRR13051054]
-    MethylSeq_HG002_LAB01_REP01: [SRR13051104, SRR13051105, SRR13051106]
-    MethylSeq_HG002_LAB01_REP02: [SRR13051101, SRR13051102, SRR13051103]
-    EMSeq_HG002_LAB02_REP02: [SRR13051139]
-    EMSeq_HG002_LAB02_REP01: [SRR13051140]
+    # TruSeq_HG002_LAB01_REP01: [SRR13050995, SRR13050996, SRR13050998]
+    # TruSeq_HG002_LAB01_REP02: [SRR13050992, SRR13050993, SRR13050994]
+    # # For downloading:  It's called SPLAT_HG002_LAB01_REP01_4 but this makes problems with the compare samples script
+    # SPLAT_HG002_LAB01_REP01: [SRR13051055, SRR13051056, SRR13051057, SRR13051058]
+    # SPLAT_HG002_LAB01_REP02:  [SRR13051050, SRR13051051, SRR13051052, SRR13051054]
+    # MethylSeq_HG002_LAB01_REP01: [SRR13051104, SRR13051105, SRR13051106]
+    # MethylSeq_HG002_LAB01_REP02: [SRR13051101, SRR13051102, SRR13051103]
+    # EMSeq_HG002_LAB02_REP02: [SRR13051139]
+    # EMSeq_HG002_LAB02_REP01: [SRR13051140]
     EMSeq_HG002_LAB01_REP02: [SRR13051141]
     EMSeq_HG002_LAB01_REP01: [SRR13051142]
-    TrueMethylOX_HG002_LAB01_REP02: [SRR13051230]
-    TrueMethylOX_HG002_LAB01_REP01: [SRR13051231, SRR13051232]
-    TrueMethylBS_HG002_LAB01_REP02: [SRR13051250, SRR13051251] 
-    TrueMethylBS_HG002_LAB01_REP01: [SRR13051253] 
+    # TrueMethylOX_HG002_LAB01_REP02: [SRR13051230]
+    # TrueMethylOX_HG002_LAB01_REP01: [SRR13051231, SRR13051232]
+    # TrueMethylBS_HG002_LAB01_REP02: [SRR13051250, SRR13051251] 
+    # TrueMethylBS_HG002_LAB01_REP01: [SRR13051253] 
   # For PacBio and Nanopore data we use direct download links since there are no SRA accessions. We use dummy names for the replicates since we only have one sample.
   PacBio:
     REP01: [pb_rep1]
