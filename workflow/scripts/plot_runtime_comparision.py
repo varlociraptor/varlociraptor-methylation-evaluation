@@ -3,13 +3,13 @@ import re
 import pandas as pd
 import altair as alt
 
-# Collect benchmark results and create summary plots comparing runtime and memory usage.
+sys.stderr = open(snakemake.log[0], "w")
 
 
 def boxplot_with_points(df, x, y, color, x_title, y_title, title):
     """Simple reusable Altair boxplot with overlaid points."""
     base = alt.Chart(df).encode(
-        x=alt.X(f"{x}:N", title=x_title),
+        x=alt.X(f"{x}:N", title=x_title, axis=alt.Axis(labelExpr='split(datum.value, " - ")[1]')),
         y=alt.Y(f"{y}:Q", title=y_title, scale=alt.Scale(type="log")),
         color=f"{color}:N",
     )
@@ -72,7 +72,6 @@ df_compare_varlo = df_summary.query(
 )
 
 # Print summary table for debugging/logging
-print(df_compare_tools.to_string())
 
 # Create runtime and memory plots for all tools
 runtime_chart = boxplot_with_points(
@@ -80,7 +79,7 @@ runtime_chart = boxplot_with_points(
     x="platform_tool",
     y="minutes",
     color="platform",
-    x_title="Platform - Tool",
+    x_title="Tool",
     y_title="Runtime (min)",
     title="Runtime of methylation calling tools",
 )

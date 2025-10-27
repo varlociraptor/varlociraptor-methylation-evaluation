@@ -163,5 +163,7 @@ rule plot_runtime_comparison:
         # memory="results/memory_comparison.html"
     conda:
         "../envs/plot.yaml"
+    log:
+        "logs/plots/plot_runtime_comparision_{plot_type}.log",
     script:
-        "../scripts/plot_runtime_comparisons.py"
+        "../scripts/plot_runtime_comparision.py"

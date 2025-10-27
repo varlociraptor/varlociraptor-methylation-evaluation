@@ -90,7 +90,7 @@ rule call_methylation:
     log:
         "logs/varlociraptor/{seq_platform}/called/{sample}/call_methylation_{scatteritem}.log",
     benchmark:
-        "benchmarks/{seq_platform}/calling/single_sample/{sample}_{scatteritem}.bwa.benchmark.txt"
+        "benchmarks/{seq_platform}/calling/{sample}_{scatteritem}.bwa.benchmark.txt"
     conda:
         "../envs/varlociraptor.yaml"
     wildcard_constraints:
