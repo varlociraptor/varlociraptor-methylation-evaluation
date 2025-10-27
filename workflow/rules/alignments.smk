@@ -1,5 +1,3 @@
-# TODO: Change chromosome from hardcoded 21 to also work with other chromosomes and the minimal config
-
 # rule bwameth_index_genome:
 #     input:
 #         "resources/{genome}.fasta",
@@ -134,7 +132,7 @@ rule aligned_reads_focus_on_chromosome:
         ),
     threads: 1
     shell:
-        "samtools view -b -o {output.bam} {input} chr21 2> {log}"
+        "samtools view -b -o {output.bam} {input} {params.chromosome} 2> {log}"
 
 
 rule aligned_reads_filter_on_mapq:
@@ -259,7 +257,7 @@ rule aligned_reads_candidates_region:
 
         start=$(bcftools query -f '%POS\n' {input.candidate} | head -n1)
         end=$(bcftools query -f '%POS\n' {input.candidate} | tail -n1)
-        samtools view -b {input.alignment} "21:$start-$end" > {output}
+        samtools view -b {input.alignment} "{params.chromosome}:$start-$end" > {output}
 
         if [ $(samtools view -c {output}) -eq 0 ]; then
             samtools view -H {input.alignment} > temp.sam

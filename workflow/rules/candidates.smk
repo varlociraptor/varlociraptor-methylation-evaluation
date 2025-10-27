@@ -9,7 +9,7 @@ rule find_candidates:
     conda:
         "../envs/varlociraptor.yaml"
     shell:
-        "{input.varlo} methylation-candidates {input.fasta} {output} 2> {log}"
+        "{input.varlo} methylation-candidates --motifs CG {input.fasta} {output} 2> {log}"
 
 
 rule split_candidates:
