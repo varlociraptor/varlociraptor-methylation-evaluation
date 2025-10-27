@@ -37,6 +37,25 @@ rule bismark_prepare_genome:
         """
 
 
+rule bismark_copy_simulated_fastqs:
+    input:
+        "resources/Illumina_pe/simulated_data_{REP}/chromosome_J02459_f1.fastq",
+        "resources/Illumina_pe/simulated_data_{REP}/chromosome_J02459_f2.fastq",
+    output:
+        "resources/Illumina_pe/simulated_data_{REP}/{SRA}/{SRA}_1_trimmed.fastq",
+        "resources/Illumina_pe/simulated_data_{REP}/{SRA}/{SRA}_2_trimmed.fastq",
+    conda:
+        "../envs/bismark.yaml"
+    log:
+        "logs/bismark/copy_simulated_fastqs_{SRA}_{REP}.log",
+    shell:
+        """
+        mkdir -p $(dirname {output[0]}) 2> {log}
+        cp {input[0]} {output[0]} 2> {log}
+        cp {input[1]} {output[1]} 2> {log}
+        """
+
+
 rule bismark_align:
     input:
         bisulfite_folder="resources/ref_tools/bismark/Bisulfite_Genome",
@@ -45,8 +64,8 @@ rule bismark_align:
             "resources/ref_tools/bismark/chromosome_{chrom}.fasta",
             chrom=config["seq_platforms"].get("Illumina_pe"),
         ),
-        reads1="resources/Illumina_pe/{sample, [^(?!simulated_data$)]}/{SRA}/{SRA}_1_trimmed.fastq",
-        reads2="resources/Illumina_pe/{sample, [^(?!simulated_data$)]}/{SRA}/{SRA}_2_trimmed.fastq",
+        reads1="resources/Illumina_pe/called/{sample}/{SRA}/{SRA}_1_trimmed.fastq",
+        reads2="resources/Illumina_pe/called/{sample}/{SRA}/{SRA}_2_trimmed.fastq",
     output:
         "resources/ref_tools/bismark/alignment/{sample}/{SRA}/{SRA}_1_trimmed_bismark_bt2_pe.bam",
     conda:
@@ -205,7 +224,7 @@ rule bismark_extract_results:
     input:
         "resources/ref_tools/bismark/alignment/{sample}/alignment_bismark_sorted.bam",
     output:
-        "results/Illumina_pe/{sample}/result_files/CpG_context_alignment_bismark_sorted.txt",
+        "results/single_sample/Illumina_pe/called/{sample}/result_files/CpG_context_alignment_bismark_sorted.txt",
     conda:
         "../envs/bismark.yaml"
     log:
@@ -219,10 +238,10 @@ rule bismark_extract_results:
 
 rule bismark_to_bedGraph:
     input:
-        "results/Illumina_pe/{sample}/result_files/CpG_context_alignment_bismark_sorted.txt",
+        "results/single_sample/Illumina_pe/called/{sample}/result_files/CpG_context_alignment_bismark_sorted.txt",
     output:
-        bedGraph="results/Illumina_pe/{sample}/result_files/CpG.bedGraph.gz",
-        cov="results/Illumina_pe/{sample}/result_files/CpG.bismark.cov.gz",
+        bedGraph="results/single_sample/Illumina_pe/called/{sample}/result_files/CpG.bedGraph.gz",
+        cov="results/single_sample/Illumina_pe/called/{sample}/result_files/CpG.bismark.cov.gz",
     log:
         "logs/bismark/{sample}/to_bedGraph.log",
     wrapper:
@@ -231,9 +250,9 @@ rule bismark_to_bedGraph:
 
 rule bismark_unzip_results:
     input:
-        "results/Illumina_pe/{sample}/result_files/CpG.bismark.cov.gz",
+        "results/single_sample/Illumina_pe/called/{sample}/result_files/CpG.bismark.cov.gz",
     output:
-        "results/Illumina_pe/{sample}/result_files/CpG.bismark.cov",
+        "results/single_sample/Illumina_pe/called/{sample}/result_files/CpG.bismark.cov",
     conda:
         "../envs/bismark.yaml"
     log:
@@ -246,7 +265,7 @@ rule bismark_unzip_results:
 
 rule bismark_focus_result_on_chromosome:
     input:
-        "results/Illumina_pe/{sample}/result_files/CpG.bismark.cov",
+        "results/single_sample/Illumina_pe/called/{sample}/result_files/CpG.bismark.cov",
     output:
         "results/single_sample/Illumina_pe/called/{sample}/result_files/bismark.bed",
     params:

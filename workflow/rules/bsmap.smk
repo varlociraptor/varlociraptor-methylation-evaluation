@@ -5,13 +5,12 @@ rule bsmap_download:
         "resources/ref_tools/bsMap/methratio.py",
     log:
         "logs/bsmap/download.log",
-    conda:
-        "../envs/shell_cmds.yaml"
     shell:
         """
-        mkdir -p mkdir -p $(dirname {output}) 2> {log}
-        cd $(dirname {output}) 2> {log}
-        wget https://raw.githubusercontent.com/zyndagj/BSMAPz/master/methratio.py 2> {log}
+        mkdir -p $(dirname {output})
+        mkdir -p logs/bsmap
+        cd $(dirname {output})
+        wget https://raw.githubusercontent.com/zyndagj/BSMAPz/master/methratio.py 
         """
 
 
@@ -28,7 +27,7 @@ rule bsmap_compute_meth:
         alignment_index="resources/Illumina_pe/{sample}/alignment_focused_downsampled_dedup_renamed.bam.bai",
     output:
         # alignment_renamed=temp("bsmap.bam"),
-        out="results/Illumina_pe/{sample}/result_files/out.sam",
+        temp("results/single_sample/Illumina_pe/called/{sample}/result_files/out.sam"),
     conda:
         "../envs/bsmap.yaml"
     log:
@@ -38,7 +37,8 @@ rule bsmap_compute_meth:
         """
         cp {input.alignment} temp.bam 2> {log}
         bsmap -a temp.bam -b temp.bam -d {input.genome} -o out.sam -p {threads} -w 100  -v 0.07 -m 50 -x 300
-        mv out.sam $(dirname {output.out}) 2> {log}
+        mv out.sam $(dirname {output}) 2> {log}
+        rm temp.bam 2> {log}
         """
 
 
@@ -52,10 +52,10 @@ rule bsmap_extract_meth:
             "resources/chromosome_{chrom}.fasta.fai",
             chrom=config["seq_platforms"].get("Illumina_pe"),
         ),
-        bsmap_sam="results/Illumina_pe/{sample}/result_files/out.sam",
+        bsmap_sam="results/single_sample/Illumina_pe/called/{sample}/result_files/out.sam",
         meth_extractor="resources/ref_tools/bsMap/methratio.py",
     output:
-        "results/Illumina_pe/{sample}/result_files/methylation_ratios.bed",
+        "results/single_sample/Illumina_pe/{sample}/result_files/methylation_ratios.bed",
     conda:
         "../envs/bsmap.yaml"
     log:
@@ -68,7 +68,7 @@ rule bsmap_extract_meth:
 
 rule bsmap_rename_output:
     input:
-        "results/Illumina_pe/{sample}/result_files/methylation_ratios.bed",
+        "results/single_sample/Illumina_pe/{sample}/result_files/methylation_ratios.bed",
     output:
         "results/single_sample/Illumina_pe/called/{sample}/result_files/bsMap.bed",
     log:

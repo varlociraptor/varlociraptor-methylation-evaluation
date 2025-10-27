@@ -10,7 +10,8 @@ sample:
 # Choose specific chromosome for evaluation
 seq_platforms: 
   # PacBio: 21
-  Illumina_pe: 21
+  # Illumina_pe: 21
+  Illumina_pe: J02459
   # Nanopore: 21
 
 # Chrom for simulated reads. Must be given even if we do not want to simulate since it is used in input files. 
@@ -20,8 +21,8 @@ seq_platforms:
 # Define reference tools for comparision against varlociraptor results
 ref_tools:
   # Chose from: bismark, bisSNP, methylDackel, bsMap
-  Illumina_pe: [bismark, bsMap, methylDackel, bisSNP]
-  # Illumina_pe: [methylDackel]
+  # Illumina_pe: [bismark, bsMap, methylDackel, bisSNP]
+  Illumina_pe: [methylDackel, bsMap, bisSNP, bismark]
   # Chose from: pb_CpG_tools
   # PacBio: [pb_CpG_tools]
   # Chose from: modkit
@@ -31,7 +32,8 @@ ref_tools:
 
 
 samples: 
-  Illumina_pe: [EMSeq_HG002_LAB01]
+  # Illumina_pe: [EMSeq_HG002_LAB01]
+  Illumina_pe: [simulated_data]
   # Illumina_pe: [TruSeq_HG002_LAB01, EMSeq_HG002_LAB02, EMSeq_HG002_LAB01, TrueMethylOX_HG002_LAB01, TrueMethylBS_HG002_LAB01, SPLAT_HG002_LAB01, MethylSeq_HG002_LAB01]
   # Since we only have one sample for PacBio and Nanopore data, we use REP as sample name 
   # PacBio: [REP]
@@ -49,13 +51,15 @@ data:
     # MethylSeq_HG002_LAB01_REP02: [SRR13051101, SRR13051102, SRR13051103]
     # EMSeq_HG002_LAB02_REP02: [SRR13051139]
     # EMSeq_HG002_LAB02_REP01: [SRR13051140]
-    EMSeq_HG002_LAB01_REP02: [SRR13051141]
-    EMSeq_HG002_LAB01_REP01: [SRR13051142]
+    # EMSeq_HG002_LAB01_REP02: [SRR13051141]
+    # EMSeq_HG002_LAB01_REP01: [SRR13051142]
     # TrueMethylOX_HG002_LAB01_REP02: [SRR13051230]
     # TrueMethylOX_HG002_LAB01_REP01: [SRR13051231, SRR13051232]
     # TrueMethylBS_HG002_LAB01_REP02: [SRR13051250, SRR13051251] 
     # TrueMethylBS_HG002_LAB01_REP01: [SRR13051253] 
   # For PacBio and Nanopore data we use direct download links since there are no SRA accessions. We use dummy names for the replicates since we only have one sample.
+    simulated_data_REP01: [sim_rep1]
+    simulated_data_REP02: [sim_rep2]
   PacBio:
     REP01: [pb_rep1]
     REP02: [pb_rep2]
@@ -80,9 +84,10 @@ np_rep2: https://42basepairs.com/download/s3/ont-open-data/giab_2025.01/basecall
 # Define minimum mapping quality to keep in alignment
 min_mapping_quality: 10
 # Number of scatter gather items (used for parallelization of varlociraptor methylation calling)
-scatter_number: 20
+scatter_number: 1
 # Define FDR alpha levels for varlociraptor methylation filtering
-fdr_alpha: [0.01, 0.05, 0.1, 1.0]
+# fdr_alpha: [0.01, 0.05, 0.1, 1.0]
+fdr_alpha: [0.01, 1.0]
 
 ###################################### PLOTS ##################################################
 heatmap_bin_size: 5
@@ -92,3 +97,9 @@ plot_type: svg
 # Define the correlation method for the comparision of the different samples
 # Choose any number from: pearson, spearman, rmse, ccc (concordance correlation coefficient), adjusted_mape
 correlation_methods: [adjusted_mape]
+
+
+
+
+# TO BE REMOVED:
+num_simulated_reads: 1000

@@ -111,8 +111,8 @@ rule trim_fastq_pe:
         "logs/data/{sample}/trim_fastq_pe_{SRA}_{accession}.log",
     conda:
         "../envs/fastp.yaml"
-    # wildcard_constraints:
-    #     sample="^(?!simulated_data$).*",
+    wildcard_constraints:
+        sample="^(?!simulated_data$).*",
     shell:
         "fastp --in1 {input.first} --in2 {input.second} --out1 {output.first} --out2 {output.second} --length_required 2 --disable_quality_filtering -z 4 --trim_poly_g --overrepresentation_analysis 2> {log}"
 

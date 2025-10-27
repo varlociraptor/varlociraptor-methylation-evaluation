@@ -83,7 +83,7 @@ def compute_correlation(
             "spearman": lambda: clean_df[col1].corr(clean_df[col2], method="spearman"),
             "rmse": lambda: np.sqrt(((clean_df[col1] - clean_df[col2]) ** 2).mean())
             / 100.0,
-            "mape": lambda: (
+            "adjusted_mape": lambda: (
                 np.where(
                     (clean_df[col1] == 0) & (clean_df[col2] == 0),
                     0,

@@ -6,7 +6,7 @@ rule compute_pandas_df:
     conda:
         "../envs/plot.yaml"
     wildcard_constraints:
-        sample="(?!simulated_data).*",
+        # sample="(?!simulated_data).*",
         method="(?!varlo|sample_df).*",
     log:
         "logs/plots/{call_type}/{seq_platform}/{sample}/compute_pandas_df_{method}.log",
@@ -21,8 +21,8 @@ rule compute_varlo_df:
         "results/{call_type}/{seq_platform}/{fdr}/{sample}/result_files/varlo.parquet",
     conda:
         "../envs/plot.yaml"
-    wildcard_constraints:
-        sample="(?!simulated_data).*",
+    # wildcard_constraints:
+    #     sample="(?!simulated_data).*",
     log:
         "logs/plots/{call_type}/{seq_platform}/{fdr}/{sample}/compute_pvarlo_df.log",
     params:

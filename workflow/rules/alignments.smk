@@ -59,6 +59,8 @@ rule align_reads_pe:
         "../envs/bwa-meth.yaml"
     log:
         "logs/alignment/{sample}/align_reads_pe_{SRA}.log",
+    wildcard_constraints:
+        sample="(?!simulated_data).*",
     threads: 30
     resources:
         mem_mb=512,
@@ -215,6 +217,8 @@ rule aligned_reads_rename_chromosomes:
         "resources/{seq_platform}/{sample}/alignment_focused_downsampled_dedup_renamed.bam",
     log:
         "logs/alignment/{seq_platform}/{sample}/rename_chromosome.log",
+    wildcard_constraints:
+        sample="(?!simulated_data).*",
     conda:
         "../envs/plot.yaml"
     script:
