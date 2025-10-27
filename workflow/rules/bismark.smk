@@ -48,7 +48,7 @@ rule bismark_align:
         reads1="resources/Illumina_pe/{sample, [^(?!simulated_data$)]}/{SRA}/{SRA}_1_trimmed.fastq",
         reads2="resources/Illumina_pe/{sample, [^(?!simulated_data$)]}/{SRA}/{SRA}_2_trimmed.fastq",
     output:
-        "resources/ref_tools/bismark/alignment/{sample}/{SRA}/{SRA}_1_bismark_bt2_pe.bam",
+        "resources/ref_tools/bismark/alignment/{sample}/{SRA}/{SRA}_1_trimmed_bismark_bt2_pe.bam",
     conda:
         "../envs/bismark.yaml"
     log:

@@ -6,7 +6,7 @@
 from pathlib import Path
 
 
-configfile: "config/config_minimal.yaml"
+configfile: "config/config.yaml"
 
 
 scattergather:
