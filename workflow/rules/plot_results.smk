@@ -158,8 +158,8 @@ rule plot_runtime_comparison:
     input:
         benchmarks="benchmarks",
     output:
-        tools="results/runtime_comparison_tools.{plot_type}",
-        varlo="results/runtime_comparison_varlo.{plot_type}",
+        tools="results/runtime_comparision_tools.{plot_type}",
+        varlo="results/runtime_comparision_varlo.{plot_type}",
         # memory="results/memory_comparison.html"
     conda:
         "../envs/plot.yaml"

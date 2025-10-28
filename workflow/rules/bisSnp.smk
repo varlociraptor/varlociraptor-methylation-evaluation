@@ -50,7 +50,7 @@ rule bissnp_prepare:
         """
 
 
-rule bissnp_extract_meth:
+rule bissnp_extract:
     input:
         jar="resources/ref_tools/Bis-tools/{sample}/BisSNP-0.82.2.jar",
         genome="resources/ref_tools/Bis-tools/{sample}/genome.fasta",
@@ -69,6 +69,8 @@ rule bissnp_extract_meth:
         chromosome=chromosome_by_seq_platform.get("Illumina_pe"),
     log:
         "logs/bissnp/{sample}/extract_meth.log",
+    benchmark:
+        "benchmarks/Illumina_pe/bisSNP/bissnp_extract/{sample}.txt"
     resources:
         mem_mb=64000,
     shell:
@@ -94,6 +96,7 @@ rule bissnp_create_bedgraph:
         "perl {input.perl_script} {input.cpg} CG 2> {log}"
 
 
+# Does not work on cluster
 rule bissnp_rename_output:
     input:
         "results/Illumina_pe/{sample}/result_files/cpg.raw.CG.bedgraph",
@@ -102,4 +105,7 @@ rule bissnp_rename_output:
     log:
         "logs/bissnp/{sample}/rename_output.log",
     shell:
-        "mv {input} {output} 2> {log}"
+        """
+        mkdir -p $(dirname {output})
+        mv {input} {output} 2> {log}
+        """

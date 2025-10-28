@@ -25,8 +25,8 @@ def compute_results() -> List[List[str]]:
     inputs.append(heatmap_replicates_common())
 
     # Runtime comparison plots
-    # inputs.append([f"results/runtime_comparison_tools.{config['plot_type']}"])
-    # inputs.append([f"results/runtime_comparison_varlo.{config['plot_type']}"])
+    # inputs.append([f"results/runtime_comparision_tools.{config['plot_type']}"])
+    # inputs.append([f"results/runtime_comparision_varlo.{config['plot_type']}"])
 
     return inputs
 

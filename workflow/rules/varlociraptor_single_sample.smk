@@ -18,7 +18,7 @@ rule download_varlociraptor:
 
 rule build_varlociraptor:
     input:
-        "resources/tools/varlociraptor",
+        "resources/tools/varlociraptor/Cargo.toml",
     output:
         "resources/tools/varlociraptor/target/debug/varlociraptor",
     log:
@@ -29,8 +29,7 @@ rule build_varlociraptor:
         mem_mb=8000,
     shell:
         """
-
-        cd {input}
+        cd $(dirname {input})
         cargo build
         """
         # mkdir -p $(dirname {output})

@@ -102,4 +102,4 @@ correlation_methods: [adjusted_mape]
 
 
 # TO BE REMOVED:
-num_simulated_reads: 1000
+num_simulated_reads: 10000

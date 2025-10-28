@@ -25,6 +25,7 @@ rule mason_fake_methylation:
         "logs/mason_methylation/fake_methylation_{chrom}_{REP}.log",
     shell:
         """
+        mkdir -p $(dirname {output.methylation})
         mason_methylation --in {input.chrom} \
             --methylation-levels \
             --meth-cg-sigma 0.3 \

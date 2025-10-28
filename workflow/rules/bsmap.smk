@@ -32,17 +32,19 @@ rule bsmap_compute_meth:
         "../envs/bsmap.yaml"
     log:
         "logs/bsmap/{sample}/compute_meth.log",
+    resources:
+        mem_mb=32000,
+    benchmark:
+        "benchmarks/Illumina_pe/bsmap/bsmap_compute/{sample}.txt"
     threads: 8
     shell:
         """
-        cp {input.alignment} temp.bam 2> {log}
-        bsmap -a temp.bam -b temp.bam -d {input.genome} -o out.sam -p {threads} -w 100  -v 0.07 -m 50 -x 300
+        bsmap -a {input.alignment} -d {input.genome} -o out.sam -p {threads} -w 100  -v 0.07 -m 50 -x 300
         mv out.sam $(dirname {output}) 2> {log}
-        rm temp.bam 2> {log}
         """
 
 
-rule bsmap_extract_meth:
+rule bsmap_extract:
     input:
         genome=expand(
             "resources/chromosome_{chrom}.fasta",
@@ -62,6 +64,8 @@ rule bsmap_extract_meth:
         "logs/bsmap/{sample}/extract_meth.log",
     params:
         chromosome=chromosome_by_seq_platform.get("Illumina_pe"),
+    benchmark:
+        "benchmarks/Illumina_pe/bsmap/bsmap_extract/{sample}.txt"
     shell:
         "python {input.meth_extractor} -c={params.chromosome} --ref={input.genome} --out={output} {input.bsmap_sam} -g -x CG 2> {log}"
 
@@ -74,4 +78,7 @@ rule bsmap_rename_output:
     log:
         "logs/bsmap/{sample}/rename_output.log",
     shell:
-        "mv {input} {output} 2> {log}"
+        """
+        mkdir -p $(dirname {output})
+        mv {input} {output} 2> {log}
+        """

@@ -72,6 +72,8 @@ rule bismark_align:
         "../envs/bismark.yaml"
     log:
         "logs/bismark/{sample}/align_{SRA}.log",
+    benchmark:
+        "benchmarks/Illumina_pe/bismark/bismark_align/{sample}/{SRA}.txt"
     resources:
         mem_mb=32000,
     threads: 6
@@ -197,6 +199,8 @@ rule bismark_deduplicate:
         "../envs/bismark.yaml"
     log:
         "logs/bismark/{sample}/deduplicate.log",
+    benchmark:
+        "benchmarks/Illumina_pe/bismark/bismark_deduplicate/{sample}.txt"
     shell:
         """
         deduplicate_bismark --bam {input} --output_dir $(dirname {output}) 2> {log}
@@ -213,6 +217,8 @@ rule bismark_sort_bams:
         "../envs/samtools.yaml"
     log:
         "logs/bismark/{sample}/sort_bams.log",
+    benchmark:
+        "benchmarks/Illumina_pe/bismark/bismark_sort/{sample}.txt"
     shell:
         """
         samtools merge {output} {input} 2> {log}
@@ -220,7 +226,7 @@ rule bismark_sort_bams:
         """
 
 
-rule bismark_extract_results:
+rule bismark_extract:
     input:
         "resources/ref_tools/bismark/alignment/{sample}/alignment_bismark_sorted.bam",
     output:
@@ -229,6 +235,8 @@ rule bismark_extract_results:
         "../envs/bismark.yaml"
     log:
         "logs/bismark/{sample}/extract_results.log",
+    benchmark:
+        "benchmarks/Illumina_pe/bismark/bismark_extract/{sample}.txt"
     shell:
         """
         mkdir -p $(dirname {output}) 2> {log}
