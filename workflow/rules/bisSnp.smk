@@ -50,16 +50,87 @@ rule bissnp_prepare:
         """
 
 
+# In deiner config.yaml:
+# scatter_number: 4   # <-- Anzahl der Teile
+
+
+rule split_bisSNP_alignments:
+    input:
+        alignment="resources/ref_tools/Bis-tools/{sample}/alignment.bam",
+        alignment_index="resources/ref_tools/Bis-tools/{sample}/alignment.bam.bai",
+    output:
+        expand(
+            "resources/ref_tools/Bis-tools/{{sample}}/alignment_{i}-of-{n}.bam",
+            i=range(1, config["scatter_number"] + 1),
+            n=config["scatter_number"],
+        ),
+    log:
+        "logs/bisSNP/split_alignments_{sample}.log",
+    conda:
+        "../envs/samtools.yaml"
+    params:
+        n=lambda wildcards: config["scatter_number"],
+    shell:
+        r"""
+        total=$(samtools view -c {input.alignment})
+        per_part=$(( (total + {params.n} - 1) / {params.n} ))
+
+        echo "Total reads: $total" > {log}
+        echo "Splitting into {params.n} parts (~$per_part reads each)" >> {log}
+
+        if [ {params.n} -eq 1 ]; then
+            echo "Only one part requested — copying input BAM directly." >> {log}
+            cp {input.alignment} {output[0]}
+            samtools index {output[0]}
+            echo "Done." >> {log}
+            exit 0
+        fi
+
+        samtools view -H {input.alignment} > header.sam
+        samtools view {input.alignment} | \
+            awk -v per_part=$per_part -v prefix="resources/ref_tools/Bis-tools/{wildcards.sample}/alignment_" -v n={params.n} \
+            'BEGIN {{file_index=1; line_count=0}}
+             {{line_count++; print >> (prefix file_index "-of-" n ".sam");
+              if (line_count >= per_part) {{close(prefix file_index "-of-" n ".sam"); file_index++; line_count=0}}}}
+             END {{for (i=file_index; i<=n; i++) close(prefix i "-of-" n ".sam")}}'
+
+        for i in $(seq 1 {params.n}); do
+            cat header.sam resources/ref_tools/Bis-tools/{wildcards.sample}/alignment_${{i}}-of-{params.n}.sam | \
+                samtools view -b -o resources/ref_tools/Bis-tools/{wildcards.sample}/alignment_${{i}}-of-{params.n}.bam -
+            rm resources/ref_tools/Bis-tools/{wildcards.sample}/alignment_${{i}}-of-{params.n}.sam
+            samtools index resources/ref_tools/Bis-tools/{wildcards.sample}/alignment_${{i}}-of-{params.n}.bam
+        done
+
+        rm header.sam
+        echo "Splitting into {params.n} BAMs completed." >> {log}
+        """
+
+
+rule index_bisSNP_alignments:
+    input:
+        "resources/ref_tools/Bis-tools/{sample}/alignment_{scatteritem}.bam",
+    output:
+        "resources/ref_tools/Bis-tools/{sample}/alignment_{scatteritem}.bam.bai",
+    log:
+        "logs/bisSNP/index_bisSNP_alignments_{sample}_{scatteritem}.log",
+    conda:
+        "../envs/samtools.yaml"
+    shell:
+        """
+        samtools index {input} 2> {log}
+        """
+
+
 rule bissnp_extract:
     input:
         jar="resources/ref_tools/Bis-tools/{sample}/BisSNP-0.82.2.jar",
         genome="resources/ref_tools/Bis-tools/{sample}/genome.fasta",
         genome_index="resources/ref_tools/Bis-tools/{sample}/genome.fasta.fai",
-        alignment="resources/ref_tools/Bis-tools/{sample}/alignment.bam",
-        alignment_index="resources/ref_tools/Bis-tools/{sample}/alignment.bam.bai",
+        alignment="resources/ref_tools/Bis-tools/{sample}/alignment_{scatteritem}.bam",
+        alignment_index="resources/ref_tools/Bis-tools/{sample}/alignment_{scatteritem}.bam.bai",
     output:
-        cpg="results/Illumina_pe/{sample}/result_files/cpg.raw.vcf",
-        snp="results/Illumina_pe/{sample}/result_files/snp.raw.vcf",
+        cpg="results/single_sample/Illumina_pe/called/{sample}/result_files/cpg_{scatteritem}.raw.vcf",
+        snp="results/single_sample/Illumina_pe/called/{sample}/result_files/snp_{scatteritem}.raw.vcf",
     conda:
         "../envs/openjdk.yaml"
     params:
@@ -68,13 +139,33 @@ rule bissnp_extract:
         ),
         chromosome=chromosome_by_seq_platform.get("Illumina_pe"),
     log:
-        "logs/bissnp/{sample}/extract_meth.log",
+        "logs/bissnp/{sample}_{scatteritem}/extract_meth.log",
     benchmark:
-        "benchmarks/Illumina_pe/bisSNP/bissnp_extract/{sample}.txt"
+        "benchmarks/Illumina_pe/bisSNP/bissnp_extract/{sample}_{scatteritem}.txt"
     resources:
         mem_mb=64000,
     shell:
         "java -Xmx10G -jar {input.jar} -R {input.genome} -T BisulfiteGenotyper -I {input.alignment} -vfn1 {output.cpg} -vfn2 {output.snp} -L {params.chromosome} 2> {log}"
+
+
+rule gather_bisSnp:
+    input:
+        cpg=gather.split_candidates(
+            "results/single_sample/Illumina_pe/called/{{sample}}/result_files/cpg_{scatteritem}.raw.vcf",
+        ),
+        snp=gather.split_candidates(
+            "results/single_sample/Illumina_pe/called/{{sample}}/result_files/snp_{scatteritem}.raw.vcf",
+        ),
+    output:
+        cpg="results/single_sample/Illumina_pe/called/{sample}/result_files/cpg.raw.vcf",
+        snp="results/single_sample/Illumina_pe/called/{sample}/result_files/snp.raw.vcf",
+    log:
+        "logs/bisSnp/{sample}/gather_calls.log",
+    shell:
+        """
+        cat {input.cpg} > {output.cpg} 2> {log}
+        cat {input.snp} > {output.snp} 2> {log}
+        """
 
 
 # We do not use the official perl script in resources/ref_tools/Bis-tools/utils/vcf2bedGraph.pl because it does not work
@@ -85,9 +176,9 @@ rule bissnp_extract:
 rule bissnp_create_bedgraph:
     input:
         perl_script="workflow/scripts/bssnp_bedGraph.pl",
-        cpg="results/Illumina_pe/{sample}/result_files/cpg.raw.vcf",
+        cpg="results/single_sample/Illumina_pe/called/{sample}/result_files/cpg.raw.vcf",
     output:
-        "results/Illumina_pe/{sample}/result_files/cpg.raw.CG.bedgraph",
+        "results/single_sample/Illumina_pe/called/{sample}/result_files/cpg.raw.CG.bedgraph",
     log:
         "logs/bissnp/{sample}/create_bedgraph.log",
     conda:
@@ -99,7 +190,7 @@ rule bissnp_create_bedgraph:
 # Does not work on cluster
 rule bissnp_rename_output:
     input:
-        "results/Illumina_pe/{sample}/result_files/cpg.raw.CG.bedgraph",
+        "results/single_sample/Illumina_pe/called/{sample}/result_files/cpg.raw.CG.bedgraph",
     output:
         "results/single_sample/Illumina_pe/called/{sample}/result_files/bisSNP.bed",
     log:
