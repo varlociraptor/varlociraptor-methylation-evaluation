@@ -1,5 +1,5 @@
 # Newer versions of BisSNP (0.90.0 or 1.0.0) don't work
-# TODO: MissingOutputException after running
+# TODO: MissingOutputException after running on cluster
 rule bissnp_download:
     output:
         "resources/ref_tools/Bis-tools/BisSNP-0.82.2.jar",
@@ -141,7 +141,7 @@ rule bissnp_extract:
     log:
         "logs/bissnp/{sample}_{scatteritem}/extract_meth.log",
     benchmark:
-        "benchmarks/Illumina_pe/bisSNP/bissnp_extract/{sample}_{scatteritem}.txt"
+        "benchmarks/Illumina_pe/bisSNP/bissnp_extract/{sample}_{scatteritem}.benchmark.txt"
     resources:
         mem_mb=64000,
     shell:
@@ -187,7 +187,7 @@ rule bissnp_create_bedgraph:
         "perl {input.perl_script} {input.cpg} CG 2> {log}"
 
 
-# Does not work on cluster
+# mv does not work on cluster
 rule bissnp_rename_output:
     input:
         "results/single_sample/Illumina_pe/called/{sample}/result_files/cpg.raw.CG.bedgraph",
@@ -198,5 +198,5 @@ rule bissnp_rename_output:
     shell:
         """
         mkdir -p $(dirname {output})
-        mv {input} {output} 2> {log}
+        cp {input} {output} 2> {log}
         """

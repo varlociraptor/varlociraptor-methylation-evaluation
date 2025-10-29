@@ -35,12 +35,11 @@ rule bsmap_compute_meth:
     resources:
         mem_mb=32000,
     benchmark:
-        "benchmarks/Illumina_pe/bsmap/bsmap_compute/{sample}.txt"
+        "benchmarks/Illumina_pe/bsmap/bsmap_compute/{sample}.benchmark.txt"
     threads: 8
     shell:
         """
-        bsmap -a {input.alignment} -d {input.genome} -o out.sam -p {threads} -w 100  -v 0.07 -m 50 -x 300
-        mv out.sam $(dirname {output}) 2> {log}
+        bsmap -a {input.alignment} -d {input.genome} -o {output} -p {threads} -w 100  -v 0.07 -m 50 -x 300
         """
 
 
@@ -70,6 +69,7 @@ rule bsmap_extract:
         "python {input.meth_extractor} -c={params.chromosome} --ref={input.genome} --out={output} {input.bsmap_sam} -g -x CG 2> {log}"
 
 
+# mv does not work on cluster
 rule bsmap_rename_output:
     input:
         "results/single_sample/Illumina_pe/{sample}/result_files/methylation_ratios.bed",
@@ -80,5 +80,5 @@ rule bsmap_rename_output:
     shell:
         """
         mkdir -p $(dirname {output})
-        mv {input} {output} 2> {log}
+        cp {input} {output} 2> {log}
         """
