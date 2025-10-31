@@ -1,21 +1,22 @@
+# It does not work with chromosome-wise fasta files, so we use the genome
 rule methylDackel_compute_meth:
     input:
-        # genome=expand(
-        #     "resources/genome.fasta",
-        #     chrom=config["seq_platforms"].get("Illumina_pe"),
-        # ),
-        # genome_index=expand(
-        #     "resources/genome.fasta.fai",
-        #     chrom=config["seq_platforms"].get("Illumina_pe"),
-        # ),
         genome=expand(
-            "resources/chromosome_{chrom}.fasta",
+            "resources/genome.fasta",
             chrom=config["seq_platforms"].get("Illumina_pe"),
         ),
         genome_index=expand(
-            "resources/chromosome_{chrom}.fasta.fai",
+            "resources/genome.fasta.fai",
             chrom=config["seq_platforms"].get("Illumina_pe"),
         ),
+        # genome=expand(
+        #     "resources/chromosome_{chrom}.fasta",
+        #     chrom=config["seq_platforms"].get("Illumina_pe"),
+        # ),
+        # genome_index=expand(
+        #     "resources/chromosome_{chrom}.fasta.fai",
+        #     chrom=config["seq_platforms"].get("Illumina_pe"),
+        # ),
         alignment="resources/Illumina_pe/{sample}/alignment_focused_downsampled_dedup_renamed.bam",
         alignment_index="resources/Illumina_pe/{sample}/alignment_focused_downsampled_dedup_renamed.bam.bai",
     output:

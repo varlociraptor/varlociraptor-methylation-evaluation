@@ -88,8 +88,10 @@ def get_sample_sra_bismark(wildcards) -> List[str]:
     """
     base_path = Path("resources/ref_tools/bismark/alignment") / wildcards.sample
     accession_numbers = config["data"]["Illumina_pe"][wildcards.sample]
+    print(accession_numbers)
 
     return [
-        str(base_path / sra / f"{sra}_1_trimmed_bismark_bt2_pe.bam")
+        # str(base_path / sra / f"{sra}_1_trimmed_bismark_bt2_pe.bam")
+        f"resources/ref_tools/bismark/bams/{wildcards.sample}_pe_{sra}.bam"
         for sra in accession_numbers
     ]
