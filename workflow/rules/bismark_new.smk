@@ -19,7 +19,7 @@ rule bismark_copy_chromosome:
     input:
         "resources/chromosome_{chrom}.fasta",
     output:
-        "resources/ref_tools/bismark/indexes/chromosome_{chrom}.fasta",
+        "resources/ref_tools/bismark/chromosome_{chrom}.fasta",
     conda:
         "../envs/bismark.yaml"
     log:
@@ -40,9 +40,9 @@ rule bismark_copy_chromosome:
 #         ),
 #     #         "resources/genome.fasta",
 #     output:
-#         directory("resources/ref_tools/bismark/indexes/Bisulfite_Genome"),
+#         directory("resources/ref_tools/bismark/Bisulfite_Genome"),
 #     log:
-#         "logs/indexes/Bisulfite_Genome.log",
+#         "logs/Bisulfite_Genome.log",
 #     params:
 #         extra="",  # optional params string
 #     wrapper:
@@ -55,7 +55,7 @@ rule bismark_copy_chromosome:
 #         "resources/ref_tools/bismark/genome.fasta",
 #     # "resources/genome.fasta",
 #     output:
-#         directory("resources/ref_tools/bismark/indexes/Bisulfite_Genome"),
+#         directory("resources/ref_tools/bismark/Bisulfite_Genome"),
 #         # directory("resources/ref_tools/bismark/{chrom}/Bisulfite_Genome"),
 #     conda:
 #         "../envs/bismark.yaml"
@@ -71,11 +71,11 @@ rule bismark_copy_chromosome:
 rule bismark_prepare_genome:
     input:
         expand(
-            "resources/ref_tools/bismark/indexes/chromosome_{chrom}.fasta",
+            "resources/ref_tools/bismark/chromosome_{chrom}.fasta",
             chrom=config["seq_platforms"].get("Illumina_pe"),
         ),
     output:
-        directory("resources/ref_tools/bismark/indexes/Bisulfite_Genome"),
+        directory("resources/ref_tools/bismark/Bisulfite_Genome"),
         # directory("resources/ref_tools/bismark/{chrom}/Bisulfite_Genome"),
     conda:
         "../envs/bismark.yaml"
@@ -89,12 +89,15 @@ rule bismark_prepare_genome:
 
 rule bismark_align:
     input:
-        fq_1="resources/Illumina_pe/{sample}/{SRA}/{SRA}_1_trimmed.fastq",
-        fq_2="resources/Illumina_pe/{sample}/{SRA}/{SRA}_2_trimmed.fastq",
-        genome="resources/genome.fasta",
-        bismark_indexes_dir="resources/ref_tools/bismark/indexes/Bisulfite_Genome",
+        fq_1="resources/Illumina_pe/{sample}/{SRA}/{SRA}_1.fastq",
+        fq_2="resources/Illumina_pe/{sample}/{SRA}/{SRA}_2.fastq",
+        genome=expand(
+            "resources/ref_tools/bismark/chromosome_{chrom}.fasta",
+            chrom=config["seq_platforms"].get("Illumina_pe"),
+        ),
+        bismark_indexes_dir="resources/ref_tools/bismark/Bisulfite_Genome",
     output:
-        bam="resources/ref_tools/bismark/bams/{sample}_pe_{SRA}.bam",
+        bam="resources/ref_tools/bismark/bams/{sample}_pe_{SRA}_unsorted.bam",
         report="resources/ref_tools/bismark/bams/{sample}_{SRA}_PE_report.txt",
         nucleotide_stats="resources/ref_tools/bismark/bams/{sample}_{SRA}_pe.nucleotide_stats.txt",
     log:
@@ -153,6 +156,7 @@ rule bismark_methylation_extractor:
     input:
         "resources/ref_tools/bismark/bams/{sample}_pe_name_sorted.bam",
     output:
+        cov_zero_based="resources/ref_tools/bismark/meth/{sample}_pe_name_sorted.bedGraph.gz.bismark.zero.cov",
         mbias_r1="resources/ref_tools/bismark/qc/meth/{sample}.M-bias_R1.png",
         # Only for PE BAMS:
         mbias_r2="resources/ref_tools/bismark/qc/meth/{sample}.M-bias_R2.png",
@@ -167,11 +171,12 @@ rule bismark_methylation_extractor:
         # * You could merge CHG, CHH using: --merge_non_CpG
         read_base_meth_state_chg="resources/ref_tools/bismark/meth/CHG_context_{sample}.txt.gz",
         read_base_meth_state_chh="resources/ref_tools/bismark/meth/CHH_context_{sample}.txt.gz",
+        # cytosine_report="resources/ref_tools/bismark/report/meth/{sample}.cytosine_report.txt",
     log:
         "logs/meth/{sample}.log",
     params:
         output_dir="resources/ref_tools/bismark/meth",  # optional output dir
-        extra="--gzip --comprehensive --bedGraph",  # optional params string
+        extra="--gzip --comprehensive --bedGraph --zero_based",  # optional params string
     wrapper:
         "v5.9.0/bio/bismark/bismark_methylation_extractor"
 
@@ -189,20 +194,35 @@ rule bismark_methylation_extractor:
 #         "v7.3.0/bio/bismark/bismark2bedGraph"
 
 
-rule bismark_unzip:
+# We need this rule since the --comprehensive option in bismark_methylation_extractor
+# does not create the desired bedGraph file with merged positions for forward and reverse read. We merge them manually by comparing to our candidates.
+rule bismark_merge_positions:
     input:
-        "resources/ref_tools/bismark/meth/bedgraph/{sample}.bedGraph.gz",
+        bedgraph="resources/ref_tools/bismark/meth/{sample}_pe_name_sorted.bedGraph.gz.bismark.zero.cov",
+        candidates=expand(
+            "resources/{chrom}/candidates.vcf",
+            chrom=config["seq_platforms"].get("Illumina_pe"),
+        ),
     output:
         "results/single_sample/Illumina_pe/called/{sample}/result_files/bismark.bed",
     log:
-        "logs/bismark/{sample}/unzip_resources/bismark.log",
-    shell:
-        """
-        mkdir -p $(dirname {output})
-        gunzip -c {input} > {output} 2> {log}
-        """
+        "logs/bismark/{sample}/bismark_merge_positions/bismark.log",
+    script:
+        "../scripts/bismark_merge_positions.py"
 
 
+# rule bismark_unzip:
+# input:
+#     "resources/ref_tools/bismark/meth/bedgraph/{sample}.bedGraph.gz",
+# output:
+#     "results/single_sample/Illumina_pe/called/{sample}/result_files/bismark.bed",
+# log:
+#     "logs/bismark/{sample}/unzip_resources/bismark.log",
+# shell:
+#     """
+#     mkdir -p $(dirname {output})
+#     gunzip -c {input} > {output} 2> {log}
+#     """
 # rule bismark_focus_result_on_chromosome:
 #     input:
 #         "resources/ref_tools/bismark/single_sample/Illumina_pe/called/{sample}/result_files/CpG.bismark.cov",
@@ -216,21 +236,21 @@ rule bismark_unzip:
 #         """
 #         awk '$1 == "{params.chromosome}"' {input} > {output} 2> {log}
 #         """
-rule merge_cpg_symmetrically:
-    input:
-        cpg="resources/ref_tools/bismark/meth/CpG_context_{sample}.txt.gz",
-    output:
-        "resources/ref_tools/bismark/meth/CpG_context_merged/{sample}_CpG_merged.txt.gz",
-    log:
-        "logs/meth/{sample}_CpG_merged.log",
-    conda:
-        "../envs/bismark.yaml"
-    shell:
-        """
-        bismark2cytosine \
-            --merge_CpG \
-            --gzip \
-            --output {output} \
-            {input.cpg} \
-            > {log} 2>&1
-        """
+# rule merge_cpg_symmetrically:
+#     input:
+#         cpg="resources/ref_tools/bismark/meth/CpG_context_{sample}.txt.gz",
+#     output:
+#         "resources/ref_tools/bismark/meth/CpG_context_merged/{sample}_CpG_merged.txt.gz",
+#     log:
+#         "logs/meth/{sample}_CpG_merged.log",
+#     conda:
+#         "../envs/bismark.yaml"
+#     shell:
+#         """
+#         bismark2cytosine \
+#             --merge_CpG \
+#             --gzip \
+#             --output {output} \
+#             {input.cpg} \
+#             > {log} 2>&1
+#         """

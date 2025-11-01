@@ -4,7 +4,7 @@ results_ratio/**
 resources/**
 !resources/scenarios
 !resources/scenarios/**
-
+results_old/**
 # !resources/Illumina_pe/minimal01/rep01/alignment.bam
 # !resources/Illumina_pe/minimal02/rep02/alignment.bam
 # !resources/PacBio/minimal01/rep01/alignment.bam
