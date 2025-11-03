@@ -79,7 +79,7 @@ rule varlociraptor_preprocess:
         """
 
 
-rule call_methylation:
+rule varlociraptor_call:
     input:
         varlo="resources/tools/varlociraptor/target/debug/varlociraptor",
         preprocess_obs="results/preprocessed/{seq_platform}/{sample}/normal_{scatteritem}.bcf",

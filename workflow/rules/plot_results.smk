@@ -108,13 +108,11 @@ rule replicates_heatmap:
     log:
         "logs/plots/{call_type}/{seq_platform}/{fdr}/plot_heatmap_comparision_{sample}_{plot_type}.log",
     params:
-        meth_callers=lambda wildcards: config["ref_tools"].get(
-            wildcards.seq_platform, []
-        )
-        + ["varlo"],
+        meth_callers=lambda wildcards: config["ref_tools"][wildcards.seq_platform]  + ["varlo"],
         # meth_callers=["varlo"],
         sample=lambda wildcards: wildcards.sample,
         bin_size=lambda wildcards: config["heatmap_bin_size"],
+        fdr=lambda wildcards: wildcards.fdr,
         # correlation_method=config["correlation_method"],
     script:
         "../scripts/plot_heatmap_comparision.py"
@@ -167,3 +165,20 @@ rule plot_runtime_comparison:
         "logs/plots/plot_runtime_comparision_{plot_type}.log",
     script:
         "../scripts/plot_runtime_comparision.py"
+
+
+rule combine_svgs:
+    input:
+        "results/single_sample/{platform}/0.01/plots/REP_heatmap.pkl",
+        "results/single_sample/{platform}/1.0/plots/REP_heatmap.pkl"
+    output:
+        "results/single_sample/{platform}/combined/plotst/combined.svg"
+
+    conda:
+        "../envs/plot.yaml"
+    log:
+        "logs/plots/plot_runtime_comparision_{platform}.log",
+    params:
+        platform=lambda wildcards: wildcards.platform,
+    script:
+        "../scripts/combine_svgs.py"

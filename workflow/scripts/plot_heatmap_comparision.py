@@ -48,7 +48,7 @@ def plot_count_heatmap(
     max_count = df["count"].max()
     min_count = 1
     ticks = [min_count, max_count]
-    title = f"Varlociraptor" if meth_caller == "varlo" else meth_caller.capitalize()
+    title = f"Varlociraptor α = {fdr}" if meth_caller == "varlo" else meth_caller.capitalize()
     # title = "PacBio"
     print(mapes, file=sys.stderr)
     heatmap = (
@@ -223,6 +223,7 @@ def compute_replicate_counts(df_dict: dict, bin_size: int, relative=False):
 # -----------------------------
 bin_size = snakemake.params["bin_size"]
 meth_callers = snakemake.params["meth_callers"]
+fdr = snakemake.params["fdr"]
 
 # Load HDF5 input
 meth_caller_dfs = {}
@@ -231,7 +232,8 @@ with pd.HDFStore(snakemake.input[0], mode="r", locking=False) as store:
         meth_caller_dfs[key.strip("/")] = store[key]
 
 replicate_dfs, cdf_dfs, mapes = compute_replicate_counts(meth_caller_dfs, bin_size)
-
+# if float(fdr) == 1.0:
+#     meth_callers = ["varlo"]
 # Create heatmaps for each methylation caller
 heatmaps = [
     plot_count_heatmap(replicate_dfs[m], m, bin_size, mapes) for m in meth_callers
@@ -240,3 +242,8 @@ heatmap_plots = alt.hconcat(*heatmaps).resolve_scale(color="independent")
 
 # Save heatmap output
 heatmap_plots.save(snakemake.output[0], embed_options={"actions": False}, inline=False)
+
+# import pickle
+
+# with open(snakemake.output[0], "wb") as f:
+#     pickle.dump(heatmap_plots, f)

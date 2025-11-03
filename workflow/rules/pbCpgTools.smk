@@ -21,30 +21,33 @@ rule pb_CpG_compute_methylation:
     input:
         runner="resources/ref_tools/pb-CpG-tools/pb-CpG-tools-v2.3.1-x86_64-unknown-linux-gnu/bin/aligned_bam_to_cpg_scores",
         model="resources/ref_tools/pb-CpG-tools/pb-CpG-tools-v2.3.1-x86_64-unknown-linux-gnu/models/pileup_calling_model.v1.tflite",
-        alignment="resources/PacBio/{sample}/alignment_focused_downsampled_dedup_renamed.bam",
-        alignment_index="resources/PacBio/{sample}/alignment_focused_downsampled_dedup_renamed.bam.bai",
-        genome="resources/genome.fasta",
+        alignment="resources/{platform}/{sample}/alignment_focused_downsampled_dedup_renamed.bam",
+        alignment_index="resources/{platform}/{sample}/alignment_focused_downsampled_dedup_renamed.bam.bai",
+        chromosome=lambda wildcards: expand(
+            "resources/chromosome_{chromosome}.fasta",
+            chromosome=chromosome_by_seq_platform.get(wildcards.platform),
+        ),
     output:
-        "results/single_sample/PacBio/called/{sample}/result_files/alignments_CpG.combined.bed",
+        "results/single_sample/{platform}/called/{sample}/result_files/alignments_CpG.combined.bed",
     log:
-        "logs/pb_CpG/{sample}/compute_methylation.log",
+        "logs/pb_CpG/{platform}/{sample}/compute_methylation.log",
     params:
         prefix=lambda wildcards, input, output: os.path.splitext(output[0])[0].replace(
             ".combined", ""
         ),
     threads: 8
     benchmark:
-        "benchmarks/PacBio/pb_CpG_tools/{sample}.bwa.benchmark.txt"
+        "benchmarks/{platform}/pb_CpG_tools/{sample}.bwa.benchmark.txt"
     shell:
         "{input.runner} --bam {input.alignment} --output-prefix {params.prefix} --model {input.model} --threads {threads} 2> {log}"
 
 
 rule pb_CpG_rename_output:
     input:
-        "results/single_sample/PacBio/called/{sample}/result_files/alignments_CpG.combined.bed",
+        "results/single_sample/{platform}/called/{sample}/result_files/alignments_CpG.combined.bed",
     output:
-        "results/single_sample/PacBio/called/{sample}/result_files/pb_CpG_tools.bed",
+        "results/single_sample/{platform}/called/{sample}/result_files/pb_CpG_tools.bed",
     log:
-        "logs/pb_CpG/{sample}/rename_output.log",
+        "logs/pb_CpG/{platform}/{sample}/rename_output.log",
     shell:
         "mv {input} {output} 2> {log}"
