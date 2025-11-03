@@ -35,7 +35,7 @@ rule bsmap_compute_meth:
     resources:
         mem_mb=32000,
     benchmark:
-        "benchmarks/Illumina_pe/bsmap/bsmap_compute/{sample}.benchmark.txt"
+        "benchmarks/Illumina_pe/bsmap/bsmap_compute/{sample}.txt"
     threads: 8
     shell:
         """
@@ -81,4 +81,5 @@ rule bsmap_rename_output:
         """
         mkdir -p $(dirname {output})
         cp {input} {output} 2> {log}
+        rm {input} 2> {log}
         """

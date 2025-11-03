@@ -23,6 +23,7 @@ ref_tools:
   # Chose from: bismark, bisSNP, methylDackel, bsMap
   # Illumina_pe: [bismark, bsMap, methylDackel, bisSNP]
   Illumina_pe: [methylDackel, bsMap, bisSNP, bismark]
+  # Illumina_pe: [bismark]
   # Chose from: pb_CpG_tools
   # PacBio: [pb_CpG_tools]
   # Chose from: modkit

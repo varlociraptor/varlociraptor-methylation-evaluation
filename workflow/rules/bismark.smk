@@ -64,14 +64,16 @@ rule bismark_align:
             "resources/ref_tools/bismark/chromosome_{chrom}.fasta",
             chrom=config["seq_platforms"].get("Illumina_pe"),
         ),
-        reads1="resources/Illumina_pe/{sample}/{SRA}/{SRA}_1_trimmed.fastq",
-        reads2="resources/Illumina_pe/{sample}/{SRA}/{SRA}_2_trimmed.fastq",
+        reads1="resources/Illumina_pe/{sample}/{SRA}/{SRA}_1.fastq",
+        reads2="resources/Illumina_pe/{sample}/{SRA}/{SRA}_2.fastq",
     output:
-        "resources/ref_tools/bismark/alignment/{sample}/{SRA}/{SRA}_1_trimmed_bismark_bt2_pe.bam",
+        "resources/ref_tools/bismark/alignment/{sample}/{SRA}/{SRA}_1_bismark_bt2_pe.bam",
     conda:
         "../envs/bismark.yaml"
     log:
         "logs/bismark/{sample}/align_{SRA}.log",
+    benchmark:
+        "benchmarks/Illumina_pe/bismark/bismark_align/{sample}/{SRA}.txt"
     resources:
         mem_mb=32000,
     threads: 6
@@ -111,7 +113,7 @@ rule bismark_deduplicate:
     log:
         "logs/bismark/{sample}/deduplicate.log",
     benchmark:
-        "benchmarks/Illumina_pe/bismark/bismark_deduplicate/{sample}.benchmark.txt"
+        "benchmarks/Illumina_pe/bismark/bismark_deduplicate/{sample}.txt"
     shell:
         """
         deduplicate_bismark --bam {input} --output_dir $(dirname {output}) 2> {log}
@@ -129,7 +131,7 @@ rule bismark_sort_bams:
     log:
         "logs/bismark/{sample}/sort_bams.log",
     benchmark:
-        "benchmarks/Illumina_pe/bismark/bismark_sort/{sample}.benchmark.txt"
+        "benchmarks/Illumina_pe/bismark/bismark_sort/{sample}.txt"
     shell:
         """
         samtools merge {output} {input} 2> {log}
@@ -147,7 +149,7 @@ rule bismark_extract:
     log:
         "logs/bismark/{sample}/extract_results.log",
     benchmark:
-        "benchmarks/Illumina_pe/bismark/bismark_extract/{sample}.benchmark.txt"
+        "benchmarks/Illumina_pe/bismark/bismark_extract/{sample}.txt"
     shell:
         """
         mkdir -p $(dirname {output}) 2> {log}

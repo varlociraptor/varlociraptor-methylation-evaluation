@@ -50,20 +50,17 @@ rule bissnp_prepare:
         """
 
 
-# In deiner config.yaml:
-# scatter_number: 4   # <-- Anzahl der Teile
-
-
 rule split_bisSNP_alignments:
     input:
         alignment="resources/ref_tools/Bis-tools/{sample}/alignment.bam",
         alignment_index="resources/ref_tools/Bis-tools/{sample}/alignment.bam.bai",
     output:
-        expand(
+        bams=expand(
             "resources/ref_tools/Bis-tools/{{sample}}/alignment_{i}-of-{n}.bam",
             i=range(1, config["scatter_number"] + 1),
             n=config["scatter_number"],
         ),
+        header="resources/ref_tools/Bis-tools/{sample}/header.sam",
     log:
         "logs/bisSNP/split_alignments_{sample}.log",
     conda:
@@ -141,7 +138,7 @@ rule bissnp_extract:
     log:
         "logs/bissnp/{sample}_{scatteritem}/extract_meth.log",
     benchmark:
-        "benchmarks/Illumina_pe/bisSNP/bissnp_extract/{sample}_{scatteritem}.benchmark.txt"
+        "benchmarks/Illumina_pe/bisSNP/bissnp_extract/{sample}_{scatteritem}.txt"
     resources:
         mem_mb=64000,
     shell:
@@ -187,7 +184,7 @@ rule bissnp_create_bedgraph:
         "perl {input.perl_script} {input.cpg} CG 2> {log}"
 
 
-# mv does not work on cluster
+# Does not work on cluster
 rule bissnp_rename_output:
     input:
         "results/single_sample/Illumina_pe/called/{sample}/result_files/cpg.raw.CG.bedgraph",
@@ -198,5 +195,5 @@ rule bissnp_rename_output:
     shell:
         """
         mkdir -p $(dirname {output})
-        cp {input} {output} 2> {log}
+        mv {input} {output} 2> {log}
         """
