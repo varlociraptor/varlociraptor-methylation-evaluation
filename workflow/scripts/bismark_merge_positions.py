@@ -1,8 +1,7 @@
 import pandas as pd
 
+# Bismark output a methylation rate for the forward and reverse strand separately without giving strand information. As a result we need to merge the positions manually. For this we compare the CpG position with our CpG candidate file and merge the positions accordingly.
 
-# ---------- Daten einlesen ----------
-# BedGraph Datei
 bedgraph = pd.read_csv(
     snakemake.input["bedgraph"],
     sep="\t",
@@ -10,25 +9,21 @@ bedgraph = pd.read_csv(
     names=["chrom", "start", "end", "perc", "meth", "unmeth"],
 )
 
-# VCF Datei (nur Positionen relevant)
+
 vcf = pd.read_csv(
     snakemake.input["candidates"][0],
-    comment="#",  # Header ignorieren
+    comment="#",  
     sep="\t",
     header=None,
     names=["CHROM", "POS", "ID", "REF", "ALT", "QUAL", "FILTER", "INFO"],
 )
 
-# ---------- Merge-Logik ----------
 
 results = []
 
 for _, row in vcf.iterrows():
     chrom = row["CHROM"]
     pos = row["POS"]
-
-    # BedGraph ist 0-based start, exclusive end
-    # VCF ist 1-based position
     mask = (bedgraph["chrom"] == chrom) & (
         (bedgraph["start"] == pos) | (bedgraph["end"] == pos)
     )
@@ -37,7 +32,6 @@ for _, row in vcf.iterrows():
     if matching.empty:
         continue
 
-    # Coverage-gewichtete Methylierung
     total_meth = matching["meth"].sum()
     total_unmeth = matching["unmeth"].sum()
 

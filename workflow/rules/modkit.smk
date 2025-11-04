@@ -16,7 +16,7 @@ rule modkit_compute_methylation:
     resources:
         mem_mb=128000,
     benchmark:
-        "benchmarks/{platform}/modkit/{sample}.bwa.benchmark.txt"
+        "benchmarks/{platform}/modkit/modkit/{sample}.bwa.benchmark.txt"
     shell:
         """
         export PATH=$PATH:~/.cargo/bin 2> {log}

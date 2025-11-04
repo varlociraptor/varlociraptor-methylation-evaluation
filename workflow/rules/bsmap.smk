@@ -35,7 +35,7 @@ rule bsmap_compute_meth:
     resources:
         mem_mb=32000,
     benchmark:
-        "benchmarks/Illumina_pe/bsmap/bsmap_compute/{sample}.txt"
+        "benchmarks/Illumina_pe/bsmap/bsmap_compute/{sample}.bwa.benchmark.txt"
     threads: 8
     shell:
         """
@@ -64,7 +64,7 @@ rule bsmap_extract:
     params:
         chromosome=chromosome_by_seq_platform.get("Illumina_pe"),
     benchmark:
-        "benchmarks/Illumina_pe/bsmap/bsmap_extract/{sample}.txt"
+        "benchmarks/Illumina_pe/bsmap/bsmap_extract/{sample}.bwa.benchmark.txt"
     shell:
         "python {input.meth_extractor} -c={params.chromosome} --ref={input.genome} --out={output} {input.bsmap_sam} -g -x CG 2> {log}"
 

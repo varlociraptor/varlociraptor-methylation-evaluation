@@ -37,7 +37,7 @@ rule pb_CpG_compute_methylation:
         ),
     threads: 8
     benchmark:
-        "benchmarks/{platform}/pb_CpG_tools/{sample}.bwa.benchmark.txt"
+        "benchmarks/{platform}/pb-CpG-tools/pb-CpG-tools/{sample}.bwa.benchmark.txt"
     shell:
         "{input.runner} --bam {input.alignment} --output-prefix {params.prefix} --model {input.model} --threads {threads} 2> {log}"
 

@@ -2,6 +2,7 @@ import os
 import re
 import pandas as pd
 import altair as alt
+import sys
 
 sys.stderr = open(snakemake.log[0], "w")
 
@@ -36,23 +37,25 @@ for root, _, files in os.walk(benchmark_path):
         full_path = os.path.join(root, fname)
         df = pd.read_csv(full_path, sep="\t", usecols=["s", "max_rss"])
         p = Path(full_path)
+        print(p, file=sys.stderr)
 
         # Extract info from folder structure
-        df["platform"] = p.parts[1]  # → "Illumina_pe"
-        df["meth_caller"] = p.parts[2]  # → "varlociraptor"
-        df["task"] = p.parts[3]  # → "simulated_data_1"
+        df["platform"] = p.parts[-4]  # → "Illumina_pe"
+        df["meth_caller"] = p.parts[-3]  # → "varlociraptor"
+        df["task"] = p.parts[-2]  # → "simulated_data_1"
         replicate = re.sub(r"_\d+-of-\d+", "", fname.replace(".benchmark.txt", ""))
         df["replicate"] = replicate
         # Clean up sample/replicate name
         records.append(df)
 
 df_all = pd.concat(records, ignore_index=True)
+print(df_all.head(), file=sys.stderr)
 # Aggregate runtime and memory usage per replicate
 
 df_summary = df_all.groupby(
     ["platform", "meth_caller", "replicate"], as_index=False
 ).agg(s=("s", "sum"), max_rss=("max_rss", "max"))
-print(df_summary.head())
+print(df_summary.head(), file=sys.stderr)
 # Compare different methylation calling tools
 df_compare_tools = (
     df_all.groupby(["platform", "meth_caller", "replicate"], as_index=False)
@@ -69,13 +72,13 @@ df_compare_tools = (
     .agg({"minutes": "sum", "max_rss_gb": "max"})
     .assign(platform_tool=lambda x: x["platform"] + " - " + x["tool"])
 )
-print(df_all.head())
+print(df_all.head(), file=sys.stderr)
 
 df_summary = df_all.groupby(
     ["platform", "meth_caller", "replicate", "task"], as_index=False
 ).agg(s=("s", "sum"), max_rss=("max_rss", "max"))
 
-print(df_summary.to_string())
+print(df_summary.head(), file=sys.stderr)
 # Compare Varlociraptor steps individually
 df_compare_varlo = (
     df_all.groupby(["platform", "meth_caller", "replicate", "task"], as_index=False)
@@ -87,7 +90,7 @@ df_compare_varlo = (
         platform_tool=lambda x: x["platform"] + " - " + x["task"],
     )
 )
-print(df_compare_varlo["platform_tool"])
+print(df_compare_tools["platform_tool"], file=sys.stderr)
 
 # Print summary table for debugging/logging
 # Create runtime and memory plots for all tools

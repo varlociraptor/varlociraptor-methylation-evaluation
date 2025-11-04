@@ -10,7 +10,7 @@ rule call_methylation_together_np_pb:
     log:
         "logs/varlociraptor/multi_sample/{replicate}/call_methylation_{scatteritem}.log",
     benchmark:
-        "benchmarks/multi_sample/np_pb/{replicate}_{scatteritem}.bwa.benchmark.txt"
+        "benchmarks/multi_sample/np_bp/np_pb/{replicate}_{scatteritem}.bwa.benchmark.txt"
     conda:
         "../envs/varlociraptor.yaml"
     shell:
@@ -28,7 +28,7 @@ rule call_methylation_together_np_trueOX:
     log:
         "logs/varlociraptor/multi_sample/np_trueOX/{replicate}/call_methylation_{scatteritem}.log",
     benchmark:
-        "benchmarks/multi_sample/np_trueOX/{replicate}_{scatteritem}.bwa.benchmark.txt"
+        "benchmarks/multi_sample/np_trueOX/np_trueOX/{replicate}_{scatteritem}.bwa.benchmark.txt"
     conda:
         "../envs/varlociraptor.yaml"
     shell:
@@ -46,7 +46,7 @@ rule call_methylation_together_pb_trueOX:
     log:
         "logs/varlociraptor/multi_sample/pb_trueOX/{replicate}/call_methylation_{scatteritem}.log",
     benchmark:
-        "benchmarks/multi_sample/pb_trueOX/{replicate}_{scatteritem}.bwa.benchmark.txt"
+        "benchmarks/multi_sample/pb_trueOX/pb_trueOX/{replicate}_{scatteritem}.bwa.benchmark.txt"
     conda:
         "../envs/varlociraptor.yaml"
     shell:
@@ -90,7 +90,7 @@ rule compute_correlation_tables_common:
         + ["varlo"],
         correlation_methods=config["correlation_methods"],
     script:
-        "../scripts/compute_correlation_tables.py"
+        "../scripts/compute_correlation.py"
 
 
 # Computes one common df out of all single method dfs

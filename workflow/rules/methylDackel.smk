@@ -26,7 +26,7 @@ rule methylDackel_compute_meth:
     log:
         "logs/methylDackel/{sample}/compute_meth.log",
     benchmark:
-        "benchmarks/Illumina_pe/methylDackel/{sample}.bwa.benchmark.txt"
+        "benchmarks/Illumina_pe/methylDackel/methylDackel/{sample}.bwa.benchmark.txt"
     params:
         prefix=lambda wildcards, input, output: os.path.splitext(output[0])[0].replace(
             ".combined", ".bedGraph"

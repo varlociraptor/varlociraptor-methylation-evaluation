@@ -64,7 +64,7 @@ rule mason_fake_reads:
     log:
         "logs/mason_reads/fake_reads_{chrom}_{REP}.log",
     params:
-        num_fragments=config["num_simulated_reads"],
+        num_fragments=config.get("num_simulated_reads"),
     shell:
         """
         mason_simulator --input-reference {input.genome} \

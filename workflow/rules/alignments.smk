@@ -60,7 +60,8 @@ rule align_reads_pe:
     log:
         "logs/alignment/{sample}/align_reads_pe_{SRA}.log",
     wildcard_constraints:
-        sample="(?!simulated_data).*",
+        sample="(?!UNTREATED).*",
+        # sample="(?!simulated_data).*",
     threads: 30
     resources:
         mem_mb=512,

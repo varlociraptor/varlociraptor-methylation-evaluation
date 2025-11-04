@@ -1,23 +1,9 @@
-results/**
-results_safe/**
-results_ratio/**
+.vscode/**
+.snakemake/**
+benchmarks/**
+logs/**
 resources/**
 !resources/scenarios
 !resources/scenarios/**
-results_old/**
-# !resources/Illumina_pe/minimal01/rep01/alignment.bam
-# !resources/Illumina_pe/minimal02/rep02/alignment.bam
-# !resources/PacBio/minimal01/rep01/alignment.bam
-# !resources/PacBio/minimal02/rep02/alignment.bam
-# !resources/Nanopore/minimal01/rep01/alignment.bam
-# !resources/Nanopore/minimal02/rep02/alignment.bam
-# !resources/chromosome_minimal.fasta
-# !resources/minimal/candidates.bcf
-logs/**
-.snakemake
-.snakemake/**
-local/**
+results/**
 report.zip
-benchmarks/**
-.vscode/**
-report/**
