@@ -53,7 +53,7 @@ rule bsmap_extract:
         bsmap_sam="results/single_sample/Illumina_pe/called/{sample}/result_files/out.sam",
         meth_extractor="resources/ref_tools/bsMap/methratio.py",
     output:
-        "results/single_sample/Illumina_pe/{sample}/result_files/methylation_ratios.bed",
+        "results/single_sample/Illumina_pe/called/{sample}/result_files/methylation_ratios.bed",
     conda:
         "../envs/bsmap.yaml"
     log:
@@ -68,7 +68,7 @@ rule bsmap_extract:
 
 rule bsmap_rename_output:
     input:
-        "results/single_sample/Illumina_pe/{sample}/result_files/methylation_ratios.bed",
+        "results/single_sample/Illumina_pe/called/{sample}/result_files/methylation_ratios.bed",
     output:
         "results/single_sample/Illumina_pe/called/{sample}/result_files/bsMap.bed",
     log:
