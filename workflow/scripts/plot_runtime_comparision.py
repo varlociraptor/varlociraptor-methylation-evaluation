@@ -18,9 +18,8 @@ def boxplot_with_points(df, x, y, color, x_title, y_title, title):
         y=alt.Y(f"{y}:Q", title=y_title, scale=alt.Scale(type="log")),
         color=f"{color}:N",
     )
-    box = base.mark_boxplot(extent="min-max")
-    points = base.mark_point(filled=True, size=50).encode(tooltip=[x, y])
-    return (box + points).properties(width=600, height=400, title=title)
+    points = base.mark_point(filled=True, size=20).encode(tooltip=[x, y])
+    return points.properties(width=600, height=400, title=title)
 
 
 # Read benchmark files from Snakemake input directory
