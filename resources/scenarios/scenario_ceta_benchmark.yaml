@@ -1,8 +1,0 @@
-samples:
-  untreat:
-    universe: "[0.0, 1.0]"
-  emseq:
-    universe: "[0.0, 1.0]"
-
-events:
-  present: "untreat:]0.0,1.0] & pacbio == emseq"
