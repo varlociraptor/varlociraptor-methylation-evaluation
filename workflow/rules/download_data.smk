@@ -1,4 +1,4 @@
-ref_gene = config.get("sample")
+ref_gene = config.get("sample", {})
 chromosomes = set(chromosome for chromosome in config["seq_platforms"].values())
 
 
@@ -6,13 +6,13 @@ rule download_genome:
     output:
         "resources/genome.fasta",
     params:
-        species=ref_gene["species"],
-        datatype=ref_gene["datatype"],
-        build=ref_gene["build"],
-        release=ref_gene["release"],
+        species=ref_gene.get("species"),
+        datatype=ref_gene.get("datatype"),
+        build=ref_gene.get("build"),
+        release=ref_gene.get("release"),
     log:
         "logs/data/download_genome.log",
-    cache: "omit-software"  # save space and time with between workflow caching (see docs)
+    cache: "omit-software"
     wrapper:
         "v2.3.2/bio/reference/ensembl-sequence"
 
@@ -145,101 +145,6 @@ rule get_pacbio_data:
     shell:
         "samtools view -b {params.url} {params.chromosome} > {output.alignment}"
         # "../scripts/get_pacbio_data.py"
-
-
-# rule get_nanopore_header:
-#     output:
-#         header="resources/Nanopore/{sample}/{SRA}/header.sam",
-#     params:
-#
-#         url=lambda wildcards: config[str(wildcards.SRA)],
-#     resources:
-#         mem_mb=4096,
-#     log:
-#         "logs/get_nanopore_header_{sample}_{SRA}.log",
-#     conda:
-#         "../envs/samtools.yaml"
-#     shell:
-#         """
-#         mkdir -p $(dirname {output.header})
-#         samtools view -H {params.url} > {output.header}
-#         """
-
-
-# # Body runterladen klappt manuell genau mit diesem Befehl, aber in Snakemake schlaegt es fehl...
-# rule get_nanopore_body:
-#     output:
-#         body="resources/Nanopore/{sample}/{SRA}/body.sam",
-#     params:
-#
-#         url=lambda wildcards: config[str(wildcards.SRA)],
-#     resources:
-#         mem_mb=4096,
-#     log:
-#         "logs/get_nanopore_body_{sample}_{SRA}.log",
-#     conda:
-#         "../envs/samtools.yaml"
-#     shell:
-#         """
-#         samtools view {params.url} | head -n 100000 > {output.body}
-#         """
-
-
-# rule combine_nanopore_data:
-#     input:
-#         header="resources/Nanopore/{sample}/{SRA}/header.sam",
-#         body="resources/Nanopore/{sample}/{SRA}/body.sam",
-#     output:
-#         comb="resources/Nanopore/{sample}/{SRA}/alignment.sam",
-#         alignment="resources/Nanopore/{sample}/{SRA}/alignment.bam",
-#     params:
-#
-#         url=lambda wildcards: config[str(wildcards.SRA)],
-#     resources:
-#         mem_mb=4096,
-#     log:
-#         "logs/combine_nanopore_data_{sample}_{SRA}.log",
-#     conda:
-#         "../envs/samtools.yaml"
-#     shell:
-#         """
-#         cat {input.header} {input.body} > {output.comb}
-#         samtools view -b {output.comb} > {output.alignment}
-#         """
-
-
-# rule get_nanopore_data:
-#     output:
-#         "resources/Nanopore/{sample}/{SRA}/alignment.bam",
-#     params:
-#         url=lambda wildcards: config[str(wildcards.SRA)],
-#     resources:
-#         mem_mb=4096,
-#     log:
-#         "logs/data/{sample}/get_nanopore_data_{SRA}.log",
-#     conda:
-#         "../envs/samtools.yaml"
-#     shell:
-#         """
-#         set +o pipefail;
-#         mkdir -p $(dirname {output}) 2> {log}
-#         samtools view -h {params.url} | head -n 200000 | samtools view -bo {output} - 2> {log}
-#         """
-
-
-# rule nanopore_index:
-#     output:
-#         alignment="resources/Nanopore/{sample}/{SRA}/alignment.bam.bai",
-#     params:
-#         url=lambda wildcards: config[str(wildcards.SRA)],
-#     resources:
-#         mem_mb=4096,
-#     conda:
-#         "../envs/samtools.yaml"
-#     log:
-#         "logs/data/{sample}/nanopore_index_{SRA}.log",
-#     shell:
-#         "samtools view -b {params.url} | samtools index - {output} 2> {log}"
 
 
 # TODO: Does not work for replicate2. You have to download this manually with wget right now

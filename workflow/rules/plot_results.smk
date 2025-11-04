@@ -6,7 +6,6 @@ rule compute_pandas_df:
     conda:
         "../envs/plot.yaml"
     wildcard_constraints:
-        # sample="(?!simulated_data).*",
         method="(?!varlo|sample_df).*",
     log:
         "logs/plots/{call_type}/{seq_platform}/{sample}/compute_pandas_df_{method}.log",
@@ -21,8 +20,6 @@ rule compute_varlo_df:
         "results/{call_type}/{seq_platform}/{fdr}/{sample}/result_files/varlo.parquet",
     conda:
         "../envs/plot.yaml"
-    # wildcard_constraints:
-    #     sample="(?!simulated_data).*",
     log:
         "logs/plots/{call_type}/{seq_platform}/{fdr}/{sample}/compute_pvarlo_df.log",
     params:
@@ -31,7 +28,7 @@ rule compute_varlo_df:
         "../scripts/pandas_df_from_meth_output.py"
 
 
-# Computes one common df out of all single method dfs
+# Computes one common df out of all single methylation caller dfs
 rule common_tool_df:
     input:
         tools=lambda wildcards: expand(
@@ -108,7 +105,10 @@ rule replicates_heatmap:
     log:
         "logs/plots/{call_type}/{seq_platform}/{fdr}/plot_heatmap_comparision_{sample}_{plot_type}.log",
     params:
-        meth_callers=lambda wildcards: config["ref_tools"].get(wildcards.seq_platform, []) + ["varlo"],
+        meth_callers=lambda wildcards: config["ref_tools"].get(
+            wildcards.seq_platform, []
+        )
+        + ["varlo"],
         # meth_callers=["varlo"],
         sample=lambda wildcards: wildcards.sample,
         bin_size=lambda wildcards: config["heatmap_bin_size"],
@@ -159,7 +159,6 @@ rule plot_runtime_comparison:
     output:
         tools="results/runtime_comparision_tools.{plot_type}",
         varlo="results/runtime_comparision_varlo.{plot_type}",
-        # memory="results/memory_comparison.html"
     conda:
         "../envs/plot.yaml"
     log:
@@ -168,13 +167,13 @@ rule plot_runtime_comparison:
         "../scripts/plot_runtime_comparision.py"
 
 
+# This rule combines the heatmaps from  two different FDR levels into one SVG file for easier comparison in the paper
 rule combine_svgs:
     input:
         "results/single_sample/{platform}/0.01/plots/REP_heatmap.pkl",
-        "results/single_sample/{platform}/1.0/plots/REP_heatmap.pkl"
+        "results/single_sample/{platform}/1.0/plots/REP_heatmap.pkl",
     output:
-        "results/single_sample/{platform}/combined/plotst/combined.svg"
-
+        "results/single_sample/{platform}/combined/plotst/combined.svg",
     conda:
         "../envs/plot.yaml"
     log:

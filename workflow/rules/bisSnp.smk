@@ -184,7 +184,6 @@ rule bissnp_create_bedgraph:
         "perl {input.perl_script} {input.cpg} CG 2> {log}"
 
 
-# Does not work on cluster
 rule bissnp_rename_output:
     input:
         "results/single_sample/Illumina_pe/called/{sample}/result_files/cpg.raw.CG.bedgraph",

@@ -37,7 +37,6 @@ for root, _, files in os.walk(benchmark_path):
         full_path = os.path.join(root, fname)
         df = pd.read_csv(full_path, sep="\t", usecols=["s", "max_rss"])
         p = Path(full_path)
-        print(p, file=sys.stderr)
 
         # Extract info from folder structure
         df["platform"] = p.parts[-4]  # → "Illumina_pe"
@@ -49,13 +48,11 @@ for root, _, files in os.walk(benchmark_path):
         records.append(df)
 
 df_all = pd.concat(records, ignore_index=True)
-print(df_all.head(), file=sys.stderr)
 # Aggregate runtime and memory usage per replicate
 
 df_summary = df_all.groupby(
     ["platform", "meth_caller", "replicate"], as_index=False
 ).agg(s=("s", "sum"), max_rss=("max_rss", "max"))
-print(df_summary.head(), file=sys.stderr)
 # Compare different methylation calling tools
 df_compare_tools = (
     df_all.groupby(["platform", "meth_caller", "replicate"], as_index=False)
@@ -72,13 +69,11 @@ df_compare_tools = (
     .agg({"minutes": "sum", "max_rss_gb": "max"})
     .assign(platform_tool=lambda x: x["platform"] + " - " + x["tool"])
 )
-print(df_all.head(), file=sys.stderr)
 
 df_summary = df_all.groupby(
     ["platform", "meth_caller", "replicate", "task"], as_index=False
 ).agg(s=("s", "sum"), max_rss=("max_rss", "max"))
 
-print(df_summary.head(), file=sys.stderr)
 # Compare Varlociraptor steps individually
 df_compare_varlo = (
     df_all.groupby(["platform", "meth_caller", "replicate", "task"], as_index=False)
@@ -90,9 +85,7 @@ df_compare_varlo = (
         platform_tool=lambda x: x["platform"] + " - " + x["task"],
     )
 )
-print(df_compare_tools["platform_tool"], file=sys.stderr)
 
-# Print summary table for debugging/logging
 # Create runtime and memory plots for all tools
 runtime_chart = boxplot_with_points(
     df_compare_tools,

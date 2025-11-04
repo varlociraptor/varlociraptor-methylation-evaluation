@@ -1,3 +1,4 @@
+# Use Varlociraptor to find methylation candidates in the reference genome
 rule find_candidates:
     input:
         varlo="resources/tools/varlociraptor/target/debug/varlociraptor",

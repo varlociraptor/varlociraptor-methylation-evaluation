@@ -1,6 +1,6 @@
-## Configuration Overview
+# Configuration Overview
 
-### Genome Settings
+## Genome Settings
 
 Defines which genome build and version to use during alignment and reference file retrieval.
 
@@ -14,9 +14,9 @@ sample:
 
 ---
 
-### Sequencing Platforms and Chromosome Selection
+## Sequencing Platforms and Chromosome Selection
 
-We focus our analysis on chromosome 21 for all sequencing platforms in order to avoid increasing the runtime and memory consumption. By commenting out a sequencing platform, the results for this platform will not be calculated. 
+We focus our analysis on chromosome 21 for all sequencing platforms in order to avoid increasing the runtime and memory consumption. By commenting out a sequencing platform, the results for this platform will not be calculated.
 
 ```yaml
 seq_platforms: 
@@ -27,7 +27,8 @@ seq_platforms:
 
 ---
 
-### Reference Methylation Callers for Benchmarking
+## Reference Methylation Callers for Benchmarking
+
 * **Illumina** bisulfite data can be compared against: [bismark](https://doi.org/10.1093/bioinformatics/btr167), [bsMap](https://github.com/BSMAP/bsmap), [methylDackel](https://github.com/dpryan79/MethylDackel) and [bisSNP](https://doi.org/10.1186/gb-2012-13-7-r61)
 * **PacBio** and **Nanopore** long-read platforms can be compared against: [modkit](https://github.com/PacificBiosciences/modkit), [pb_CpG_tools](https://github.com/PacificBiosciences/pb-CpG-tools)
 * We evaluated Varlociraptor on multiple samples at the same time. To run the evaluation you have to define `multi_sample` and leave intentionally empty (required by downstream workflow)
@@ -42,7 +43,7 @@ ref_tools:
 
 ---
 
-### Input Data (Accessions and URLs)
+## Input Data (Accessions and URLs)
 
 We download the Illumina data using SRR accession numbers from the [EpiQC study](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-021-02529-2). To keep the structure for every platform the same we use dummy names for PacBio and Nanopore.
 
@@ -86,7 +87,7 @@ np_rep2: https://42basepairs.com/download/s3/ont-open-data/giab_2025.01/basecall
 
 ---
 
-### Sample Definitions
+## Sample Definitions
 
 Names of the individual samples under which the workflow merges the two replicates.
 
@@ -100,7 +101,8 @@ samples:
 
 ---
 
-### Methylation Calling Settings
+## Methylation Calling Settings
+
 * Filters reads below mapping quality 10.
 * Enables parallelization using scatter-gather (20 tasks).
 * Performs methylation calling at multiple FDR thresholds.
@@ -113,7 +115,7 @@ fdr_alpha: [0.01, 1.0]
 
 ---
 
-### Plotting Settings
+## Plotting Settings
 
 ```yaml
 heatmap_bin_size: 5

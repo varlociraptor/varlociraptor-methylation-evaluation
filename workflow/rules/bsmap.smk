@@ -14,9 +14,6 @@ rule bsmap_download:
         """
 
 
-# We have to rename the alignment file to make it shorter to not get a buffer error
-# TODO: does not work with symlinks on HPC: https://github.com/zyndagj/BSMAPz/issues/19 Filenames are too long.
-# Maximum allowed number of characters in alignment name: 68
 rule bsmap_compute_meth:
     input:
         genome=expand(
@@ -69,7 +66,6 @@ rule bsmap_extract:
         "python {input.meth_extractor} -c={params.chromosome} --ref={input.genome} --out={output} {input.bsmap_sam} -g -x CG 2> {log}"
 
 
-# mv does not work on cluster
 rule bsmap_rename_output:
     input:
         "results/single_sample/Illumina_pe/{sample}/result_files/methylation_ratios.bed",

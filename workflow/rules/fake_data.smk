@@ -17,6 +17,7 @@ rule mason_download:
 rule mason_fake_methylation:
     input:
         chrom="resources/chromosome_{chrom}.fasta",
+        index="resources/chromosome_{chrom}.fasta.fai",
     output:
         methylation="resources/Illumina_pe/simulated_data_{REP}/chromosome_{chrom}_meth.fa",
     conda:
@@ -36,7 +37,7 @@ rule mason_fake_methylation:
 
 rule mason_fake_variants:
     input:
-        "resources/chromosome_{chrom}.fasta",
+        chrom="resources/chromosome_{chrom}.fasta",
     output:
         "resources/Illumina_pe/simulated_data_{REP}/chromosome_{chrom}_variants.vcf",
     conda:
@@ -48,7 +49,6 @@ rule mason_fake_variants:
         mason_variator --in-reference {input} \
             --out-vcf {output}  2> {log}
         """
-        # --snp-rate 0.01 \
 
 
 rule mason_fake_reads:

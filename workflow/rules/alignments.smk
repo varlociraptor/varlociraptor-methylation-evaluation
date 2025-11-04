@@ -1,36 +1,20 @@
-# rule bwameth_index_genome:
-#     input:
-#         "resources/{genome}.fasta",
-#     output:
-#         "resources/{genome}.fasta.bwameth.c2t",
-#         # "resources/{genome}.fasta.bwameth.c2t.0123",
-#         # "resources/{genome}.fasta.bwameth.c2t.amb",
-#         # "resources/{genome}.fasta.bwameth.c2t.ann",
-#         # "resources/{genome}.fasta.bwameth.c2t.bwt.2bit.64",
-#         # "resources/{genome}.fasta.bwameth.c2t.pac",
-#     log:
-#         "logs/alignment/index_genome_{genome}.log",
-#     conda:
-#         "../envs/bwa-meth.yaml"
-#     shell:
-#         "bwameth.py index {input} 2> {log}"
-
 
 rule bwameth_index:
     input:
         "resources/{genome}.fasta",
-        # "genome.fasta",
     output:
-        multiext(
-            "resources/{genome}.fasta.bwameth",
-            ".c2t",
-            ".c2t.amb",
-            ".c2t.ann",
-            ".c2t.bwt.2bit.64",
-            ".c2t.pac",
-            ".c2t.0123",
+        temp(
+            multiext(
+                "resources/{genome}.fasta.bwameth",
+                ".c2t",
+                ".c2t.amb",
+                ".c2t.ann",
+                ".c2t.bwt.2bit.64",
+                ".c2t.pac",
+                ".c2t.0123",
+            )
         ),
-    cache: True  # save space and time with between workflow caching (see docs)
+    cache: False
     threads: 1
     log:
         "logs/bwameth_index/{genome}.log",
@@ -49,7 +33,6 @@ rule align_reads_pe:
             ".c2t.pac",
             ".c2t.0123",
         ),
-        # fasta_index="resources/genome.fasta.bwameth.c2t",
         fasta="resources/genome.fasta",
         reads1="resources/Illumina_pe/{sample}/{SRA}/{SRA}_1_trimmed.fastq",
         reads2="resources/Illumina_pe/{sample}/{SRA}/{SRA}_2_trimmed.fastq",
@@ -59,9 +42,6 @@ rule align_reads_pe:
         "../envs/bwa-meth.yaml"
     log:
         "logs/alignment/{sample}/align_reads_pe_{SRA}.log",
-    wildcard_constraints:
-        sample="(?!UNTREATED).*",
-        # sample="(?!simulated_data).*",
     threads: 30
     resources:
         mem_mb=512,

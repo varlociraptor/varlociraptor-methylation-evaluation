@@ -1,18 +1,15 @@
-# TODO: Missingoutputexception
 rule download_varlociraptor:
     output:
         "resources/tools/varlociraptor/Cargo.toml",
-    log:
-        "logs/varlociraptor/download.log",
     conda:
         "../envs/shell_cmds.yaml"
     shell:
         """
-        mkdir -p resources/tools 2> {log}
-        cd resources/tools 2> {log}
-        git clone https://github.com/varlociraptor/varlociraptor.git 2> {log}
-        cd varlociraptor 2> {log}
-        git checkout methylation-paired-end-master-new 2> {log}
+        mkdir -p resources/tools
+        cd resources/tools
+        git clone https://github.com/varlociraptor/varlociraptor.git
+        cd varlociraptor
+        git checkout methylation-paired-end-master-new
         """
 
 

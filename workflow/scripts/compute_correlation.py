@@ -111,13 +111,9 @@ def normalize_sample_name(replicate_name: str) -> str:
     """
     Normalize replicate names to a sample identifier.
     """
-    print(replicate_name, file=sys.stderr)
     name = re.sub(r"_REP\d+$", "", replicate_name)  # Illumina pattern
-    print(name, file=sys.stderr)
-    name = re.sub(r"REP\d+$", "REP", name)# PacBio/ Nanopore / multi-sample pattern
-    print(name, file=sys.stderr)
+    name = re.sub(r"REP\d+$", "REP", name)  # PacBio/ Nanopore / multi-sample pattern
     name = re.sub(r"minimal\d+$", "minimal", name)  # minimal toy example
-    print(name, file=sys.stderr)
     return name or replicate_name
 
 

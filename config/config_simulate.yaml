@@ -8,8 +8,8 @@ seq_platforms:
 
 # Define reference tools for comparision against varlociraptor results
 ref_tools:
-  # Chose from: bismark, bisSNP, methylDackel, bsMap
-  Illumina_pe: [methylDackel]
+  # Chose from: bismark, bisSNP, bsMap
+  Illumina_pe: [bsMap]
 
 
 
