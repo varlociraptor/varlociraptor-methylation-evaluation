@@ -53,16 +53,25 @@ rule mason_fake_variants:
 
 rule mason_fake_reads:
     input:
-        genome="resources/chromosome_{chrom}.fasta",
-        variants="resources/Illumina_pe/simulated_data_{REP}/chromosome_{chrom}_variants.vcf",
-        methylation="resources/Illumina_pe/simulated_data_{REP}/chromosome_{chrom}_meth.fa",
+        genome=expand(
+            "resources/chromosome_{chrom}.fasta",
+            chrom=config["seq_platforms"].get("Illumina_pe"),
+        ),
+        variants=expand(
+            "resources/Illumina_pe/simulated_data_{{REP}}/chromosome_{chrom}_variants.vcf",
+            chrom=config["seq_platforms"].get("Illumina_pe"),
+        ),
+        methylation=expand(
+            "resources/Illumina_pe/simulated_data_{{REP}}/chromosome_{chrom}_meth.fa",
+            chrom=config["seq_platforms"].get("Illumina_pe"),
+        ),
     output:
-        f1="resources/Illumina_pe/simulated_data_{REP}/chromosome_{chrom}_f1.fastq",
-        f2="resources/Illumina_pe/simulated_data_{REP}/chromosome_{chrom}_f2.fastq",
+        f1="resources/Illumina_pe/simulated_data_{REP}/{SRA}/{SRA}_1.fastq",
+        f2="resources/Illumina_pe/simulated_data_{REP}/{SRA}/{SRA}_2.fastq",
     conda:
         "../envs/mason.yaml"
     log:
-        "logs/mason_reads/fake_reads_{chrom}_{REP}.log",
+        "logs/mason_reads/fake_reads_{SRA}_{REP}.log",
     params:
         num_fragments=config.get("num_simulated_reads"),
     shell:
@@ -89,12 +98,16 @@ rule mason_align_reads:
             chrom=config["seq_platforms"].get("Illumina_pe"),
         ),
         f1=expand(
-            "resources/Illumina_pe/simulated_data_{{REP}}/chromosome_{chrom}_f1.fastq",
-            chrom=config["seq_platforms"].get("Illumina_pe"),
+            "resources/Illumina_pe/simulated_data_{{REP}}/{SRA}/{SRA}_1.fastq",
+            SRA=lambda wildcards: config["data"]["Illumina_pe"][
+                f"simulated_data_{wildcards.REP}"
+            ],
         ),
         f2=expand(
-            "resources/Illumina_pe/simulated_data_{{REP}}/chromosome_{chrom}_f2.fastq",
-            chrom=config["seq_platforms"].get("Illumina_pe"),
+            "resources/Illumina_pe/simulated_data_{{REP}}/{SRA}/{SRA}_2.fastq",
+            SRA=lambda wildcards: config["data"]["Illumina_pe"][
+                f"simulated_data_{wildcards.REP}"
+            ],
         ),
     output:
         "resources/Illumina_pe/simulated_data_{REP}/alignment.sam",

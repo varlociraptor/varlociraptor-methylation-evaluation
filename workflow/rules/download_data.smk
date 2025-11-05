@@ -82,8 +82,8 @@ rule get_fastq_pe:
     params:
         extra="--skip-technical",
     threads: 6
-    # wildcard_constraints:
-    #     sample="^(?!simulated_data$).*",
+    wildcard_constraints:
+        sample="^(?!simulated_data$).*",
     wrapper:
         "v7.1.0/bio/sra-tools/fasterq-dump"
 

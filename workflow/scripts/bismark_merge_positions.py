@@ -1,7 +1,7 @@
 import pandas as pd
+import pysam
 
-# Bismark output a methylation rate for the forward and reverse strand separately without giving strand information. As a result we need to merge the positions manually. For this we compare the CpG position with our CpG candidate file and merge the positions accordingly.
-
+# Read bedgraph
 bedgraph = pd.read_csv(
     snakemake.input["bedgraph"],
     sep="\t",
@@ -9,21 +9,15 @@ bedgraph = pd.read_csv(
     names=["chrom", "start", "end", "perc", "meth", "unmeth"],
 )
 
-
-vcf = pd.read_csv(
-    snakemake.input["candidates"][0],
-    comment="#",  
-    sep="\t",
-    header=None,
-    names=["CHROM", "POS", "ID", "REF", "ALT", "QUAL", "FILTER", "INFO"],
-)
-
+# Read BCF
+bcf_file = pysam.VariantFile(snakemake.input["candidates"][0])
 
 results = []
 
-for _, row in vcf.iterrows():
-    chrom = row["CHROM"]
-    pos = row["POS"]
+for record in bcf_file:
+    chrom = record.chrom
+    pos = record.pos  # 1-based position
+    # Find matching bedgraph positions
     mask = (bedgraph["chrom"] == chrom) & (
         (bedgraph["start"] == pos) | (bedgraph["end"] == pos)
     )
@@ -34,7 +28,6 @@ for _, row in vcf.iterrows():
 
     total_meth = matching["meth"].sum()
     total_unmeth = matching["unmeth"].sum()
-
     merged_percentage = (total_meth / (total_meth + total_unmeth)) * 100
 
     results.append(
@@ -49,6 +42,6 @@ for _, row in vcf.iterrows():
         }
     )
 
-merged_df = pd.DataFrame(results).to_csv(
-    snakemake.output[0], sep="\t", header=False, index=False
-)
+# Save merged results
+merged_df = pd.DataFrame(results)
+merged_df.to_csv(snakemake.output[0], sep="\t", header=False, index=False)

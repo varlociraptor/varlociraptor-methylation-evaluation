@@ -9,7 +9,7 @@ seq_platforms:
 # Define reference tools for comparision against varlociraptor results
 ref_tools:
   # Chose from: bismark, bisSNP, bsMap
-  Illumina_pe: [bsMap]
+  Illumina_pe: [bsMap, bismark]
 
 
 

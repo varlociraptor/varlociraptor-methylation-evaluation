@@ -159,19 +159,42 @@ rule bismark_methylation_extractor:
         "v5.9.0/bio/bismark/bismark_methylation_extractor"
 
 
+# rule bismark_extract:
+#     input:
+#         bam="resources/ref_tools/bismark/dedup/{sample}.deduplicated.bam",
+#     output:
+#         cov_zero_based="resources/ref_tools/bismark/meth/{sample}.deduplicated.bedGraph.gz.bismark.zero.cov",
+#         # "results/single_sample/Illumina_pe/called/{sample}/result_files/CpG_context_alignment_bismark_sorted.txt",
+#     conda:
+#         "../envs/bismark.yaml"
+#     log:
+#         "logs/bismark/{sample}/extract_results.log",
+#     benchmark:
+#         "benchmarks/Illumina_pe/bismark/bismark_methylation_extractor/{sample}.bwa.benchmark.txt"
+#     resources:
+#         mem_mb=16000,
+#     shell:
+#         """
+#         mkdir -p $(dirname {output}) 2> {log}
+#         bismark_methylation_extractor {input} -o $(dirname {output}) --comprehensive --gzip --comprehensive --bedGraph --zero_based 2> {log}
+#         """
+
+
 # We need this rule since the --comprehensive option in bismark_methylation_extractor
 # does not create the desired bedGraph file with merged positions for forward and reverse read. We merge them manually by comparing to our candidates.
 rule bismark_merge_positions:
     input:
         bedgraph="resources/ref_tools/bismark/meth/{sample}.deduplicated.bedGraph.gz.bismark.zero.cov",
         candidates=expand(
-            "resources/{chrom}/candidates.vcf",
+            "resources/{chrom}/candidates.bcf",
             chrom=config["seq_platforms"].get("Illumina_pe"),
         ),
     output:
         "results/single_sample/Illumina_pe/called/{sample}/result_files/bismark.bed",
     log:
         "logs/bismark/{sample}/bismark_merge_positions/bismark.log",
+    conda:
+        "../envs/pysam.yaml"
     benchmark:
         "benchmarks/Illumina_pe/bismark/bismark_merge_positions/{sample}.bwa.benchmark.txt"
     script:
