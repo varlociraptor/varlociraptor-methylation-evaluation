@@ -113,7 +113,7 @@ rule replicates_heatmap:
         bin_size=lambda wildcards: config["heatmap_bin_size"],
         fdr=lambda wildcards: wildcards.fdr,
     script:
-        "../scripts/plot_heatmap_comparision.py"
+        "../scripts/plot_heatmap_comparison.py"
 
 
 # Compute common heatmap over all Illumina samples
@@ -146,21 +146,21 @@ rule heatmap_illumina_samples:
         bin_size=lambda wildcards: config["heatmap_bin_size"],
         fdr=lambda wildcards: wildcards.fdr,
     script:
-        "../scripts/plot_heatmap_comparision.py"
+        "../scripts/plot_heatmap_comparison.py"
 
 
 rule plot_runtime_comparison:
     input:
         benchmarks="benchmarks",
     output:
-        tools="results/runtime_comparision_tools.{plot_type}",
-        varlo="results/runtime_comparision_varlo.{plot_type}",
+        tools="results/runtime_comparison_tools.{plot_type}",
+        varlo="results/runtime_comparison_varlo.{plot_type}",
     conda:
         "../envs/plot.yaml"
     log:
-        "logs/plot_results/plot_runtime_comparision/{plot_type}.log",
+        "logs/plot_results/plot_runtime_comparison/{plot_type}.log",
     script:
-        "../scripts/plot_runtime_comparision.py"
+        "../scripts/plot_runtime_comparison.py"
 
 
 # This rule combines the heatmaps from  two different FDR levels into one SVG file for easier comparison in the paper

@@ -6,10 +6,10 @@ seq_platforms:
   Illumina_pe: J02459
 
 
-# Define reference tools for comparision against varlociraptor results
+# Define reference tools for comparison against varlociraptor results
 ref_tools:
-  # Chose from: bismark, bisSNP, bsMap
-  Illumina_pe: [bsMap, bismark]
+  # Chose from: bismark, bisSNP, bsMap, methylDackel
+  Illumina_pe: [bsMap, bismark, bisSNP, methylDackel]
 
 
 
@@ -39,7 +39,7 @@ fdr_alpha: [0.01, 1.0]
 heatmap_bin_size: 5
 # Choose from png, svg, html
 plot_type: svg
-# Define the correlation method for the comparision of the different samples
+# Define the correlation method for the comparison of the different samples
 # Choose any number from: pearson, spearman, rmse, ccc (concordance correlation coefficient), adjusted_mape
 correlation_methods: [adjusted_mape]
 

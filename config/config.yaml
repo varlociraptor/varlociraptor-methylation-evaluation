@@ -14,7 +14,7 @@ seq_platforms:
   Nanopore: 21
 
 
-# Define reference methylation caller for comparision against varlociraptor results
+# Define reference methylation caller for comparison against varlociraptor results
 ref_tools:
   # Chose from: bismark, bisSNP, methylDackel, bsMap
   Illumina_pe: [bismark, bsMap, methylDackel]
@@ -42,7 +42,7 @@ data:
     TrueMethylOX_HG002_LAB01_REP01: [SRR13051231, SRR13051232]
     TrueMethylBS_HG002_LAB01_REP02: [SRR13051250, SRR13051251] 
     TrueMethylBS_HG002_LAB01_REP01: [SRR13051253] 
-  # For PacBio and Nanopore data we use direct download links since there are no SRA accessions. We use dummy names for the replicates since we only have one sampleto have the same structure as for Illumina data
+  # For PacBio and Nanopore data we use direct download links since there are no SRA accessions. We use dummy names for the replicates since we only have one sample to have the same structure as for Illumina data
   PacBio:
     REP01: [pb_rep1]
     REP02: [pb_rep2]
@@ -84,6 +84,6 @@ heatmap_bin_size: 5
 # Choose from png, svg, html
 plot_type: svg
 
-# Define the correlation method for the comparision of the different samples
+# Define the correlation method for the comparison of the different samples
 # Choose any number from: pearson, spearman, rmse, ccc (concordance correlation coefficient), adjusted_mape
 correlation_methods: [adjusted_mape]
