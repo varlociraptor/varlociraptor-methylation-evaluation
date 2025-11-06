@@ -4,6 +4,8 @@ rule bsmap_clone_and_build:
     output:
         binary="resources/ref_tools/BSMAPz/bsmapz",
         meth_extractor="resources/ref_tools/BSMAPz/methratio.py",
+    log:
+        "logs/bsmap/bsmap_clone_and_build/download.log",
     shell:
         """
         mkdir -p resources/ref_tools
@@ -43,7 +45,7 @@ rule bsmapz_compute_meth:
     output:
         temp("results/single_sample/Illumina_pe/called/{sample}/result_files/out.sam"),
     log:
-        "logs/bsmap/{sample}/compute_meth.log",
+        "logs/bsmap/bsmap_compute/{sample}.log",
     resources:
         mem_mb=32000,
     benchmark:
@@ -71,7 +73,7 @@ rule bsmapz_extract:
     output:
         "results/single_sample/Illumina_pe/called/{sample}/result_files/methylation_ratios.bed",
     log:
-        "logs/bsmap/{sample}/extract_meth.log",
+        "logs/bsmap/bsmap_extract/{sample}.log",
     params:
         chromosome=chromosome_by_seq_platform.get("Illumina_pe"),
     conda:
@@ -89,7 +91,7 @@ rule bsmapz_rename_output:
     output:
         "results/single_sample/Illumina_pe/called/{sample}/result_files/bsMap.bed",
     log:
-        "logs/bsmap/{sample}/rename_output.log",
+        "logs/bsmap/bsmap_rename_output/{sample}.log",
     shell:
         """
         mkdir -p $(dirname {output})

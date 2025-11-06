@@ -8,7 +8,7 @@ rule compute_pandas_df:
     wildcard_constraints:
         method="(?!varlo|sample_df).*",
     log:
-        "logs/plots/{call_type}/{seq_platform}/{sample}/compute_pandas_df_{method}.log",
+        "logs/plot_results/compute_pandas_df/{call_type}_{seq_platform}_{sample}_{method}.log",
     script:
         "../scripts/pandas_df_from_meth_output.py"
 
@@ -21,7 +21,7 @@ rule compute_varlo_df:
     conda:
         "../envs/plot.yaml"
     log:
-        "logs/plots/{call_type}/{seq_platform}/{fdr}/{sample}/compute_pvarlo_df.log",
+        "logs/plot_results/compute_varlo_df/{call_type}_{seq_platform}_{fdr}_{sample}.log",
     params:
         alpha=lambda wildcards: wildcards.fdr,
     script:
@@ -41,7 +41,7 @@ rule common_tool_df:
     conda:
         "../envs/plot.yaml"
     log:
-        "logs/plots/{call_type}/{seq_platform}/{fdr}/{sample}/common_tool_df.log",
+        "logs/plot_results/common_tool_df/{call_type}_{seq_platform}_{fdr}_{sample}.log",
     params:
         plot_type=config["plot_type"],
     wildcard_constraints:
@@ -70,7 +70,7 @@ rule compute_correlation:
     conda:
         "../envs/plot.yaml"
     log:
-        "logs/plots/{call_type}/{seq_platform}/{fdr}/correlation_tables.log",
+        "logs/plot_results/compute_correlation/{call_type}_{seq_platform}_{fdr}.log",
     wildcard_constraints:
         call_type="(?!multi_sample).*",
     params:
@@ -103,7 +103,7 @@ rule replicates_heatmap:
     resources:
         mem_mb=32000,
     log:
-        "logs/plots/{call_type}/{seq_platform}/{fdr}/plot_heatmap_comparision_{sample}_{plot_type}.log",
+        "logs/plot_results/replicates_heatmap/{call_type}_{seq_platform}_{fdr}_{sample}_{plot_type}.log",
     params:
         meth_callers=lambda wildcards: config["ref_tools"].get(
             wildcards.seq_platform, []
@@ -136,7 +136,7 @@ rule heatmap_illumina_samples:
     resources:
         mem_mb=32000,
     log:
-        "logs/plots/{call_type}/{seq_platform}/{fdr}/plot_heatmap_comparision_{plot_type}.log",
+        "logs/plot_results/{call_type}_{seq_platform}_{fdr}_{plot_type}.log",
     params:
         meth_callers=lambda wildcards: config["ref_tools"].get(
             wildcards.seq_platform, []
@@ -158,7 +158,7 @@ rule plot_runtime_comparison:
     conda:
         "../envs/plot.yaml"
     log:
-        "logs/plots/plot_runtime_comparision_{plot_type}.log",
+        "logs/plot_results/plot_runtime_comparision/{plot_type}.log",
     script:
         "../scripts/plot_runtime_comparision.py"
 
@@ -173,7 +173,7 @@ rule combine_svgs:
     conda:
         "../envs/plot.yaml"
     log:
-        "logs/plots/plot_runtime_comparision_{platform}.log",
+        "logs/plot_results/combine_svgs/{platform}.log",
     params:
         platform=lambda wildcards: wildcards.platform,
     script:

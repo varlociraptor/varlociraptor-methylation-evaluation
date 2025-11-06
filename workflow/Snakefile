@@ -19,7 +19,7 @@ inputflags:
 
 chromosome_by_seq_platform = config["seq_platforms"]
 chromosomes = set(chromosome for chromosome in config["seq_platforms"].values())
-chr_chromosome = set("chr" + str(chromosome) for chromosome in chromosomes)
+chr_chromosome = set(f"chr{chromosome}" for chromosome in chromosomes)
 seq_platform = config["data"]
 
 
@@ -32,7 +32,7 @@ include: "rules/bismark.smk"
 include: "rules/bisSnp.smk"
 include: "rules/bsmapz.smk"
 include: "rules/candidates.smk"
-include: "rules/fake_data.smk"
+include: "rules/mason.smk"
 include: "rules/download_data.smk"
 include: "rules/methylDackel.smk"
 include: "rules/modkit.smk"

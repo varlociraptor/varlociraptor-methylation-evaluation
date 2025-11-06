@@ -6,7 +6,7 @@ rule find_candidates:
     output:
         "resources/{chromosome}/candidates.bcf",
     log:
-        "logs/candidates/find_candidates_{chromosome}.log",
+        "logs/candidates/find_candidates/{chromosome}.log",
     conda:
         "../envs/varlociraptor.yaml"
     shell:
@@ -19,7 +19,7 @@ rule split_candidates:
     output:
         scatter.split_candidates("resources/{{chrom}}/candidates_{scatteritem}.bcf"),
     log:
-        "logs/candidates/split_candidates_{chrom}.log",
+        "logs/candidates/split_candidates/{chrom}.log",
     conda:
         "../envs/rbt.yaml"
     shell:
@@ -32,7 +32,7 @@ rule index_candidates:
     output:
         "resources/{chrom}/candidates.bcf.csi",
     log:
-        "logs/candidates/index_candidates_{chrom}.log",
+        "logs/candidates/index_candidates/{chrom}.log",
     conda:
         "../envs/samtools.yaml"
     shell:

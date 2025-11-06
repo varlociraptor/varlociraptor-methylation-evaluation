@@ -8,7 +8,7 @@ rule call_methylation_together_np_pb:
     output:
         "results/multi_sample/np_pb/called/{replicate}/calls_{scatteritem}.bcf",
     log:
-        "logs/varlociraptor/multi_sample/{replicate}/call_methylation_{scatteritem}.log",
+        "logs/varlociraptor_multi/call_methylation_together_np_pb/{replicate}_{scatteritem}.log",
     benchmark:
         "benchmarks/multi_sample/np_bp/np_pb/{replicate}_{scatteritem}.bwa.benchmark.txt"
     conda:
@@ -26,7 +26,7 @@ rule call_methylation_together_np_trueOX:
     output:
         "results/multi_sample/np_trueOX/called/{replicate}/calls_{scatteritem}.bcf",
     log:
-        "logs/varlociraptor/multi_sample/np_trueOX/{replicate}/call_methylation_{scatteritem}.log",
+        "logs/varlociraptor_multi/call_methylation_together_np_trueOX/{replicate}_{scatteritem}.log",
     benchmark:
         "benchmarks/multi_sample/np_trueOX/np_trueOX/{replicate}_{scatteritem}.bwa.benchmark.txt"
     conda:
@@ -44,7 +44,7 @@ rule call_methylation_together_pb_trueOX:
     output:
         "results/multi_sample/pb_trueOX/called/{replicate}/calls_{scatteritem}.bcf",
     log:
-        "logs/varlociraptor/multi_sample/pb_trueOX/{replicate}/call_methylation_{scatteritem}.log",
+        "logs/varlociraptor_multi/call_methylation_together_pb_trueOX/{replicate}_{scatteritem}.log",
     benchmark:
         "benchmarks/multi_sample/pb_trueOX/pb_trueOX/{replicate}_{scatteritem}.bwa.benchmark.txt"
     conda:
@@ -62,7 +62,7 @@ rule common_meth_calling_df:
     conda:
         "../envs/plot.yaml"
     log:
-        "logs/plots/multi_sample/{fdr}/{sample}/common_tool_df.log",
+        "logs/plot_results/common_tool_df/{fdr}_{sample}.log",
     params:
         plot_type=config["plot_type"],
     resources:
@@ -83,7 +83,7 @@ rule compute_correlation_tables_common:
     conda:
         "../envs/plot.yaml"
     log:
-        "logs/plots/multi_sample/{fdr}/correlation_tables.log",
+        "logs/plot_results/correlation_tables/{fdr}.log",
     params:
         # plot_type=config["plot_type"],
         meth_callers=lambda wildcards: config["ref_tools"].get("multi_sample", [])

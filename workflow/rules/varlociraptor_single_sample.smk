@@ -3,6 +3,8 @@ rule download_varlociraptor:
         "resources/tools/varlociraptor/Cargo.toml",
     conda:
         "../envs/shell_cmds.yaml"
+    log:
+        "logs/varlociraptor_single/download_varlociraptor/download.log",
     shell:
         """
         mkdir -p resources/tools
@@ -20,6 +22,8 @@ rule build_varlociraptor:
         "resources/tools/varlociraptor/target/debug/varlociraptor",
     conda:
         "../envs/varlociraptor.yaml"
+    log:
+        "logs/varlociraptor_single/build_varlociraptor/build.log",
     resources:
         mem_mb=8000,
     shell:
@@ -49,7 +53,7 @@ rule varlociraptor_preprocess:
     output:
         "results/preprocessed/{seq_platform}/{sample}/normal_{scatteritem}.bcf",
     log:
-        "logs/varlociraptor/{seq_platform}/{sample}/compute_meth_observations_{scatteritem}.log",
+        "logs/varlociraptor_single/varlociraptor_preprocess/{seq_platform}_{sample}_{scatteritem}.log",
     benchmark:
         "benchmarks/{seq_platform}/varlociraptor/preprocessing/{sample}_{scatteritem}.bwa.benchmark.txt"
     conda:
@@ -75,7 +79,7 @@ rule varlociraptor_call:
     output:
         "results/single_sample/{seq_platform}/called/{sample}/calls_{scatteritem}.bcf",
     log:
-        "logs/varlociraptor/{seq_platform}/called/{sample}/call_methylation_{scatteritem}.log",
+        "logs/varlociraptor_single/varlociraptor_call/{seq_platform}_{sample}_{scatteritem}.log",
     benchmark:
         "benchmarks/{seq_platform}/varlociraptor/calling/{sample}_{scatteritem}.bwa.benchmark.txt"
     conda:
@@ -113,7 +117,7 @@ rule calls_to_vcf:
     conda:
         "../envs/samtools.yaml"
     log:
-        "logs/varlociraptor/{call_type}/{seq_platform}/{sample}/calls_to_vcf_{scatteritem}.log",
+        "logs/varlociraptor_single/calls_to_vcf/{call_type}_{seq_platform}_{sample}_{scatteritem}.log",
     threads: 10
     shell:
         # "touch {output} 2> {log}"
@@ -128,7 +132,7 @@ rule gather_calls:
     output:
         "results/{call_type}/{seq_platform}/{sample}/result_files/varlo.bed",
     log:
-        "logs/varlociraptor/{call_type}/{seq_platform}/{sample}/gather_calls.log",
+        "logs/varlociraptor_single/gather_calls/{call_type}_{seq_platform}_{sample}.log",
     shell:
         "cat {input} > {output} 2> {log}"
 

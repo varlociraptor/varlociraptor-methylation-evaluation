@@ -6,7 +6,7 @@ rule bissnp_download:
     conda:
         "../envs/shell_cmds.yaml"
     log:
-        "logs/bissnp/download.log",
+        "logs/bissnp/bissnp_download/download.log",
     shell:
         """
         touch {log}
@@ -39,7 +39,7 @@ rule bissnp_prepare:
         alignment="resources/ref_tools/Bis-tools/{sample}/alignment.bam",
         alignment_index="resources/ref_tools/Bis-tools/{sample}/alignment.bam.bai",
     log:
-        "logs/bissnp/{sample}/prepare.log",
+        "logs/bissnp/bissnp_prepare/{sample}.log",
     shell:
         """
         cp {input.jar} {output.jar} 2> {log}
@@ -50,66 +50,67 @@ rule bissnp_prepare:
         """
 
 
-rule split_bisSNP_alignments:
-    input:
-        alignment="resources/ref_tools/Bis-tools/{sample}/alignment.bam",
-        alignment_index="resources/ref_tools/Bis-tools/{sample}/alignment.bam.bai",
-    output:
-        bams=expand(
-            "resources/ref_tools/Bis-tools/{{sample}}/alignment_{i}-of-{n}.bam",
-            i=range(1, config["scatter_number"] + 1),
-            n=config["scatter_number"],
-        ),
-        header="resources/ref_tools/Bis-tools/{sample}/header.sam",
-    log:
-        "logs/bisSNP/split_alignments_{sample}.log",
-    conda:
-        "../envs/samtools.yaml"
-    params:
-        n=lambda wildcards: config["scatter_number"],
-    shell:
-        r"""
-        total=$(samtools view -c {input.alignment})
-        per_part=$(( (total + {params.n} - 1) / {params.n} ))
+# We tried to split the alignment file in smaller parts to process faster but it did not work properly
+# rule split_bisSNP_alignments:
+#     input:
+#         alignment="resources/ref_tools/Bis-tools/{sample}/alignment.bam",
+#         alignment_index="resources/ref_tools/Bis-tools/{sample}/alignment.bam.bai",
+#     output:
+#         bams=expand(
+#             "resources/ref_tools/Bis-tools/{{sample}}/alignment_{i}-of-{n}.bam",
+#             i=range(1, config["scatter_number"] + 1),
+#             n=config["scatter_number"],
+#         ),
+#         header="resources/ref_tools/Bis-tools/{sample}/header.sam",
+#     log:
+#         "logs/bissnp/split_bisSNP_alignments/{sample}.log",
+#     conda:
+#         "../envs/samtools.yaml"
+#     params:
+#         n=lambda wildcards: config["scatter_number"],
+#     shell:
+#         r"""
+#         total=$(samtools view -c {input.alignment})
+#         per_part=$(( (total + {params.n} - 1) / {params.n} ))
 
-        echo "Total reads: $total" > {log}
-        echo "Splitting into {params.n} parts (~$per_part reads each)" >> {log}
+#         echo "Total reads: $total" > {log}
+#         echo "Splitting into {params.n} parts (~$per_part reads each)" >> {log}
 
-        if [ {params.n} -eq 1 ]; then
-            echo "Only one part requested — copying input BAM directly." >> {log}
-            cp {input.alignment} {output[0]}
-            samtools index {output[0]}
-            echo "Done." >> {log}
-            exit 0
-        fi
+#         if [ {params.n} -eq 1 ]; then
+#             echo "Only one part requested — copying input BAM directly." >> {log}
+#             cp {input.alignment} {output[0]}
+#             samtools index {output[0]}
+#             echo "Done." >> {log}
+#             exit 0
+#         fi
 
-        samtools view -H {input.alignment} > header.sam
-        samtools view {input.alignment} | \
-            awk -v per_part=$per_part -v prefix="resources/ref_tools/Bis-tools/{wildcards.sample}/alignment_" -v n={params.n} \
-            'BEGIN {{file_index=1; line_count=0}}
-             {{line_count++; print >> (prefix file_index "-of-" n ".sam");
-              if (line_count >= per_part) {{close(prefix file_index "-of-" n ".sam"); file_index++; line_count=0}}}}
-             END {{for (i=file_index; i<=n; i++) close(prefix i "-of-" n ".sam")}}'
+#         samtools view -H {input.alignment} > header.sam
+#         samtools view {input.alignment} | \
+#             awk -v per_part=$per_part -v prefix="resources/ref_tools/Bis-tools/{wildcards.sample}/alignment_" -v n={params.n} \
+#             'BEGIN {{file_index=1; line_count=0}}
+#              {{line_count++; print >> (prefix file_index "-of-" n ".sam");
+#               if (line_count >= per_part) {{close(prefix file_index "-of-" n ".sam"); file_index++; line_count=0}}}}
+#              END {{for (i=file_index; i<=n; i++) close(prefix i "-of-" n ".sam")}}'
 
-        for i in $(seq 1 {params.n}); do
-            cat header.sam resources/ref_tools/Bis-tools/{wildcards.sample}/alignment_${{i}}-of-{params.n}.sam | \
-                samtools view -b -o resources/ref_tools/Bis-tools/{wildcards.sample}/alignment_${{i}}-of-{params.n}.bam -
-            rm resources/ref_tools/Bis-tools/{wildcards.sample}/alignment_${{i}}-of-{params.n}.sam
-            samtools index resources/ref_tools/Bis-tools/{wildcards.sample}/alignment_${{i}}-of-{params.n}.bam
-        done
+#         for i in $(seq 1 {params.n}); do
+#             cat header.sam resources/ref_tools/Bis-tools/{wildcards.sample}/alignment_${{i}}-of-{params.n}.sam | \
+#                 samtools view -b -o resources/ref_tools/Bis-tools/{wildcards.sample}/alignment_${{i}}-of-{params.n}.bam -
+#             rm resources/ref_tools/Bis-tools/{wildcards.sample}/alignment_${{i}}-of-{params.n}.sam
+#             samtools index resources/ref_tools/Bis-tools/{wildcards.sample}/alignment_${{i}}-of-{params.n}.bam
+#         done
 
-        rm header.sam
-        echo "Splitting into {params.n} BAMs completed." >> {log}
-        """
+#         rm header.sam
+#         echo "Splitting into {params.n} BAMs completed." >> {log}
+#         """
 
 
 rule index_bisSNP_alignments:
     input:
-        "resources/ref_tools/Bis-tools/{sample}/alignment_{scatteritem}.bam",
+        "resources/ref_tools/Bis-tools/{sample}/alignment.bam",
     output:
-        "resources/ref_tools/Bis-tools/{sample}/alignment_{scatteritem}.bam.bai",
+        "resources/ref_tools/Bis-tools/{sample}/alignment.bam.bai",
     log:
-        "logs/bisSNP/index_bisSNP_alignments_{sample}_{scatteritem}.log",
+        "logs/bissnp/index_bisSNP_alignments/{sample}.log",
     conda:
         "../envs/samtools.yaml"
     shell:
@@ -123,11 +124,11 @@ rule bissnp_extract:
         jar="resources/ref_tools/Bis-tools/{sample}/BisSNP-0.82.2.jar",
         genome="resources/ref_tools/Bis-tools/{sample}/genome.fasta",
         genome_index="resources/ref_tools/Bis-tools/{sample}/genome.fasta.fai",
-        alignment="resources/ref_tools/Bis-tools/{sample}/alignment_{scatteritem}.bam",
-        alignment_index="resources/ref_tools/Bis-tools/{sample}/alignment_{scatteritem}.bam.bai",
+        alignment="resources/ref_tools/Bis-tools/{sample}/alignment.bam",
+        alignment_index="resources/ref_tools/Bis-tools/{sample}/alignment.bam.bai",
     output:
-        cpg="results/single_sample/Illumina_pe/called/{sample}/result_files/cpg_{scatteritem}.raw.vcf",
-        snp="results/single_sample/Illumina_pe/called/{sample}/result_files/snp_{scatteritem}.raw.vcf",
+        cpg="results/single_sample/Illumina_pe/called/{sample}/result_files/cpg.raw.vcf",
+        snp="results/single_sample/Illumina_pe/called/{sample}/result_files/snp.raw.vcf",
     conda:
         "../envs/openjdk.yaml"
     params:
@@ -136,9 +137,9 @@ rule bissnp_extract:
         ),
         chromosome=chromosome_by_seq_platform.get("Illumina_pe"),
     log:
-        "logs/bissnp/{sample}_{scatteritem}/extract_meth.log",
+        "logs/bissnp/bissnp_extract/{sample}.log",
     benchmark:
-        "benchmarks/Illumina_pe/bisSNP/bissnp_extract/{sample}_{scatteritem}.txt"
+        "benchmarks/Illumina_pe/bisSNP/bissnp_extract/{sample}.txt"
     resources:
         mem_mb=64000,
     shell:
@@ -148,16 +149,16 @@ rule bissnp_extract:
 rule gather_bisSnp:
     input:
         cpg=gather.split_candidates(
-            "results/single_sample/Illumina_pe/called/{{sample}}/result_files/cpg_{scatteritem}.raw.vcf",
+            "results/single_sample/Illumina_pe/called/{{sample}}/result_files/cpg.raw.vcf",
         ),
         snp=gather.split_candidates(
-            "results/single_sample/Illumina_pe/called/{{sample}}/result_files/snp_{scatteritem}.raw.vcf",
+            "results/single_sample/Illumina_pe/called/{{sample}}/result_files/snp.raw.vcf",
         ),
     output:
         cpg="results/single_sample/Illumina_pe/called/{sample}/result_files/cpg.raw.vcf",
         snp="results/single_sample/Illumina_pe/called/{sample}/result_files/snp.raw.vcf",
     log:
-        "logs/bisSnp/{sample}/gather_calls.log",
+        "logs/bissnp/gather_bissnp/{sample}.log",
     shell:
         """
         cat {input.cpg} > {output.cpg} 2> {log}
@@ -177,7 +178,7 @@ rule bissnp_create_bedgraph:
     output:
         "results/single_sample/Illumina_pe/called/{sample}/result_files/cpg.raw.CG.bedgraph",
     log:
-        "logs/bissnp/{sample}/create_bedgraph.log",
+        "logs/bissnp/bissnp_create_bedgraph/{sample}.log",
     conda:
         "../envs/openjdk.yaml"
     shell:
@@ -190,7 +191,7 @@ rule bissnp_rename_output:
     output:
         "results/single_sample/Illumina_pe/called/{sample}/result_files/bisSNP.bed",
     log:
-        "logs/bissnp/{sample}/rename_output.log",
+        "logs/bissnp/bissnp_rename_output/{sample}.log",
     shell:
         """
         mkdir -p $(dirname {output})

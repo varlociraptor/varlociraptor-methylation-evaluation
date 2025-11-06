@@ -1,9 +1,12 @@
+# Fake data to simulate reads with Mason2
+
+
 rule mason_download:
     output:
         mason_dir=directory("resources/tools/seqan/apps/mason2"),
         mason="resources/tools/seqan/apps/mason2/methylation_levels.h",
     log:
-        "../logs/mason/download.log",
+        "logs/mason/mason_download/download.log",
     conda:
         "../envs/shell_cmds.yaml"
     shell:
@@ -23,7 +26,7 @@ rule mason_fake_methylation:
     conda:
         "../envs/mason.yaml"
     log:
-        "logs/mason_methylation/fake_methylation_{chrom}_{REP}.log",
+        "logs/mason/mason_fake_methylation/{chrom}_{REP}.log",
     shell:
         """
         mkdir -p $(dirname {output.methylation})
@@ -43,7 +46,7 @@ rule mason_fake_variants:
     conda:
         "../envs/mason.yaml"
     log:
-        "logs/mason_variants/fake_variants_{chrom}_{REP}.log",
+        "logs/mason/mason_fake_variants/{chrom}_{REP}.log",
     shell:
         """
         mason_variator --in-reference {input} \
@@ -71,7 +74,7 @@ rule mason_fake_reads:
     conda:
         "../envs/mason.yaml"
     log:
-        "logs/mason_reads/fake_reads_{SRA}_{REP}.log",
+        "logs/mason/mason_fake_reads/{SRA}_{REP}.log",
     params:
         num_fragments=config.get("num_simulated_reads"),
     shell:
@@ -114,7 +117,7 @@ rule mason_align_reads:
     conda:
         "../envs/bwa-meth.yaml"
     log:
-        "logs/mason/align_reads_{REP}.log",
+        "logs/mason/mason_align_reads/{REP}.log",
     threads: 30
     shell:
         """
@@ -132,7 +135,7 @@ rule mason_sam_to_bam:
     conda:
         "../envs/samtools.yaml"
     log:
-        "logs/mason/sam_to_bam_{REP}.log",
+        "logs/mason/mason_sam_to_bam/{REP}.log",
     threads: 30
     shell:
         "samtools view -Sb {input} > {output} 2> {log}"
@@ -147,7 +150,7 @@ rule mason_sort_reads:
     conda:
         "../envs/samtools.yaml"
     log:
-        "logs/mason/sort_reads_{REP}.log",
+        "logs/mason/mason_sort_reads/{REP}.log",
     threads: 10
     shell:
         "samtools sort -@ {threads}  {input} -o {output} 2> {log}"
@@ -165,7 +168,7 @@ rule mason_alignment_forward:
     conda:
         "../envs/samtools.yaml"
     log:
-        "logs/mason/alignment_forward_{REP}.log",
+        "logs/mason/mason_alignment_forward/{REP}.log",
     shell:
         """
         samtools view -b -f 64 -F 16 {input} > {output.first} 2> {log}
@@ -184,7 +187,7 @@ rule mason_alignment_reverse:
     conda:
         "../envs/samtools.yaml"
     log:
-        "logs/mason/alignment_reverse_{REP}.log",
+        "logs/mason/mason_alignment_reverse/{REP}.log",
     shell:
         """
         samtools view -b -f 16 -f 64 {input} > {output.first} 2> {log}
@@ -202,7 +205,7 @@ rule mason_sort_oriented_reads:
         "../envs/samtools.yaml"
     threads: 10
     log:
-        "logs/mason/sort_oriented_reads_{orientation}_{REP}.log",
+        "logs/mason/mason_sort_oriented_reads/{orientation}_{REP}.log",
     shell:
         "samtools sort -@ {threads}  {input} -o {output} 2> {log}"
 
@@ -215,7 +218,7 @@ rule mason_index_oriented_alignment:
     conda:
         "../envs/samtools.yaml"
     log:
-        "logs/mason/index_oriented_alignment_{orientation}_{REP}.log",
+        "logs/mason/mason_index_oriented_alignment/{orientation}_{REP}.log",
     shell:
         "samtools index {input} 2> {log}"
 
@@ -234,7 +237,7 @@ rule mason_coverage:
         "resources/Illumina_pe/simulated_data_{REP}/{orientation}_cov.regions.bed.gz",
         summary="resources/Illumina_pe/simulated_data_{REP}/{orientation}_cov.mosdepth.summary.txt",  # this named output is required for prefix parsing
     log:
-        "logs/mason/coverage_{orientation}_{REP}.log",
+        "logs/mason/mason_coverage/{orientation}_{REP}.log",
     params:
         extra="--no-per-base --use-median",  # optional
     threads: 4  # This value - 1 will be sent to `--threads`
@@ -248,7 +251,7 @@ rule mason_unzip_coverage:
     output:
         "resources/Illumina_pe/simulated_data_{REP}/{orientation}_cov.regions.bed",
     log:
-        "logs/mason/unzip_coverage_{orientation}_{REP}.log",
+        "logs/mason/mason_unzip_coverage/{orientation}_{REP}.log",
     shell:
         "gunzip {input} 2> {log}"
 
@@ -264,6 +267,6 @@ rule mason_compute_truth:
     conda:
         "../envs/python.yaml"
     log:
-        "logs/mason/compute_truth_{chrom}_{REP}.log",
+        "logs/mason/mason_compute_truth/{chrom}_{REP}.log",
     script:
         "../scripts/mason_ascii_to_meth.py"

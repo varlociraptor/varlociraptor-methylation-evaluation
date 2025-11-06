@@ -11,7 +11,7 @@ rule download_genome:
         build=ref_gene.get("build"),
         release=ref_gene.get("release"),
     log:
-        "logs/data/download_genome.log",
+        "logs/download_data/download_genome/download.log",
     cache: "omit-software"
     wrapper:
         "v2.3.2/bio/reference/ensembl-sequence"
@@ -23,7 +23,7 @@ rule genome_index:
     output:
         "resources/genome.fasta.fai",
     log:
-        "logs/data/genome_index.log",
+        "logs/download_data/genome_index/index.log",
     conda:
         "../envs/samtools.yaml"
     shell:
@@ -36,7 +36,7 @@ rule focus_genome_on_chromosome:
     output:
         "resources/chromosome_{chromosome}.fasta",
     log:
-        "logs/data/focus_genome_on_chromosome_{chromosome}.log",
+        "logs/download_data/focus_genome_on_chromosome/{chromosome}.log",
     conda:
         "../envs/samtools.yaml"
     threads: 10
@@ -50,7 +50,7 @@ rule chromosome_index:
     output:
         "resources/chromosome_{chromosome}.fasta.fai",
     log:
-        "logs/data/chromosome_index_{chromosome}.log",
+        "logs/download_data/chromosome_index/{chromosome}.log",
     conda:
         "../envs/samtools.yaml"
     shell:
@@ -66,7 +66,7 @@ rule rename_chromosome_in_fasta:
     output:
         "resources/chr_chromosome_{chromosome}.fasta",
     log:
-        "logs/data/rename_chromosome_in_fasta_{chromosome}.log",
+        "logs/download_data/rename_chromosome_in_fasta/{chromosome}.log",
     conda:
         "../envs/python.yaml"
     script:
@@ -78,7 +78,7 @@ rule get_fastq_pe:
         "resources/Illumina_pe/{sample}/{SRA}/{accession}_1.fastq",
         "resources/Illumina_pe/{sample}/{SRA}/{accession}_2.fastq",
     log:
-        "logs/data/{sample}/get_fastq_pe_{SRA}_{accession}.log",
+        "logs/download_data/get_fastq_pe/{sample}_{SRA}_{accession}.log",
     params:
         extra="--skip-technical",
     threads: 6
@@ -92,7 +92,7 @@ rule get_fastq_se:
     output:
         "resources/Illumina_se/{sample}/{SRA}/{accession}.fastq",
     log:
-        "logs/data/{sample}/get_fastq_se_{SRA}_{accession}.log",
+        "logs/download_data/get_fastq_se/{sample}_{SRA}_{accession}.log",
     params:
         extra="--skip-technical",
     threads: 6
@@ -108,7 +108,7 @@ rule trim_fastq_pe:
         first="resources/Illumina_pe/{sample}/{SRA}/{accession}_1_trimmed.fastq",
         second="resources/Illumina_pe/{sample}/{SRA}/{accession}_2_trimmed.fastq",
     log:
-        "logs/data/{sample}/trim_fastq_pe_{SRA}_{accession}.log",
+        "logs/download_data/trim_fastq_pe/{sample}_{SRA}_{accession}.log",
     conda:
         "../envs/fastp.yaml"
     wildcard_constraints:
@@ -123,7 +123,7 @@ rule trim_fastq_se:
     output:
         first="resources/Illumina_se/{sample}/{SRA}/{accession}_trimmed.fastq",
     log:
-        "logs/data/{sample}/trim_fastq_se_{SRA}_{accession}.log",
+        "logs/download_data/trim_fastq_se/{sample}_{SRA}_{accession}.log",
     conda:
         "../envs/fastp.yaml"
     shell:
@@ -135,9 +135,9 @@ rule get_pacbio_data:
         alignment="resources/PacBio/{sample}/{SRA}/alignment.bam",
     params:
         url=lambda wildcards: config.get(str(wildcards.SRA)),
-        chromosome="chr" + str(config["seq_platforms"].get("PacBio")),
+        chromosome=f"chr{config['seq_platforms'].get('PacBio')}",
     log:
-        "logs/data/{sample}/get_pacbio_data_{SRA}.log",
+        "logs/download_data/get_pacbio_data/{sample}_{SRA}.log",
     resources:
         mem_mb=4096,
     conda:
@@ -152,9 +152,9 @@ rule get_nanopore_data:
         alignment="resources/Nanopore/{sample}/{SRA}/alignment.bam",
     params:
         url=lambda wildcards: config.get(str(wildcards.SRA)),
-        chromosome="chr" + str(config["seq_platforms"].get("Nanopore")),
+        chromosome=f"chr{config['seq_platforms'].get('Nanopore')}",
     log:
-        "logs/data/{sample}/get_nanopore_data_{SRA}.log",
+        "logs/download_data/get_nanopore_data/{sample}_{SRA}.log",
     resources:
         mem_mb=4096,
     conda:

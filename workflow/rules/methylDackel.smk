@@ -24,7 +24,7 @@ rule methylDackel_compute_meth:
     conda:
         "../envs/methylDackel.yaml"
     log:
-        "logs/methylDackel/{sample}/compute_meth.log",
+        "logs/methylDackel/methylDackel_compute_meth/{sample}.log",
     benchmark:
         "benchmarks/Illumina_pe/methylDackel/methylDackel/{sample}.bwa.benchmark.txt"
     params:
@@ -44,6 +44,6 @@ rule methylDackel_rename_output:
     output:
         "results/single_sample/Illumina_pe/called/{sample}/result_files/methylDackel.bed",
     log:
-        "logs/methylDackel/{sample}/rename_output.log",
+        "logs/methylDackel/methylDackel_rename_output/{sample}.log",
     shell:
         "mkdir -p $(dirname {output}) && mv {input} {output} 2> {log}"
