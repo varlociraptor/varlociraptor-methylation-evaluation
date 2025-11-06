@@ -133,6 +133,8 @@ rule gather_calls:
         "results/{call_type}/{seq_platform}/{sample}/result_files/varlo.bed",
     log:
         "logs/varlociraptor_single/gather_calls/{call_type}_{seq_platform}_{sample}.log",
+    conda:
+        "../envs/general.yaml"
     shell:
         "cat {input} > {output} 2> {log}"
 

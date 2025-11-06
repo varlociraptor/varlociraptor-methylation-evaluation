@@ -40,6 +40,8 @@ rule bissnp_prepare:
         alignment_index="resources/ref_tools/Bis-tools/{sample}/alignment.bam.bai",
     log:
         "logs/bissnp/bissnp_prepare/{sample}.log",
+    conda:
+        "../envs/general.yaml"
     shell:
         """
         cp {input.jar} {output.jar} 2> {log}
@@ -159,6 +161,8 @@ rule gather_bisSnp:
         snp="results/single_sample/Illumina_pe/called/{sample}/result_files/snp.raw.vcf",
     log:
         "logs/bissnp/gather_bissnp/{sample}.log",
+    conda:
+        "../envs/general.yaml"
     shell:
         """
         cat {input.cpg} > {output.cpg} 2> {log}
@@ -192,6 +196,8 @@ rule bissnp_rename_output:
         "results/single_sample/Illumina_pe/called/{sample}/result_files/bisSNP.bed",
     log:
         "logs/bissnp/bissnp_rename_output/{sample}.log",
+    conda:
+        "../envs/general.yaml"
     shell:
         """
         mkdir -p $(dirname {output})

@@ -1,11 +1,13 @@
 # Clone BSMAPz and compile bsmapz locally
 # The official conda environment does not work properly (Illegal instruction     (core dumped))
-rule bsmap_clone_and_build:
+rule bsmapz_clone_and_build:
     output:
         binary="resources/ref_tools/BSMAPz/bsmapz",
         meth_extractor="resources/ref_tools/BSMAPz/methratio.py",
     log:
-        "logs/bsmap/bsmap_clone_and_build/download.log",
+        "logs/bsmapz/bsmapz_clone_and_build/download.log",
+    conda:
+        "../envs/general.yaml"
     shell:
         """
         mkdir -p resources/ref_tools
@@ -24,7 +26,7 @@ rule bsmap_clone_and_build:
 #     output:
 #         "resources/ref_tools/BSMAPz/methratio.py",
 #     log:
-#         "logs/bsmap/download_methratio.log",
+#         "logs/bsmapz/downlzoad_methratio.log",
 #     shell:
 #         """
 #         mkdir -p $(dirname {output})
@@ -45,11 +47,13 @@ rule bsmapz_compute_meth:
     output:
         temp("results/single_sample/Illumina_pe/called/{sample}/result_files/out.sam"),
     log:
-        "logs/bsmap/bsmap_compute/{sample}.log",
+        "logs/bsmapz/bsmapz_compute/{sample}.log",
     resources:
         mem_mb=32000,
     benchmark:
         "benchmarks/Illumina_pe/bsmap/bsmap_compute/{sample}.bwa.benchmark.txt"
+    conda:
+        "../envs/general.yaml"
     threads: 8
     shell:
         """
@@ -73,7 +77,7 @@ rule bsmapz_extract:
     output:
         "results/single_sample/Illumina_pe/called/{sample}/result_files/methylation_ratios.bed",
     log:
-        "logs/bsmap/bsmap_extract/{sample}.log",
+        "logs/bsmapz/bsmapz_extract/{sample}.log",
     params:
         chromosome=chromosome_by_seq_platform.get("Illumina_pe"),
     conda:
@@ -91,7 +95,9 @@ rule bsmapz_rename_output:
     output:
         "results/single_sample/Illumina_pe/called/{sample}/result_files/bsMap.bed",
     log:
-        "logs/bsmap/bsmap_rename_output/{sample}.log",
+        "logs/bsmapz/bsmapz_rename_output/{sample}.log",
+    conda:
+        "../envs/general.yaml"
     shell:
         """
         mkdir -p $(dirname {output})

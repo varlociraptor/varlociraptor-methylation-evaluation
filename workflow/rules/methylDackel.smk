@@ -45,5 +45,7 @@ rule methylDackel_rename_output:
         "results/single_sample/Illumina_pe/called/{sample}/result_files/methylDackel.bed",
     log:
         "logs/methylDackel/methylDackel_rename_output/{sample}.log",
+    conda:
+        "../envs/general.yaml"
     shell:
         "mkdir -p $(dirname {output}) && mv {input} {output} 2> {log}"

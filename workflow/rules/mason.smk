@@ -252,6 +252,8 @@ rule mason_unzip_coverage:
         "resources/Illumina_pe/simulated_data_{REP}/{orientation}_cov.regions.bed",
     log:
         "logs/mason/mason_unzip_coverage/{orientation}_{REP}.log",
+    conda:
+        "../envs/general.yaml"
     shell:
         "gunzip {input} 2> {log}"
 

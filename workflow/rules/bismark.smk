@@ -8,6 +8,8 @@ rule bismark_copy_genome:
         "resources/ref_tools/bismark/genome.fasta",
     log:
         "logs/bismark/bismark_copy_genome/copy.log",
+    conda:
+        "../envs/general.yaml"
     shell:
         """
         mkdir -p $(dirname {output}) 2> {log}

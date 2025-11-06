@@ -36,6 +36,8 @@ rule pb_CpG_compute_methylation:
             ".combined", ""
         ),
     threads: 8
+    conda:
+        "../envs/general.yaml"
     benchmark:
         "benchmarks/{platform}/pb-CpG-tools/pb-CpG-tools/{sample}.bwa.benchmark.txt"
     shell:
@@ -49,5 +51,7 @@ rule pb_CpG_rename_output:
         "results/single_sample/{platform}/called/{sample}/result_files/pb_CpG_tools.bed",
     log:
         "logs/pb_CpG_tools/pb_CpG_rename_output/{platform}_{sample}.log",
+    conda:
+        "../envs/general.yaml"
     shell:
         "mv {input} {output} 2> {log}"
