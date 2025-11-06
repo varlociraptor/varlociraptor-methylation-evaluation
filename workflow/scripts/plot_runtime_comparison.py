@@ -66,9 +66,6 @@ df_compare_tools = (
     .assign(platform_tool=lambda x: x["platform"] + " - " + x["tool"])
 )
 
-df_summary = df_all.groupby(
-    ["platform", "meth_caller", "replicate", "task"], as_index=False
-).agg(s=("s", "sum"), max_rss=("max_rss", "max"))
 
 # Compare Varlociraptor steps individually
 df_compare_varlo = (

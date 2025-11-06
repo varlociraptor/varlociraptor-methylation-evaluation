@@ -255,7 +255,7 @@ rule mason_unzip_coverage:
     conda:
         "../envs/general.yaml"
     shell:
-        "gunzip {input} 2> {log}"
+        "gunzip -c {input} > {output} 2> {log}"
 
 
 rule mason_compute_truth:

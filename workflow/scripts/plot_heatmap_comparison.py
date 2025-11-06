@@ -129,7 +129,7 @@ def plot_histogram_cdf(meth_callers, meth_caller_dfs, cdf_dfs):
     return combined_chart
 
 
-def compute_replicate_counts(df_dict: dict, bin_size: int, relative=False):
+def compute_replicate_counts(df_dict: dict, bin_size: int):
     """
     Compute replicate counts and binned/unbinned distances for each methylation caller.
     Returns:
