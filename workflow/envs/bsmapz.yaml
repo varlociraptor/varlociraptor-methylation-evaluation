@@ -1,4 +1,4 @@
 channels:
   - zyndagj
 dependencies:
-  - bsmapz 1.1.3
+  - bsmapz=1.1.3

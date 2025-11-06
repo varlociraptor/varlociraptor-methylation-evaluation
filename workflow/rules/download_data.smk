@@ -75,24 +75,24 @@ rule rename_chromosome_in_fasta:
 
 rule get_fastq_pe:
     output:
-        "resources/Illumina_pe/{sample}/{SRA}/{accession}_1.fastq",
-        "resources/Illumina_pe/{sample}/{SRA}/{accession}_2.fastq",
+        "resources/Illumina_pe/{sample,(?!simulated_data).*}/{SRA}/{SRA}_1.fastq",
+        "resources/Illumina_pe/{sample,(?!simulated_data).*}/{SRA}/{SRA}_2.fastq",
     log:
-        "logs/download_data/get_fastq_pe/{sample}_{SRA}_{accession}.log",
+        "logs/download_data/get_fastq_pe/{sample}_{SRA}_{SRA}.log",
     params:
         extra="--skip-technical",
     threads: 6
-    wildcard_constraints:
-        sample="^(?!simulated_data$).*",
+    # wildcard_constraints:
+    #     sample="",
     wrapper:
         "v7.1.0/bio/sra-tools/fasterq-dump"
 
 
 rule get_fastq_se:
     output:
-        "resources/Illumina_se/{sample}/{SRA}/{accession}.fastq",
+        "resources/Illumina_se/{sample}/{SRA}/{SRA}.fastq",
     log:
-        "logs/download_data/get_fastq_se/{sample}_{SRA}_{accession}.log",
+        "logs/download_data/get_fastq_se/{sample}_{SRA}_{SRA}.log",
     params:
         extra="--skip-technical",
     threads: 6
@@ -102,13 +102,15 @@ rule get_fastq_se:
 
 rule trim_fastq_pe:
     input:
-        first="resources/Illumina_pe/{sample}/{SRA}/{accession}_1.fastq",
-        second="resources/Illumina_pe/{sample}/{SRA}/{accession}_2.fastq",
+        first="resources/Illumina_pe/{sample,(?!simulated_data).*}/{SRA}/{SRA}_1.fastq",
+        second="resources/Illumina_pe/{sample,(?!simulated_data).*}/{SRA}/{SRA}_2.fastq",
     output:
-        first="resources/Illumina_pe/{sample}/{SRA}/{accession}_1_trimmed.fastq",
-        second="resources/Illumina_pe/{sample}/{SRA}/{accession}_2_trimmed.fastq",
+        first="resources/Illumina_pe/{sample,(?!simulated_data).*}/{SRA}/{SRA}_1_trimmed.fastq",
+        second="resources/Illumina_pe/{sample,(?!simulated_data).*}/{SRA}/{SRA}_2_trimmed.fastq",
+        # first="resources/Illumina_pe/{sample}/{SRA}/{SRA}_1_trimmed.fastq",
+        # second="resources/Illumina_pe/{sample}/{SRA}/{SRA}_2_trimmed.fastq",
     log:
-        "logs/download_data/trim_fastq_pe/{sample}_{SRA}_{accession}.log",
+        "logs/download_data/trim_fastq_pe/{sample}_{SRA}_{SRA}.log",
     conda:
         "../envs/fastp.yaml"
     wildcard_constraints:
@@ -119,11 +121,11 @@ rule trim_fastq_pe:
 
 rule trim_fastq_se:
     input:
-        first="resources/Illumina_se/{sample}/{SRA}/{accession}.fastq",
+        first="resources/Illumina_se/{sample}/{SRA}/{SRA}.fastq",
     output:
-        first="resources/Illumina_se/{sample}/{SRA}/{accession}_trimmed.fastq",
+        first="resources/Illumina_se/{sample}/{SRA}/{SRA}_trimmed.fastq",
     log:
-        "logs/download_data/trim_fastq_se/{sample}_{SRA}_{accession}.log",
+        "logs/download_data/trim_fastq_se/{sample}_{SRA}_{SRA}.log",
     conda:
         "../envs/fastp.yaml"
     shell:
