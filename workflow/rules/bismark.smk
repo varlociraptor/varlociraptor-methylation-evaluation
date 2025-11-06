@@ -128,7 +128,6 @@ rule deduplicate_bismark:
 rule bismark_methylation_extractor:
     input:
         bam="resources/ref_tools/bismark/dedup/{sample}.deduplicated.bam",
-        # "resources/ref_tools/bismark/bams/{sample}_pe_name_sorted.bam",
     output:
         cov_zero_based="resources/ref_tools/bismark/meth/{sample}.deduplicated.bedGraph.gz.bismark.zero.cov",
         mbias_r1="resources/ref_tools/bismark/qc/meth/{sample}.deduplicated.M-bias_R1.png",
@@ -145,7 +144,6 @@ rule bismark_methylation_extractor:
         # * You could merge CHG, CHH using: --merge_non_CpG
         read_base_meth_state_chg="resources/ref_tools/bismark/meth/CHG_context_{sample}.deduplicated.txt.gz",
         read_base_meth_state_chh="resources/ref_tools/bismark/meth/CHH_context_{sample}.deduplicated.txt.gz",
-        # cytosine_report="resources/ref_tools/bismark/report/meth/{sample}.deduplicated.cytosine_report.txt",
     log:
         "logs/meth/{sample}.log",
     params:

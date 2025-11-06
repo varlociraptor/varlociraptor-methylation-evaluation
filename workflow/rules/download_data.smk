@@ -144,7 +144,6 @@ rule get_pacbio_data:
         "../envs/samtools.yaml"
     shell:
         "samtools view -b {params.url} {params.chromosome} > {output.alignment}"
-        # "../scripts/get_pacbio_data.py"
 
 
 # TODO: Does not work for replicate2. You have to download this manually with wget right now

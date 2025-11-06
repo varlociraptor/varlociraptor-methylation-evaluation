@@ -14,7 +14,8 @@ scattergather:
 
 
 inputflags:
-    access.sequential
+    access.sequential,
+
 
 chromosome_by_seq_platform = config["seq_platforms"]
 chromosomes = set(chromosome for chromosome in config["seq_platforms"].values())
@@ -23,6 +24,7 @@ seq_platform = config["data"]
 
 
 report: "report/workflow.rst"
+
 
 include: "rules/common.smk"
 include: "rules/alignments.smk"
@@ -39,6 +41,7 @@ include: "rules/pbCpgTools.smk"
 include: "rules/candidates.smk"
 include: "rules/varlociraptor_multi_sample.smk"
 include: "rules/varlociraptor_single_sample.smk"
+
 
 rule all:
     input:

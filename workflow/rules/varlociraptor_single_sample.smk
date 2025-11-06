@@ -29,13 +29,6 @@ rule build_varlociraptor:
         cd $(dirname {input})
         cargo build
         """
-        # mkdir -p $(dirname {output})
-        # CARGO_TARGET_DIR={resources.tmpdir}/cargo_target \
-        #     cargo build
-        # mkdir -p $(dirname {output})
-        # cp {resources.tmpdir}/cargo_target/debug/varlociraptor {output}
-        # touch {output}
-        # ls $(dirname {output}) >> {log}
 
 
 rule varlociraptor_preprocess:

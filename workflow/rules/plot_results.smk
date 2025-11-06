@@ -109,11 +109,9 @@ rule replicates_heatmap:
             wildcards.seq_platform, []
         )
         + ["varlo"],
-        # meth_callers=["varlo"],
         sample=lambda wildcards: wildcards.sample,
         bin_size=lambda wildcards: config["heatmap_bin_size"],
         fdr=lambda wildcards: wildcards.fdr,
-        # correlation_method=config["correlation_method"],
     script:
         "../scripts/plot_heatmap_comparision.py"
 
@@ -144,11 +142,9 @@ rule heatmap_illumina_samples:
             wildcards.seq_platform, []
         )
         + ["varlo"],
-        # sample="all",
         sample=lambda wildcards: config["samples"].get(wildcards.seq_platform, []),
         bin_size=lambda wildcards: config["heatmap_bin_size"],
         fdr=lambda wildcards: wildcards.fdr,
-        # correlation_method=config["correlation_method"],
     script:
         "../scripts/plot_heatmap_comparision.py"
 
