@@ -189,6 +189,10 @@ rule bismark_merge_positions:
             "resources/{chrom}/candidates.bcf",
             chrom=config["seq_platforms"].get("Illumina_pe"),
         ),
+        candidates_index=expand(
+            "resources/{chrom}/candidates.bcf.csi",
+            chrom=config["seq_platforms"].get("Illumina_pe"),
+        ),
     output:
         "results/single_sample/Illumina_pe/called/{sample}/result_files/bismark.bed",
     log:

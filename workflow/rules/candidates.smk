@@ -24,3 +24,16 @@ rule split_candidates:
         "../envs/rbt.yaml"
     shell:
         "rbt vcf-split {input} {output} 2> {log}"
+
+
+rule index_candidates:
+    input:
+        "resources/{chrom}/candidates.bcf",
+    output:
+        "resources/{chrom}/candidates.bcf.csi",
+    log:
+        "logs/candidates/index_candidates_{chrom}.log",
+    conda:
+        "../envs/samtools.yaml"
+    shell:
+        "bcftools index {input}"
