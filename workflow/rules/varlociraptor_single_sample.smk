@@ -18,8 +18,6 @@ rule build_varlociraptor:
         "resources/tools/varlociraptor/Cargo.toml",
     output:
         "resources/tools/varlociraptor/target/debug/varlociraptor",
-    log:
-        "logs/varlociraptor/build.log",
     conda:
         "../envs/varlociraptor.yaml"
     resources:

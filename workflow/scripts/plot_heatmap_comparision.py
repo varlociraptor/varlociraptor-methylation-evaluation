@@ -4,18 +4,13 @@ import sys
 import numpy as np
 from functools import reduce
 
-# -----------------------------
-# Logging and display options
-# -----------------------------
+
 sys.stderr = open(snakemake.log[0], "w")
 pd.set_option("display.max_columns", None)
 pd.set_option("display.max_rows", 1000)
 alt.data_transformers.enable("vegafusion")
 
 
-# -----------------------------
-# Helper functions
-# -----------------------------
 def bin_methylation(series: pd.Series, bin_size: int) -> pd.Series:
     """
     Round methylation values to the nearest bin_size and cast to int.
@@ -202,14 +197,13 @@ def compute_replicate_counts(df_dict: dict, bin_size: int, relative=False):
 
         # Unbinned distances for CDF
         agg_cdf = df_temp.copy()
-        agg_cdf["dist"] = agg_cdf.apply(
-            lambda row: (
-                0
-                if max(row[x_col], row[y_col]) == 0
-                else abs(row[x_col] - row[y_col]) / max(row[x_col], row[y_col]) * 100
-            ),
-            axis=1,
-        ).round(2)
+        # Calculate distance directly using vectorized operations
+        max_vals = agg_cdf[[x_col, y_col]].max(axis=1)
+        agg_cdf["dist"] = np.where(
+            max_vals == 0,
+            0,
+            (np.abs(agg_cdf[x_col] - agg_cdf[y_col]) / max_vals * 100).round(2),
+        )
         agg_cdf = agg_cdf.groupby("dist", as_index=False).agg(count=("dist", "size"))
         agg_cdf["rel_count"] = agg_cdf["count"] / agg_cdf["count"].sum() * 100
         agg_cdf["cdf"] = agg_cdf["count"].cumsum() / agg_cdf["count"].sum()

@@ -1,6 +1,5 @@
 channels:
   - conda-forge
-  - anaconda
 dependencies:
   - wget =1.20
   - tar =1.34

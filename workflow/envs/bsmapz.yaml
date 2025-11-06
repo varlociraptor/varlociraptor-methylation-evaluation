@@ -1,0 +1,4 @@
+channels:
+  - zyndagj
+dependencies:
+  - bsmapz 1.1.3

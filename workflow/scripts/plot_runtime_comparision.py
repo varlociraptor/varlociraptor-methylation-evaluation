@@ -3,6 +3,8 @@ import re
 import pandas as pd
 import altair as alt
 import sys
+from pathlib import Path
+
 
 sys.stderr = open(snakemake.log[0], "w")
 
@@ -25,7 +27,6 @@ def boxplot_with_points(df, x, y, color, x_title, y_title, title):
 # Read benchmark files from Snakemake input directory
 records = []
 benchmark_path = snakemake.input.benchmarks
-from pathlib import Path
 
 
 for root, _, files in os.walk(benchmark_path):
@@ -47,11 +48,7 @@ for root, _, files in os.walk(benchmark_path):
         records.append(df)
 
 df_all = pd.concat(records, ignore_index=True)
-# Aggregate runtime and memory usage per replicate
 
-df_summary = df_all.groupby(
-    ["platform", "meth_caller", "replicate"], as_index=False
-).agg(s=("s", "sum"), max_rss=("max_rss", "max"))
 # Compare different methylation calling tools
 df_compare_tools = (
     df_all.groupby(["platform", "meth_caller", "replicate"], as_index=False)

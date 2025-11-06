@@ -1,20 +1,37 @@
-# We need the newer methylation extractor from bsmapz, since the original one is outdated:
-# https://github.com/zyndagj/BSMAPz
-rule bsmap_download:
+# Clone BSMAPz and compile bsmapz locally
+# The official conda environment does not work properly (Illegal instruction     (core dumped))
+rule bsmap_clone_and_build:
     output:
-        "resources/ref_tools/bsMap/methratio.py",
-    log:
-        "logs/bsmap/download.log",
+        binary="resources/ref_tools/BSMAPz/bsmapz",
+        meth_extractor="resources/ref_tools/BSMAPz/methratio.py",
     shell:
         """
-        mkdir -p $(dirname {output})
-        mkdir -p logs/bsmap
-        cd $(dirname {output})
-        wget https://raw.githubusercontent.com/zyndagj/BSMAPz/master/methratio.py 
+        mkdir -p resources/ref_tools
+        cd resources/ref_tools
+        # if [ ! -d BSMAPz ]; then
+        git clone https://github.com/zyndagj/BSMAPz.git
+        # fi
+        cd BSMAPz
+        make bsmapz
+        cp bsmapz ../../bsmapz
         """
 
 
-rule bsmap_compute_meth:
+# # Download the newer methylation extractor from BSMAPz
+# rule bsmap_download_methratio:
+#     output:
+#         "resources/ref_tools/BSMAPz/methratio.py",
+#     log:
+#         "logs/bsmap/download_methratio.log",
+#     shell:
+#         """
+#         mkdir -p $(dirname {output})
+#         wget -O {output} https://raw.githubusercontent.com/zyndagj/BSMAPz/master/methratio.py > {log} 2>&1
+# """
+
+
+# Run BSMAPz to compute methylation alignments
+rule bsmapz_compute_meth:
     input:
         genome=expand(
             "resources/chromosome_{chrom}.fasta",
@@ -22,11 +39,9 @@ rule bsmap_compute_meth:
         ),
         alignment="resources/Illumina_pe/{sample}/alignment_focused_downsampled_dedup_renamed.bam",
         alignment_index="resources/Illumina_pe/{sample}/alignment_focused_downsampled_dedup_renamed.bam.bai",
+        bsmap_binary="resources/ref_tools/BSMAPz/bsmapz",
     output:
-        # alignment_renamed=temp("bsmap.bam"),
         temp("results/single_sample/Illumina_pe/called/{sample}/result_files/out.sam"),
-    conda:
-        "../envs/bsmap.yaml"
     log:
         "logs/bsmap/{sample}/compute_meth.log",
     resources:
@@ -36,11 +51,12 @@ rule bsmap_compute_meth:
     threads: 8
     shell:
         """
-        bsmap -a {input.alignment} -d {input.genome} -o {output} -p {threads} -w 100  -v 0.07 -m 50 -x 300
+        {input.bsmap_binary} -a {input.alignment} -d {input.genome} -o {output} -p {threads} -w 100 -v 0.07 -m 50 -x 300 > {log} 2>&1
         """
 
 
-rule bsmap_extract:
+# Extract methylation ratios
+rule bsmapz_extract:
     input:
         genome=expand(
             "resources/chromosome_{chrom}.fasta",
@@ -51,22 +67,23 @@ rule bsmap_extract:
             chrom=config["seq_platforms"].get("Illumina_pe"),
         ),
         bsmap_sam="results/single_sample/Illumina_pe/called/{sample}/result_files/out.sam",
-        meth_extractor="resources/ref_tools/bsMap/methratio.py",
+        meth_extractor="resources/ref_tools/BSMAPz/methratio.py",
     output:
         "results/single_sample/Illumina_pe/called/{sample}/result_files/methylation_ratios.bed",
-    conda:
-        "../envs/bsmap.yaml"
     log:
         "logs/bsmap/{sample}/extract_meth.log",
     params:
         chromosome=chromosome_by_seq_platform.get("Illumina_pe"),
+    conda:
+        "../envs/bsmapz.yaml"
     benchmark:
         "benchmarks/Illumina_pe/bsmap/bsmap_extract/{sample}.bwa.benchmark.txt"
     shell:
         "python {input.meth_extractor} -c={params.chromosome} --ref={input.genome} --out={output} {input.bsmap_sam} -g -x CG 2> {log}"
 
 
-rule bsmap_rename_output:
+# Rename output file to standardized name
+rule bsmapz_rename_output:
     input:
         "results/single_sample/Illumina_pe/called/{sample}/result_files/methylation_ratios.bed",
     output:

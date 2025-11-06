@@ -6,7 +6,7 @@
 from pathlib import Path
 
 
-configfile: "config/config.yaml"
+configfile: "config/config_simulate.yaml"
 
 
 scattergather:
@@ -30,7 +30,7 @@ include: "rules/common.smk"
 include: "rules/alignments.smk"
 include: "rules/bismark.smk"
 include: "rules/bisSnp.smk"
-include: "rules/bsmap.smk"
+include: "rules/bsmapz.smk"
 include: "rules/candidates.smk"
 include: "rules/fake_data.smk"
 include: "rules/download_data.smk"
@@ -38,7 +38,6 @@ include: "rules/methylDackel.smk"
 include: "rules/modkit.smk"
 include: "rules/plot_results.smk"
 include: "rules/pbCpgTools.smk"
-include: "rules/candidates.smk"
 include: "rules/varlociraptor_multi_sample.smk"
 include: "rules/varlociraptor_single_sample.smk"
 

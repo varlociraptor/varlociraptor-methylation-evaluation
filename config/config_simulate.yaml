@@ -37,7 +37,7 @@ fdr_alpha: [0.01, 1.0]
 ###################################### PLOTS ##################################################
 
 heatmap_bin_size: 5
-# Choose frome png, svg, html
+# Choose from png, svg, html
 plot_type: svg
 # Define the correlation method for the comparision of the different samples
 # Choose any number from: pearson, spearman, rmse, ccc (concordance correlation coefficient), adjusted_mape
