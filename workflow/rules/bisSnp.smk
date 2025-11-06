@@ -106,19 +106,19 @@ rule bissnp_prepare:
 #         """
 
 
-rule index_bisSNP_alignments:
-    input:
-        "resources/ref_tools/Bis-tools/{sample}/alignment.bam",
-    output:
-        "resources/ref_tools/Bis-tools/{sample}/alignment.bam.bai",
-    log:
-        "logs/bissnp/index_bisSNP_alignments/{sample}.log",
-    conda:
-        "../envs/samtools.yaml"
-    shell:
-        """
-        samtools index {input} 2> {log}
-        """
+# rule index_bisSNP_alignments:
+#     input:
+#         "resources/ref_tools/Bis-tools/{sample}/alignment.bam",
+#     output:
+#         "resources/ref_tools/Bis-tools/{sample}/alignment.bam.bai",
+#     log:
+#         "logs/bissnp/index_bisSNP_alignments/{sample}.log",
+#     conda:
+#         "../envs/samtools.yaml"
+#     shell:
+#         """
+#         samtools index {input} 2> {log}
+#         """
 
 
 rule bissnp_extract:
