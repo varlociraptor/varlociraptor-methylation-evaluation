@@ -6,15 +6,14 @@
 from pathlib import Path
 
 
-configfile: "config/config.yaml"
+configfile: "config/config_simulate.yaml"
 
 
 scattergather:
     split_candidates=config["scatter_number"],
 
 
-inputflags:
-    access.sequential,
+inputflags: access.sequential,
 
 
 chromosome_by_seq_platform = config["seq_platforms"]

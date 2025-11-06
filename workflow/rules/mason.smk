@@ -103,13 +103,13 @@ rule mason_align_reads:
         f1=expand(
             "resources/Illumina_pe/simulated_data_{{REP}}/{SRA}/{SRA}_1.fastq",
             SRA=lambda wildcards: config["data"]["Illumina_pe"][
-                f"simulated_data_{wildcards.REP}"
+            f"simulated_data_{wildcards.REP}"
             ],
         ),
         f2=expand(
             "resources/Illumina_pe/simulated_data_{{REP}}/{SRA}/{SRA}_2.fastq",
             SRA=lambda wildcards: config["data"]["Illumina_pe"][
-                f"simulated_data_{wildcards.REP}"
+            f"simulated_data_{wildcards.REP}"
             ],
         ),
     output:
