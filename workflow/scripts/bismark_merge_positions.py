@@ -10,32 +10,31 @@ bedgraph = pd.read_csv(
 )
 bedgraph["chrom"] = bedgraph["chrom"].astype(str)
 
-# Read BCF
-bcf_file = pysam.VariantFile(snakemake.input["candidates"][0])
+# Read BCF 
+bcf = pysam.VariantFile(snakemake.input["candidates"][0])
 
 results = []
 
-for record in bcf_file:
-    chrom = record.chrom
-    pos = record.pos  # 1-based position
-    # Find matching bedgraph positions
-    mask = (bedgraph["chrom"] == chrom) & (
-        (bedgraph["start"] == pos) | (bedgraph["end"] == pos)
-    )
-    matching = bedgraph[mask]
+for idx, row in bedgraph.iterrows():
+    chrom = row["chrom"]
+    pos_start = int(row["start"])
+    pos_end = int(row["end"])
 
-    if matching.empty:
+    records = list(bcf.fetch(chrom, pos_start, pos_end))  
+
+    if len(records) == 0:
+        print(f"No candidate in BCF for {chrom}:{pos_start}-{pos_end}")
         continue
-
-    total_meth = matching["meth"].sum()
-    total_unmeth = matching["unmeth"].sum()
+    print(f"Found {len(records)} candidates in BCF for {chrom}:{pos_start}-{pos_end}")
+    total_meth = row["meth"]
+    total_unmeth = row["unmeth"]
     merged_percentage = (total_meth / (total_meth + total_unmeth)) * 100
 
     results.append(
         {
             "chrom": chrom,
-            "pos_start": pos - 1,
-            "pos_end": pos + 1,
+            "pos_start": pos_start,
+            "pos_end": pos_end,
             "meth_pct_merged": round(merged_percentage, 2),
             "coverage": int(total_meth + total_unmeth),
             "meth_counts": int(total_meth),
@@ -43,6 +42,4 @@ for record in bcf_file:
         }
     )
 
-# Save merged results
-merged_df = pd.DataFrame(results)
-merged_df.to_csv(snakemake.output[0], sep="\t", header=False, index=False)
+pd.DataFrame(results).to_csv(snakemake.output[0], sep="\t", header=False, index=False)
