@@ -8,6 +8,7 @@ bedgraph = pd.read_csv(
     header=None,
     names=["chrom", "start", "end", "perc", "meth", "unmeth"],
 )
+bedgraph["chrom"] = bedgraph["chrom"].astype(str)
 
 # Read BCF
 bcf_file = pysam.VariantFile(snakemake.input["candidates"][0])
