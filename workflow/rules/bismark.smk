@@ -165,7 +165,6 @@ rule bismark_extract:
         bam="resources/ref_tools/bismark/dedup/{sample}.deduplicated.bam",
     output:
         cov_zero_based="resources/ref_tools/bismark/meth/{sample}.deduplicated.bedGraph.gz.bismark.zero.cov",
-        # "results/single_sample/Illumina_pe/called/{sample}/result_files/CpG_context_alignment_bismark_sorted.txt",
     conda:
         "../envs/bismark.yaml"
     log:

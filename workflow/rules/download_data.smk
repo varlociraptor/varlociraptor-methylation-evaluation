@@ -107,8 +107,6 @@ rule trim_fastq_pe:
     output:
         first="resources/Illumina_pe/{sample,(?!simulated_data).*}/{SRA}/{SRA}_1_trimmed.fastq",
         second="resources/Illumina_pe/{sample,(?!simulated_data).*}/{SRA}/{SRA}_2_trimmed.fastq",
-        # first="resources/Illumina_pe/{sample}/{SRA}/{SRA}_1_trimmed.fastq",
-        # second="resources/Illumina_pe/{sample}/{SRA}/{SRA}_2_trimmed.fastq",
     log:
         "logs/download_data/trim_fastq_pe/{sample}_{SRA}_{SRA}.log",
     conda:
