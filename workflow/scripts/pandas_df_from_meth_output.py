@@ -127,7 +127,7 @@ def read_tool_file(filepath: str, file_name: str) -> pd.DataFrame:
             # -----------------------------
             # MethylDackel / Bismark formats
             # -----------------------------
-            elif file_name in {"methylDackel", "bismark"}:
+            elif file_name in {"methylDackel", "bismark", "bisSNP"}:
                 chrom = parts[0]
                 start, end = int(parts[1]), int(parts[2])
                 meth_rate = float(parts[3])

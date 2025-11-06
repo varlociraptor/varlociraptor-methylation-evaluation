@@ -189,17 +189,22 @@ rule bissnp_create_bedgraph:
         "perl {input.perl_script} {input.cpg} CG 2> {log}"
 
 
-rule bissnp_rename_output:
+rule bissnp_merge_positions:
     input:
-        "results/single_sample/Illumina_pe/called/{sample}/result_files/cpg.raw.CG.bedgraph",
+        bedgraph="results/single_sample/Illumina_pe/called/{sample}/result_files/cpg.raw.CG.bedgraph",
+        candidates=expand(
+            "resources/{chrom}/candidates.bcf",
+            chrom=config["seq_platforms"].get("Illumina_pe"),
+        ),
+        candidates_index=expand(
+            "resources/{chrom}/candidates.bcf.csi",
+            chrom=config["seq_platforms"].get("Illumina_pe"),
+        ),
     output:
         "results/single_sample/Illumina_pe/called/{sample}/result_files/bisSNP.bed",
     log:
-        "logs/bissnp/bissnp_rename_output/{sample}.log",
+        "logs/bissnp/bissnp_merge_positions/{sample}.log",
     conda:
-        "../envs/general.yaml"
-    shell:
-        """
-        mkdir -p $(dirname {output})
-        mv {input} {output} 2> {log}
-        """
+        "../envs/pysam.yaml"
+    script:
+        "../scripts/bismark_merge_positions.py"

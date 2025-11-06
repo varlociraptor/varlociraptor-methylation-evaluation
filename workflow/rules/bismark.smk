@@ -199,7 +199,5 @@ rule bismark_merge_positions:
         "logs/bismark/bismark_merge_positions/{sample}.log",
     conda:
         "../envs/pysam.yaml"
-    benchmark:
-        "benchmarks/Illumina_pe/bismark/bismark_merge_positions/{sample}.bwa.benchmark.txt"
     script:
         "../scripts/bismark_merge_positions.py"
