@@ -63,11 +63,11 @@ rule varlociraptor_preprocess:
     shell:
         """
         if [[ "{wildcards.seq_platform}" == "Illumina_pe" || "{wildcards.seq_platform}" == "Illumina_se" ]]; then
-            seq_platform="Illumina"
+            meth="converted"
         else
-            seq_platform="{wildcards.seq_platform}"
+            meth="annotated"
         fi
-        {input.varlo} preprocess variants --omit-mapq-adjustment {input.chromosome} --candidates {input.candidates} --bam {input.alignments} --read-type $seq_platform --max-depth 5000 > {output} 2> {log}
+        {input.varlo} preprocess variants --omit-mapq-adjustment {input.chromosome} --candidates {input.candidates} --bam {input.alignments} --methylation-read-type $meth --max-depth 5000 > {output} 2> {log}
         """
 
 
