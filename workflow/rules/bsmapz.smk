@@ -57,6 +57,8 @@ rule bsmapz_compute_meth:
     threads: 8
     shell:
         """
+        mkdir -p $(dirname {log})
+        mkdir -p $(dirname {output})
         {input.bsmap_binary} -a {input.alignment} -d {input.genome} -o {output} -p {threads} -w 100 -v 0.07 -m 50 -x 300 > {log} 2>&1
         """
 

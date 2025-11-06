@@ -25,7 +25,6 @@ for idx, row in bedgraph.iterrows():
         print(f"No candidate in BCF for {chrom}:{pos_start}-{pos_end}")
         continue
     bcf_position = records[0].pos
-    print(records, chrom, pos_start, pos_end)
     total_meth = row["meth"]
     total_unmeth = row["unmeth"]
     # merged_percentage = (total_meth / (total_meth + total_unmeth)) * 100
@@ -43,16 +42,14 @@ for idx, row in bedgraph.iterrows():
 
 df = pd.DataFrame(results)
 
-# Nach chrom und pos gruppieren, Summen von meth_counts und unmeth_counts berechnen
+
 df_merged = df.groupby(["chrom", "pos"], as_index=False).agg(
     {"meth_counts": "sum", "unmeth_counts": "sum"}
 )
 
-# Neue Spalten berechnen
 df_merged["coverage"] = df_merged["meth_counts"] + df_merged["unmeth_counts"]
 df_merged["meth_pct_merged"] = round(
     df_merged["meth_counts"] / df_merged["coverage"] * 100, 2
 )
 
-# Als TSV speichern
 df_merged.to_csv(snakemake.output[0], sep="\t", header=False, index=False)

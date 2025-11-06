@@ -136,7 +136,7 @@ rule heatmap_illumina_samples:
     resources:
         mem_mb=32000,
     log:
-        "logs/plot_results/{call_type}_{seq_platform}_{fdr}_{plot_type}.log",
+        "logs/plot_results/heatmap_illumina_samples/{call_type}_{seq_platform}_{fdr}_{plot_type}.log",
     params:
         meth_callers=lambda wildcards: config["ref_tools"].get(
             wildcards.seq_platform, []

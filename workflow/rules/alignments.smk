@@ -193,7 +193,7 @@ rule aligned_reads_downsampled_index:
 
 rule aligned_reads_rename_chromosomes:
     input:
-        "resources/{seq_platform}/{sample, [^(?!simulated_data$)]}/alignment_focused_downsampled_dedup.bam",
+        "resources/{seq_platform}/{sample}/alignment_focused_downsampled_dedup.bam",
     output:
         "resources/{seq_platform}/{sample}/alignment_focused_downsampled_dedup_renamed.bam",
     log:

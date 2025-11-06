@@ -41,8 +41,11 @@ rule methylDackel_compute_meth:
         ),
     shell:
         """
-        OUTDIR=$(dirname {output})/alignments 2> {log}
-        MethylDackel extract {input.genome} {input.alignment} -o $OUTDIR --mergeContext 2> {log}
+        mkdir -p $(dirname {log})
+        mkdir -p $(dirname {output})
+        OUTDIR=$(dirname {output})/alignments
+        mkdir -p "$OUTDIR"
+        MethylDackel extract {input.genome} {input.alignment} -o "$OUTDIR" --mergeContext 2> {log}
         """
 
 
@@ -56,4 +59,4 @@ rule methylDackel_rename_output:
     conda:
         "../envs/general.yaml"
     shell:
-        "mkdir -p $(dirname {output}) && mv {input} {output} 2> {log}"
+        "mkdir -p $(dirname {log}) && mkdir -p $(dirname {output}) && mv {input} {output} 2> {log}"

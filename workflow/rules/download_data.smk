@@ -143,7 +143,7 @@ rule get_pacbio_data:
     conda:
         "../envs/samtools.yaml"
     shell:
-        "samtools view -b {params.url} {params.chromosome} > {output.alignment}"
+        "samtools view -b {params.url} {params.chromosome} > {output.alignment} 2> {log}"
 
 
 # TODO: Does not work for replicate2. You have to download this manually with wget right now
@@ -160,4 +160,4 @@ rule get_nanopore_data:
     conda:
         "../envs/samtools.yaml"
     shell:
-        "samtools view -b {params.url} {params.chromosome} > {output.alignment}"
+        "samtools view -b {params.url} {params.chromosome} > {output.alignment} 2> {log}"

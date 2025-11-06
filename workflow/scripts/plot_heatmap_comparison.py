@@ -139,15 +139,16 @@ def compute_replicate_counts(df_dict: dict, bin_size: int):
     """
     samples = snakemake.params["sample"]
     meth_callers = snakemake.params["meth_callers"]
-
+    print(samples)
     # Merge across samples if needed
     if isinstance(samples, str):
-        df = df_dict[samples]
-    else:
-        df = pd.concat([df_dict[p] for p in samples], ignore_index=True)
-        methyl_cols = [c for c in df.columns if "methylation" in c]
-        df = df.groupby(["chromosome", "position"], as_index=False)[methyl_cols].mean()
+        samples = [samples]
 
+    df = pd.concat([df_dict[p] for p in samples], ignore_index=True)
+    methyl_cols = [c for c in df.columns if "methylation" in c]
+    df = df.groupby(["chromosome", "position"], as_index=False)[methyl_cols].mean()
+
+    print(df.head(10))
     meth_caller_dfs = {}
     cdf_dfs = {}
     mapes = {}
