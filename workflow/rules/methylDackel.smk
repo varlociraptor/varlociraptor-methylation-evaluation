@@ -1,13 +1,21 @@
 # It does not work with chromosome-wise fasta files, so we use the genome
 rule methylDackel_compute_meth:
     input:
-        genome=expand(
-            "resources/genome.fasta",
-            chrom=config["seq_platforms"].get("Illumina_pe"),
+        genome=lambda wildcards: (
+            expand(
+                "resources/chromosome_{chrom}.fasta",
+                chrom=config["seq_platforms"].get("Illumina_pe"),
+            )
+            if wildcards.sample.startswith("simulated_data")
+            else ["resources/genome.fasta"]
         ),
-        genome_index=expand(
-            "resources/genome.fasta.fai",
-            chrom=config["seq_platforms"].get("Illumina_pe"),
+        genome_index=lambda wildcards: (
+            expand(
+                "resources/chromosome_{chrom}.fasta.fai",
+                chrom=config["seq_platforms"].get("Illumina_pe"),
+            )
+            if wildcards.sample.startswith("simulated_data")
+            else ["resources/genome.fasta.fai"]
         ),
         # genome=expand(
         #     "resources/chromosome_{chrom}.fasta",
