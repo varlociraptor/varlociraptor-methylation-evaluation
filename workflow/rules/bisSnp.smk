@@ -177,7 +177,7 @@ rule gather_bisSnp:
 #   - line 104: my $out_line = "$chr\t$start\t$end\t$methy\t$ct_reads";
 rule bissnp_create_bedgraph:
     input:
-        perl_script="workflow/scripts/bssnp_bedGraph.pl",
+        perl_script="../scripts/bissnp_bedGraph.pl",
         cpg="results/single_sample/Illumina_pe/called/{sample}/result_files/cpg.raw.vcf",
     output:
         "results/single_sample/Illumina_pe/called/{sample}/result_files/cpg.raw.CG.bedgraph",
