@@ -207,4 +207,4 @@ rule bissnp_merge_positions:
     conda:
         "../envs/pysam.yaml"
     script:
-        "../scripts/bismark_merge_positions.py"
+        "../scripts/merge_forward_reverse_positions.py"
