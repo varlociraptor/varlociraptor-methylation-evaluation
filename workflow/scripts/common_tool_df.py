@@ -21,8 +21,11 @@ for tool_file in tool_files:
     df = pd.read_parquet(tool_file, engine="pyarrow")
 
     # Keep only relevant columns and rename methylation column
-    df = df[["chromosome", "position", "tool_methylation"]].rename(
-        columns={"tool_methylation": f"{tool_name}_methylation"}
+    df = df[["chromosome", "position", "tool_methylation", "format"]].rename(
+        columns={
+            "tool_methylation": f"{tool_name}_methylation",
+            "format": f"{tool_name}_format",
+        }
     )
 
     tool_dfs.append(df)

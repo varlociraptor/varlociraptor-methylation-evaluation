@@ -18,6 +18,113 @@ def bin_methylation(series: pd.Series, bin_size: int) -> pd.Series:
     return (np.round(series / bin_size) * bin_size).astype(int)
 
 
+def plot_biases(df):
+    new_cols = [
+        "DP",
+        "AF",
+        "SAOBS",
+        "SROBS",
+        "OBS",
+        "OOBS",
+        "SB",
+        "ROB",
+        "RPB",
+        "SCB",
+        "HE",
+        "ALB",
+        "AFD",
+    ]
+
+    keep_cols = ["AF", "SB", "ROB", "RPB", "SCB", "HE", "ALB"]
+
+    # Split rep1
+    df_rep1 = df["varlo_format_rep1"].str.split(":", expand=True)
+    df_rep1.columns = [f"{col}_rep1" for col in new_cols[: df_rep1.shape[1]]]
+    df_rep1 = df_rep1[[f"{col}_rep1" for col in keep_cols]]
+
+    # Split rep2
+    df_rep2 = df["varlo_format_rep2"].str.split(":", expand=True)
+    df_rep2.columns = [f"{col}_rep2" for col in new_cols[: df_rep2.shape[1]]]
+    df_rep2 = df_rep2[[f"{col}_rep2" for col in keep_cols]]
+
+    df_selected = pd.concat(
+        [df[["chromosome", "position"]].reset_index(drop=True), df_rep1, df_rep2],
+        axis=1,
+    )
+    # Filter rows without bias info
+    bias_cols = ["SB", "ROB", "RPB", "SCB", "HE", "ALB"]
+    filter_cols = [f"{b}_rep1" for b in bias_cols] + [f"{b}_rep2" for b in bias_cols]
+    df_selected = df_selected[df_selected[filter_cols].notna().all(axis=1)]
+    df_selected = df_selected[df_selected[filter_cols].ne(".").any(axis=1)]
+
+    # AF-cols to float
+    df_selected["AF_rep1"] = df_selected["AF_rep1"].astype(float)
+    df_selected["AF_rep2"] = df_selected["AF_rep2"].astype(float)
+
+    df_selected["rep1_has_bias"] = (
+        df_selected[[f"{b}_rep1" for b in bias_cols]].ne(".").any(axis=1)
+    )
+    df_selected["rep2_has_bias"] = (
+        df_selected[[f"{b}_rep2" for b in bias_cols]].ne(".").any(axis=1)
+    )
+
+    # Bias categories
+    def categorize(row):
+        if row["rep1_has_bias"] and row["rep2_has_bias"]:
+            return "Bias both reps"
+        elif (row["rep1_has_bias"] and row["AF_rep2"] == 0) or (
+            row["rep2_has_bias"] and row["AF_rep1"] == 0
+        ):
+            return "Bias, AF = 0"
+        elif (row["rep1_has_bias"] and row["AF_rep2"] > 0) or (
+            row["rep2_has_bias"] and row["AF_rep1"] > 0
+        ):
+            return "Bias, AF > 0"
+        else:
+            return "No bias"
+
+    df_selected["category"] = df_selected.apply(categorize, axis=1)
+
+    rep1_long = df_selected.melt(
+        id_vars=["chromosome", "position", "AF_rep1", "AF_rep2", "category"],
+        value_vars=[f"{b}_rep1" for b in bias_cols],
+        var_name="bias_type",
+        value_name="rep1_bias",
+    )
+    rep1_long["bias_type"] = rep1_long["bias_type"].str.replace("_rep1", "")
+
+    rep2_long = df_selected.melt(
+        id_vars=["chromosome", "position", "AF_rep1", "AF_rep2", "category"],
+        value_vars=[f"{b}_rep2" for b in bias_cols],
+        var_name="bias_type",
+        value_name="rep2_bias",
+    )
+    rep2_long["bias_type"] = rep2_long["bias_type"].str.replace("_rep2", "")
+
+    df_long = rep1_long.merge(
+        rep2_long[["chromosome", "position", "bias_type", "rep2_bias"]],
+        on=["chromosome", "position", "bias_type"],
+    )
+
+    df_long["rep1_has_bias"] = df_long["rep1_bias"].ne(".")
+    df_long["rep2_has_bias"] = df_long["rep2_bias"].ne(".")
+    df_long = df_long[df_long["rep1_has_bias"] | df_long["rep2_has_bias"]]
+
+    chart = (
+        alt.Chart(df_long)
+        .mark_bar()
+        .encode(
+            x=alt.X("category:N", title="Category"),
+            y=alt.Y("count():Q", title="Number of sites"),
+            color=alt.Color("bias_type:N", title="Bias type"),
+            tooltip=["category", "bias_type", "count()"],
+        )
+        .properties(title="Bias Types per Category Across Replicates")
+    )
+
+    chart.save(snakemake.output["bias"], embed_options={"actions": False}, inline=False)
+
+
 def plot_count_heatmap(
     df: pd.DataFrame, meth_caller: str, bin_size: int, mapes: dict
 ) -> alt.Chart:
@@ -215,6 +322,10 @@ def compute_replicate_counts(df_dict: dict, bin_size: int):
 # -----------------------------
 # Main execution
 # -----------------------------
+samples = snakemake.params["sample"]
+if isinstance(samples, str):
+    samples = [samples]
+
 bin_size = snakemake.params["bin_size"]
 meth_callers = snakemake.params["meth_callers"]
 fdr = snakemake.params["fdr"]
@@ -224,6 +335,23 @@ meth_caller_dfs = {}
 with pd.HDFStore(snakemake.input[0], mode="r", locking=False) as store:
     for key in store.keys():
         meth_caller_dfs[key.strip("/")] = store[key]
+
+
+sample_df = pd.concat([meth_caller_dfs[p] for p in samples], ignore_index=True)
+
+
+plot_biases(
+    sample_df[
+        [
+            "chromosome",
+            "position",
+            "varlo_format_rep1",
+            "varlo_format_rep2",
+            "varlo_methylation_rep1",
+            "varlo_methylation_rep2",
+        ]
+    ]
+)
 
 replicate_dfs, cdf_dfs, mapes = compute_replicate_counts(meth_caller_dfs, bin_size)
 # if float(fdr) == 1.0:
@@ -235,7 +363,9 @@ heatmaps = [
 heatmap_plots = alt.hconcat(*heatmaps).resolve_scale(color="independent")
 
 # Save heatmap output
-heatmap_plots.save(snakemake.output[0], embed_options={"actions": False}, inline=False)
+heatmap_plots.save(
+    snakemake.output["heatmap"], embed_options={"actions": False}, inline=False
+)
 # import pickle
 # with open(snakemake.output[0], "wb") as f:
 #     pickle.dump(heatmap_plots, f)

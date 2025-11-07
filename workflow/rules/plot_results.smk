@@ -88,7 +88,17 @@ rule replicates_heatmap:
     input:
         "results/{call_type}/{seq_platform}/{fdr}/plots/replicates.hd5",
     output:
-        report(
+        bias=report(
+            "results/{call_type}/{seq_platform}/{fdr}/plots/{sample}_bias.{plot_type}",
+            category="{call_type}",
+            subcategory=lambda wildcards: f"{wildcards.seq_platform}",
+            labels={
+                "file": "heatmap",
+                "sample": "{sample}",
+                "fdr": "{fdr}",
+            },
+        ),
+        heatmap=report(
             "results/{call_type}/{seq_platform}/{fdr}/plots/{sample}_heatmap.{plot_type}",
             category="{call_type}",
             subcategory=lambda wildcards: f"{wildcards.seq_platform}",
@@ -121,7 +131,7 @@ rule heatmap_illumina_samples:
     input:
         "results/{call_type}/{seq_platform}/{fdr}/plots/replicates.hd5",
     output:
-        report(
+        heatmap=report(
             "results/{call_type}/{seq_platform}/{fdr}/plots/heatmap_all_samples.{plot_type}",
             category="{call_type}",
             subcategory=lambda wildcards: f"{wildcards.seq_platform}",
@@ -131,6 +141,7 @@ rule heatmap_illumina_samples:
                 "fdr": "{fdr}",
             },
         ),
+        bias="results/{call_type}/{seq_platform}/{fdr}/plots/bias_all_samples.{plot_type}",
     conda:
         "../envs/plot.yaml"
     resources:
