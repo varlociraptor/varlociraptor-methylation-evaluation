@@ -146,15 +146,6 @@ def read_tool_file(filepath: str, file_name: str) -> pd.DataFrame:
                 records.append([chrom, position, meth_rate])
 
             # -----------------------------
-            # bisSNP format
-            # -----------------------------
-            elif file_name == "bisSNP":
-                chrom = parts[0]
-                position = int(parts[2])
-                meth_rate = float(parts[3])
-                records.append([chrom, position, meth_rate])
-
-            # -----------------------------
             # modkit format
             # -----------------------------
             elif file_name == "modkit":
