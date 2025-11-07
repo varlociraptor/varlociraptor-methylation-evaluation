@@ -1,23 +1,35 @@
-# TODO: Give versions to packages
 channels:
   - conda-forge
   - bioconda
   - nodefaults
+
 dependencies:
-  - varlociraptor =8.4
-  - vega-lite-cli =5.16
-  - libclang
-  - rust=1.86
+  # core tools
+  - varlociraptor=8.4
+  - vega-lite-cli=5.16
+
+  # compiler + toolchain
+  - rust=1.81       # <= existiert auf conda-forge
+  - gcc=14
+  - gxx=14
+  - binutils        # <- stellt `ar` bereit
+
+  # build tools
   - pkg-config
   - make
   - cmake
-  - gsl
-  - libcblas
+
+  # libs for openssl-sys and dep crates
   - openssl
   - zlib
   - bzip2
   - xz
-  - clangdev
+
+  # scientific libs
+  - gsl
+  - libcblas
   - blis
-  - gcc
-  - gxx
+
+  # clang libs
+  - libclang
+  - clangdev
