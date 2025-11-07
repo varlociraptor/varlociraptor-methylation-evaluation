@@ -23,7 +23,9 @@ if not bedgraph["col6"].isna().all():
 else:
     # BisSNP
     bedgraph["coverage"] = bedgraph["col5"]
-    bedgraph["meth"] = ((bedgraph["perc"] / 100) * bedgraph["coverage"]).round().astype(int)
+    bedgraph["meth"] = (
+        ((bedgraph["perc"] / 100) * bedgraph["coverage"]).round().astype(int)
+    )
     bedgraph["unmeth"] = (bedgraph["coverage"] - bedgraph["meth"]).astype(int)
 
 # Read BCF
@@ -45,21 +47,22 @@ for idx, row in bedgraph.iterrows():
     total_meth = row["meth"]
     total_unmeth = row["unmeth"]
 
-    results.append({
-        "chrom": chrom,
-        "pos": bcf_position,
-        "meth_counts": int(total_meth),
-        "unmeth_counts": int(total_unmeth)
-    })
+    results.append(
+        {
+            "chrom": chrom,
+            "pos": bcf_position,
+            "meth_counts": int(total_meth),
+            "unmeth_counts": int(total_unmeth),
+        }
+    )
 
 # Create DataFrame
 df = pd.DataFrame(results)
 
 # Merge by chrom + pos
-df_merged = df.groupby(["chrom", "pos"], as_index=False).agg({
-    "meth_counts": "sum",
-    "unmeth_counts": "sum"
-})
+df_merged = df.groupby(["chrom", "pos"], as_index=False).agg(
+    {"meth_counts": "sum", "unmeth_counts": "sum"}
+)
 
 # Compute coverage and merged methylation percentage
 df_merged["coverage"] = df_merged["meth_counts"] + df_merged["unmeth_counts"]
@@ -68,4 +71,8 @@ df_merged["meth_pct_merged"] = round(
 )
 
 # Save output
-df_merged.to_csv(snakemake.output[0], sep="\t", header=False, index=False)
+# df_merged.to_csv(snakemake.output[0], sep="\t", header=False, index=False)
+
+df_merged[["chrom", "pos", "meth_pct_merged"]].to_csv(
+    snakemake.output[0], sep="\t", header=False, index=False
+)
