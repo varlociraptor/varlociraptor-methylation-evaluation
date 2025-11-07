@@ -1,0 +1,45 @@
+
+
+
+# Choose specific chromosome for evaluation
+seq_platforms: 
+  Illumina_pe: J02459
+
+
+# Define reference tools for comparison against varlociraptor results
+ref_tools:
+  # Chose from: bismark, bisSNP, bsMap, methylDackel
+  Illumina_pe: [bsMap, bismark, bisSNP, methylDackel]
+
+
+
+samples: 
+  Illumina_pe: [simulated_data]
+data:
+  Illumina_pe:
+    simulated_data_REP01: [sim_rep1]
+    simulated_data_REP02: [sim_rep2]
+
+
+# Number of simulated reads
+num_simulated_reads: 10000
+
+
+###################################### METH CALLING ##################################################
+
+# Define minimum mapping quality to keep in alignment
+min_mapping_quality: 10
+# Number of scatter gather items (used for parallelization of varlociraptor methylation calling)
+scatter_number: 1
+# Define FDR alpha levels for varlociraptor methylation filtering
+fdr_alpha: [0.01]
+
+###################################### PLOTS ##################################################
+
+heatmap_bin_size: 5
+# Choose from png, svg, html
+plot_type: svg
+# Define the correlation method for the comparison of the different samples
+# Choose any number from: pearson, spearman, rmse, ccc (concordance correlation coefficient), adjusted_mape
+correlation_methods: [adjusted_mape]
+
