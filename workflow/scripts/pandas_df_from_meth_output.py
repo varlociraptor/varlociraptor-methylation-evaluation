@@ -172,7 +172,7 @@ def read_tool_file(filepath: str, file_name: str) -> pd.DataFrame:
                 chrom = parts[0]
                 position = int(parts[2])
                 meth_rate = float(parts[3])
-                records.append([chrom, position, meth_rate])
+                records.append([chrom, position, meth_rate, pd.NA])
 
     return pd.DataFrame(
         records, columns=["chromosome", "position", "tool_methylation", "format"]

@@ -110,19 +110,35 @@ def plot_biases(df):
     df_long["rep2_has_bias"] = df_long["rep2_bias"].ne(".")
     df_long = df_long[df_long["rep1_has_bias"] | df_long["rep2_has_bias"]]
 
+    bias_colors = {
+        "SB": "#1f77b4",  # blau
+        "ROB": "#ff7f0e",  # orange
+        "RPB": "#2ca02c",  # grün
+        "SCB": "#d62728",  # rot
+        "HE": "#9467bd",  # lila
+        "ALB": "#8c564b",  # braun
+    }
+
     chart = (
         alt.Chart(df_long)
         .mark_bar()
         .encode(
             x=alt.X("category:N", title="Category"),
             y=alt.Y("count():Q", title="Number of sites"),
-            color=alt.Color("bias_type:N", title="Bias type"),
+            color=alt.Color(
+                "bias_type:N",
+                title="Bias type",
+                scale=alt.Scale(
+                    domain=list(bias_colors.keys()),
+                    range=list(bias_colors.values()),
+                ),
+            ),
             tooltip=["category", "bias_type", "count()"],
         )
         .properties(title="Bias Types per Category Across Replicates")
     )
 
-    chart.save(snakemake.output["bias"], embed_options={"actions": False}, inline=False)
+    return chart
 
 
 def plot_count_heatmap(
@@ -340,7 +356,7 @@ with pd.HDFStore(snakemake.input[0], mode="r", locking=False) as store:
 sample_df = pd.concat([meth_caller_dfs[p] for p in samples], ignore_index=True)
 
 
-plot_biases(
+biases = plot_biases(
     sample_df[
         [
             "chromosome",
@@ -363,9 +379,11 @@ heatmaps = [
 heatmap_plots = alt.hconcat(*heatmaps).resolve_scale(color="independent")
 
 # Save heatmap output
-heatmap_plots.save(
-    snakemake.output["heatmap"], embed_options={"actions": False}, inline=False
-)
 # import pickle
 # with open(snakemake.output[0], "wb") as f:
 #     pickle.dump(heatmap_plots, f)
+
+heatmap_plots.save(
+    snakemake.output["heatmap"], embed_options={"actions": False}, inline=False
+)
+biases.save(snakemake.output["bias"], embed_options={"actions": False}, inline=False)

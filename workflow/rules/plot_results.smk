@@ -9,6 +9,8 @@ rule compute_pandas_df:
         method="(?!varlo|sample_df).*",
     log:
         "logs/plot_results/compute_pandas_df/{call_type}_{seq_platform}_{sample}_{method}.log",
+    resources:
+        mem_mb=64000,
     script:
         "../scripts/pandas_df_from_meth_output.py"
 
@@ -24,6 +26,8 @@ rule compute_varlo_df:
         "logs/plot_results/compute_varlo_df/{call_type}_{seq_platform}_{fdr}_{sample}.log",
     params:
         alpha=lambda wildcards: wildcards.fdr,
+    resources:
+        mem_mb=64000,
     script:
         "../scripts/pandas_df_from_meth_output.py"
 
@@ -47,7 +51,7 @@ rule common_tool_df:
     wildcard_constraints:
         call_type="(?!multi_sample).*",
     resources:
-        mem_mb=16000,
+        mem_mb=64000,
     script:
         "../scripts/common_tool_df.py"
 
@@ -73,6 +77,8 @@ rule compute_correlation:
         "logs/plot_results/compute_correlation/{call_type}_{seq_platform}_{fdr}.log",
     wildcard_constraints:
         call_type="(?!multi_sample).*",
+    resources:
+        mem_mb=64000,
     params:
         # plot_type=config["plot_type"],
         meth_callers=lambda wildcards: config["ref_tools"].get(
@@ -93,7 +99,7 @@ rule replicates_heatmap:
             category="{call_type}",
             subcategory=lambda wildcards: f"{wildcards.seq_platform}",
             labels={
-                "file": "heatmap",
+                "file": "bias",
                 "sample": "{sample}",
                 "fdr": "{fdr}",
             },
@@ -111,7 +117,7 @@ rule replicates_heatmap:
     conda:
         "../envs/plot.yaml"
     resources:
-        mem_mb=32000,
+        mem_mb=64000,
     log:
         "logs/plot_results/replicates_heatmap/{call_type}_{seq_platform}_{fdr}_{sample}_{plot_type}.log",
     params:
@@ -145,7 +151,7 @@ rule heatmap_illumina_samples:
     conda:
         "../envs/plot.yaml"
     resources:
-        mem_mb=32000,
+        mem_mb=64000,
     log:
         "logs/plot_results/heatmap_illumina_samples/{call_type}_{seq_platform}_{fdr}_{plot_type}.log",
     params:

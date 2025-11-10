@@ -2,8 +2,8 @@ channels:
   - conda-forge
   - bioconda
 dependencies:
-  - altair=5.1
-  - vl-convert-python=0.14
+  - altair=5.5
+  - vl-convert-python=1.8
   - vegafusion=1.6
   - vega_datasets=0.9
   - matplotlib=3.8
@@ -11,6 +11,6 @@ dependencies:
   - pysam=0.23
   - scipy=1.15
   - altair_saver=0.5
-  - pytables=3.10.2
-  - pandas=2.2.2
-  - pyarrow=14.0.2
+  - pytables=3.10
+  - pandas=2.2
+  - pyarrow=14.0
