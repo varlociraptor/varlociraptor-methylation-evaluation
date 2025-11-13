@@ -237,8 +237,8 @@ rule combine_heatmaps_paper_illumina:
 
 rule combine_single_illumina_paper:
     input:
-        "results/single_sample/Illumina_pe/1.0/plots/bar_plot_single_samples.pkl",
-        "results/single_sample/Illumina_pe/0.01/plots/bar_plot_single_samples.pkl",
+        "results/single_sample/Illumina_pe/1.0/plots/bar_plot_single_samples.parquet",
+        "results/single_sample/Illumina_pe/0.01/plots/bar_plot_single_samples.parquet",
     output:
         "results/single_sample/Illumina_pe/combined/all/illumina.{plot_type}",
     conda:
@@ -247,5 +247,6 @@ rule combine_single_illumina_paper:
         "logs/plot_results/combine_heatmaps_paper/{plot_type}.log",
     params:
         plot_type="bias",
+        platform="Illumina_pe",
     script:
         "../scripts/combine_paper_plots.py"

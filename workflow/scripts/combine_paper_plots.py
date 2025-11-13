@@ -5,9 +5,7 @@ import pandas as pd
 
 plot_type = snakemake.params["plot_type"]
 
-print(plot_type)
 if plot_type != "bias":
-    print("TEST")
 
     platform = snakemake.params["platform"]
 
