@@ -1,8 +1,7 @@
 # Use Varlociraptor to find methylation candidates in the reference genome
 rule find_candidates:
     input:
-        varlo="resources/tools/varlociraptor/target/debug/varlociraptor",
-        fasta="resources/chromosome_{chromosome}.fasta",
+        "resources/chromosome_{chromosome}.fasta",
     output:
         "resources/{chromosome}/candidates.bcf",
     log:
@@ -10,7 +9,7 @@ rule find_candidates:
     conda:
         "../envs/varlociraptor.yaml"
     shell:
-        "{input.varlo} methylation-candidates {input.fasta} {output} 2> {log}"
+        "varlociraptor methylation-candidates {input} --motif CG {output} 2> {log}"
 
 
 rule split_candidates:

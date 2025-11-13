@@ -2,6 +2,7 @@ import pandas as pd
 import altair as alt
 import sys
 import numpy as np
+import pickle
 from functools import reduce
 
 
@@ -395,7 +396,7 @@ if isinstance(samples, str):
 bin_size = snakemake.params["bin_size"]
 meth_callers = snakemake.params["meth_callers"]
 fdr = snakemake.params["fdr"]
-if float(fdr) == 1.0 and snakemake.params.get("paper_plots", False) == True:
+if float(fdr) == 0.01 and snakemake.params.get("paper_plots", False) == True:
     meth_callers = ["varlo"]
 
 # Load HDF5 input
@@ -500,17 +501,27 @@ heatmap_plots = alt.hconcat(*heatmaps).resolve_scale(color="independent")
 #########################################################
 
 # Save heatmap output
+# if snakemake.params.get("paper_plots", False) == True:
+#     df_summary.to_parquet(snakemake.output["bar_plot_single_samples"])
+#     bias_df.to_parquet(snakemake.output["bias"])
+#     heatmap_df.to_parquet(snakemake.output["heatmap"])
 if snakemake.params.get("paper_plots", False) == True:
-    df_summary.to_parquet(snakemake.output["histogram_single_samples"])
-    bias_df.to_parquet(snakemake.output["bias"])
-    heatmap_df.to_parquet(snakemake.output["heatmap"])
+    with open(snakemake.output["heatmap"], "wb") as f:
+        pickle.dump(heatmap_plots, f)
+    if snakemake.output.get("bar_plot_single_samples") is not None:
+        with open(snakemake.output["bar_plot_single_samples"], "wb") as f:
+            pickle.dump(illumina_histo, f)
+    with open(snakemake.output["bias"], "wb") as f:
+        pickle.dump(bias_chart, f)
+# with open(snakemake.output[0], "wb") as f:
+#     pickle.dump(heatmap_plots, f)
 else:
     heatmap_plots.save(
         snakemake.output["heatmap"], embed_options={"actions": False}, inline=False
     )
-    if snakemake.output.get("histogram_single_samples") is not None:
+    if snakemake.output.get("bar_plot_single_samples") is not None:
         illumina_histo.save(
-            snakemake.output["histogram_single_samples"],
+            snakemake.output["bar_plot_single_samples"],
             embed_options={"actions": False},
             inline=False,
         )

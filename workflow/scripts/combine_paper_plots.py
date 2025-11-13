@@ -3,44 +3,40 @@ import pickle
 import pandas as pd
 
 
-platform = snakemake.params["platform"]
+plot_type = snakemake.params["plot_type"]
 
-df1 = pd.read_parquet(snakemake.input[0])
-df2 = pd.read_parquet(snakemake.input[1])
-df_summary = pd.concat([df1, df2], ignore_index=True)
-if platform != "Illumina_pe":
-    heatmap = (
-        alt.Chart(
-            df,
-            title=alt.Title(
-                title,
-                subtitle=f"N = {df['count'].sum()} | D = {mapes.get(meth_caller,0)}",
-            ),
+print(plot_type)
+if plot_type != "bias":
+    print("TEST")
+
+    platform = snakemake.params["platform"]
+
+    with open(snakemake.input[0], "rb") as f:
+        chart1 = pickle.load(f)
+
+    with open(snakemake.input[1], "rb") as f:
+        chart2 = pickle.load(f)
+    if platform == "Illumina_pe":
+        combined = alt.hconcat(chart1, chart2).resolve_scale(color="independent")
+    else:
+        combined = (
+            alt.hconcat(chart1, chart2)
+            .resolve_scale(color="independent")
+            .properties(
+                title=alt.TitleParams(
+                    text=f"{platform.capitalize()} data",
+                    anchor="middle",
+                    fontSize=18,
+                    fontWeight="bold",
+                )
+            )
         )
-        .mark_rect()
-        .encode(
-            x=alt.X(
-                "rep1_bin:O",
-                sort=list(range(0, 101, bin_size)),
-                title="replicate 1",
-            ),
-            y=alt.Y(
-                "rep2_bin:O",
-                sort=list(range(100, -1, -bin_size)),
-                title="replicate 2",
-            ),
-            color=alt.Color(
-                "count:Q",
-                scale=alt.Scale(type="log", scheme="viridis", domain=[1, max_count]),
-                legend=alt.Legend(
-                    title="Count", orient="right", values=ticks, format=","
-                ),
-            ),
-            tooltip=["rep1_bin", "rep2_bin", "count"],
-        )
-        .properties(width=200, height=200)
-    )
+
+    combined.save(snakemake.output[0])
 else:
+    df1 = pd.read_parquet(snakemake.input[0])
+    df2 = pd.read_parquet(snakemake.input[1])
+    df_summary = pd.concat([df1, df2], ignore_index=True)
     meth_caller_order = [
         "BSMAPz",
         "Bismark",

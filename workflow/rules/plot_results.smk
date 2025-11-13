@@ -128,6 +128,7 @@ rule replicates_heatmap:
         sample=lambda wildcards: wildcards.sample,
         bin_size=lambda wildcards: config["heatmap_bin_size"],
         fdr=lambda wildcards: wildcards.fdr,
+        paper_plots=True,
     script:
         "../scripts/plot_heatmap_comparison.py"
 
@@ -179,7 +180,7 @@ rule heatmap_illumina_samples:
         sample=lambda wildcards: config["samples"].get("Illumina_pe", []),
         bin_size=lambda wildcards: config["heatmap_bin_size"],
         fdr=lambda wildcards: wildcards.fdr,
-        paper_plots=False,
+        paper_plots=True,
     script:
         "../scripts/plot_heatmap_comparison.py"
 
@@ -201,31 +202,50 @@ rule plot_runtime_comparison:
 # This rule combines the heatmaps from  two different FDR levels into one SVG file for easier comparison in the paper
 rule combine_heatmaps_paper:
     input:
-        "results/single_sample/{platform}/0.01/plots/REP_heatmap.parquet",
-        "results/single_sample/{platform}/1.0/plots/REP_heatmap.parquet",
+        "results/single_sample/{platform}/1.0/plots/REP_heatmap.pkl",
+        "results/single_sample/{platform}/0.01/plots/REP_heatmap.pkl",
     output:
-        "results/single_sample/{platform}/combined/plotst/combined.{plot_type}",
+        "results/single_sample/{platform}/combined/all/combined.{plot_type}",
     conda:
         "../envs/plot.yaml"
     log:
         "logs/plot_results/combine_heatmaps_paper/{platform}_{plot_type}.log",
     params:
+        plot_type="heatmap",
         platform=lambda wildcards: wildcards.platform,
+    script:
+        "../scripts/combine_paper_plots.py"
+        # This rule combines the heatmaps from  two different FDR levels into one SVG file for easier comparison in the paper
+
+
+rule combine_heatmaps_paper_illumina:
+    input:
+        "results/single_sample/Illumina_pe/1.0/plots/heatmap_all_samples.pkl",
+        "results/single_sample/Illumina_pe/0.01/plots/heatmap_all_samples.pkl",
+    output:
+        "results/single_sample/Illumina_pe/combined/all/illumina_heatmap.{plot_type}",
+    conda:
+        "../envs/plot.yaml"
+    log:
+        "logs/plot_results/combine_heatmaps_paper/Illumina_pe_{plot_type}.log",
+    params:
+        plot_type="heatmap",
+        platform="Illumina_pe",
     script:
         "../scripts/combine_paper_plots.py"
 
 
 rule combine_single_illumina_paper:
     input:
-        "results/single_sample/Illumina_pe/0.01/plots/bar_plot_single_samples.parquet",
-        "results/single_sample/Illumina_pe/1.0/plots/bar_plot_single_samples.parquet",
+        "results/single_sample/Illumina_pe/1.0/plots/bar_plot_single_samples.pkl",
+        "results/single_sample/Illumina_pe/0.01/plots/bar_plot_single_samples.pkl",
     output:
-        "results/single_sample/Illumina_pe/combined/plotst/illumina.{plot_type}",
+        "results/single_sample/Illumina_pe/combined/all/illumina.{plot_type}",
     conda:
         "../envs/plot.yaml"
     log:
         "logs/plot_results/combine_heatmaps_paper/{plot_type}.log",
     params:
-        platform="Illumina_pe",
+        plot_type="bias",
     script:
         "../scripts/combine_paper_plots.py"

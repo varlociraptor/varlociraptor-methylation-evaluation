@@ -1,41 +1,5 @@
-rule download_varlociraptor:
-    output:
-        "resources/tools/varlociraptor/Cargo.toml",
-    conda:
-        "../envs/shell_cmds.yaml"
-    log:
-        "logs/varlociraptor_single/download_varlociraptor/download.log",
-    shell:
-        """
-        mkdir -p resources/tools
-        cd resources/tools
-        git clone https://github.com/varlociraptor/varlociraptor.git
-        cd varlociraptor
-        git checkout methylation-paired-end-master-new
-        """
-
-
-rule build_varlociraptor:
-    input:
-        "resources/tools/varlociraptor/Cargo.toml",
-    output:
-        "resources/tools/varlociraptor/target/debug/varlociraptor",
-    conda:
-        "../envs/varlociraptor.yaml"
-    log:
-        "logs/varlociraptor_single/build_varlociraptor/build.log",
-    resources:
-        mem_mb=8000,
-    shell:
-        """
-        cd $(dirname {input})
-        cargo build
-        """
-
-
 rule varlociraptor_preprocess:
     input:
-        varlo="resources/tools/varlociraptor/target/debug/varlociraptor",
         chromosome=lambda wildcards: expand(
             "resources/chromosome_{chrom}.fasta",
             chrom=chromosome_by_seq_platform.get(wildcards.seq_platform),
@@ -67,13 +31,12 @@ rule varlociraptor_preprocess:
         else
             meth="annotated"
         fi
-        {input.varlo} preprocess variants --omit-mapq-adjustment {input.chromosome} --candidates {input.candidates} --bam {input.alignments} --methylation-read-type $meth --max-depth 5000 > {output} 2> {log}
+        varlociraptor preprocess variants --omit-mapq-adjustment {input.chromosome} --candidates {input.candidates} --bam {input.alignments} --methylation-read-type $meth --max-depth 5000 > {output} 2> {log}
         """
 
 
 rule varlociraptor_call:
     input:
-        varlo="resources/tools/varlociraptor/target/debug/varlociraptor",
         preprocess_obs="results/preprocessed/{seq_platform}/{sample}/normal_{scatteritem}.bcf",
         scenario="resources/scenarios/scenario.yaml",
     output:
@@ -88,24 +51,6 @@ rule varlociraptor_call:
         seq_platform="(?!multi_sample).*",
     shell:
         "{input.varlo} call variants generic --scenario {input.scenario} --obs normal={input.preprocess_obs} > {output} 2> {log}"
-
-
-# TODO: Reactivate, right now it deletes too much data
-# rule filter_calls:
-#     input:
-#         varlo="resources/tools/varlociraptor/target/debug/varlociraptor",
-#         bcf="results/{seq_platform}/{sample}/calls_{scatteritem}.bcf",
-#     output:
-#         "results/{seq_platform}/{fdr}/{sample}/calls_{scatteritem}.bcf",
-#     log:
-#         "logs/varlociraptor/{seq_platform}/{fdr}/{sample}/filter_calls_{scatteritem}.log",
-#     conda:
-#         "../envs/varlociraptor.yaml"
-#     params:
-#         event="LOW",
-#         fdr_alpha=config["fdr_alpha"]
-#     shell:
-#         "{input.varlo} filter-calls control-fdr --mode local-smart {input.bcf} --events LOW HIGH --fdr {params.fdr_alpha} > {output} 2> {log}"
 
 
 # TODO: Skip this step, right now it would be useless since I debug so much
