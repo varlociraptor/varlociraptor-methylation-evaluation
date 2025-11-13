@@ -43,7 +43,7 @@ rule bsmapz_compute_meth:
         ),
         alignment="resources/Illumina_pe/{sample}/alignment_focused_downsampled_dedup_renamed.bam",
         alignment_index="resources/Illumina_pe/{sample}/alignment_focused_downsampled_dedup_renamed.bam.bai",
-        bsmap_binary="resources/ref_tools/BSMAPz/bsmapz",
+        bsmapz_binary="resources/ref_tools/BSMAPz/bsmapz",
     output:
         temp("results/single_sample/Illumina_pe/called/{sample}/result_files/out.sam"),
     log:
@@ -59,7 +59,7 @@ rule bsmapz_compute_meth:
         """
         mkdir -p $(dirname {log})
         mkdir -p $(dirname {output})
-        {input.bsmap_binary} -a {input.alignment} -d {input.genome} -o {output} -p {threads} -w 100 -v 0.07 -m 50 -x 300 > {log} 2>&1
+        {input.bsmapz_binary} -a {input.alignment} -d {input.genome} -o {output} -p {threads} -w 100 -v 0.07 -m 50 -x 300 > {log} 2>&1
         """
 
 

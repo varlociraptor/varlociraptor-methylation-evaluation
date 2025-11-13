@@ -35,7 +35,7 @@ def plot_biases(df):
         "AFD",
     ]
 
-    keep_cols = ["AF", "SB", "ROB", "RPB", "SCB", "HE", "ALB"]
+    keep_cols = ["DP", "AF", "SB", "ROB", "RPB", "SCB", "HE", "ALB"]
 
     # Split rep1
     df_rep1 = df["varlo_format_rep1"].str.split(":", expand=True)
@@ -60,6 +60,8 @@ def plot_biases(df):
     # AF-cols to float
     df_selected["AF_rep1"] = df_selected["AF_rep1"].astype(float)
     df_selected["AF_rep2"] = df_selected["AF_rep2"].astype(float)
+    df_selected["DP_rep1"] = df_selected["DP_rep1"].astype(int)
+    df_selected["DP_rep2"] = df_selected["DP_rep2"].astype(int)
 
     df_selected["rep1_has_bias"] = (
         df_selected[[f"{b}_rep1" for b in bias_cols]].ne(".").any(axis=1)
@@ -86,7 +88,15 @@ def plot_biases(df):
     df_selected["category"] = df_selected.apply(categorize, axis=1)
 
     rep1_long = df_selected.melt(
-        id_vars=["chromosome", "position", "AF_rep1", "AF_rep2", "category"],
+        id_vars=[
+            "chromosome",
+            "position",
+            "AF_rep1",
+            "AF_rep2",
+            "category",
+            "DP_rep1",
+            "DP_rep2",
+        ],
         value_vars=[f"{b}_rep1" for b in bias_cols],
         var_name="bias_type",
         value_name="rep1_bias",
@@ -94,7 +104,15 @@ def plot_biases(df):
     rep1_long["bias_type"] = rep1_long["bias_type"].str.replace("_rep1", "")
 
     rep2_long = df_selected.melt(
-        id_vars=["chromosome", "position", "AF_rep1", "AF_rep2", "category"],
+        id_vars=[
+            "chromosome",
+            "position",
+            "AF_rep1",
+            "AF_rep2",
+            "category",
+            "DP_rep1",
+            "DP_rep2",
+        ],
         value_vars=[f"{b}_rep2" for b in bias_cols],
         var_name="bias_type",
         value_name="rep2_bias",
@@ -111,15 +129,13 @@ def plot_biases(df):
     df_long = df_long[df_long["rep1_has_bias"] | df_long["rep2_has_bias"]]
 
     bias_colors = {
-        "SB": "#1f77b4",  # blau
-        "ROB": "#ff7f0e",  # orange
-        "RPB": "#2ca02c",  # grün
-        "SCB": "#d62728",  # rot
-        "HE": "#9467bd",  # lila
-        "ALB": "#8c564b",  # braun
+        "SB": "#D81B60",
+        "ALB": "#1E88E5",
     }
-
-    chart = (
+    # This is only for paper plotting
+    if snakemake.output.get("bias_df") is not None:
+        df_long.to_parquet(snakemake.output["bias_df"], index=False)
+    bias_chart = (
         alt.Chart(df_long)
         .mark_bar()
         .encode(
@@ -137,12 +153,52 @@ def plot_biases(df):
         )
         .properties(title="Bias Types per Category Across Replicates")
     )
+    df_long = df_long[df_long["category"] == "Bias, AF > 0"]
+    df_long["AF"] = np.maximum(df_long["AF_rep1"], df_long["AF_rep2"]).round(2)
+    df_long = df_long[df_long["DP_rep1"] <= 500]
+    df_long = df_long[df_long["DP_rep2"] <= 500]
 
-    return chart
+    af_chart = (
+        alt.Chart(df_long)
+        .mark_bar()
+        .encode(
+            x=alt.X("AF:Q", title="Allele frequency (AF)"),
+            y=alt.Y("count()"),
+        )
+        .properties(title="AF of replicates without bias")
+    )
+
+    df_long = df_long.melt(
+        id_vars=["chromosome", "position"],
+        value_vars=["DP_rep1", "DP_rep2"],
+        var_name="replicate",
+        value_name="DP",
+    )
+
+    dp_chart = (
+        alt.Chart(df_long)
+        .mark_bar()
+        .encode(
+            x=alt.X("DP:Q", bin=alt.Bin(step=5), title="Depth (DP)"),
+            y=alt.Y("count()", title="Anzahl Positionen"),
+            color=alt.Color("replicate:N", title="Replicate"),
+            # column=alt.Column("replicate:N"),  # nebeneinander (facettiert)
+        )
+        .properties(title="DP rep1 vs. DP rep2")
+    )
+    bias_chart = alt.hconcat(bias_chart, af_chart, dp_chart).resolve_scale(
+        color="independent"
+    )
+
+    return bias_chart, df_long
 
 
 def plot_count_heatmap(
-    df: pd.DataFrame, meth_caller: str, bin_size: int, mapes: dict
+    df: pd.DataFrame,
+    meth_caller: str,
+    bin_size: int,
+    mapes: dict,
+    meth_caller_name: str,
 ) -> alt.Chart:
     """
     Create a log-scaled heatmap for replicate methylation values.
@@ -166,16 +222,11 @@ def plot_count_heatmap(
     max_count = df["count"].max()
     min_count = 1
     ticks = [min_count, max_count]
-    title = (
-        f"Varlociraptor α = {fdr}"
-        if meth_caller == "varlo"
-        else meth_caller.capitalize()
-    )
     heatmap = (
         alt.Chart(
             df,
             title=alt.Title(
-                title,
+                meth_caller_name,
                 subtitle=f"N = {df['count'].sum()} | D = {mapes.get(meth_caller,0)}",
             ),
         )
@@ -223,7 +274,7 @@ def plot_histogram_cdf(meth_callers, meth_caller_dfs, cdf_dfs):
         alt.Chart(df_hist_long)
         .mark_point(size=60, filled=True)
         .encode(
-            x=alt.X("dist_bin:Q", title="Distance (%)"),
+            x=alt.X("dist_bin:Q", title="Discordance"),
             y=alt.Y("rel_count:Q", axis=alt.Axis(format="%")),
             color=alt.Color(
                 "meth_caller:N", scale=alt.Scale(scheme="category10", domain=domain)
@@ -252,7 +303,7 @@ def plot_histogram_cdf(meth_callers, meth_caller_dfs, cdf_dfs):
     return combined_chart
 
 
-def compute_replicate_counts(df_dict: dict, bin_size: int):
+def compute_replicate_counts(df_dict: dict, bin_size: int, samples):
     """
     Compute replicate counts and binned/unbinned distances for each methylation caller.
     Returns:
@@ -260,15 +311,14 @@ def compute_replicate_counts(df_dict: dict, bin_size: int):
         cdf_dfs: DataFrame per caller for CDFs
         mapes: mean absolute percentage error per caller
     """
-    samples = snakemake.params["sample"]
     meth_callers = snakemake.params["meth_callers"]
     # Merge across samples if needed
     if isinstance(samples, str):
         samples = [samples]
-
     df = pd.concat([df_dict[p] for p in samples], ignore_index=True)
-    methyl_cols = [c for c in df.columns if "methylation" in c]
-    df = df.groupby(["chromosome", "position"], as_index=False)[methyl_cols].mean()
+
+    # methyl_cols = [c for c in df.columns if "methylation" in c]
+    # df = df.groupby(["chromosome", "position"], as_index=False)[methyl_cols].mean()
 
     meth_caller_dfs = {}
     cdf_dfs = {}
@@ -345,6 +395,8 @@ if isinstance(samples, str):
 bin_size = snakemake.params["bin_size"]
 meth_callers = snakemake.params["meth_callers"]
 fdr = snakemake.params["fdr"]
+if float(fdr) == 1.0 and snakemake.params.get("paper_plots", False) == True:
+    meth_callers = ["varlo"]
 
 # Load HDF5 input
 meth_caller_dfs = {}
@@ -352,11 +404,73 @@ with pd.HDFStore(snakemake.input[0], mode="r", locking=False) as store:
     for key in store.keys():
         meth_caller_dfs[key.strip("/")] = store[key]
 
-
 sample_df = pd.concat([meth_caller_dfs[p] for p in samples], ignore_index=True)
 
 
-biases = plot_biases(
+############################################## Histogram single Illumina samples
+results = []  # List for collecting rows
+meth_caller_to_name = {
+    "varlo": f"Varlociraptor α = {fdr}",
+    "bismark": "Bismark",
+    "bsMap": "BSMAPz",
+    "methylDackel": "MethylDackel",
+    "modkit": "Modkit",
+    "pb_CpG_tools": "pb-CpG-tools",
+}
+for s in samples:
+    for m in meth_callers:
+        rep_df_s, cdf_s, mape_s = compute_replicate_counts(
+            meth_caller_dfs, bin_size, [s]
+        )
+
+        results.append(
+            {
+                "sample": s,
+                "meth_caller": meth_caller_to_name[m],
+                "number": int(str(rep_df_s[m]["count"].sum())[:3]),
+                "distance": float(
+                    mape_s[m].replace("%", "")
+                ),  # Convert "12.3%" -> 12.3
+            }
+        )
+df_summary = pd.DataFrame(results)
+
+colorblind_safe_palette = [
+    "#D81B60",
+    "#1E88E5",
+    "#FFC107",
+    "#D35892",
+    "#AC3FE6",
+]
+
+bars = (
+    alt.Chart(df_summary)
+    .mark_bar()
+    .encode(
+        x=alt.X("sample:N"),
+        xOffset="meth_caller:N",
+        y=alt.Y("distance:Q", title="Discordance"),
+        color=alt.Color(
+            "meth_caller:N",
+            title="Methylation caller",
+            scale=alt.Scale(range=colorblind_safe_palette),
+        ),
+    )
+)
+
+labels = (
+    alt.Chart(df_summary)
+    .mark_text(size=8, dy=-5, color="black")
+    .transform_calculate(text_k="datum.number + 'k'")
+    .encode(text="text_k:N", x="sample:N", xOffset="meth_caller:N", y="distance:Q")
+)
+
+illumina_histo = bars + labels
+
+
+####################################################### Compute Biases
+
+bias_chart, bias_df = plot_biases(
     sample_df[
         [
             "chromosome",
@@ -369,21 +483,37 @@ biases = plot_biases(
     ]
 )
 
-replicate_dfs, cdf_dfs, mapes = compute_replicate_counts(meth_caller_dfs, bin_size)
-# if float(fdr) == 1.0:
-#     meth_callers = ["varlo"]
+################################################################## Compute heatmaps
+replicate_dfs, cdf_dfs, mapes = compute_replicate_counts(
+    meth_caller_dfs, bin_size, snakemake.params["sample"]
+)
+
+
 # Create heatmaps for each methylation caller
 heatmaps = [
-    plot_count_heatmap(replicate_dfs[m], m, bin_size, mapes) for m in meth_callers
+    plot_count_heatmap(replicate_dfs[m], m, bin_size, mapes, meth_caller_to_name[m])
+    for m in meth_callers
 ]
+heatmap_df = pd.concat(replicate_dfs.values(), ignore_index=True)
 heatmap_plots = alt.hconcat(*heatmaps).resolve_scale(color="independent")
 
-# Save heatmap output
-# import pickle
-# with open(snakemake.output[0], "wb") as f:
-#     pickle.dump(heatmap_plots, f)
+#########################################################
 
-heatmap_plots.save(
-    snakemake.output["heatmap"], embed_options={"actions": False}, inline=False
-)
-biases.save(snakemake.output["bias"], embed_options={"actions": False}, inline=False)
+# Save heatmap output
+if snakemake.params.get("paper_plots", False) == True:
+    df_summary.to_parquet(snakemake.output["histogram_single_samples"])
+    bias_df.to_parquet(snakemake.output["bias"])
+    heatmap_df.to_parquet(snakemake.output["heatmap"])
+else:
+    heatmap_plots.save(
+        snakemake.output["heatmap"], embed_options={"actions": False}, inline=False
+    )
+    if snakemake.output.get("histogram_single_samples") is not None:
+        illumina_histo.save(
+            snakemake.output["histogram_single_samples"],
+            embed_options={"actions": False},
+            inline=False,
+        )
+    bias_chart.save(
+        snakemake.output["bias"], embed_options={"actions": False}, inline=False
+    )

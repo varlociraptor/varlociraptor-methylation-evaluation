@@ -9,19 +9,40 @@ from pathlib import Path
 sys.stderr = open(snakemake.log[0], "w")
 
 
-def boxplot_with_points(df, x, y, color, x_title, y_title, title):
+def point_plot(df, x, y, color, x_title, y_title, title, height=200):
     """Simple reusable Altair boxplot with overlaid points."""
-    base = alt.Chart(df).encode(
-        x=alt.X(
-            f"{x}:N",
-            title=x_title,
-            axis=alt.Axis(labelExpr='split(datum.value, " - ")[1]'),
-        ),
-        y=alt.Y(f"{y}:Q", title=y_title, scale=alt.Scale(type="log")),
-        color=f"{color}:N",
+    colorblind_safe_palette = [
+        "#D81B60",
+        "#1E88E5",
+        "#FFC107",
+        "#D35892",
+        "#AC3FE6",
+    ]
+    base = (
+        alt.Chart(df)
+        .encode(
+            x=alt.X(
+                f"{x}:N",
+                title=None,
+                axis=alt.Axis(labelExpr='split(datum.value, " - ")[1]'),
+            ),
+            y=alt.Y(f"{y}:Q", title=y_title, scale=alt.Scale(type="log")),
+            color=alt.Color(
+                f"{color}:N", scale=alt.Scale(range=colorblind_safe_palette)
+            ),
+            xOffset=alt.XOffset(
+                "jitter:Q",
+                scale=alt.Scale(domain=[-0.05, 0.05]),  # << feste min/max Jitter Range
+            ),
+        )
+        .transform_calculate(
+            # jitter sehr klein!
+            jitter="(random() - 0.5) * 0.02"
+        )
     )
+
     points = base.mark_point(filled=True, size=20).encode(tooltip=[x, y])
-    return points.properties(width=600, height=400, title=title)
+    return points.properties(height=height)
 
 
 # Read benchmark files from Snakemake input directory
@@ -48,6 +69,8 @@ for root, _, files in os.walk(benchmark_path):
         records.append(df)
 
 df_all = pd.concat(records, ignore_index=True)
+df_all["platform"] = df_all["platform"].replace("Illumina_pe", "Illumina")
+
 
 # Compare different methylation calling tools
 df_compare_tools = (
@@ -78,26 +101,27 @@ df_compare_varlo = (
         platform_tool=lambda x: x["platform"] + " - " + x["task"],
     )
 )
-
 # Create runtime and memory plots for all tools
-runtime_chart = boxplot_with_points(
+runtime_chart = point_plot(
     df_compare_tools,
     x="platform_tool",
     y="minutes",
     color="platform",
     x_title="Tool",
     y_title="Runtime (min)",
-    title="Runtime of methylation calling tools",
+    title="Runtime",
+    height=200,
 )
 
-memory_chart = boxplot_with_points(
+memory_chart = point_plot(
     df_compare_tools,
     x="platform_tool",
     y="max_rss_gb",
     color="platform",
     x_title="Platform - Tool",
     y_title="Max RSS (GB)",
-    title="Memory usage of methylation calling tools",
+    title="Memory usage",
+    height=200,
 )
 
 # Combine tool plots
@@ -108,15 +132,17 @@ tool_chart.save(
     inline=False,
 )
 
+df_compare_varlo["platform"] = " - " + df_compare_varlo["platform"]
 # Runtime comparison for Varlociraptor steps
-runtime_varlo_chart = boxplot_with_points(
+runtime_varlo_chart = point_plot(
     df_compare_varlo,
-    x="platform_tool",
+    x="platform",
     y="minutes",
-    color="platform",
+    color="task",
     x_title="Platform - Step",
     y_title="Runtime (min)",
     title="Runtime of Varlociraptor steps",
+    height=150,
 )
 
 runtime_varlo_chart.save(

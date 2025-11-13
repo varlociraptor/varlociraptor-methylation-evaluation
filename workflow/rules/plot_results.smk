@@ -135,33 +135,51 @@ rule replicates_heatmap:
 # Compute common heatmap over all Illumina samples
 rule heatmap_illumina_samples:
     input:
-        "results/{call_type}/{seq_platform}/{fdr}/plots/replicates.hd5",
+        "results/single_sample/Illumina_pe/{fdr}/plots/replicates.hd5",
     output:
         heatmap=report(
-            "results/{call_type}/{seq_platform}/{fdr}/plots/heatmap_all_samples.{plot_type}",
-            category="{call_type}",
-            subcategory=lambda wildcards: f"{wildcards.seq_platform}",
+            "results/single_sample/Illumina_pe/{fdr}/plots/heatmap_all_samples.{plot_type}",
+            category="single_sample",
+            subcategory="Illumina_pe",
             labels={
                 "file": "heatmap",
                 "sample": "all samples",
                 "fdr": "{fdr}",
             },
         ),
-        bias="results/{call_type}/{seq_platform}/{fdr}/plots/bias_all_samples.{plot_type}",
+        bias=report(
+            "results/single_sample/Illumina_pe/{fdr}/plots/bias_all_samples.{plot_type}",
+            category="single_sample",
+            subcategory="Illumina_pe",
+            labels={
+                "file": "bias",
+                "sample": "all samples",
+                "fdr": "{fdr}",
+            },
+        ),
+        bar_plot_single_samples=report(
+            "results/single_sample/Illumina_pe/{fdr}/plots/bar_plot_single_samples.{plot_type}",
+            category="single_sample",
+            subcategory="Illumina_pe",
+            labels={
+                "file": "bar_plot_single_samples",
+                "sample": "all samples",
+                "fdr": "{fdr}",
+            },
+        ),
     conda:
         "../envs/plot.yaml"
     resources:
         mem_mb=64000,
     log:
-        "logs/plot_results/heatmap_illumina_samples/{call_type}_{seq_platform}_{fdr}_{plot_type}.log",
+        "logs/plot_results/heatmap_illumina_samples/single_sample_Illumina_pe_{fdr}_{plot_type}.log",
     params:
-        meth_callers=lambda wildcards: config["ref_tools"].get(
-            wildcards.seq_platform, []
-        )
+        meth_callers=lambda wildcards: config["ref_tools"].get("Illumina_pe", [])
         + ["varlo"],
-        sample=lambda wildcards: config["samples"].get(wildcards.seq_platform, []),
+        sample=lambda wildcards: config["samples"].get("Illumina_pe", []),
         bin_size=lambda wildcards: config["heatmap_bin_size"],
         fdr=lambda wildcards: wildcards.fdr,
+        paper_plots=False,
     script:
         "../scripts/plot_heatmap_comparison.py"
 
@@ -181,17 +199,33 @@ rule plot_runtime_comparison:
 
 
 # This rule combines the heatmaps from  two different FDR levels into one SVG file for easier comparison in the paper
-rule combine_svgs:
+rule combine_heatmaps_paper:
     input:
-        "results/single_sample/{platform}/0.01/plots/REP_heatmap.pkl",
-        "results/single_sample/{platform}/1.0/plots/REP_heatmap.pkl",
+        "results/single_sample/{platform}/0.01/plots/REP_heatmap.parquet",
+        "results/single_sample/{platform}/1.0/plots/REP_heatmap.parquet",
     output:
-        "results/single_sample/{platform}/combined/plotst/combined.svg",
+        "results/single_sample/{platform}/combined/plotst/combined.{plot_type}",
     conda:
         "../envs/plot.yaml"
     log:
-        "logs/plot_results/combine_svgs/{platform}.log",
+        "logs/plot_results/combine_heatmaps_paper/{platform}_{plot_type}.log",
     params:
         platform=lambda wildcards: wildcards.platform,
     script:
-        "../scripts/combine_svgs.py"
+        "../scripts/combine_paper_plots.py"
+
+
+rule combine_single_illumina_paper:
+    input:
+        "results/single_sample/Illumina_pe/0.01/plots/bar_plot_single_samples.parquet",
+        "results/single_sample/Illumina_pe/1.0/plots/bar_plot_single_samples.parquet",
+    output:
+        "results/single_sample/Illumina_pe/combined/plotst/illumina.{plot_type}",
+    conda:
+        "../envs/plot.yaml"
+    log:
+        "logs/plot_results/combine_heatmaps_paper/{plot_type}.log",
+    params:
+        platform="Illumina_pe",
+    script:
+        "../scripts/combine_paper_plots.py"
