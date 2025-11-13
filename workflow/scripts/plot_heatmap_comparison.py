@@ -396,8 +396,7 @@ if isinstance(samples, str):
 bin_size = snakemake.params["bin_size"]
 meth_callers = snakemake.params["meth_callers"]
 fdr = snakemake.params["fdr"]
-if float(fdr) == 0.01 and snakemake.params.get("paper_plots", False) == True:
-    meth_callers = ["varlo"]
+meth_callers = ["varlo"]
 
 # Load HDF5 input
 meth_caller_dfs = {}
@@ -500,31 +499,16 @@ heatmap_plots = alt.hconcat(*heatmaps).resolve_scale(color="independent")
 
 #########################################################
 
-# Save heatmap output
-# if snakemake.params.get("paper_plots", False) == True:
-#     df_summary.to_parquet(snakemake.output["bar_plot_single_samples"])
-#     bias_df.to_parquet(snakemake.output["bias"])
-#     heatmap_df.to_parquet(snakemake.output["heatmap"])
-if snakemake.params.get("paper_plots", False) == True:
-    with open(snakemake.output["heatmap"], "wb") as f:
-        pickle.dump(heatmap_plots, f)
-    if snakemake.output.get("bar_plot_single_samples") is not None:
-        with open(snakemake.output["bar_plot_single_samples"], "wb") as f:
-            pickle.dump(illumina_histo, f)
-    with open(snakemake.output["bias"], "wb") as f:
-        pickle.dump(bias_chart, f)
-# with open(snakemake.output[0], "wb") as f:
-#     pickle.dump(heatmap_plots, f)
-else:
-    heatmap_plots.save(
-        snakemake.output["heatmap"], embed_options={"actions": False}, inline=False
+
+heatmap_plots.save(
+    snakemake.output["heatmap"], embed_options={"actions": False}, inline=False
+)
+if snakemake.output.get("bar_plot_single_samples") is not None:
+    illumina_histo.save(
+        snakemake.output["bar_plot_single_samples"],
+        embed_options={"actions": False},
+        inline=False,
     )
-    if snakemake.output.get("bar_plot_single_samples") is not None:
-        illumina_histo.save(
-            snakemake.output["bar_plot_single_samples"],
-            embed_options={"actions": False},
-            inline=False,
-        )
-    bias_chart.save(
-        snakemake.output["bias"], embed_options={"actions": False}, inline=False
-    )
+bias_chart.save(
+    snakemake.output["bias"], embed_options={"actions": False}, inline=False
+)
