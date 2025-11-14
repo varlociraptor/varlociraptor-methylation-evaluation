@@ -140,7 +140,7 @@ def plot_biases(df):
         alt.Chart(df_long)
         .mark_bar()
         .encode(
-            x=alt.X("category:N", title="Category"),
+            x=alt.X("category:N"),
             y=alt.Y("count():Q", title="Number of sites"),
             color=alt.Color(
                 "bias_type:N",
@@ -152,7 +152,7 @@ def plot_biases(df):
             ),
             tooltip=["category", "bias_type", "count()"],
         )
-        .properties(title="Bias Types per Category Across Replicates")
+        .properties(title=f"{snakemake.params["platform"]}  data", height=200)
     )
     df_long = df_long[df_long["category"] == "Bias, AF > 0"]
     df_long["AF"] = np.maximum(df_long["AF_rep1"], df_long["AF_rep2"]).round(2)
@@ -175,7 +175,7 @@ def plot_biases(df):
         var_name="replicate",
         value_name="DP",
     )
-
+    print("TEST")
     dp_chart = (
         alt.Chart(df_long)
         .mark_bar()
@@ -187,9 +187,9 @@ def plot_biases(df):
         )
         .properties(title="DP rep1 vs. DP rep2")
     )
-    bias_chart = alt.hconcat(bias_chart, af_chart, dp_chart).resolve_scale(
-        color="independent"
-    )
+    # bias_chart = alt.hconcat(bias_chart, af_chart, dp_chart).resolve_scale(
+    #     color="independent"
+    # )
 
     return bias_chart, df_long
 
@@ -501,20 +501,19 @@ heatmap_plots = alt.hconcat(*heatmaps).resolve_scale(color="independent")
 #########################################################
 
 # Save heatmap output
-if snakemake.params.get("paper_plots", False) == True:
-    df_summary.to_parquet(snakemake.output["bar_plot_single_samples"])
-    bias_df.to_parquet(snakemake.output["bias"])
-    heatmap_df.to_parquet(snakemake.output["heatmap"])
 # if snakemake.params.get("paper_plots", False) == True:
-#     with open(snakemake.output["heatmap"], "wb") as f:
-#         pickle.dump(heatmap_plots, f)
-#     if snakemake.output.get("bar_plot_single_samples") is not None:
-#         with open(snakemake.output["bar_plot_single_samples"], "wb") as f:
-#             pickle.dump(illumina_histo, f)
-#     with open(snakemake.output["bias"], "wb") as f:
-#         pickle.dump(bias_chart, f)
-# with open(snakemake.output[0], "wb") as f:
-#     pickle.dump(heatmap_plots, f)
+# if snakemake.output.get("bar_plot_single_samples") is not None:
+#     df_summary.to_parquet(snakemake.output["bar_plot_single_samples"])
+# bias_df.to_parquet(snakemake.output["bias"])
+# heatmap_df.to_parquet(snakemake.output["heatmap"])
+if snakemake.params.get("paper_plots", False) == True:
+    with open(snakemake.output["heatmap"], "wb") as f:
+        pickle.dump(heatmap_plots, f)
+    if snakemake.output.get("bar_plot_single_samples") is not None:
+        with open(snakemake.output["bar_plot_single_samples"], "wb") as f:
+            pickle.dump(illumina_histo, f)
+    with open(snakemake.output["bias"], "wb") as f:
+        pickle.dump(bias_chart, f)
 else:
     heatmap_plots.save(
         snakemake.output["heatmap"], embed_options={"actions": False}, inline=False

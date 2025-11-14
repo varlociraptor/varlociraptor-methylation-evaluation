@@ -129,6 +129,7 @@ rule replicates_heatmap:
         bin_size=lambda wildcards: config["heatmap_bin_size"],
         fdr=lambda wildcards: wildcards.fdr,
         paper_plots=True,
+        platform=lambda wildcards: wildcards.seq_platform,
     script:
         "../scripts/plot_heatmap_comparison.py"
 
@@ -181,6 +182,7 @@ rule heatmap_illumina_samples:
         bin_size=lambda wildcards: config["heatmap_bin_size"],
         fdr=lambda wildcards: wildcards.fdr,
         paper_plots=True,
+        platform="Illumina_pe",
     script:
         "../scripts/plot_heatmap_comparison.py"
 
@@ -220,9 +222,9 @@ rule combine_heatmaps_paper:
 
 rule combine_bias_paper:
     input:
-        "results/single_sample/Nanopore/0.01/plots/REP_bias.pkl",
-        "results/single_sample/PacBio/0.01/plots/REP_bias.pkl",
         "results/single_sample/Illumina_pe/0.01/plots/bias_all_samples.pkl",
+        "results/single_sample/PacBio/0.01/plots/REP_bias.pkl",
+        "results/single_sample/Nanopore/0.01/plots/REP_bias.pkl",
     output:
         "results/single_sample/combined/all/combined.{plot_type}",
     conda:
@@ -230,7 +232,7 @@ rule combine_bias_paper:
     log:
         "logs/plot_results/combine_bias_paper/{plot_type}.log",
     params:
-        plot_type="heatmap",
+        plot_type="bias",
     script:
         "../scripts/combine_paper_plots.py"
 
