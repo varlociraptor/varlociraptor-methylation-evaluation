@@ -120,7 +120,6 @@ def plot_biases(df: pd.DataFrame) -> tuple:
     """Generate bias charts and prepare dataframe for plotting."""
     df_long = prepare_bias_dataframe(df)
     colorblind_safe_palette = ["#D81B60", "#1E88E5", "#FFC107", "#D35892", "#AC3FE6"]
-
     # Bias count chart
     bias_chart = (
         alt.Chart(df_long)
@@ -145,7 +144,7 @@ def plot_biases(df: pd.DataFrame) -> tuple:
         alt.Chart(df_af)
         .mark_bar()
         .encode(x="AF:Q", y="count()")
-        .properties(title="AF of replicates without bias")
+        .properties(title="AF at loci with bias in other replicates")
     )
 
     # DP chart
@@ -160,7 +159,10 @@ def plot_biases(df: pd.DataFrame) -> tuple:
         .mark_bar()
         .encode(
             x=alt.X("DP:Q", bin=alt.Bin(step=5), title="Depth (DP)"),
-            y=alt.Y("count()", title="Number of positions"),
+            y=alt.Y(
+                "count()",
+                title="Coverage per replicate at loci with bias in only one replicate",
+            ),
             color=alt.Color(
                 "replicate:N",
                 scale=alt.Scale(range=colorblind_safe_palette),
@@ -290,6 +292,7 @@ meth_caller_to_name = {
     "varlo": f"Varlociraptor α = {fdr}",
     "bismark": "Bismark",
     "bsMap": "BSMAPz",
+    "bisSNP": "BisSNP",
     "methylDackel": "MethylDackel",
     "modkit": "Modkit",
     "pb_CpG_tools": "pb-CpG-tools",

@@ -119,7 +119,7 @@ rule plots_samples:
     resources:
         mem_mb=64000,
     log:
-        "logs/plot_results/replicates_heatmap/{call_type}_{seq_platform}_{fdr}_{sample}_{plot_type}.log",
+        "logs/plot_results/plots_samples/{call_type}_{seq_platform}_{fdr}_{sample}_{plot_type}.log",
     params:
         meth_callers=lambda wildcards: config["ref_tools"].get(
             wildcards.seq_platform, []
@@ -173,7 +173,7 @@ rule plots_all_illumina_samples:
     resources:
         mem_mb=64000,
     log:
-        "logs/plot_results/heatmap_illumina_samples/single_sample_Illumina_pe_{fdr}_{plot_type}.log",
+        "logs/plot_results/plots_all_illumina_samples/single_sample_Illumina_pe_{fdr}_{plot_type}.log",
     params:
         meth_callers=lambda wildcards: config["ref_tools"].get("Illumina_pe", [])
         + ["varlo"],

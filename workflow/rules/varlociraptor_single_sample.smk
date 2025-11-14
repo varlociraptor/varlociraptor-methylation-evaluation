@@ -50,7 +50,7 @@ rule varlociraptor_call:
     wildcard_constraints:
         seq_platform="(?!multi_sample).*",
     shell:
-        "{input.varlo} call variants generic --scenario {input.scenario} --obs normal={input.preprocess_obs} > {output} 2> {log}"
+        "varlociraptor call variants generic --scenario {input.scenario} --obs normal={input.preprocess_obs} > {output} 2> {log}"
 
 
 # TODO: Skip this step, right now it would be useless since I debug so much
