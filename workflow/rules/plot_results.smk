@@ -90,7 +90,7 @@ rule compute_correlation:
         "../scripts/compute_correlation.py"
 
 
-rule replicates_heatmap:
+rule plots_samples:
     input:
         "results/{call_type}/{seq_platform}/{fdr}/plots/replicates.hd5",
     output:
@@ -134,7 +134,7 @@ rule replicates_heatmap:
 
 
 # Compute common heatmap over all Illumina samples
-rule heatmap_illumina_samples:
+rule plots_all_illumina_samples:
     input:
         "results/single_sample/Illumina_pe/{fdr}/plots/replicates.hd5",
     output:
