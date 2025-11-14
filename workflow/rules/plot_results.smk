@@ -218,6 +218,23 @@ rule combine_heatmaps_paper:
         # This rule combines the heatmaps from  two different FDR levels into one SVG file for easier comparison in the paper
 
 
+rule combine_bias_paper:
+    input:
+        "results/single_sample/Nanopore/0.01/plots/REP_bias.pkl",
+        "results/single_sample/PacBio/0.01/plots/REP_bias.pkl",
+        "results/single_sample/Illumina_pe/0.01/plots/bias_all_samples.pkl",
+    output:
+        "results/single_sample/combined/all/combined.{plot_type}",
+    conda:
+        "../envs/plot.yaml"
+    log:
+        "logs/plot_results/combine_bias_paper/{plot_type}.log",
+    params:
+        plot_type="heatmap",
+    script:
+        "../scripts/combine_paper_plots.py"
+
+
 rule combine_heatmaps_paper_illumina:
     input:
         "results/single_sample/Illumina_pe/1.0/plots/heatmap_all_samples.pkl",

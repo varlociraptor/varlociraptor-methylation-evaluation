@@ -5,7 +5,7 @@ import pandas as pd
 
 plot_type = snakemake.params["plot_type"]
 
-if plot_type != "bias":
+if plot_type == "heatmap":
 
     platform = snakemake.params["platform"]
 
@@ -29,6 +29,18 @@ if plot_type != "bias":
                 )
             )
         )
+
+    combined.save(snakemake.output[0])
+if plot_type == "bias":
+
+    with open(snakemake.input[0], "rb") as f:
+        chart1 = pickle.load(f)
+
+    with open(snakemake.input[1], "rb") as f:
+        chart2 = pickle.load(f)
+    with open(snakemake.input[2], "rb") as f:
+        chart3 = pickle.load(f)
+    combined = alt.hconcat(chart1, chart2, chart3).resolve_scale(color="independent")
 
     combined.save(snakemake.output[0])
 else:
