@@ -20,9 +20,22 @@ def compute_results() -> List[List[str]]:
                 for fdr in config["fdr_alpha"]
             ]
         )
+        inputs.append(
+            [
+                f"results/single_sample/Illumina_pe/{fdr}/plots/bias_all_samples.{config['plot_type']}"
+                for fdr in config["fdr_alpha"]
+            ]
+        )
+        inputs.append(
+            [
+                f"results/single_sample/Illumina_pe/{fdr}/plots/bar_plot_single_samples.{config['plot_type']}"
+                for fdr in config["fdr_alpha"]
+            ]
+        )
 
     # Multi-sample common heatmaps
     inputs.append(heatmap_replicates_common())
+    inputs.append(bias_replicates_common())
 
     return inputs
 
@@ -52,6 +65,23 @@ def heatmap_replicates_common() -> List[str]:
 
     return [
         f"{base_path}/{comp}/{fdr}/plots/{sample}_heatmap.{plot_type}"
+        for comp in comparisons
+        for sample in config["samples"].get("multi_sample", [])
+        for fdr in config["fdr_alpha"]
+    ]
+
+
+def bias_replicates_common() -> List[str]:
+    """
+    Return file paths for multi-sample common heatmaps across comparisons.
+    """
+    base_path = Path("results/multi_sample")
+    plot_type = config["plot_type"]
+
+    comparisons = ["np_pb", "pb_trueOX", "np_trueOX"]
+
+    return [
+        f"{base_path}/{comp}/{fdr}/plots/{sample}_bias.{plot_type}"
         for comp in comparisons
         for sample in config["samples"].get("multi_sample", [])
         for fdr in config["fdr_alpha"]
