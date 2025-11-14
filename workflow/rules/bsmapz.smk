@@ -54,7 +54,7 @@ rule bsmapz_compute_meth:
         "benchmarks/Illumina_pe/bsmap/bsmap_compute/{sample}.bwa.benchmark.txt"
     conda:
         "../envs/general.yaml"
-    threads: 8
+    threads: 1
     shell:
         """
         mkdir -p $(dirname {log})
