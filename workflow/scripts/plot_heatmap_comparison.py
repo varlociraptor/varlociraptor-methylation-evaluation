@@ -142,6 +142,13 @@ def plot_biases(df):
     # This is only for paper plotting
     if snakemake.output.get("bias_df") is not None:
         df_long.to_parquet(snakemake.output["bias_df"], index=False)
+    bias_label_map = {
+        "SB": "Strand Bias",
+        "ALB": "Alt Locus Bias",
+    }
+
+    df_long["bias_type_label"] = df_long["bias_type"].map(bias_label_map)
+
     bias_chart = (
         alt.Chart(df_long)
         .mark_bar()
@@ -149,19 +156,19 @@ def plot_biases(df):
             x=alt.X("category:N", title=None),
             y=alt.Y("count():Q", title="Number of sites"),
             color=alt.Color(
-                "bias_type:N",
-                title="Bias type",
+                "bias_type_label:N",
                 scale=alt.Scale(
-                    domain=list(bias_colors.keys()),
-                    range=list(bias_colors.values()),
+                    domain=list(bias_label_map.values()),
+                    range=[bias_colors[k] for k in bias_label_map.keys()],
                 ),
                 legend=(
                     None if platform != "Nanopore" else alt.Legend(title="Bias type")
                 ),
             ),
-            tooltip=["category", "bias_type", "count()"],
+            tooltip=["category:N", "count():Q", "bias_type_label:N"],
         )
-        .properties(title=f"{platform} data", height=200)
+        .interactive()
+        .properties(title=f"{platform} data", height=140)
     )
     df_long = df_long[df_long["category"] == "Bias, AF > 0"]
     df_long["AF"] = np.maximum(df_long["AF_rep1"], df_long["AF_rep2"]).round(2)
@@ -174,8 +181,10 @@ def plot_biases(df):
         .encode(
             x=alt.X("AF:Q", title="Allele frequency (AF)"),
             y=alt.Y("count()"),
+            tooltip=["AF:Q", "count()"],
         )
         .properties(title="AF of replicates without bias")
+        .interactive()
     )
 
     df_long = df_long.melt(
@@ -184,7 +193,6 @@ def plot_biases(df):
         var_name="replicate",
         value_name="DP",
     )
-    print("TEST")
     dp_chart = (
         alt.Chart(df_long)
         .mark_bar()
@@ -192,14 +200,13 @@ def plot_biases(df):
             x=alt.X("DP:Q", bin=alt.Bin(step=5), title="Depth (DP)"),
             y=alt.Y("count()", title="Anzahl Positionen"),
             color=alt.Color("replicate:N", title="Replicate"),
-            # column=alt.Column("replicate:N"),  # nebeneinander (facettiert)
+            tooltip=["DP:Q", "count()", "replicate:N"],
         )
         .properties(title="DP rep1 vs. DP rep2")
+        .interactive()
     )
-    # bias_chart = alt.hconcat(bias_chart, af_chart, dp_chart).resolve_scale(
-    #     color="independent"
-    # )
 
+    bias_chart = alt.hconcat(bias_chart, af_chart, dp_chart).interactive()
     return bias_chart, df_long
 
 
@@ -231,7 +238,9 @@ def plot_count_heatmap(
     """
     max_count = df["count"].max()
     min_count = 1
-    ticks = [min_count, max_count]
+
+    ticks = list(np.logspace(0, np.log10(max_count), num=5).round().astype(int))
+    meth_caller_name = "PacBio and TrueMethylOX"
     heatmap = (
         alt.Chart(
             df,
@@ -256,12 +265,17 @@ def plot_count_heatmap(
                 "count:Q",
                 scale=alt.Scale(type="log", scheme="viridis", domain=[1, max_count]),
                 legend=alt.Legend(
-                    title="Count", orient="right", values=ticks, format=","
+                    title="Count",
+                    orient="right",
+                    values=ticks,
+                    format=",",
+                    tickCount=len(ticks),
                 ),
             ),
-            tooltip=["rep1_bin", "rep2_bin", "count"],
+            tooltip=["rep1_bin:O", "rep2_bin:O", "count:Q"],
         )
         .properties(width=200, height=200)
+        .interactive()
     )
     return heatmap
 
@@ -289,8 +303,9 @@ def plot_histogram_cdf(meth_callers, meth_caller_dfs, cdf_dfs):
             color=alt.Color(
                 "meth_caller:N", scale=alt.Scale(scheme="category10", domain=domain)
             ),
-            tooltip=["dist_bin", "meth_caller", "rel_count"],
+            tooltip=["dist_bin:Q", "rel_count:Q", "meth_caller:N"],
         )
+        .interactive()
     )
 
     # CDF line
@@ -303,8 +318,9 @@ def plot_histogram_cdf(meth_callers, meth_caller_dfs, cdf_dfs):
             color=alt.Color(
                 "meth_caller:N", scale=alt.Scale(scheme="category10", domain=domain)
             ),
-            tooltip=["dist", "meth_caller", "cdf"],
+            tooltip=["dist:Q", "cdf:Q", "meth_caller:N"],
         )
+        .interactive()
     )
 
     combined_chart = alt.layer(cdf_chart, hist_chart).properties(
@@ -449,9 +465,10 @@ colorblind_safe_palette = [
     "#D81B60",
     "#1E88E5",
     "#FFC107",
-    "#D35892",
-    "#AC3FE6",
+    "#004D40",
+    "#05AA8F",
 ]
+df_summary["sample"] = df_summary["sample"].str.replace("_HG002_", "_", regex=False)
 
 bars = (
     alt.Chart(df_summary)
@@ -465,14 +482,23 @@ bars = (
             title="Methylation caller",
             scale=alt.Scale(range=colorblind_safe_palette),
         ),
+        tooltip=["sample:N", "meth_caller:N", "distance:Q", "number:Q"],
     )
+    .interactive()
 )
 
 labels = (
     alt.Chart(df_summary)
     .mark_text(size=8, dy=-5, color="black")
     .transform_calculate(text_k="datum.number + 'k'")
-    .encode(text="text_k:N", x="sample:N", xOffset="meth_caller:N", y="distance:Q")
+    .encode(
+        text="text_k:N",
+        x="sample:N",
+        xOffset="meth_caller:N",
+        y="distance:Q",
+        tooltip=["sample:N", "meth_caller:N", "distance:Q", "number:Q"],
+    )
+    .interactive()
 )
 
 illumina_histo = bars + labels
@@ -508,14 +534,15 @@ heatmap_df = pd.concat(replicate_dfs.values(), ignore_index=True)
 heatmap_plots = alt.hconcat(*heatmaps).resolve_scale(color="independent")
 
 #########################################################
-
 # Save heatmap output
 # if snakemake.params.get("paper_plots", False) == True:
-# if snakemake.output.get("bar_plot_single_samples") is not None:
-#     df_summary.to_parquet(snakemake.output["bar_plot_single_samples"])
-# bias_df.to_parquet(snakemake.output["bias"])
-# heatmap_df.to_parquet(snakemake.output["heatmap"])
-if snakemake.params.get("paper_plots", False) == True:
+if False:
+    if snakemake.output.get("bar_plot_single_samples") is not None:
+        df_summary.to_parquet(snakemake.output["bar_plot_single_samples"])
+    bias_df.to_parquet(snakemake.output["bias"])
+    heatmap_df.to_parquet(snakemake.output["heatmap"])
+if False:
+    # if snakemake.params.get("paper_plots", False) == True:
     with open(snakemake.output["heatmap"], "wb") as f:
         pickle.dump(heatmap_plots, f)
     if snakemake.output.get("bar_plot_single_samples") is not None:

@@ -1,15 +1,13 @@
-from sys import path
 import altair as alt
 import pickle
 import pandas as pd
-import json
+
 
 plot_type = snakemake.params["plot_type"]
 
 if plot_type == "heatmap":
 
     platform = snakemake.params["platform"]
-
     with open(snakemake.input[0], "rb") as f:
         chart1 = pickle.load(f)
 
@@ -23,7 +21,7 @@ if plot_type == "heatmap":
             .resolve_scale(color="independent")
             .properties(
                 title=alt.TitleParams(
-                    text=f"{platform.capitalize()} data",
+                    text=f"{platform} data",
                     anchor="middle",
                     fontSize=18,
                     fontWeight="bold",
@@ -32,30 +30,15 @@ if plot_type == "heatmap":
         )
 
     combined.save(snakemake.output[0])
-if plot_type == "bias":
+elif plot_type == "bias":
 
-    def load_chart(path):
-        with open(path) as f:
-            return alt.Chart.from_json(f.read())
+    with open(snakemake.input[0], "rb") as f:
+        chart1 = pickle.load(f)
 
-    chart1 = load_chart(snakemake.input[0])
-    chart2 = load_chart(snakemake.input[1])
-    chart3 = load_chart(snakemake.input[2])
-
-    # with open(snakemake.input[0], "rb") as f:
-    #     chart1 = pickle.load(f)
-
-    # with open(snakemake.input[1], "rb") as f:
-    #     chart2 = pickle.load(f)
-    # with open(snakemake.input[2], "rb") as f:
-    #     chart3 = pickle.load(f)
-    # combined = alt.hconcat(chart1, chart2, chart3).resolve_scale(color="independent")
-    chart1 = chart1.encode(color="sample:N")
-    chart2 = chart2.encode(color="sample:N")
-    chart3 = chart3.encode(color="sample:N")
-    chart1 = chart1.encode(color=None)
-    chart2 = chart2.encode(color=None)
-    chart3 = chart3.encode(color=None)
+    with open(snakemake.input[1], "rb") as f:
+        chart2 = pickle.load(f)
+    with open(snakemake.input[2], "rb") as f:
+        chart3 = pickle.load(f)
     combined = alt.hconcat(chart1, chart2, chart3).resolve_scale(color="shared")
 
     combined.save(snakemake.output[0])
@@ -64,8 +47,8 @@ else:
     df2 = pd.read_parquet(snakemake.input[1])
     df_summary = pd.concat([df1, df2], ignore_index=True)
     meth_caller_order = [
-        "BSMAPz",
         "Bismark",
+        "BSMAPz",
         "MethylDackel",
         "Varlociraptor α = 1.0",
         "Varlociraptor α = 0.01",
@@ -74,8 +57,8 @@ else:
         "#D81B60",
         "#1E88E5",
         "#FFC107",
-        "#D35892",
-        "#AC3FE6",
+        "#004D40",
+        "#05AA8F",
     ]
 
     bars = (
@@ -95,7 +78,9 @@ else:
                 scale=alt.Scale(range=colorblind_safe_palette),
                 sort=meth_caller_order,
             ),
+            tooltip=["sample:N", "meth_caller:N", "distance:Q", "number:Q"],
         )
+        .interactive()
     )
 
     labels = (
@@ -107,7 +92,9 @@ else:
             x="sample:N",
             xOffset=alt.XOffset("meth_caller:N", sort=meth_caller_order),
             y="distance:Q",
+            tooltip=["sample:N", "meth_caller:N", "distance:Q", "number:Q"],
         )
+        .interactive()
     )
 
     combined = bars + labels

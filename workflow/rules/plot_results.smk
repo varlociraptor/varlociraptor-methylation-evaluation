@@ -15,6 +15,20 @@ rule compute_pandas_df:
         "../scripts/pandas_df_from_meth_output.py"
 
 
+rule methylDackel_output:
+    input:
+        expand(
+            "results/single_sample/Illumina_pe/called/{sample}/result_files/alignments_CpG.bedGraph",
+            sample=config["data"].get("Illumina_pe", []),
+        ),
+    output:
+        "methyldackel.txt",
+    shell:
+        """
+        touch {output}
+        """
+
+
 rule compute_varlo_df:
     input:
         tool="results/{call_type}/{seq_platform}/called/{sample}/result_files/varlo.bed",
@@ -103,6 +117,7 @@ rule replicates_heatmap:
                 "sample": "{sample}",
                 "fdr": "{fdr}",
             },
+            caption="../report/bias.rst",
         ),
         heatmap=report(
             "results/{call_type}/{seq_platform}/{fdr}/plots/{sample}_heatmap.{plot_type}",
@@ -113,6 +128,7 @@ rule replicates_heatmap:
                 "sample": "{sample}",
                 "fdr": "{fdr}",
             },
+            caption="../report/heatmap.rst",
         ),
     conda:
         "../envs/plot.yaml"
@@ -128,7 +144,7 @@ rule replicates_heatmap:
         sample=lambda wildcards: wildcards.sample,
         bin_size=lambda wildcards: config["heatmap_bin_size"],
         fdr=lambda wildcards: wildcards.fdr,
-        paper_plots=True,
+        paper_plots=False,
         platform=lambda wildcards: wildcards.seq_platform,
     script:
         "../scripts/plot_heatmap_comparison.py"
@@ -148,6 +164,7 @@ rule heatmap_illumina_samples:
                 "sample": "all samples",
                 "fdr": "{fdr}",
             },
+            caption="../report/heatmap_illumina.rst",
         ),
         bias=report(
             "results/single_sample/Illumina_pe/{fdr}/plots/bias_all_samples.{plot_type}",
@@ -158,6 +175,7 @@ rule heatmap_illumina_samples:
                 "sample": "all samples",
                 "fdr": "{fdr}",
             },
+            caption="../report/bias_illumina.rst",
         ),
         bar_plot_single_samples=report(
             "results/single_sample/Illumina_pe/{fdr}/plots/bar_plot_single_samples.{plot_type}",
@@ -168,6 +186,7 @@ rule heatmap_illumina_samples:
                 "sample": "all samples",
                 "fdr": "{fdr}",
             },
+            caption="../report/bar_plot_illumina.rst",
         ),
     conda:
         "../envs/plot.yaml"
@@ -181,7 +200,7 @@ rule heatmap_illumina_samples:
         sample=lambda wildcards: config["samples"].get("Illumina_pe", []),
         bin_size=lambda wildcards: config["heatmap_bin_size"],
         fdr=lambda wildcards: wildcards.fdr,
-        paper_plots=True,
+        paper_plots=False,
         platform="Illumina_pe",
     script:
         "../scripts/plot_heatmap_comparison.py"
@@ -192,7 +211,7 @@ rule plot_runtime_comparison:
         benchmarks="benchmarks",
     output:
         tools="results/runtime_comparison_tools.{plot_type}",
-        varlo="results/runtime_comparison_varlo.{plot_type}",
+        # varlo="results/runtime_comparison_varlo.{plot_type}",
     conda:
         "../envs/plot.yaml"
     log:
@@ -222,9 +241,9 @@ rule combine_heatmaps_paper:
 
 rule combine_bias_paper:
     input:
-        "results/single_sample/Illumina_pe/0.01/plots/bias_all_samples.pkl",
-        "results/single_sample/PacBio/0.01/plots/REP_bias.pkl",
-        "results/single_sample/Nanopore/0.01/plots/REP_bias.pkl",
+        "results/single_sample/Illumina_pe/0.01/plots/bias_all_samples.svg",
+        "results/single_sample/PacBio/0.01/plots/REP_bias.svg",
+        "results/single_sample/Nanopore/0.01/plots/REP_bias.svg",
     output:
         "results/single_sample/combined/all/combined.{plot_type}",
     conda:
@@ -265,7 +284,7 @@ rule combine_single_illumina_paper:
     log:
         "logs/plot_results/combine_heatmaps_paper/{plot_type}.log",
     params:
-        plot_type="bias",
+        plot_type="single",
         platform="Illumina_pe",
     script:
         "../scripts/combine_paper_plots.py"

@@ -1,0 +1,1 @@
+ Called biases by {{snakemake.wildcards.seq_platform}} for sample {{snakemake.wildcards.sample}}. We distinguish between loci where the bias was called in both replicates, the other replicate had an alteration fraction (AF, here methylation rate) of 0, or an alteration fraction of greater than zero.
