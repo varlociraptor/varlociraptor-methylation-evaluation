@@ -133,6 +133,11 @@ def plot_biases(df):
         "SB": "#D81B60",
         "ALB": "#1E88E5",
     }
+    platform = (
+        "Illumina"
+        if snakemake.params["platform"] == "Illumina_pe"
+        else snakemake.params["platform"]
+    )
     # This is only for paper plotting
     if snakemake.output.get("bias_df") is not None:
         df_long.to_parquet(snakemake.output["bias_df"], index=False)
@@ -140,7 +145,7 @@ def plot_biases(df):
         alt.Chart(df_long)
         .mark_bar()
         .encode(
-            x=alt.X("category:N"),
+            x=alt.X("category:N", title=None),
             y=alt.Y("count():Q", title="Number of sites"),
             color=alt.Color(
                 "bias_type:N",
@@ -152,7 +157,7 @@ def plot_biases(df):
             ),
             tooltip=["category", "bias_type", "count()"],
         )
-        .properties(title=f"{snakemake.params["platform"]}  data", height=200)
+        .properties(title=f"{platform} data", height=200)
     )
     df_long = df_long[df_long["category"] == "Bias, AF > 0"]
     df_long["AF"] = np.maximum(df_long["AF_rep1"], df_long["AF_rep2"]).round(2)
