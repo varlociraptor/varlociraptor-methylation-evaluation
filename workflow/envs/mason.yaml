@@ -1,0 +1,4 @@
+channels:
+  - bioconda
+dependencies:
+  - mason =2.0

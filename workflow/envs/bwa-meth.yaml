@@ -1,0 +1,8 @@
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - python=3.10
+  - bwameth=0.2
+  - bwa-mem2=2.2
+  - ncurses

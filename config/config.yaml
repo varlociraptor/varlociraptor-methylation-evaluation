@@ -1,0 +1,89 @@
+###################################### DATA ##################################################
+
+# Genome information
+sample:
+  species: "homo_sapiens"
+  datatype: "dna"
+  build: "GRCh38"
+  release: "110"
+
+# Choose specific chromosome for evaluation
+seq_platforms: 
+  Illumina_pe: 21
+  PacBio: 21
+  Nanopore: 21
+
+
+# Define reference methylation caller for comparison against varlociraptor results
+ref_tools:
+  # Chose from: bismark, bisSNP, methylDackel, bsMap
+  Illumina_pe: [bismark, bsMap, methylDackel]
+  # Chose from: modkit, pb_CpG_tools
+  PacBio: [modkit, pb_CpG_tools]
+  # Chose from: modkit, pb_CpG_tools
+  Nanopore: [modkit, pb_CpG_tools]
+  # This needs to be an empty list
+  multi_sample: []
+
+data:
+  # We use SRA accessions for Illumina data
+  Illumina_pe:
+    TruSeq_HG002_LAB01_REP01: [SRR13050995, SRR13050996, SRR13050998]
+    TruSeq_HG002_LAB01_REP02: [SRR13050992, SRR13050993, SRR13050994]
+    SPLAT_HG002_LAB01_REP01: [SRR13051055, SRR13051056, SRR13051057, SRR13051058]
+    SPLAT_HG002_LAB01_REP02:  [SRR13051050, SRR13051051, SRR13051052, SRR13051054]
+    MethylSeq_HG002_LAB01_REP01: [SRR13051104, SRR13051105, SRR13051106]
+    MethylSeq_HG002_LAB01_REP02: [SRR13051101, SRR13051102, SRR13051103]
+    EMSeq_HG002_LAB02_REP02: [SRR13051139]
+    EMSeq_HG002_LAB02_REP01: [SRR13051140]
+    EMSeq_HG002_LAB01_REP02: [SRR13051141]
+    EMSeq_HG002_LAB01_REP01: [SRR13051142]
+    TrueMethylOX_HG002_LAB01_REP02: [SRR13051230]
+    TrueMethylOX_HG002_LAB01_REP01: [SRR13051231, SRR13051232]
+    TrueMethylBS_HG002_LAB01_REP02: [SRR13051250, SRR13051251] 
+    TrueMethylBS_HG002_LAB01_REP01: [SRR13051253] 
+  # For PacBio and Nanopore data we use direct download links since there are no SRA accessions. We use dummy names for the replicates since we only have one sample to have the same structure as for Illumina data
+  PacBio:
+    REP01: [pb_rep1]
+    REP02: [pb_rep2]
+  Nanopore:
+    REP01: [np_rep1]
+    REP02: [np_rep2]
+  multi_sample:
+    REP01: [dummy_rep1]
+    REP02: [dummy_rep2]
+
+samples: 
+  # Illumina_pe: [EMSeq_HG002_LAB01]
+  Illumina_pe: [TruSeq_HG002_LAB01, EMSeq_HG002_LAB02, EMSeq_HG002_LAB01, TrueMethylOX_HG002_LAB01, TrueMethylBS_HG002_LAB01, SPLAT_HG002_LAB01, MethylSeq_HG002_LAB01]
+  # Since we only have one sample for PacBio and Nanopore data, we use REP as sample name 
+  PacBio: [REP]
+  Nanopore: [REP]
+  multi_sample: [REP]
+
+# Download of PacBio data:
+pb_rep1: https://downloads.pacbcloud.com/public/revio/2022Q4/HG002-rep1/analysis/HG002.m84011_220902_175841_s1.GRCh38.bam
+pb_rep2: https://downloads.pacbcloud.com/public/revio/2022Q4/HG002-rep2/analysis/HG002.m84005_220919_232112_s2.GRCh38.bam
+
+# Download of Nanopore data:
+np_rep1: https://42basepairs.com/download/s3/ont-open-data/giab_2025.01/basecalling/hac/HG002/PAW70337/calls.sorted.bam
+np_rep2: https://42basepairs.com/download/s3/ont-open-data/giab_2025.01/basecalling/hac/HG002/PAW71238/calls.sorted.bam
+
+
+###################################### METH CALLING ##################################################
+
+# Define minimum mapping quality to keep in alignment
+min_mapping_quality: 10
+# Number of scatter gather items (used for parallelization of varlociraptor methylation calling)
+scatter_number: 20
+# Define FDR alpha levels for varlociraptor methylation filtering
+fdr_alpha: [0.01, 0.05, 0.1, 1.0]
+
+###################################### PLOTS ##################################################
+heatmap_bin_size: 5
+# Choose from png, svg, html
+plot_type: pdf
+
+# Define the correlation method for the comparison of the different samples
+# Choose any number from: pearson, spearman, rmse, ccc (concordance correlation coefficient), adjusted_mape
+correlation_methods: [adjusted_mape]
