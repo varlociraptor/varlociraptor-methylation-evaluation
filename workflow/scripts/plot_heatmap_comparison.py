@@ -138,6 +138,7 @@ def plot_biases(df):
         if snakemake.params["platform"] == "Illumina_pe"
         else snakemake.params["platform"]
     )
+
     # This is only for paper plotting
     if snakemake.output.get("bias_df") is not None:
         df_long.to_parquet(snakemake.output["bias_df"], index=False)
@@ -153,6 +154,9 @@ def plot_biases(df):
                 scale=alt.Scale(
                     domain=list(bias_colors.keys()),
                     range=list(bias_colors.values()),
+                ),
+                legend=(
+                    None if platform != "Nanopore" else alt.Legend(title="Bias type")
                 ),
             ),
             tooltip=["category", "bias_type", "count()"],

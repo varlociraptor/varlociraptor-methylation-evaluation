@@ -1,7 +1,8 @@
+from sys import path
 import altair as alt
 import pickle
 import pandas as pd
-
+import json
 
 plot_type = snakemake.params["plot_type"]
 
@@ -33,14 +34,29 @@ if plot_type == "heatmap":
     combined.save(snakemake.output[0])
 if plot_type == "bias":
 
-    with open(snakemake.input[0], "rb") as f:
-        chart1 = pickle.load(f)
+    def load_chart(path):
+        with open(path) as f:
+            return alt.Chart.from_json(f.read())
 
-    with open(snakemake.input[1], "rb") as f:
-        chart2 = pickle.load(f)
-    with open(snakemake.input[2], "rb") as f:
-        chart3 = pickle.load(f)
-    combined = alt.hconcat(chart1, chart2, chart3).resolve_scale(color="independent")
+    chart1 = load_chart(snakemake.input[0])
+    chart2 = load_chart(snakemake.input[1])
+    chart3 = load_chart(snakemake.input[2])
+
+    # with open(snakemake.input[0], "rb") as f:
+    #     chart1 = pickle.load(f)
+
+    # with open(snakemake.input[1], "rb") as f:
+    #     chart2 = pickle.load(f)
+    # with open(snakemake.input[2], "rb") as f:
+    #     chart3 = pickle.load(f)
+    # combined = alt.hconcat(chart1, chart2, chart3).resolve_scale(color="independent")
+    chart1 = chart1.encode(color="sample:N")
+    chart2 = chart2.encode(color="sample:N")
+    chart3 = chart3.encode(color="sample:N")
+    chart1 = chart1.encode(color=None)
+    chart2 = chart2.encode(color=None)
+    chart3 = chart3.encode(color=None)
+    combined = alt.hconcat(chart1, chart2, chart3).resolve_scale(color="shared")
 
     combined.save(snakemake.output[0])
 else:
