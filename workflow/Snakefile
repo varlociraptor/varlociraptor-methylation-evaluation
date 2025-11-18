@@ -32,6 +32,7 @@ include: "rules/common.smk"
 # include: "rules/methylDackel.smk"
 # include: "rules/modkit.smk"
 include: "rules/plot_results.smk"
+include: "rules/plots_paper.smk"
 
 
 # include: "rules/pbCpgTools.smk"

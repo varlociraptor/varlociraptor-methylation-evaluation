@@ -57,10 +57,9 @@ else:
         "#D81B60",
         "#1E88E5",
         "#FFC107",
-        "#004D40",
         "#05AA8F",
+        "#004D40",
     ]
-
     bars = (
         alt.Chart(df_summary)
         .mark_bar()
@@ -68,7 +67,7 @@ else:
             x=alt.X(
                 "sample:N",
                 axis=alt.Axis(labelAngle=-30),
-                title="Sample",
+                title=None,
             ),
             xOffset=alt.XOffset("meth_caller:N", sort=meth_caller_order),
             y=alt.Y("distance:Q", title="Discordance"),

@@ -13,7 +13,7 @@ rule call_methylation_together_np_pb:
     conda:
         "../envs/varlociraptor.yaml"
     shell:
-        "{input.varlo} call variants generic --scenario {input.scenario} --obs  pacbio={input.pacbio}  nanopore={input.nanopore} > {output} 2> {log}"
+        "varlociraptor call variants generic --scenario {input.scenario} --obs  pacbio={input.pacbio}  nanopore={input.nanopore} > {output} 2> {log}"
 
 
 rule call_methylation_together_np_trueOX:
@@ -30,7 +30,7 @@ rule call_methylation_together_np_trueOX:
     conda:
         "../envs/varlociraptor.yaml"
     shell:
-        "{input.varlo} call variants generic --scenario {input.scenario} --obs  trueOX={input.trueOX}  nanopore={input.nanopore} > {output} 2> {log}"
+        "varlociraptor call variants generic --scenario {input.scenario} --obs  trueOX={input.trueOX}  nanopore={input.nanopore} > {output} 2> {log}"
 
 
 rule call_methylation_together_pb_trueOX:

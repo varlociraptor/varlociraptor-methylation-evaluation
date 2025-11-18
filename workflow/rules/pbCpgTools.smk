@@ -35,7 +35,7 @@ rule pb_CpG_compute_methylation:
         prefix=lambda wildcards, input, output: os.path.splitext(output[0])[0].replace(
             ".combined", ""
         ),
-    threads: 8
+    threads: 1
     conda:
         "../envs/general.yaml"
     benchmark:

@@ -11,6 +11,7 @@ def compute_results() -> List[List[str]]:
     # Heatmaps per sequencing platform
     for platform in config["seq_platforms"].keys():
         inputs.append(heatmap_replicates(platform))
+        inputs.append(bias_replicates(platform))
 
     # Single-sample heatmaps across all FDR thresholds
     if "Illumina_pe" in config["seq_platforms"]:
@@ -20,9 +21,41 @@ def compute_results() -> List[List[str]]:
                 for fdr in config["fdr_alpha"]
             ]
         )
+        inputs.append(
+            [
+                f"results/single_sample/Illumina_pe/{fdr}/plots/bias_all_samples.{config['plot_type']}"
+                for fdr in config["fdr_alpha"]
+            ]
+        )
+        inputs.append(
+            [
+                f"results/single_sample/Illumina_pe/{fdr}/plots/bar_plot_single_samples.{config['plot_type']}"
+                for fdr in config["fdr_alpha"]
+            ]
+        )
 
     # Multi-sample common heatmaps
     inputs.append(heatmap_replicates_common())
+
+    if config["create_paper_plots"]:
+        inputs.append(
+            [
+                f"results/single_sample/paper/{platform}/heatmap.{config['plot_type']}"
+                for platform in config["seq_platforms"].keys()
+            ]
+        )
+        inputs.append(
+            [
+                f"results/single_sample/paper/{plot}.{plot_type}"
+                for plot in ["bias", "runtime_memory"]
+                for plot_type in [config["plot_type"]]
+            ]
+        )
+        inputs.append(
+            [
+                f"results/single_sample/paper/Illumina_pe/illumina_single_sample.{config['plot_type']}"
+            ]
+        )
 
     return inputs
 
@@ -36,6 +69,20 @@ def heatmap_replicates(seq_platform: str) -> List[str]:
 
     return [
         f"{base_path}/{fdr}/plots/{sample}_heatmap.{plot_type}"
+        for sample in config["samples"][seq_platform]
+        for fdr in config["fdr_alpha"]
+    ]
+
+
+def bias_replicates(seq_platform: str) -> List[str]:
+    """
+    Return file paths for bias for a given sequencing platform.
+    """
+    base_path = Path("results/single_sample") / seq_platform
+    plot_type = config["plot_type"]
+
+    return [
+        f"{base_path}/{fdr}/plots/{sample}_bias.{plot_type}"
         for sample in config["samples"][seq_platform]
         for fdr in config["fdr_alpha"]
     ]

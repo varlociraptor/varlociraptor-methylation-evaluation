@@ -41,11 +41,20 @@ def point_plot(df, x, y, color, shape, x_title, y_title, height=140):
         present_tools = subset["tool_label"].unique().tolist()
         color_domain = present_tools
         color_range = [tool_base_colors[t] for t in present_tools]
-
+        ticks = list(np.logspace(0, np.log10(subset[x].max() * 1.3), num=5).round().astype(int))
+        print(ticks)
         base = (
             alt.Chart(subset)
             .encode(
-                x=alt.X(f"{x}:Q", title=x_title, scale=alt.Scale(type="log")),
+                
+
+                x=alt.X(
+                    f"{x}:Q",
+                    title=x_title,
+                    scale=alt.Scale(type="log", domain=[1, subset[x].max() * 1.3 + 1]),
+                    axis=alt.Axis(values=ticks, labelAngle=-45)
+                ),
+
                 y=alt.Y(f"{y}:Q", title=y_title, scale=alt.Scale(type="log")),
                 color=alt.Color(
                     "tool_label:N",
@@ -60,7 +69,7 @@ def point_plot(df, x, y, color, shape, x_title, y_title, height=140):
                 ),
             )
             .mark_point(filled=False, size=30)
-            .properties(height=height)
+            .properties(height=height, width=height, title=platform)
             .interactive()
         )
 
