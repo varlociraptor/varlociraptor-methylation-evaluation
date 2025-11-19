@@ -11,10 +11,6 @@ pd.set_option("display.max_rows", 1000)
 alt.data_transformers.enable("vegafusion")
 
 
-# --------------------------------------------------------------------
-# CONSTANTS
-# --------------------------------------------------------------------
-
 BIAS_COLS = ["SB", "ROB", "RPB", "SCB", "HE", "ALB"]
 INFO_COLS = ["DP", "AF"]
 KEEP_COLS = INFO_COLS + BIAS_COLS

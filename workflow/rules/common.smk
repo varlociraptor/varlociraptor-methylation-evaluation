@@ -28,26 +28,6 @@ def compute_results() -> List[List[str]]:
     # Multi-sample common heatmaps
     inputs.append(heatmap_replicates_common())
 
-    # if config["create_paper_plots"]:
-    #     inputs.append(
-    #         [
-    #             f"results/single_sample/paper/{platform}/heatmap.{config['plot_type']}"
-    #             for platform in config["seq_platforms"].keys()
-    #         ]
-    #     )
-    #     inputs.append(
-    #         [
-    #             f"results/single_sample/paper/{plot}.{plot_type}"
-    #             for plot in ["bias", "runtime_memory"]
-    #             for plot_type in [config["plot_type"]]
-    #         ]
-    #     )
-    #     inputs.append(
-    #         [
-    #             f"results/single_sample/paper/Illumina_pe/illumina_single_sample.{config['plot_type']}"
-    #         ]
-    #     )
-
     return inputs
 
 

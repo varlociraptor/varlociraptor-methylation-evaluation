@@ -22,22 +22,20 @@ seq_platform = config["data"]
 report: "report/workflow.rst"
 
 
-# include: "rules/download_data.smk"
+include: "rules/download_data.smk"
 include: "rules/common.smk"
-# include: "rules/alignments.smk"
-# include: "rules/bisSnp.smk"
-# include: "rules/bsmapz.smk"
-# include: "rules/candidates.smk"
-# include: "rules/mason.smk"
-# include: "rules/methylDackel.smk"
-# include: "rules/modkit.smk"
+include: "rules/alignments.smk"
+include: "rules/bisSnp.smk"
+include: "rules/bsmapz.smk"
+include: "rules/candidates.smk"
+include: "rules/mason.smk"
+include: "rules/methylDackel.smk"
+include: "rules/modkit.smk"
 include: "rules/plot_results.smk"
-
-
-# include: "rules/pbCpgTools.smk"
-# include: "rules/varlociraptor_multi_sample.smk"
-# include: "rules/varlociraptor_single_sample.smk"
-# include: "rules/bismark.smk"
+include: "rules/pbCpgTools.smk"
+include: "rules/varlociraptor_multi_sample.smk"
+include: "rules/varlociraptor_single_sample.smk"
+include: "rules/bismark.smk"
 
 
 rule all:

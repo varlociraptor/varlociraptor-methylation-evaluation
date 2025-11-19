@@ -30,7 +30,6 @@ def compute_replicate_counts(df_dict: dict, bin_size: int, samples: list):
         if temp.empty:
             continue
 
-        # --- MAPE -----------------------------------------------------------
         rep1_vals = temp[rep1].to_numpy()
         rep2_vals = temp[rep2].to_numpy()
 
@@ -46,13 +45,11 @@ def compute_replicate_counts(df_dict: dict, bin_size: int, samples: list):
 
         mape_records.append({"meth_caller": caller, "mape": mape})
 
-        # --- Binning --------------------------------------------------------
         temp = temp.assign(
             rep1_bin=bin_methylation(temp[rep1], bin_size),
             rep2_bin=bin_methylation(temp[rep2], bin_size),
         )
 
-        # --- Crosstab -------------------------------------------------------
         counts = (
             pd.crosstab(temp["rep1_bin"], temp["rep2_bin"])
             .stack()
@@ -61,7 +58,6 @@ def compute_replicate_counts(df_dict: dict, bin_size: int, samples: list):
 
         counts["rel_count"] = counts["count"] / counts["count"].sum()
 
-        # Normalized distance %
         max_bin = counts[["rep1_bin", "rep2_bin"]].max(axis=1)
         counts["dist"] = np.where(
             max_bin == 0,
@@ -69,20 +65,17 @@ def compute_replicate_counts(df_dict: dict, bin_size: int, samples: list):
             np.abs(counts["rep1_bin"] - counts["rep2_bin"]) / max_bin * 100,
         )
 
-        # Distance binning
         counts["dist_bin"] = (counts["dist"] / bin_size).round().astype(int) * bin_size
         counts["meth_caller"] = caller
 
         caller_counts.append(counts)
 
-    # Combine all callers into single DFs
     counts_df = pd.concat(caller_counts, ignore_index=True)
     mapes_df = pd.DataFrame(mape_records)
 
     return counts_df, mapes_df
 
 
-# Parameters
 samples = snakemake.params["sample"]
 
 if isinstance(samples, str):
@@ -101,11 +94,7 @@ with pd.HDFStore(snakemake.input[0], mode="r", locking=False) as store:
 sample_df = pd.concat([meth_caller_dfs[p] for p in samples], ignore_index=True)
 
 
-# -----------------------------
-# Compute replicate counts / heatmaps
-# -----------------------------
 replicate_dfs, mapes = compute_replicate_counts(meth_caller_dfs, bin_size, samples)
-# combined_counts_df = pd.concat(replicate_dfs.values(), ignore_index=True)
 
 
 sample_name = snakemake.params["sample_name"].replace("_HG002_", "_")

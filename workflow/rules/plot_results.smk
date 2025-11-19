@@ -47,7 +47,7 @@ rule common_tool_df:
             fdr=config["fdr_alpha"],
         ),
     output:
-        sample_df="results/{call_type}/{seq_platform}/result_files/{sample}.parquet",
+        sample_df="results/{call_type}/{seq_platform}/result_files/sample_df_{sample}.parquet",
     conda:
         "../envs/plot.yaml"
     log:
@@ -63,7 +63,7 @@ rule common_tool_df:
 rule merge_replicates:
     input:
         samples=lambda wildcards: expand(
-            "results/{call_type}/{seq_platform}/result_files/{sample}.parquet",
+            "results/{call_type}/{seq_platform}/result_files/sample_df_{sample}.parquet",
             call_type=wildcards.call_type,
             seq_platform=wildcards.seq_platform,
             sample=config["data"].get(
@@ -76,12 +76,9 @@ rule merge_replicates:
         "../envs/plot.yaml"
     log:
         "logs/plot_results/merge_replicates/{call_type}_{seq_platform}.log",
-    # wildcard_constraints:
-    #     call_type="(?!multi_sample).*",
     resources:
         mem_mb=64000,
     params:
-        # plot_type=config["plot_type"],
         meth_callers=lambda wildcards: config["ref_tools"].get(
             wildcards.seq_platform, []
         )
@@ -97,7 +94,6 @@ rule prepare_plot_df:
     output:
         df="results/{call_type}/{seq_platform}/result_files/{sample}_prepared.parquet",
         mapes="results/{call_type}/{seq_platform}/result_files/{sample}_mapes.parquet",
-        # biases="results/{call_type}/{seq_platform}/result_files/{sample}_biases.parquet",
     conda:
         "../envs/plot.yaml"
     log:
@@ -149,7 +145,6 @@ rule plot_heatmaps:
         "../scripts/plot_heatmaps.py"
 
 
-# Compute common heatmap over all Illumina samples
 rule plots_bars_illumina:
     input:
         df=expand(
