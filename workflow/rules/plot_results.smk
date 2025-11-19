@@ -83,7 +83,6 @@ rule merge_replicates:
             wildcards.seq_platform, []
         )
         + ["varlo"],
-        correlation_methods=config["correlation_methods"],
     script:
         "../scripts/merge_replicates.py"
 

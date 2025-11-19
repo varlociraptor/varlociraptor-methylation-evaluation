@@ -120,9 +120,7 @@ fdr_alpha: [0.01, 1.0]
 ```yaml
 heatmap_bin_size: 5
 plot_type: svg
-correlation_methods: [adjusted_mape]
 ```
 
 * Binning resolution for heatmaps (bp).
 * Output format for figures (`png`, `svg`, or `html`).
-* Correlation metric(s) used to compare methylation calls.
