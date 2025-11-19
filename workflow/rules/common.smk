@@ -75,13 +75,6 @@ def heatmap_replicates_common() -> List[str]:
     plot_type = config["plot_type"]
 
     comparisons = ["np_pb", "pb_trueOX", "np_trueOX"]
-    # print(
-    #     [
-    #         f"{base_path}/{comp}/plots/{sample}_heatmap.{plot_type}"
-    #         for comp in comparisons
-    #         for sample in config["samples"].get("multi_sample", [])
-    #     ]
-    # )
     return [
         f"{base_path}/{comp}/plots/{sample}_heatmap.{plot_type}"
         for comp in comparisons

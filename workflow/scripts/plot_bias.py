@@ -32,7 +32,9 @@ def split_varlo_format(df: pd.DataFrame, rep: str, keep_cols=None) -> pd.DataFra
         "AFD",
     ]
 
-    df_split = df[f"varlo_format_{rep}"].str.split(":", expand=True)
+    df_split = df[f"varlo_{snakemake.params['fdr']}_format_{rep}"].str.split(
+        ":", expand=True
+    )
     df_split.columns = [f"{col}_{rep}" for col in new_cols[: df_split.shape[1]]]
     return df_split[[f"{col}_{rep}" for col in keep_cols]]
 
@@ -237,10 +239,10 @@ bias_chart, bias_df = plot_biases(
         [
             "chromosome",
             "position",
-            "varlo_format_rep1",
-            "varlo_format_rep2",
-            "varlo_methylation_rep1",
-            "varlo_methylation_rep2",
+            f"varlo_{fdr}_format_rep1",
+            f"varlo_{fdr}_format_rep2",
+            f"varlo_{fdr}_methylation_rep1",
+            f"varlo_{fdr}_methylation_rep2",
         ]
     ]
 )

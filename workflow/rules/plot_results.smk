@@ -19,7 +19,7 @@ rule compute_varlo_df:
     input:
         tool="results/{call_type}/{seq_platform}/called/{sample}/result_files/varlo.bed",
     output:
-        "results/{call_type}/{seq_platform}/{fdr}/{sample}/result_files/varlo.parquet",
+        "results/{call_type}/{seq_platform}/called/{sample}/result_files/varlo_{fdr}.parquet",
     conda:
         "../envs/plot.yaml"
     log:
@@ -30,21 +30,6 @@ rule compute_varlo_df:
         mem_mb=64000,
     script:
         "../scripts/pandas_df_from_meth_output.py"
-
-
-def compute_all_samples(wildcards):
-    tools = [
-        f"results/{wildcards.call_type}/{wildcards.seq_platform}/called/{sample}/result_files/{method}.parquet"
-        for sample in config["data"].get(wildcards.seq_platform, [])
-        for method in config["ref_tools"].get(wildcards.seq_platform, [])
-    ]
-    print([sample for sample in config["data"].get(wildcards.seq_platform, [])])
-    varlo = [
-        f"results/{wildcards.call_type}/{wildcards.seq_platform}/{fdr}/{sample}/result_files/varlo.parquet"
-        for sample in config["data"].get(wildcards.seq_platform, [])
-        for fdr in config["fdr_alpha"]
-    ]
-    return tools + varlo
 
 
 # Computes one common df out of all single methylation caller dfs
@@ -58,11 +43,11 @@ rule common_tool_df:
             ),
         ),
         varlo=expand(
-            "results/{{call_type}}/{{seq_platform}}/{fdr}/{{sample}}/result_files/varlo.parquet",
+            "results/{{call_type}}/{{seq_platform}}/called/{{sample}}/result_files/varlo_{fdr}.parquet",
             fdr=config["fdr_alpha"],
         ),
     output:
-        sample_df="results/{call_type}/{seq_platform}/{sample}/result_files/sample_df.parquet",
+        sample_df="results/{call_type}/{seq_platform}/result_files/{sample}.parquet",
     conda:
         "../envs/plot.yaml"
     log:
@@ -78,7 +63,7 @@ rule common_tool_df:
 rule merge_replicates:
     input:
         samples=lambda wildcards: expand(
-            "results/{call_type}/{seq_platform}/{sample}/result_files/sample_df.parquet",
+            "results/{call_type}/{seq_platform}/result_files/{sample}.parquet",
             call_type=wildcards.call_type,
             seq_platform=wildcards.seq_platform,
             sample=config["data"].get(
@@ -86,7 +71,7 @@ rule merge_replicates:
             ),
         ),
     output:
-        table="results/{call_type}/{seq_platform}/plots/replicates.hd5",
+        table="results/{call_type}/{seq_platform}/result_files/replicates.hd5",
     conda:
         "../envs/plot.yaml"
     log:
@@ -108,11 +93,11 @@ rule merge_replicates:
 
 rule prepare_plot_df:
     input:
-        "results/{call_type}/{seq_platform}/plots/replicates.hd5",
+        "results/{call_type}/{seq_platform}/result_files/replicates.hd5",
     output:
-        df="results/{call_type}/{seq_platform}/plots/{sample}_prepared.parquet",
-        mapes="results/{call_type}/{seq_platform}/plots/{sample}_mapes.parquet",
-        # biases="results/{call_type}/{seq_platform}/plots/{sample}_biases.parquet",
+        df="results/{call_type}/{seq_platform}/result_files/{sample}_prepared.parquet",
+        mapes="results/{call_type}/{seq_platform}/result_files/{sample}_mapes.parquet",
+        # biases="results/{call_type}/{seq_platform}/result_files/{sample}_biases.parquet",
     conda:
         "../envs/plot.yaml"
     log:
@@ -138,8 +123,8 @@ rule prepare_plot_df:
 
 rule plot_heatmaps:
     input:
-        df="results/{call_type}/{seq_platform}/plots/{sample}_prepared.parquet",
-        mapes="results/{call_type}/{seq_platform}/plots/{sample}_mapes.parquet",
+        df="results/{call_type}/{seq_platform}/result_files/{sample}_prepared.parquet",
+        mapes="results/{call_type}/{seq_platform}/result_files/{sample}_mapes.parquet",
     output:
         heatmap=report(
             "results/{call_type}/{seq_platform}/plots/{sample}_heatmap.{plot_type}",
@@ -168,11 +153,11 @@ rule plot_heatmaps:
 rule plots_bars_illumina:
     input:
         df=expand(
-            "results/single_sample/Illumina_pe/plots/{sample}_prepared.parquet",
+            "results/single_sample/Illumina_pe/result_files/{sample}_prepared.parquet",
             sample=config["samples"].get("Illumina_pe", []),
         ),
         mapes=expand(
-            "results/single_sample/Illumina_pe/plots/{sample}_mapes.parquet",
+            "results/single_sample/Illumina_pe/result_files/{sample}_mapes.parquet",
             sample=config["samples"].get("Illumina_pe", []),
         ),
     output:
@@ -202,7 +187,7 @@ rule plots_bars_illumina:
 
 rule plot_bias:
     input:
-        "results/{call_type}/{seq_platform}/{fdr}/plots/replicates.hd5",
+        table="results/{call_type}/{seq_platform}/result_files/replicates.hd5",
     output:
         report(
             "results/{call_type}/{seq_platform}/plots/{sample}_bias_{fdr}.{plot_type}",
@@ -243,7 +228,7 @@ rule plot_runtime_comparison:
     input:
         benchmarks="benchmarks",
     output:
-        tools="results/single_sample/paper/runtime_memory.{plot_type}",
+        tools="results/single_sample/plots/runtime_memory.{plot_type}",
     conda:
         "../envs/plot.yaml"
     log:

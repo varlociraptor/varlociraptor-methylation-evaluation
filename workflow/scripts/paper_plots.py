@@ -58,35 +58,6 @@ if plot_type == "heatmap":
     df = pd.concat([df1, df2], ignore_index=True)
     platform = snakemake.params["platform"]
 
-    print(df1)
-    print(df2)
-
-    # with open(snakemake.input[0], "rb") as f:
-    #     chart1 = pickle.load(f)
-
-    # with open(snakemake.input[1], "rb") as f:
-    #     chart2 = pickle.load(f)
-    # if platform == "Illumina_pe":
-    #     combined = alt.hconcat(chart1, chart2).resolve_scale(
-    #         x="independent", y="independent", color="independent"
-    #     )
-    #     # .resolve_scale(color="independent")
-    # else:
-    #     combined = (
-    #         alt.hconcat(chart1, chart2).resolve_scale(
-    #             x="independent", y="independent", color="independent"
-    #         )
-    #         # .resolve_scale(color="independent")
-    #         .properties(
-    #             title=alt.TitleParams(
-    #                 text=f"{platform} data",
-    #                 anchor="middle",
-    #                 fontSize=18,
-    #                 fontWeight="bold",
-    #             )
-    #         )
-    #     )
-
     combined.save(snakemake.output[0])
 elif plot_type == "bias":
     df1 = pd.read_parquet(snakemake.input[0])
@@ -96,16 +67,6 @@ elif plot_type == "bias":
     print(df2)
     print(df2)
     combined = pd.concat([df1, df2, df2], ignore_index=True)
-    # with open(snakemake.input[0], "rb") as f:
-    #     chart1 = pickle.load(f)
-    # with open(snakemake.input[1], "rb") as f:
-    #     chart2 = pickle.load(f)
-    # with open(snakemake.input[2], "rb") as f:
-    #     chart3 = pickle.load(f)
-    # combined = alt.hconcat(chart1, chart2, chart3).resolve_scale(
-    #     x="independent", y="independent", color="independent"
-    # )
-    # .resolve_scale(color="shared")
 
     combined.save(snakemake.output[0])
 else:

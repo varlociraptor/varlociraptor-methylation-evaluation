@@ -29,12 +29,11 @@ replicate_dfs = {}
 
 for sample_file in snakemake.input["samples"]:
     # Extract replicate name from file path
-    replicate_name = sample_file.split("/")[-3]
+    replicate_name = sample_file.split("/")[-1].replace(".parquet", "")
     df = pd.read_parquet(sample_file, engine="pyarrow")
 
     # Normalize sample name (combine replicates)
     sample_name = normalize_sample_name(replicate_name)
-
     if sample_name in replicate_dfs:
         # Merge replicate 1 and replicate 2 data
         replicate_dfs[sample_name] = pd.merge(

@@ -14,7 +14,6 @@ tool_dfs = []
 tool_files = snakemake.input["tools"] + snakemake.input["varlo"]
 
 for tool_file in tool_files:
-    # print(tool_files)
     tool_name = os.path.splitext(os.path.basename(tool_file))[0]
 
     df = pd.read_parquet(tool_file, engine="pyarrow")
@@ -42,7 +41,6 @@ df_merged = reduce(
     ),
     tool_dfs,
 )
-print(df_merged)
 
 df_merged.to_parquet(
     snakemake.output["sample_df"], engine="pyarrow", compression="snappy"

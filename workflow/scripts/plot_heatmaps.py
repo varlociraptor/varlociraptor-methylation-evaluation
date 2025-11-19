@@ -69,7 +69,6 @@ meth_caller_to_name = {
     "modkit": "Modkit",
     "pb_CpG_tools": "pb-CpG-tools",
 }
-print(mapes)
 for m in meth_callers:
     if m.startswith("varlo_"):
         alpha = m.split("_")[1]

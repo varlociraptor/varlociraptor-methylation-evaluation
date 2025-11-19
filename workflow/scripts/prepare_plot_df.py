@@ -137,7 +137,6 @@ def compute_replicate_counts(df_dict: dict, bin_size: int, samples: list):
         rep2_vals = temp[rep2].to_numpy()
 
         denom = np.maximum(rep1_vals, rep2_vals)
-        print(denom, file=sys.stderr)
         mape = (
             np.where(
                 (rep1_vals == 0) & (rep2_vals == 0),
@@ -201,7 +200,6 @@ with pd.HDFStore(snakemake.input[0], mode="r", locking=False) as store:
     for key in store.keys():
         meth_caller_dfs[key.strip("/")] = store[key]
 # Combine sample data
-
 sample_df = pd.concat([meth_caller_dfs[p] for p in samples], ignore_index=True)
 
 
