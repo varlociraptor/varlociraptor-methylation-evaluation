@@ -52,7 +52,10 @@ rule common_tool_df:
     input:
         tools=lambda wildcards: expand(
             "results/{{call_type}}/{{seq_platform}}/called/{{sample}}/result_files/{method}.parquet",
-            method=config["ref_tools"].get(wildcards.seq_platform, []),
+            method=config["ref_tools"].get(
+                wildcards.seq_platform,
+                config["ref_tools"].get(wildcards.call_type, []),
+            ),
         ),
         varlo=expand(
             "results/{{call_type}}/{{seq_platform}}/{fdr}/{{sample}}/result_files/varlo.parquet",
@@ -78,7 +81,9 @@ rule merge_replicates:
             "results/{call_type}/{seq_platform}/{sample}/result_files/sample_df.parquet",
             call_type=wildcards.call_type,
             seq_platform=wildcards.seq_platform,
-            sample=config["data"].get(wildcards.seq_platform, wildcards.seq_platform),
+            sample=config["data"].get(
+                wildcards.seq_platform, config["data"].get(wildcards.call_type, [])
+            ),
         ),
     output:
         table="results/{call_type}/{seq_platform}/plots/replicates.hd5",

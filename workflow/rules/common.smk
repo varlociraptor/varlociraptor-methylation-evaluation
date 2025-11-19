@@ -29,7 +29,7 @@ def compute_results() -> List[List[str]]:
         )
 
     # Multi-sample common heatmaps
-    # inputs.append(heatmap_replicates_common())
+    inputs.append(heatmap_replicates_common())
 
     # if config["create_paper_plots"]:
     #     inputs.append(
@@ -67,20 +67,6 @@ def heatmap_replicates(seq_platform: str) -> List[str]:
     ]
 
 
-def bias_replicates(seq_platform: str) -> List[str]:
-    """
-    Return file paths for bias for a given sequencing platform.
-    """
-    base_path = Path("results/single_sample") / seq_platform
-    plot_type = config["plot_type"]
-
-    return [
-        f"{base_path}/plots/{sample}_bias_{fdr}.{plot_type}"
-        for sample in config["samples"][seq_platform]
-        for fdr in config["fdr_alpha"]
-    ]
-
-
 def heatmap_replicates_common() -> List[str]:
     """
     Return file paths for multi-sample common heatmaps across comparisons.
@@ -100,6 +86,20 @@ def heatmap_replicates_common() -> List[str]:
         f"{base_path}/{comp}/plots/{sample}_heatmap.{plot_type}"
         for comp in comparisons
         for sample in config["samples"].get("multi_sample", [])
+    ]
+
+
+def bias_replicates(seq_platform: str) -> List[str]:
+    """
+    Return file paths for bias for a given sequencing platform.
+    """
+    base_path = Path("results/single_sample") / seq_platform
+    plot_type = config["plot_type"]
+
+    return [
+        f"{base_path}/plots/{sample}_bias_{fdr}.{plot_type}"
+        for sample in config["samples"][seq_platform]
+        for fdr in config["fdr_alpha"]
     ]
 
 
