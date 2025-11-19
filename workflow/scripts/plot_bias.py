@@ -18,6 +18,10 @@ VARLO_COLS = INFO_COLS + ["SAOBS", "SROBS", "OBS", "OOBS"] + BIAS_COLS + ["AFD"]
 
 BIAS_LABELS = {
     "SB": "Strand Bias",
+    "ROB": "Read Orientation Bias",
+    "RPB": "Read Position Bias",
+    "SCB": "Soft‑clipped Bias",
+    "HE": "Haplotype Error",
     "ALB": "Alt Locus Bias",
 }
 
@@ -61,9 +65,15 @@ def build_bias_dataframe(df: pd.DataFrame, fdr: str) -> pd.DataFrame:
         axis=1,
     )
 
-    bias_fields = [f"{b}_{r}" for b in BIAS_COLS for r in ("rep1", "rep2")]
-    base = base[base[bias_fields].notna().all(axis=1)]
-    base = base[(base[bias_fields] != ".").any(axis=1)]
+    all_bias_fields = [f"{b}_{r}" for b in BIAS_COLS for r in ("rep1", "rep2")]
+    bias_fields = [c for c in all_bias_fields if c in base.columns]
+
+    if bias_fields:
+        base = base[base[bias_fields].notna().all(axis=1)]
+        base = base[(base[bias_fields] != ".").any(axis=1)]
+    else:
+        # No bias columns present – nothing to plot
+        return pd.DataFrame(columns=["chromosome", "position"])
 
     base[["AF_rep1", "AF_rep2"]] = base[["AF_rep1", "AF_rep2"]].astype(float)
     base[["DP_rep1", "DP_rep2"]] = base[["DP_rep1", "DP_rep2"]].astype(int)

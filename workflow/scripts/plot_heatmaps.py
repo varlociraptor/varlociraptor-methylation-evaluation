@@ -79,7 +79,7 @@ heatmaps = [
         m,
         bin_size,
         mapes,
-        meth_caller_to_name[m],
+        meth_caller_to_name.get(m, m),
     )
     for m in meth_callers
 ]
