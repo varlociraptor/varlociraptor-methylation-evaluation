@@ -10,108 +10,6 @@ pd.set_option("display.max_rows", 1000)
 alt.data_transformers.enable("vegafusion")
 
 
-def split_varlo_format(df: pd.DataFrame, rep: str, keep_cols=None) -> pd.DataFrame:
-    """
-    Split the varlo_format string into separate columns and select relevant ones.
-    """
-    if keep_cols is None:
-        keep_cols = ["DP", "AF", "SB", "ROB", "RPB", "SCB", "HE", "ALB"]
-    new_cols = [
-        "DP",
-        "AF",
-        "SAOBS",
-        "SROBS",
-        "OBS",
-        "OOBS",
-        "SB",
-        "ROB",
-        "RPB",
-        "SCB",
-        "HE",
-        "ALB",
-        "AFD",
-    ]
-
-    df_split = df[f"varlo_format_{rep}"].str.split(":", expand=True)
-    df_split.columns = [f"{col}_{rep}" for col in new_cols[: df_split.shape[1]]]
-    return df_split[[f"{col}_{rep}" for col in keep_cols]]
-
-
-def categorize_bias(row):
-    """Assign bias category based on replicates and allele frequency."""
-    rep1_has_bias, rep2_has_bias = row["rep1_has_bias"], row["rep2_has_bias"]
-    if rep1_has_bias and rep2_has_bias:
-        return "Bias both reps"
-    elif (rep1_has_bias and row["AF_rep2"] == 0) or (
-        rep2_has_bias and row["AF_rep1"] == 0
-    ):
-        return "Bias, AF = 0"
-    elif (rep1_has_bias and row["AF_rep2"] > 0) or (
-        rep2_has_bias and row["AF_rep1"] > 0
-    ):
-        return "Bias, AF > 0"
-    return "No bias"
-
-
-def prepare_bias_dataframe(df: pd.DataFrame) -> pd.DataFrame:
-    """Process Varlociraptor data to identify biases and reshape for plotting."""
-    df_rep1 = split_varlo_format(df, "rep1")
-    df_rep2 = split_varlo_format(df, "rep2")
-    df_selected = pd.concat(
-        [df[["chromosome", "position"]].reset_index(drop=True), df_rep1, df_rep2],
-        axis=1,
-    )
-    bias_cols = ["SB", "ROB", "RPB", "SCB", "HE", "ALB"]
-    filter_cols = [f"{b}_rep1" for b in bias_cols] + [f"{b}_rep2" for b in bias_cols]
-    df_selected = df_selected[df_selected[filter_cols].notna().all(axis=1)]
-    df_selected = df_selected[df_selected[filter_cols].ne(".").any(axis=1)]
-
-    df_selected[["AF_rep1", "AF_rep2"]] = df_selected[["AF_rep1", "AF_rep2"]].astype(
-        float
-    )
-    df_selected[["DP_rep1", "DP_rep2"]] = df_selected[["DP_rep1", "DP_rep2"]].astype(
-        int
-    )
-
-    df_selected["rep1_has_bias"] = (
-        df_selected[[f"{b}_rep1" for b in bias_cols]].ne(".").any(axis=1)
-    )
-    df_selected["rep2_has_bias"] = (
-        df_selected[[f"{b}_rep2" for b in bias_cols]].ne(".").any(axis=1)
-    )
-
-    df_selected["category"] = df_selected.apply(categorize_bias, axis=1)
-
-    # Reshape for plotting
-    long_dfs = []
-    for rep in ["rep1", "rep2"]:
-        temp = df_selected.melt(
-            id_vars=[
-                "chromosome",
-                "position",
-                "AF_rep1",
-                "AF_rep2",
-                "category",
-                "DP_rep1",
-                "DP_rep2",
-            ],
-            value_vars=[f"{b}_{rep}" for b in bias_cols],
-            var_name="bias_type",
-            value_name=f"{rep}_bias",
-        )
-        temp["bias_type"] = temp["bias_type"].str.replace(f"_{rep}", "")
-        long_dfs.append(temp)
-
-    df_long = long_dfs[0].merge(
-        long_dfs[1][["chromosome", "position", "bias_type", "rep2_bias"]],
-        on=["chromosome", "position", "bias_type"],
-    )
-
-    df_long = df_long[df_long["rep1_bias"].ne(".") | df_long["rep2_bias"].ne(".")]
-
-    return df_long
-
-
 def bin_methylation(series: pd.Series, bin_size: int) -> pd.Series:
     """Round methylation values to nearest bin_size and cast to int."""
 
@@ -208,6 +106,7 @@ sample_df = pd.concat([meth_caller_dfs[p] for p in samples], ignore_index=True)
 # -----------------------------
 replicate_dfs, mapes = compute_replicate_counts(meth_caller_dfs, bin_size, samples)
 # combined_counts_df = pd.concat(replicate_dfs.values(), ignore_index=True)
+
 
 sample_name = snakemake.params["sample_name"].replace("_HG002_", "_")
 mapes["sample"] = sample_name

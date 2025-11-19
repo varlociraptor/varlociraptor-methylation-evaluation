@@ -19,10 +19,7 @@ def compute_results() -> List[List[str]]:
             f"results/single_sample/Illumina_pe/plots/all_samples_heatmap.{config['plot_type']}"
         )
         inputs.append(
-            [
-                f"results/single_sample/Illumina_pe/plots/all_samples_bias_{fdr}.{config['plot_type']}"
-                for fdr in config["fdr_alpha"]
-            ]
+            f"results/single_sample/Illumina_pe/plots/all_samples_bias.{config['plot_type']}"
         )
         inputs.append(
             f"results/single_sample/Illumina_pe/plots/bar_plot_single_samples.{config['plot_type']}"
@@ -90,9 +87,8 @@ def bias_replicates(seq_platform: str) -> List[str]:
     plot_type = config["plot_type"]
 
     return [
-        f"{base_path}/plots/{sample}_bias_{fdr}.{plot_type}"
+        f"{base_path}/plots/{sample}_bias.{plot_type}"
         for sample in config["samples"][seq_platform]
-        for fdr in config["fdr_alpha"]
     ]
 
 

@@ -190,13 +190,12 @@ rule plot_bias:
         table="results/{call_type}/{seq_platform}/result_files/replicates.hd5",
     output:
         report(
-            "results/{call_type}/{seq_platform}/plots/{sample}_bias_{fdr}.{plot_type}",
+            "results/{call_type}/{seq_platform}/plots/{sample}_bias.{plot_type}",
             category="{call_type}",
             subcategory=lambda wildcards: f"{wildcards.seq_platform}",
             labels={
                 "file": "bias",
                 "sample": "{sample}",
-                "fdr": "{fdr}",
             },
             caption="../report/bias.rst",
         ),
@@ -205,7 +204,7 @@ rule plot_bias:
     resources:
         mem_mb=64000,
     log:
-        "logs/plot_results/plot_bias/{call_type}_{seq_platform}_{fdr}_{sample}_{plot_type}.log",
+        "logs/plot_results/plot_bias/{call_type}_{seq_platform}_{sample}_{plot_type}.log",
     params:
         meth_callers=lambda wildcards: config["ref_tools"].get(
             wildcards.seq_platform, []
@@ -217,9 +216,9 @@ rule plot_bias:
             else wildcards.sample
         ),
         bin_size=lambda wildcards: config["heatmap_bin_size"],
-        fdr=lambda wildcards: wildcards.fdr,
         platform=lambda wildcards: wildcards.seq_platform,
         plot_type=lambda wildcards: wildcards.plot_type,
+        fdrs=config["fdr_alpha"],
     script:
         "../scripts/plot_bias.py"
 

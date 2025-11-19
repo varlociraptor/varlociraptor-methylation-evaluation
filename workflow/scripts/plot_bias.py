@@ -1,257 +1,212 @@
 import pandas as pd
 import altair as alt
-import sys
 import numpy as np
-import pickle
+import sys
 
+# Logging
 sys.stderr = open(snakemake.log[0], "w")
+
 pd.set_option("display.max_columns", None)
 pd.set_option("display.max_rows", 1000)
 alt.data_transformers.enable("vegafusion")
 
 
-def split_varlo_format(df: pd.DataFrame, rep: str, keep_cols=None) -> pd.DataFrame:
-    """
-    Split the varlo_format string into separate columns and select relevant ones.
-    """
-    if keep_cols is None:
-        keep_cols = ["DP", "AF", "SB", "ROB", "RPB", "SCB", "HE", "ALB"]
-    new_cols = [
-        "DP",
-        "AF",
-        "SAOBS",
-        "SROBS",
-        "OBS",
-        "OOBS",
-        "SB",
-        "ROB",
-        "RPB",
-        "SCB",
-        "HE",
-        "ALB",
-        "AFD",
-    ]
+# --------------------------------------------------------------------
+# CONSTANTS
+# --------------------------------------------------------------------
 
-    df_split = df[f"varlo_{snakemake.params['fdr']}_format_{rep}"].str.split(
-        ":", expand=True
+BIAS_COLS = ["SB", "ROB", "RPB", "SCB", "HE", "ALB"]
+INFO_COLS = ["DP", "AF"]
+KEEP_COLS = INFO_COLS + BIAS_COLS
+VARLO_COLS = INFO_COLS + ["SAOBS", "SROBS", "OBS", "OOBS"] + BIAS_COLS + ["AFD"]
+
+BIAS_LABELS = {
+    "SB": "Strand Bias",
+    "ALB": "Alt Locus Bias",
+}
+
+REPLICATE_LABELS = {
+    "DP_rep1": "replicate 1",
+    "DP_rep2": "replicate 2",
+}
+
+
+def split_varlo_format(df: pd.DataFrame, rep: str, fdr: str) -> pd.DataFrame:
+    """Extract colon-separated Varlociraptor FORMAT fields."""
+    col = f"varlo_{fdr}_format_{rep}"
+    fields = df[col].str.split(":", expand=True)
+    fields.columns = [f"{c}_{rep}" for c in VARLO_COLS[: fields.shape[1]]]
+    return fields[[f"{c}_{rep}" for c in KEEP_COLS if f"{c}_{rep}" in fields]]
+
+
+def classify_bias(df):
+    """Vectorized bias category assignment."""
+    r1, r2 = df["rep1_has_bias"], df["rep2_has_bias"]
+    af1, af2 = df["AF_rep1"], df["AF_rep2"]
+
+    return np.select(
+        [
+            r1 & r2,
+            (r1 & (af2 == 0)) | (r2 & (af1 == 0)),
+            (r1 & (af2 > 0)) | (r2 & (af1 > 0)),
+        ],
+        ["Bias both reps", "Bias, AF = 0", "Bias, AF > 0"],
+        default="No bias",
     )
-    df_split.columns = [f"{col}_{rep}" for col in new_cols[: df_split.shape[1]]]
-    return df_split[[f"{col}_{rep}" for col in keep_cols]]
 
 
-def categorize_bias(row):
-    """Assign bias category based on replicates and allele frequency."""
-    rep1_has_bias, rep2_has_bias = row["rep1_has_bias"], row["rep2_has_bias"]
-    if rep1_has_bias and rep2_has_bias:
-        return "Bias both reps"
-    elif (rep1_has_bias and row["AF_rep2"] == 0) or (
-        rep2_has_bias and row["AF_rep1"] == 0
-    ):
-        return "Bias, AF = 0"
-    elif (rep1_has_bias and row["AF_rep2"] > 0) or (
-        rep2_has_bias and row["AF_rep1"] > 0
-    ):
-        return "Bias, AF > 0"
-    return "No bias"
+def build_bias_dataframe(df: pd.DataFrame, fdr: str) -> pd.DataFrame:
+    """Build long-format bias-analysis dataframe from Varlociraptor data."""
+    df_r1 = split_varlo_format(df, "rep1", fdr)
+    df_r2 = split_varlo_format(df, "rep2", fdr)
 
-
-def prepare_bias_dataframe(df: pd.DataFrame) -> pd.DataFrame:
-    """Process Varlociraptor data to identify biases and reshape for plotting."""
-    df_rep1 = split_varlo_format(df, "rep1")
-    df_rep2 = split_varlo_format(df, "rep2")
-    df_selected = pd.concat(
-        [df[["chromosome", "position"]].reset_index(drop=True), df_rep1, df_rep2],
+    base = pd.concat(
+        [df[["chromosome", "position"]].reset_index(drop=True), df_r1, df_r2],
         axis=1,
     )
-    bias_cols = ["SB", "ROB", "RPB", "SCB", "HE", "ALB"]
-    filter_cols = [f"{b}_rep1" for b in bias_cols] + [f"{b}_rep2" for b in bias_cols]
-    df_selected = df_selected[df_selected[filter_cols].notna().all(axis=1)]
-    df_selected = df_selected[df_selected[filter_cols].ne(".").any(axis=1)]
 
-    df_selected[["AF_rep1", "AF_rep2"]] = df_selected[["AF_rep1", "AF_rep2"]].astype(
-        float
-    )
-    df_selected[["DP_rep1", "DP_rep2"]] = df_selected[["DP_rep1", "DP_rep2"]].astype(
-        int
-    )
+    bias_fields = [f"{b}_{r}" for b in BIAS_COLS for r in ("rep1", "rep2")]
+    base = base[base[bias_fields].notna().all(axis=1)]
+    base = base[(base[bias_fields] != ".").any(axis=1)]
 
-    df_selected["rep1_has_bias"] = (
-        df_selected[[f"{b}_rep1" for b in bias_cols]].ne(".").any(axis=1)
-    )
-    df_selected["rep2_has_bias"] = (
-        df_selected[[f"{b}_rep2" for b in bias_cols]].ne(".").any(axis=1)
-    )
+    base[["AF_rep1", "AF_rep2"]] = base[["AF_rep1", "AF_rep2"]].astype(float)
+    base[["DP_rep1", "DP_rep2"]] = base[["DP_rep1", "DP_rep2"]].astype(int)
 
-    df_selected["category"] = df_selected.apply(categorize_bias, axis=1)
+    base["rep1_has_bias"] = base[[f"{b}_rep1" for b in BIAS_COLS]].ne(".").any(axis=1)
+    base["rep2_has_bias"] = base[[f"{b}_rep2" for b in BIAS_COLS]].ne(".").any(axis=1)
 
-    # Reshape for plotting
-    long_dfs = []
-    for rep in ["rep1", "rep2"]:
-        temp = df_selected.melt(
-            id_vars=[
-                "chromosome",
-                "position",
-                "AF_rep1",
-                "AF_rep2",
-                "category",
-                "DP_rep1",
-                "DP_rep2",
-            ],
-            value_vars=[f"{b}_{rep}" for b in bias_cols],
-            var_name="bias_type",
-            value_name=f"{rep}_bias",
-        )
-        temp["bias_type"] = temp["bias_type"].str.replace(f"_{rep}", "")
-        long_dfs.append(temp)
+    base["category"] = classify_bias(base)
 
-    df_long = long_dfs[0].merge(
-        long_dfs[1][["chromosome", "position", "bias_type", "rep2_bias"]],
-        on=["chromosome", "position", "bias_type"],
+    long = base.melt(
+        id_vars=[
+            "chromosome",
+            "position",
+            "AF_rep1",
+            "AF_rep2",
+            "DP_rep1",
+            "DP_rep2",
+            "category",
+        ],
+        value_vars=[f"{b}_{r}" for b in BIAS_COLS for r in ("rep1", "rep2")],
+        var_name="bias_var",
+        value_name="bias_value",
     )
 
-    df_long = df_long[df_long["rep1_bias"].ne(".") | df_long["rep2_bias"].ne(".")]
+    long = long[long["bias_value"] != "."]
 
-    return df_long
-
-
-def plot_biases(df):
-    """Plot bias categories, AF distribution, and DP distribution."""
-
-    bias_colors = {
-        "SB": "#D81B60",
-        "ALB": "#1E88E5",
-    }
-    platform = (
-        "Illumina"
-        if snakemake.params["platform"] == "Illumina_pe"
-        else snakemake.params["platform"]
+    long[["bias_type", "replicate"]] = long["bias_var"].str.rsplit(
+        pat="_", n=1, expand=True
     )
-    bias_label_map = {
-        "SB": "Strand Bias",
-        "ALB": "Alt Locus Bias",
-    }
-    df_long = prepare_bias_dataframe(df)
-    df_long["bias_type_label"] = df_long["bias_type"].map(bias_label_map)
+
+    long["bias_type_label"] = long["bias_type"].map(BIAS_LABELS)
+
+    return long
+
+
+def make_plots(df_long: pd.DataFrame, fdr: str, platform_label: str):
+    """Create bias, AF, and DP plots from long-format data."""
+    # Bias category plot
 
     bias_chart = (
         alt.Chart(df_long)
         .mark_bar()
         .encode(
-            x=alt.X("category:N", title=None),
-            y=alt.Y("count():Q", title="Number of sites"),
+            x=alt.X("category:N", axis=alt.Axis(labelAngle=-45), title=None),
+            y="count():Q",
             color=alt.Color(
                 "bias_type_label:N",
                 scale=alt.Scale(
-                    domain=list(bias_label_map.values()),
-                    range=[bias_colors[k] for k in bias_label_map.keys()],
+                    domain=list(BIAS_LABELS.values()),
+                    range=["#D81B60", "#1E88E5"],
                 ),
-                #     None if platform != "Nanopore" else alt.Legend(title="Bias type")
-                # ),
+                title="Bias Type",
             ),
-            tooltip=["category:N", "count():Q", "bias_type_label:N"],
+            tooltip=["category", "count()", "bias_type_label"],
         )
-        .interactive()
-        .properties(title=f"{platform} data", height=140)
+    ).properties(title=f"{platform_label}")
+
+    # AF plot
+    df_af = df_long[df_long["category"] == "Bias, AF > 0"].assign(
+        AF=lambda d: d[["AF_rep1", "AF_rep2"]].max(axis=1).round(2)
     )
-    # AF chart (AF > 0, DP <= 500)
-    df_af = df_long[df_long["category"] == "Bias, AF > 0"]
-    df_af["AF"] = np.maximum(df_af["AF_rep1"], df_af["AF_rep2"]).round(2)
     df_af = df_af[(df_af["DP_rep1"] <= 500) & (df_af["DP_rep2"] <= 500)]
+
     af_chart = (
         alt.Chart(df_af)
-        .mark_bar()
+        .mark_bar(color="#05AA8F")
         .encode(
-            x="AF:Q",
-            y="count()",
-            color=alt.value("#1E88E5"),
-            tooltip=["AF:Q", "count()"],
+            x=alt.X("AF:Q", bin=alt.Bin(step=0.05), title="Allele Frequency"),
+            y="count():Q",
+            tooltip=["AF:Q", "count():Q"],
         )
-        .properties(title="AF at loci with bias in other replicates")
-        .interactive()
+        .properties(title="AF at one sided biased loci")
     )
 
-    # DP chart
+    # DP plot
     df_dp = df_af.melt(
         id_vars=["chromosome", "position"],
         value_vars=["DP_rep1", "DP_rep2"],
         var_name="replicate",
         value_name="DP",
-    )
+    ).assign(replicate=lambda d: d["replicate"].map(REPLICATE_LABELS))
     dp_chart = (
         alt.Chart(df_dp)
         .mark_bar()
         .encode(
-            x=alt.X("DP:Q", bin=alt.Bin(step=5), title="Depth (DP)"),
-            y=alt.Y(
-                "count()",
-                title="Coverage per replicate at loci with bias in only one replicate",
-            ),
+            x=alt.X("DP:Q", bin=alt.Bin(maxbins=50), title="Depth"),
+            y="count():Q",
             color=alt.Color(
                 "replicate:N",
-                scale=alt.Scale(range=list(bias_colors.values())),
+                scale=alt.Scale(
+                    domain=list(REPLICATE_LABELS.values()),
+                    range=["#FFC107", "#004D40"],
+                ),
             ),
-            tooltip=["DP:Q", "count()", "replicate:N"],
+            tooltip=["DP:Q", "count():Q"],
         )
-        .properties(title="DP rep1 vs. DP rep2")
-        .interactive()
+        .properties(title="Coverage distributions")
     )
 
-    combined = alt.hconcat(bias_chart, af_chart, dp_chart).resolve_scale(
-        color="independent"
+    final_chart = (
+        alt.hconcat(bias_chart, af_chart, dp_chart)
+        .resolve_scale(color="independent")
+        .properties(title=f"FDR {fdr}")
     )
-    return combined, df_long
+    return final_chart
 
 
-# -----------------------------
-# Main execution
-# -----------------------------
+# --------------------------------------------------------------------
+# MAIN
+# --------------------------------------------------------------------
+
+with pd.HDFStore(snakemake.input[0], mode="r", locking=False) as store:
+    dfs = {key.strip("/"): store[key] for key in store.keys()}
 
 samples = snakemake.params["sample"]
 if isinstance(samples, str):
     samples = [samples]
-plot_type = snakemake.params.get("plot_type")
-fdr = snakemake.params["fdr"]
 
+sample_df = pd.concat([dfs[s] for s in samples], ignore_index=True)
 
-meth_caller_to_name = {
-    "varlo": f"Varlociraptor α = {fdr}",
-    "bismark": "Bismark",
-    "bsMap": "BSMAPz",
-    "bisSNP": "BisSNP",
-    "methylDackel": "MethylDackel",
-    "modkit": "Modkit",
-    "pb_CpG_tools": "pb-CpG-tools",
-}
+platform = snakemake.params["platform"]
+platform_label = "Illumina" if platform == "Illumina_pe" else platform
 
-# Load HDF5 input
-meth_caller_dfs = {}
-with pd.HDFStore(snakemake.input[0], mode="r", locking=False) as store:
-    for key in store.keys():
-        meth_caller_dfs[key.strip("/")] = store[key]
-# Combine sample data
-sample_df = pd.concat([meth_caller_dfs[p] for p in samples], ignore_index=True)
+all_charts = []
 
-# -----------------------------
-# Compute and plot biases
-# -----------------------------
-bias_chart, bias_df = plot_biases(
-    sample_df[
-        [
-            "chromosome",
-            "position",
-            f"varlo_{fdr}_format_rep1",
-            f"varlo_{fdr}_format_rep2",
-            f"varlo_{fdr}_methylation_rep1",
-            f"varlo_{fdr}_methylation_rep2",
-        ]
+for fdr in snakemake.params["fdrs"]:
+    cols = [
+        "chromosome",
+        "position",
+        f"varlo_{fdr}_format_rep1",
+        f"varlo_{fdr}_format_rep2",
+        f"varlo_{fdr}_methylation_rep1",
+        f"varlo_{fdr}_methylation_rep2",
     ]
-)
 
+    df_subset = sample_df[cols]
+    df_long = build_bias_dataframe(df_subset, fdr)
+    chart = make_plots(df_long, fdr, platform_label)
+    all_charts.append(chart)
 
-if plot_type == "parquet":
-    bias_df.to_parquet(snakemake.output[0])
-elif plot_type == "pkl":
-    with open(snakemake.output[0], "wb") as f:
-        pickle.dump(bias_chart, f)
-else:
-    bias_chart.save(snakemake.output[0], embed_options={"actions": False}, inline=False)
+final_chart = alt.vconcat(*all_charts)
+final_chart.save(snakemake.output[0])
