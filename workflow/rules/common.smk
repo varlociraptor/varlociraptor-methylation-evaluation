@@ -16,46 +16,40 @@ def compute_results() -> List[List[str]]:
     # Single-sample heatmaps across all FDR thresholds
     if "Illumina_pe" in config["seq_platforms"]:
         inputs.append(
+            f"results/single_sample/Illumina_pe/plots/all_samples_heatmap.{config['plot_type']}"
+        )
+        inputs.append(
             [
-                f"results/single_sample/Illumina_pe/{fdr}/plots/heatmap_all_samples.{config['plot_type']}"
+                f"results/single_sample/Illumina_pe/plots/all_samples_bias_{fdr}.{config['plot_type']}"
                 for fdr in config["fdr_alpha"]
             ]
         )
         inputs.append(
-            [
-                f"results/single_sample/Illumina_pe/{fdr}/plots/bias_all_samples.{config['plot_type']}"
-                for fdr in config["fdr_alpha"]
-            ]
-        )
-        inputs.append(
-            [
-                f"results/single_sample/Illumina_pe/{fdr}/plots/bar_plot_single_samples.{config['plot_type']}"
-                for fdr in config["fdr_alpha"]
-            ]
+            f"results/single_sample/Illumina_pe/plots/bar_plot_single_samples.{config['plot_type']}"
         )
 
     # Multi-sample common heatmaps
-    inputs.append(heatmap_replicates_common())
+    # inputs.append(heatmap_replicates_common())
 
-    if config["create_paper_plots"]:
-        inputs.append(
-            [
-                f"results/single_sample/paper/{platform}/heatmap.{config['plot_type']}"
-                for platform in config["seq_platforms"].keys()
-            ]
-        )
-        inputs.append(
-            [
-                f"results/single_sample/paper/{plot}.{plot_type}"
-                for plot in ["bias", "runtime_memory"]
-                for plot_type in [config["plot_type"]]
-            ]
-        )
-        inputs.append(
-            [
-                f"results/single_sample/paper/Illumina_pe/illumina_single_sample.{config['plot_type']}"
-            ]
-        )
+    # if config["create_paper_plots"]:
+    #     inputs.append(
+    #         [
+    #             f"results/single_sample/paper/{platform}/heatmap.{config['plot_type']}"
+    #             for platform in config["seq_platforms"].keys()
+    #         ]
+    #     )
+    #     inputs.append(
+    #         [
+    #             f"results/single_sample/paper/{plot}.{plot_type}"
+    #             for plot in ["bias", "runtime_memory"]
+    #             for plot_type in [config["plot_type"]]
+    #         ]
+    #     )
+    #     inputs.append(
+    #         [
+    #             f"results/single_sample/paper/Illumina_pe/illumina_single_sample.{config['plot_type']}"
+    #         ]
+    #     )
 
     return inputs
 
@@ -68,9 +62,8 @@ def heatmap_replicates(seq_platform: str) -> List[str]:
     plot_type = config["plot_type"]
 
     return [
-        f"{base_path}/{fdr}/plots/{sample}_heatmap.{plot_type}"
+        f"{base_path}/plots/{sample}_heatmap.{plot_type}"
         for sample in config["samples"][seq_platform]
-        for fdr in config["fdr_alpha"]
     ]
 
 
@@ -82,7 +75,7 @@ def bias_replicates(seq_platform: str) -> List[str]:
     plot_type = config["plot_type"]
 
     return [
-        f"{base_path}/{fdr}/plots/{sample}_bias.{plot_type}"
+        f"{base_path}/plots/{sample}_bias_{fdr}.{plot_type}"
         for sample in config["samples"][seq_platform]
         for fdr in config["fdr_alpha"]
     ]
@@ -96,12 +89,17 @@ def heatmap_replicates_common() -> List[str]:
     plot_type = config["plot_type"]
 
     comparisons = ["np_pb", "pb_trueOX", "np_trueOX"]
-
+    # print(
+    #     [
+    #         f"{base_path}/{comp}/plots/{sample}_heatmap.{plot_type}"
+    #         for comp in comparisons
+    #         for sample in config["samples"].get("multi_sample", [])
+    #     ]
+    # )
     return [
-        f"{base_path}/{comp}/{fdr}/plots/{sample}_heatmap.{plot_type}"
+        f"{base_path}/{comp}/plots/{sample}_heatmap.{plot_type}"
         for comp in comparisons
         for sample in config["samples"].get("multi_sample", [])
-        for fdr in config["fdr_alpha"]
     ]
 
 

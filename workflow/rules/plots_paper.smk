@@ -15,8 +15,8 @@ rule plot_runtime_comparison:
 rule heatmaps_paper:
     input:
         lambda wildcards: [
-            f"results/single_sample/{wildcards.platform}/1.0/plots/{'heatmap_all_samples.pkl' if wildcards.platform == 'Illumina_pe' else 'REP_heatmap.pkl'}",
-            f"results/single_sample/{wildcards.platform}/0.01/plots/{'heatmap_all_samples.pkl' if wildcards.platform == 'Illumina_pe' else 'REP_heatmap.pkl'}",
+            f"results/single_sample/{wildcards.platform}/1.0/plots/{'all_samples_heatmap.parquet' if wildcards.platform == 'Illumina_pe' else 'REP_heatmap.parquet'}",
+            f"results/single_sample/{wildcards.platform}/0.01/plots/{'all_samples_heatmap.parquet' if wildcards.platform == 'Illumina_pe' else 'REP_heatmap.parquet'}",
         ],
     output:
         "results/single_sample/paper/{platform}/heatmap.{plot_type}",
@@ -50,9 +50,9 @@ rule illumina_single_sample_paper:
 
 rule bias_paper:
     input:
-        "results/single_sample/Illumina_pe/0.01/plots/bias_all_samples.pkl",
-        "results/single_sample/PacBio/0.01/plots/REP_bias.pkl",
-        "results/single_sample/Nanopore/0.01/plots/REP_bias.pkl",
+        "results/single_sample/Illumina_pe/0.01/plots/all_samples_bias.parquet",
+        "results/single_sample/PacBio/0.01/plots/REP_bias.parquet",
+        "results/single_sample/Nanopore/0.01/plots/REP_bias.parquet",
     output:
         "results/single_sample/paper/bias.{plot_type}",
     conda:

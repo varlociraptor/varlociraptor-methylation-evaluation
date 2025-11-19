@@ -3,43 +3,109 @@ import pickle
 import pandas as pd
 
 
+def plot_heatmap(
+    df: pd.DataFrame,
+    meth_caller: str,
+    bin_size: int,
+    mapes: dict,
+    meth_caller_name: str,
+) -> alt.Chart:
+    """Log-scaled heatmap for replicate methylation counts."""
+    max_count = df["count"].max()
+    min_count = 1
+
+    ticks = list(np.logspace(0, np.log10(max_count), num=5).round().astype(int))
+    heatmap = (
+        alt.Chart(
+            df,
+            title=alt.Title(
+                meth_caller_name,
+                subtitle=f"N = {df['count'].sum()} | D = {mapes.get(meth_caller,0):.2f}%",
+            ),
+        )
+        .mark_rect()
+        .encode(
+            x=alt.X(
+                "rep1_bin:O", sort=list(range(0, 101, bin_size)), title="Replicate 1"
+            ),
+            y=alt.Y(
+                "rep2_bin:O", sort=list(range(100, -1, -bin_size)), title="Replicate 2"
+            ),
+            color=alt.Color(
+                "count:Q",
+                scale=alt.Scale(type="log", scheme="viridis", domain=[1, max_count]),
+                legend=alt.Legend(
+                    title="Count",
+                    orient="right",
+                    values=ticks,
+                    format=",",
+                    tickCount=len(ticks),
+                ),
+            ),
+            tooltip=["rep1_bin:O", "rep2_bin:O", "count:Q"],
+        )
+        .properties(width=200, height=200)
+        .interactive()
+    )
+    return heatmap
+
+
 plot_type = snakemake.params["plot_type"]
 
 if plot_type == "heatmap":
-
+    df1 = pd.read_parquet(snakemake.input[0])
+    df2 = pd.read_parquet(snakemake.input[1])
+    df = pd.concat([df1, df2], ignore_index=True)
     platform = snakemake.params["platform"]
-    with open(snakemake.input[0], "rb") as f:
-        chart1 = pickle.load(f)
 
-    with open(snakemake.input[1], "rb") as f:
-        chart2 = pickle.load(f)
-    if platform == "Illumina_pe":
-        combined = alt.hconcat(chart1, chart2).resolve_scale(color="independent")
-    else:
-        combined = (
-            alt.hconcat(chart1, chart2)
-            .resolve_scale(color="independent")
-            .properties(
-                title=alt.TitleParams(
-                    text=f"{platform} data",
-                    anchor="middle",
-                    fontSize=18,
-                    fontWeight="bold",
-                )
-            )
-        )
+    print(df1)
+    print(df2)
+
+    # with open(snakemake.input[0], "rb") as f:
+    #     chart1 = pickle.load(f)
+
+    # with open(snakemake.input[1], "rb") as f:
+    #     chart2 = pickle.load(f)
+    # if platform == "Illumina_pe":
+    #     combined = alt.hconcat(chart1, chart2).resolve_scale(
+    #         x="independent", y="independent", color="independent"
+    #     )
+    #     # .resolve_scale(color="independent")
+    # else:
+    #     combined = (
+    #         alt.hconcat(chart1, chart2).resolve_scale(
+    #             x="independent", y="independent", color="independent"
+    #         )
+    #         # .resolve_scale(color="independent")
+    #         .properties(
+    #             title=alt.TitleParams(
+    #                 text=f"{platform} data",
+    #                 anchor="middle",
+    #                 fontSize=18,
+    #                 fontWeight="bold",
+    #             )
+    #         )
+    #     )
 
     combined.save(snakemake.output[0])
 elif plot_type == "bias":
-
-    with open(snakemake.input[0], "rb") as f:
-        chart1 = pickle.load(f)
-
-    with open(snakemake.input[1], "rb") as f:
-        chart2 = pickle.load(f)
-    with open(snakemake.input[2], "rb") as f:
-        chart3 = pickle.load(f)
-    combined = alt.hconcat(chart1, chart2, chart3).resolve_scale(color="shared")
+    df1 = pd.read_parquet(snakemake.input[0])
+    df2 = pd.read_parquet(snakemake.input[1])
+    df2 = pd.read_parquet(snakemake.input[2])
+    print(df1)
+    print(df2)
+    print(df2)
+    combined = pd.concat([df1, df2, df2], ignore_index=True)
+    # with open(snakemake.input[0], "rb") as f:
+    #     chart1 = pickle.load(f)
+    # with open(snakemake.input[1], "rb") as f:
+    #     chart2 = pickle.load(f)
+    # with open(snakemake.input[2], "rb") as f:
+    #     chart3 = pickle.load(f)
+    # combined = alt.hconcat(chart1, chart2, chart3).resolve_scale(
+    #     x="independent", y="independent", color="independent"
+    # )
+    # .resolve_scale(color="shared")
 
     combined.save(snakemake.output[0])
 else:
