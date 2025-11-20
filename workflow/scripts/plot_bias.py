@@ -97,9 +97,11 @@ def build_bias_dataframe(df: pd.DataFrame, fdr: str) -> pd.DataFrame:
         var_name="bias_var",
         value_name="bias_value",
     )
-
+    print("Debugging:")
+    print(long)
     long = long[long["bias_value"] != "."]
-
+    print(long["bias_var"])
+    print(long["bias_var"].str.rsplit(pat="_", n=1, expand=True))
     long[["bias_type", "replicate"]] = long["bias_var"].str.rsplit(
         pat="_", n=1, expand=True
     )
