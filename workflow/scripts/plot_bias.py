@@ -64,6 +64,7 @@ def build_bias_dataframe(df: pd.DataFrame, fdr: str) -> pd.DataFrame:
         [df[["chromosome", "position"]].reset_index(drop=True), df_r1, df_r2],
         axis=1,
     )
+    print(f"Debug 3 \n {base.head()} ")
 
     all_bias_fields = [f"{b}_{r}" for b in BIAS_COLS for r in ("rep1", "rep2")]
     bias_fields = [c for c in all_bias_fields if c in base.columns]
@@ -82,6 +83,7 @@ def build_bias_dataframe(df: pd.DataFrame, fdr: str) -> pd.DataFrame:
     base["rep2_has_bias"] = base[[f"{b}_rep2" for b in BIAS_COLS]].ne(".").any(axis=1)
 
     base["category"] = classify_bias(base)
+    print(f"Debug 4 \n {base.head()} ")
 
     long = base.melt(
         id_vars=[
@@ -97,11 +99,10 @@ def build_bias_dataframe(df: pd.DataFrame, fdr: str) -> pd.DataFrame:
         var_name="bias_var",
         value_name="bias_value",
     )
-    print("Debugging:")
-    print(long)
+
+    print(f"Debug 5 \n {long.head()} ")
+
     long = long[long["bias_value"] != "."]
-    print(long["bias_var"])
-    print(long["bias_var"].str.rsplit(pat="_", n=1, expand=True))
     long[["bias_type", "replicate"]] = long["bias_var"].str.rsplit(
         pat="_", n=1, expand=True
     )
@@ -195,7 +196,7 @@ df = df[df["replicate"].isin(samples)]
 
 platform = snakemake.params["platform"]
 platform_label = "Illumina" if platform == "Illumina_pe" else platform
-
+print(f"Debug 1 \n {df.head()} ")
 all_charts = []
 
 for fdr in snakemake.params["fdrs"]:
@@ -209,6 +210,8 @@ for fdr in snakemake.params["fdrs"]:
     ]
 
     df_subset = df[cols]
+    print(f"Debug 1 \n {df_subset.head()} ")
+
     df_long = build_bias_dataframe(df_subset, fdr)
     chart = make_plots(df_long, fdr, platform_label)
     all_charts.append(chart)
