@@ -16,10 +16,8 @@ def bin_methylation(series: pd.Series, bin_size: int) -> pd.Series:
     return (np.round(series / bin_size) * bin_size).astype(int)
 
 
-def compute_replicate_counts(df_dict: dict, bin_size: int, samples: list):
+def compute_replicate_counts(df, bin_size):
     meth_callers = snakemake.params["meth_callers"]
-
-    df = pd.concat([df_dict[p] for p in samples], ignore_index=True)
 
     caller_counts = []
     mape_records = []
@@ -83,18 +81,12 @@ if isinstance(samples, str):
 plot_type = snakemake.params.get("plot_type")
 bin_size = snakemake.params["bin_size"]
 
-meth_callers = snakemake.params["meth_callers"]
 
-# Load HDF5 input
-meth_caller_dfs = {}
-with pd.HDFStore(snakemake.input[0], mode="r", locking=False) as store:
-    for key in store.keys():
-        meth_caller_dfs[key.strip("/")] = store[key]
-# Combine sample data
-sample_df = pd.concat([meth_caller_dfs[p] for p in samples], ignore_index=True)
+df = pd.read_parquet(snakemake.input[0], engine="pyarrow")
+df = df[df["replicate"].isin(samples)]
 
 
-replicate_dfs, mapes = compute_replicate_counts(meth_caller_dfs, bin_size, samples)
+replicate_dfs, mapes = compute_replicate_counts(df, bin_size)
 
 
 sample_name = snakemake.params["sample_name"].replace("_HG002_", "_")

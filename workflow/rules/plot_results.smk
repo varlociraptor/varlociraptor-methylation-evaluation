@@ -62,7 +62,7 @@ rule common_tool_df:
 
 rule merge_replicates:
     input:
-        samples=lambda wildcards: expand(
+        lambda wildcards: expand(
             "results/{call_type}/{seq_platform}/result_files/sample_df_{sample}.parquet",
             call_type=wildcards.call_type,
             seq_platform=wildcards.seq_platform,
@@ -71,7 +71,7 @@ rule merge_replicates:
             ),
         ),
     output:
-        table="results/{call_type}/{seq_platform}/result_files/replicates.hd5",
+        "results/{call_type}/{seq_platform}/result_files/replicates.parquet",
     conda:
         "../envs/plot.yaml"
     log:
@@ -89,7 +89,7 @@ rule merge_replicates:
 
 rule prepare_plot_df:
     input:
-        "results/{call_type}/{seq_platform}/result_files/replicates.hd5",
+        "results/{call_type}/{seq_platform}/result_files/replicates.parquet",
     output:
         df="results/{call_type}/{seq_platform}/result_files/{sample}_prepared.parquet",
         mapes="results/{call_type}/{seq_platform}/result_files/{sample}_mapes.parquet",
@@ -181,7 +181,7 @@ rule plots_bars_illumina:
 
 rule plot_bias:
     input:
-        table="results/{call_type}/{seq_platform}/result_files/replicates.hd5",
+        table="results/{call_type}/{seq_platform}/result_files/replicates.parquet",
     output:
         report(
             "results/{call_type}/{seq_platform}/plots/{sample}_bias.{plot_type}",

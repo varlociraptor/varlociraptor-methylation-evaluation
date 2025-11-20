@@ -185,14 +185,11 @@ def make_plots(df_long: pd.DataFrame, fdr: str, platform_label: str):
 # MAIN
 # --------------------------------------------------------------------
 
-with pd.HDFStore(snakemake.input[0], mode="r", locking=False) as store:
-    dfs = {key.strip("/"): store[key] for key in store.keys()}
-
 samples = snakemake.params["sample"]
 if isinstance(samples, str):
     samples = [samples]
-
-sample_df = pd.concat([dfs[s] for s in samples], ignore_index=True)
+df = pd.read_parquet(snakemake.input[0], engine="pyarrow")
+df = df[df["replicate"].isin(samples)]
 
 platform = snakemake.params["platform"]
 platform_label = "Illumina" if platform == "Illumina_pe" else platform
@@ -209,7 +206,7 @@ for fdr in snakemake.params["fdrs"]:
         f"varlo_{fdr}_methylation_rep2",
     ]
 
-    df_subset = sample_df[cols]
+    df_subset = df[cols]
     df_long = build_bias_dataframe(df_subset, fdr)
     chart = make_plots(df_long, fdr, platform_label)
     all_charts.append(chart)

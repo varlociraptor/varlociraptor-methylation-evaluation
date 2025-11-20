@@ -27,7 +27,7 @@ replicate_dfs = {}
 
 # ---- Compute correlations across all input samples ---- #
 
-for sample_file in snakemake.input["samples"]:
+for sample_file in snakemake.input:
     # Extract replicate name from file path
     replicate_name = (
         sample_file.split("/")[-1].replace(".parquet", "").replace("sample_df_", "", 1)
@@ -48,8 +48,12 @@ for sample_file in snakemake.input["samples"]:
     else:
         replicate_dfs[sample_name] = df
 
-# ---- Save intermediate tables ---- #
-
-with pd.HDFStore(snakemake.output["table"]) as store:
-    for key, data in replicate_dfs.items():
-        store[key] = data
+combined_df = pd.concat(
+    [df.assign(replicate=key) for key, df in replicate_dfs.items()],
+    ignore_index=True,
+)
+combined_df.to_parquet(
+    snakemake.output[0],
+    engine="pyarrow",
+    index=False,
+)
