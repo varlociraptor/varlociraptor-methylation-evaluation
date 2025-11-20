@@ -9,16 +9,20 @@ import numpy as np
 sys.stderr = open(snakemake.log[0], "w")
 
 tool_dfs = []
-tool_names = []
 
 # Combine standard tool files and Varlociraptor output
-tool_files = snakemake.input["tools"] + [snakemake.input["varlo"]]
+tool_files = snakemake.input["tools"] + snakemake.input["varlo"]
 
 for tool_file in tool_files:
     tool_name = os.path.splitext(os.path.basename(tool_file))[0]
-    tool_names.append(tool_name)
 
     df = pd.read_parquet(tool_file, engine="pyarrow")
+    if tool_name == "varlo":
+        # Rename Varlociraptor columns to match other tools
+        fdr = os.path.basename(
+            os.path.dirname(os.path.dirname(os.path.dirname(tool_file)))
+        )
+        tool_name = f"varlo_{fdr}"
 
     # Keep only relevant columns and rename methylation column
     df = df[["chromosome", "position", "tool_methylation", "format"]].rename(

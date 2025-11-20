@@ -1,0 +1,1 @@
+Comparison of discordance on Illumina replicates. The number of reported loci for each tool is displayed above the corresponding bar.

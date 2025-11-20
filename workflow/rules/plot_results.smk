@@ -19,7 +19,7 @@ rule compute_varlo_df:
     input:
         tool="results/{call_type}/{seq_platform}/called/{sample}/result_files/varlo.bed",
     output:
-        "results/{call_type}/{seq_platform}/{fdr}/{sample}/result_files/varlo.parquet",
+        "results/{call_type}/{seq_platform}/called/{sample}/result_files/varlo_{fdr}.parquet",
     conda:
         "../envs/plot.yaml"
     log:
@@ -37,160 +37,191 @@ rule common_tool_df:
     input:
         tools=lambda wildcards: expand(
             "results/{{call_type}}/{{seq_platform}}/called/{{sample}}/result_files/{method}.parquet",
-            method=config["ref_tools"].get(wildcards.seq_platform, []),
+            method=config["ref_tools"].get(
+                wildcards.seq_platform,
+                config["ref_tools"].get(wildcards.call_type, []),
+            ),
         ),
-        varlo="results/{call_type}/{seq_platform}/{fdr}/{sample}/result_files/varlo.parquet",
+        varlo=expand(
+            "results/{{call_type}}/{{seq_platform}}/called/{{sample}}/result_files/varlo_{fdr}.parquet",
+            fdr=config["fdr_alpha"],
+        ),
     output:
-        sample_df="results/{call_type}/{seq_platform}/{fdr}/{sample}/result_files/sample_df.parquet",
+        sample_df="results/{call_type}/{seq_platform}/result_files/sample_df_{sample}.parquet",
     conda:
         "../envs/plot.yaml"
     log:
-        "logs/plot_results/common_tool_df/{call_type}_{seq_platform}_{fdr}_{sample}.log",
+        "logs/plot_results/common_tool_df/{call_type}_{seq_platform}_{sample}.log",
     params:
         plot_type=config["plot_type"],
-    wildcard_constraints:
-        call_type="(?!multi_sample).*",
     resources:
         mem_mb=64000,
     script:
         "../scripts/common_tool_df.py"
 
 
-# Plot overview tables over all samples of a sequencing platform with correlation information
-# We correlate
-# - all tools against each other on the same replicate
-# - all replicates against each other for the same tool
-rule compute_correlation:
+rule merge_replicates:
     input:
-        samples=lambda wildcards: expand(
-            "results/{call_type}/{seq_platform}/{fdr}/{sample}/result_files/sample_df.parquet",
+        lambda wildcards: expand(
+            "results/{call_type}/{seq_platform}/result_files/sample_df_{sample}.parquet",
             call_type=wildcards.call_type,
             seq_platform=wildcards.seq_platform,
-            fdr=wildcards.fdr,
-            sample=config["data"].get(wildcards.seq_platform, wildcards.seq_platform),
+            sample=config["data"].get(
+                wildcards.seq_platform, config["data"].get(wildcards.call_type, [])
+            ),
         ),
     output:
-        table="results/{call_type}/{seq_platform}/{fdr}/plots/replicates.hd5",
+        "results/{call_type}/{seq_platform}/result_files/replicates.parquet",
     conda:
         "../envs/plot.yaml"
     log:
-        "logs/plot_results/compute_correlation/{call_type}_{seq_platform}_{fdr}.log",
-    wildcard_constraints:
-        call_type="(?!multi_sample).*",
+        "logs/plot_results/merge_replicates/{call_type}_{seq_platform}.log",
     resources:
         mem_mb=64000,
     params:
-        # plot_type=config["plot_type"],
         meth_callers=lambda wildcards: config["ref_tools"].get(
             wildcards.seq_platform, []
         )
         + ["varlo"],
-        correlation_methods=config["correlation_methods"],
     script:
-        "../scripts/compute_correlation.py"
+        "../scripts/merge_replicates.py"
 
 
-rule plots_samples:
+rule prepare_plot_df:
     input:
-        "results/{call_type}/{seq_platform}/{fdr}/plots/replicates.hd5",
+        "results/{call_type}/{seq_platform}/result_files/replicates.parquet",
     output:
-        bias=report(
-            "results/{call_type}/{seq_platform}/{fdr}/plots/{sample}_bias.{plot_type}",
-            category="{call_type}",
-            subcategory=lambda wildcards: f"{wildcards.seq_platform}",
-            labels={
-                "file": "bias",
-                "sample": "{sample}",
-                "fdr": "{fdr}",
-            },
-        ),
-        heatmap=report(
-            "results/{call_type}/{seq_platform}/{fdr}/plots/{sample}_heatmap.{plot_type}",
-            category="{call_type}",
-            subcategory=lambda wildcards: f"{wildcards.seq_platform}",
-            labels={
-                "file": "heatmap",
-                "sample": "{sample}",
-                "fdr": "{fdr}",
-            },
-        ),
+        df="results/{call_type}/{seq_platform}/result_files/{sample}_prepared.parquet",
+        mapes="results/{call_type}/{seq_platform}/result_files/{sample}_mapes.parquet",
     conda:
         "../envs/plot.yaml"
+    log:
+        "logs/plot_results/prepare_plot_df/{call_type}_{seq_platform}_{sample}.log",
     resources:
         mem_mb=64000,
-    log:
-        "logs/plot_results/plots_samples/{call_type}_{seq_platform}_{fdr}_{sample}_{plot_type}.log",
     params:
         meth_callers=lambda wildcards: config["ref_tools"].get(
             wildcards.seq_platform, []
         )
-        + ["varlo"],
-        sample=lambda wildcards: wildcards.sample,
+        + [f"varlo_{fdr}" for fdr in config["fdr_alpha"]],
+        sample=lambda wildcards: (
+            config["samples"].get("Illumina_pe", [])
+            if wildcards.sample == "all_samples"
+            else wildcards.sample
+        ),
+        sample_name=lambda wildcards: wildcards.sample,
         bin_size=lambda wildcards: config["heatmap_bin_size"],
-        fdr=lambda wildcards: wildcards.fdr,
-        paper_plots=True,
+        platform=lambda wildcards: wildcards.seq_platform,
     script:
-        "../scripts/plot_heatmap_comparison.py"
+        "../scripts/prepare_plot_df.py"
 
 
-# Compute common heatmap over all Illumina samples
-rule plots_all_illumina_samples:
+rule plot_heatmaps:
     input:
-        "results/single_sample/Illumina_pe/{fdr}/plots/replicates.hd5",
+        df="results/{call_type}/{seq_platform}/result_files/{sample}_prepared.parquet",
+        mapes="results/{call_type}/{seq_platform}/result_files/{sample}_mapes.parquet",
     output:
         heatmap=report(
-            "results/single_sample/Illumina_pe/{fdr}/plots/heatmap_all_samples.{plot_type}",
-            category="single_sample",
-            subcategory="Illumina_pe",
+            "results/{call_type}/{seq_platform}/plots/{sample}_heatmap.{plot_type}",
+            category="{call_type}",
+            subcategory=lambda wildcards: f"{wildcards.seq_platform}",
             labels={
                 "file": "heatmap",
-                "sample": "all samples",
-                "fdr": "{fdr}",
+                "sample": "{sample}",
             },
+            caption="../report/heatmap.rst",
         ),
-        bias=report(
-            "results/single_sample/Illumina_pe/{fdr}/plots/bias_all_samples.{plot_type}",
-            category="single_sample",
-            subcategory="Illumina_pe",
-            labels={
-                "file": "bias",
-                "sample": "all samples",
-                "fdr": "{fdr}",
-            },
+    conda:
+        "../envs/plot.yaml"
+    resources:
+        mem_mb=64000,
+    log:
+        "logs/plot_results/plot_heatmaps/{call_type}_{seq_platform}_{sample}_{plot_type}.log",
+    params:
+        bin_size=lambda wildcards: config["heatmap_bin_size"],
+        plot_type=lambda wildcards: wildcards.plot_type,
+    script:
+        "../scripts/plot_heatmaps.py"
+
+
+rule plots_bars_illumina:
+    input:
+        df=expand(
+            "results/single_sample/Illumina_pe/result_files/{sample}_prepared.parquet",
+            sample=config["samples"].get("Illumina_pe", []),
         ),
-        bar_plot_single_samples=report(
-            "results/single_sample/Illumina_pe/{fdr}/plots/bar_plot_single_samples.{plot_type}",
+        mapes=expand(
+            "results/single_sample/Illumina_pe/result_files/{sample}_mapes.parquet",
+            sample=config["samples"].get("Illumina_pe", []),
+        ),
+    output:
+        report(
+            "results/single_sample/Illumina_pe/plots/bar_plot_single_samples.{plot_type}",
             category="single_sample",
             subcategory="Illumina_pe",
             labels={
                 "file": "bar_plot_single_samples",
                 "sample": "all samples",
-                "fdr": "{fdr}",
             },
+            caption="../report/bar_plot_illumina.rst",
         ),
     conda:
         "../envs/plot.yaml"
     resources:
         mem_mb=64000,
     log:
-        "logs/plot_results/plots_all_illumina_samples/single_sample_Illumina_pe_{fdr}_{plot_type}.log",
+        "logs/plot_results/plots_bars_illumina/single_sample_Illumina_pe_{plot_type}.log",
     params:
-        meth_callers=lambda wildcards: config["ref_tools"].get("Illumina_pe", [])
-        + ["varlo"],
-        sample=lambda wildcards: config["samples"].get("Illumina_pe", []),
+        sample=config["samples"].get("Illumina_pe", []),
         bin_size=lambda wildcards: config["heatmap_bin_size"],
-        fdr=lambda wildcards: wildcards.fdr,
-        paper_plots=True,
+        plot_type=lambda wildcards: wildcards.plot_type,
     script:
-        "../scripts/plot_heatmap_comparison.py"
+        "../scripts/plot_bars_illumina.py"
+
+
+rule plot_bias:
+    input:
+        table="results/{call_type}/{seq_platform}/result_files/replicates.parquet",
+    output:
+        report(
+            "results/{call_type}/{seq_platform}/plots/{sample}_bias.{plot_type}",
+            category="{call_type}",
+            subcategory=lambda wildcards: f"{wildcards.seq_platform}",
+            labels={
+                "file": "bias",
+                "sample": "{sample}",
+            },
+            caption="../report/bias.rst",
+        ),
+    conda:
+        "../envs/plot.yaml"
+    resources:
+        mem_mb=64000,
+    log:
+        "logs/plot_results/plot_bias/{call_type}_{seq_platform}_{sample}_{plot_type}.log",
+    params:
+        meth_callers=lambda wildcards: config["ref_tools"].get(
+            wildcards.seq_platform, []
+        )
+        + ["varlo"],
+        sample=lambda wildcards: (
+            config["samples"].get("Illumina_pe", [])
+            if wildcards.sample == "all_samples"
+            else wildcards.sample
+        ),
+        bin_size=lambda wildcards: config["heatmap_bin_size"],
+        platform=lambda wildcards: wildcards.seq_platform,
+        plot_type=lambda wildcards: wildcards.plot_type,
+        fdrs=config["fdr_alpha"],
+    script:
+        "../scripts/plot_bias.py"
 
 
 rule plot_runtime_comparison:
     input:
         benchmarks="benchmarks",
     output:
-        tools="results/runtime_comparison_tools.{plot_type}",
-        varlo="results/runtime_comparison_varlo.{plot_type}",
+        tools="results/single_sample/plots/runtime_memory.{plot_type}",
     conda:
         "../envs/plot.yaml"
     log:

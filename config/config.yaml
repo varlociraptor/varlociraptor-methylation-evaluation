@@ -77,13 +77,10 @@ min_mapping_quality: 10
 # Number of scatter gather items (used for parallelization of varlociraptor methylation calling)
 scatter_number: 20
 # Define FDR alpha levels for varlociraptor methylation filtering
-fdr_alpha: [0.01, 0.05, 0.1, 1.0]
+fdr_alpha: [1.0, 0.1, 0.01]
 
 ###################################### PLOTS ##################################################
 heatmap_bin_size: 5
-# Choose from png, svg, html
-plot_type: pdf
-
-# Define the correlation method for the comparison of the different samples
-# Choose any number from: pearson, spearman, rmse, ccc (concordance correlation coefficient), adjusted_mape
-correlation_methods: [adjusted_mape]
+# Choose from png, svg, html, pdf
+# Use html for an interactive snakemake report
+plot_type: html
