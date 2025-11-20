@@ -1,7 +1,6 @@
 import pandas as pd
 import altair as alt
 import sys
-import numpy as np
 import pickle
 
 sys.stderr = open(snakemake.log[0], "w")

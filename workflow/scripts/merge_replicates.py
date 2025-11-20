@@ -1,6 +1,5 @@
 import sys
 import re
-import numpy as np
 import pandas as pd
 
 # Redirect stderr to Snakemake log file
