@@ -2,8 +2,6 @@ import sys
 import re
 import numpy as np
 import pandas as pd
-import altair as alt
-from typing import Literal
 
 # Redirect stderr to Snakemake log file
 sys.stderr = open(snakemake.log[0], "w")
@@ -25,7 +23,7 @@ def normalize_sample_name(replicate_name: str) -> str:
 
 replicate_dfs = {}
 
-# ---- Compute correlations across all input samples ---- #
+# ---- Merge replicates for each sample ---- #
 
 for sample_file in snakemake.input:
     # Extract replicate name from file path
