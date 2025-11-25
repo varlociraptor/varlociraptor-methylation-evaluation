@@ -5,5 +5,15 @@ logs/**
 resources/**
 !resources/scenarios
 !resources/scenarios/**
+!resources/chromosome_J02459.fasta
 results/**
 report.zip
+
+.test/benchmarks/**
+.test/logs/**
+.test/results/**
+.test/resources/**
+!.test/resources/scenarios
+!.test/resources/scenarios/**
+!.test/resources/chromosome_J02459.fasta
+.test/.snakemake/**

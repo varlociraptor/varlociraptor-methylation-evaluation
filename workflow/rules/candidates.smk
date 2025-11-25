@@ -1,15 +1,15 @@
+# Use Varlociraptor to find methylation candidates in the reference genome
 rule find_candidates:
     input:
-        varlo="resources/tools/varlociraptor/target/debug/varlociraptor",
-        fasta="resources/chromosome_{chromosome}.fasta",
+        "resources/chromosome_{chromosome}.fasta",
     output:
         "resources/{chromosome}/candidates.bcf",
     log:
-        "logs/candidates/find_candidates_{chromosome}.log",
+        "logs/candidates/find_candidates/{chromosome}.log",
     conda:
         "../envs/varlociraptor.yaml"
     shell:
-        "{input.varlo} methylation-candidates {input.fasta} {output} 2> {log}"
+        "varlociraptor methylation-candidates {input} {output} --motifs CG 2> {log}"
 
 
 rule split_candidates:
@@ -18,8 +18,21 @@ rule split_candidates:
     output:
         scatter.split_candidates("resources/{{chrom}}/candidates_{scatteritem}.bcf"),
     log:
-        "logs/candidates/split_candidates_{chrom}.log",
+        "logs/candidates/split_candidates/{chrom}.log",
     conda:
         "../envs/rbt.yaml"
     shell:
         "rbt vcf-split {input} {output} 2> {log}"
+
+
+rule index_candidates:
+    input:
+        "resources/{chrom}/candidates.bcf",
+    output:
+        "resources/{chrom}/candidates.bcf.csi",
+    log:
+        "logs/candidates/index_candidates/{chrom}.log",
+    conda:
+        "../envs/samtools.yaml"
+    shell:
+        "bcftools index {input}"

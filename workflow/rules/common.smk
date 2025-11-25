@@ -11,22 +11,22 @@ def compute_results() -> List[List[str]]:
     # Heatmaps per sequencing platform
     for platform in config["seq_platforms"].keys():
         inputs.append(heatmap_replicates(platform))
+        inputs.append(bias_replicates(platform))
 
     # Single-sample heatmaps across all FDR thresholds
     if "Illumina_pe" in config["seq_platforms"]:
         inputs.append(
-            [
-                f"results/single_sample/Illumina_pe/{fdr}/plots/heatmap_all_samples.{config['plot_type']}"
-                for fdr in config["fdr_alpha"]
-            ]
+            f"results/single_sample/Illumina_pe/plots/all_samples_heatmap.{config['plot_type']}"
+        )
+        inputs.append(
+            f"results/single_sample/Illumina_pe/plots/all_samples_bias.{config['plot_type']}"
+        )
+        inputs.append(
+            f"results/single_sample/Illumina_pe/plots/bar_plot_single_samples.{config['plot_type']}"
         )
 
     # Multi-sample common heatmaps
     inputs.append(heatmap_replicates_common())
-
-    # Runtime comparison plots
-    # inputs.append([f"results/runtime_comparision_tools.{config['plot_type']}"])
-    # inputs.append([f"results/runtime_comparision_varlo.{config['plot_type']}"])
 
     return inputs
 
@@ -39,9 +39,8 @@ def heatmap_replicates(seq_platform: str) -> List[str]:
     plot_type = config["plot_type"]
 
     return [
-        f"{base_path}/{fdr}/plots/{sample}_heatmap.{plot_type}"
+        f"{base_path}/plots/{sample}_heatmap.{plot_type}"
         for sample in config["samples"][seq_platform]
-        for fdr in config["fdr_alpha"]
     ]
 
 
@@ -53,12 +52,23 @@ def heatmap_replicates_common() -> List[str]:
     plot_type = config["plot_type"]
 
     comparisons = ["np_pb", "pb_trueOX", "np_trueOX"]
-
     return [
-        f"{base_path}/{comp}/{fdr}/plots/{sample}_heatmap.{plot_type}"
+        f"{base_path}/{comp}/plots/{sample}_heatmap.{plot_type}"
         for comp in comparisons
         for sample in config["samples"].get("multi_sample", [])
-        for fdr in config["fdr_alpha"]
+    ]
+
+
+def bias_replicates(seq_platform: str) -> List[str]:
+    """
+    Return file paths for bias for a given sequencing platform.
+    """
+    base_path = Path("results/single_sample") / seq_platform
+    plot_type = config["plot_type"]
+
+    return [
+        f"{base_path}/plots/{sample}_bias.{plot_type}"
+        for sample in config["samples"][seq_platform]
     ]
 
 
@@ -90,7 +100,6 @@ def get_sample_sra_bismark(wildcards) -> List[str]:
     accession_numbers = config["data"]["Illumina_pe"][wildcards.sample]
 
     return [
-        # str(base_path / sra / f"{sra}_1_trimmed_bismark_bt2_pe.bam")
         f"resources/ref_tools/bismark/bams/{wildcards.sample}_pe_{sra}_unsorted.bam"
         for sra in accession_numbers
     ]

@@ -12,7 +12,7 @@ rule modkit_compute_methylation:
     conda:
         "../envs/modkit.yaml"
     log:
-        "logs/modkit/{platform}/{sample}/compute_methylation.log",
+        "logs/modkit/modkit_compute_methylation/{platform}_{sample}.log",
     resources:
         mem_mb=128000,
     benchmark:

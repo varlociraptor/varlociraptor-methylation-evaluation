@@ -1,13 +1,21 @@
 # It does not work with chromosome-wise fasta files, so we use the genome
 rule methylDackel_compute_meth:
     input:
-        genome=expand(
-            "resources/genome.fasta",
-            chrom=config["seq_platforms"].get("Illumina_pe"),
+        genome=lambda wildcards: (
+            expand(
+                "resources/chromosome_{chrom}.fasta",
+                chrom=config["seq_platforms"].get("Illumina_pe"),
+            )
+            if wildcards.sample.startswith("simulated_data")
+            else ["resources/genome.fasta"]
         ),
-        genome_index=expand(
-            "resources/genome.fasta.fai",
-            chrom=config["seq_platforms"].get("Illumina_pe"),
+        genome_index=lambda wildcards: (
+            expand(
+                "resources/chromosome_{chrom}.fasta.fai",
+                chrom=config["seq_platforms"].get("Illumina_pe"),
+            )
+            if wildcards.sample.startswith("simulated_data")
+            else ["resources/genome.fasta.fai"]
         ),
         # genome=expand(
         #     "resources/chromosome_{chrom}.fasta",
@@ -24,7 +32,7 @@ rule methylDackel_compute_meth:
     conda:
         "../envs/methylDackel.yaml"
     log:
-        "logs/methylDackel/{sample}/compute_meth.log",
+        "logs/methylDackel/methylDackel_compute_meth/{sample}.log",
     benchmark:
         "benchmarks/Illumina_pe/methylDackel/methylDackel/{sample}.bwa.benchmark.txt"
     params:
@@ -33,8 +41,11 @@ rule methylDackel_compute_meth:
         ),
     shell:
         """
-        OUTDIR=$(dirname {output})/alignments 2> {log}
-        MethylDackel extract {input.genome} {input.alignment} -o $OUTDIR --mergeContext 2> {log}
+        mkdir -p $(dirname {log})
+        mkdir -p $(dirname {output})
+        OUTDIR=$(dirname {output})/alignments
+        mkdir -p "$OUTDIR"
+        MethylDackel extract {input.genome} {input.alignment} -o "$OUTDIR" --mergeContext 2> {log}
         """
 
 
@@ -44,6 +55,8 @@ rule methylDackel_rename_output:
     output:
         "results/single_sample/Illumina_pe/called/{sample}/result_files/methylDackel.bed",
     log:
-        "logs/methylDackel/{sample}/rename_output.log",
+        "logs/methylDackel/methylDackel_rename_output/{sample}.log",
+    conda:
+        "../envs/general.yaml"
     shell:
-        "mkdir -p $(dirname {output}) && mv {input} {output} 2> {log}"
+        "mkdir -p $(dirname {log}) && mkdir -p $(dirname {output}) && mv {input} {output} 2> {log}"

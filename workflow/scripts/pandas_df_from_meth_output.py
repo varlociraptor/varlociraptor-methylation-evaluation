@@ -121,18 +121,25 @@ def read_tool_file(filepath: str, file_name: str) -> pd.DataFrame:
                         file=sys.stderr,
                     )
                     continue
-
-                records.append([chrom, position, meth_rate])
+                records.append([chrom, position, meth_rate, parts[9]])
 
             # -----------------------------
             # MethylDackel / Bismark formats
             # -----------------------------
-            elif file_name in {"methylDackel", "bismark"}:
+            elif file_name in {"methylDackel"}:
                 chrom = parts[0]
                 start, end = int(parts[1]), int(parts[2])
                 meth_rate = float(parts[3])
                 position = (start + end) // 2
-                records.append([chrom, position, meth_rate])
+                records.append([chrom, position, meth_rate, pd.NA])
+            # -----------------------------
+            # BisSNP / Bismark formats
+            # -----------------------------
+            elif file_name in {"bismark", "bisSNP"}:
+                chrom = parts[0]
+                position = int(parts[1])
+                meth_rate = float(parts[2])
+                records.append([chrom, position, meth_rate, pd.NA])
 
             # -----------------------------
             # bsMap format
@@ -143,16 +150,7 @@ def read_tool_file(filepath: str, file_name: str) -> pd.DataFrame:
                 chrom = parts[0]
                 position = int(parts[1])
                 meth_rate = float(parts[4]) * 100
-                records.append([chrom, position, meth_rate])
-
-            # -----------------------------
-            # bisSNP format
-            # -----------------------------
-            elif file_name == "bisSNP":
-                chrom = parts[0]
-                position = int(parts[2])
-                meth_rate = float(parts[3])
-                records.append([chrom, position, meth_rate])
+                records.append([chrom, position, meth_rate, pd.NA])
 
             # -----------------------------
             # modkit format
@@ -165,7 +163,7 @@ def read_tool_file(filepath: str, file_name: str) -> pd.DataFrame:
                 meth_rate = float(details[1])
 
                 if modified_base == "m":
-                    records.append([chrom, position, meth_rate])
+                    records.append([chrom, position, meth_rate, pd.NA])
 
             # -----------------------------
             # pb_CpG_tools format
@@ -174,9 +172,11 @@ def read_tool_file(filepath: str, file_name: str) -> pd.DataFrame:
                 chrom = parts[0]
                 position = int(parts[2])
                 meth_rate = float(parts[3])
-                records.append([chrom, position, meth_rate])
+                records.append([chrom, position, meth_rate, pd.NA])
 
-    return pd.DataFrame(records, columns=["chromosome", "position", "tool_methylation"])
+    return pd.DataFrame(
+        records, columns=["chromosome", "position", "tool_methylation", "format"]
+    )
 
 
 # -----------------------------

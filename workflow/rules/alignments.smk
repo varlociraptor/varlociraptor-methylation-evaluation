@@ -1,39 +1,23 @@
-# rule bwameth_index_genome:
-#     input:
-#         "resources/{genome}.fasta",
-#     output:
-#         "resources/{genome}.fasta.bwameth.c2t",
-#         # "resources/{genome}.fasta.bwameth.c2t.0123",
-#         # "resources/{genome}.fasta.bwameth.c2t.amb",
-#         # "resources/{genome}.fasta.bwameth.c2t.ann",
-#         # "resources/{genome}.fasta.bwameth.c2t.bwt.2bit.64",
-#         # "resources/{genome}.fasta.bwameth.c2t.pac",
-#     log:
-#         "logs/alignment/index_genome_{genome}.log",
-#     conda:
-#         "../envs/bwa-meth.yaml"
-#     shell:
-#         "bwameth.py index {input} 2> {log}"
-
 
 rule bwameth_index:
     input:
         "resources/{genome}.fasta",
-        # "genome.fasta",
     output:
-        multiext(
-            "resources/{genome}.fasta.bwameth",
-            ".c2t",
-            ".c2t.amb",
-            ".c2t.ann",
-            ".c2t.bwt.2bit.64",
-            ".c2t.pac",
-            ".c2t.0123",
+        temp(
+            multiext(
+                "resources/{genome}.fasta.bwameth",
+                ".c2t",
+                ".c2t.amb",
+                ".c2t.ann",
+                ".c2t.bwt.2bit.64",
+                ".c2t.pac",
+                ".c2t.0123",
+            )
         ),
-    cache: True  # save space and time with between workflow caching (see docs)
+    cache: False
     threads: 1
     log:
-        "logs/bwameth_index/{genome}.log",
+        "logs/bwameth/bwameth_index/{genome}.log",
     wrapper:
         "v6.0.1/bio/bwameth/index"
 
@@ -49,7 +33,6 @@ rule align_reads_pe:
             ".c2t.pac",
             ".c2t.0123",
         ),
-        # fasta_index="resources/genome.fasta.bwameth.c2t",
         fasta="resources/genome.fasta",
         reads1="resources/Illumina_pe/{sample}/{SRA}/{SRA}_1_trimmed.fastq",
         reads2="resources/Illumina_pe/{sample}/{SRA}/{SRA}_2_trimmed.fastq",
@@ -58,10 +41,7 @@ rule align_reads_pe:
     conda:
         "../envs/bwa-meth.yaml"
     log:
-        "logs/alignment/{sample}/align_reads_pe_{SRA}.log",
-    wildcard_constraints:
-        sample="(?!UNTREATED).*",
-        # sample="(?!simulated_data).*",
+        "logs/bwameth/align_reads_pe/{sample}_{SRA}.log",
     threads: 30
     resources:
         mem_mb=512,
@@ -82,7 +62,7 @@ rule align_reads_se:
     conda:
         "../envs/bwa-meth.yaml"
     log:
-        "logs/alignment/{sample}/align_reads_se_{SRA}.log",
+        "logs/bwameth/align_reads_se/{sample}_{SRA}.log",
     threads: 30
     resources:
         mem_mb=512,
@@ -96,7 +76,7 @@ rule aligned_reads_sort:
     output:
         "resources/{seq_platform}/{sample}/{SRA}/alignment_sorted.bam",
     log:
-        "logs/alignment/{seq_platform}/{sample}/sort_reads_{SRA}.log",
+        "logs/bwameth/align_reads_sort/{seq_platform}_{sample}_{SRA}.log",
     conda:
         "../envs/samtools.yaml"
     shell:
@@ -109,7 +89,7 @@ rule aligned_reads_index:
     output:
         "resources/{seq_platform}/{sample}/{SRA}/alignment_sorted.bam.bai",
     log:
-        "logs/alignment/{seq_platform}/{sample}/index_sort_reads_{SRA}.log",
+        "logs/bwameth/aligned_reads_index/{seq_platform}_{sample}_{SRA}.log",
     conda:
         "../envs/samtools.yaml"
     shell:
@@ -123,7 +103,7 @@ rule aligned_reads_focus_on_chromosome:
     output:
         bam="resources/{seq_platform}/{sample}/{SRA}/alignment_focused.bam",
     log:
-        "logs/alignment/{seq_platform}/{sample}/focus_on_chromosome_{SRA}.log",
+        "logs/bwameth/aligned_reads_focus_on_chromosome/{seq_platform}_{sample}_{SRA}.log",
     conda:
         "../envs/samtools.yaml"
     params:
@@ -144,7 +124,7 @@ rule aligned_reads_filter_on_mapq:
     output:
         "resources/{seq_platform}/{sample}/{SRA}/alignment_focused_filtered.bam",
     log:
-        "logs/alignment/{seq_platform}/{sample}/filter_on_mapq_{SRA}.log",
+        "logs/bwameth/aligned_reads_filter_on_mapq/{seq_platform}_{sample}_{SRA}.log",
     conda:
         "../envs/samtools.yaml"
     params:
@@ -161,7 +141,7 @@ rule aligned_reads_markduplicates:
         bam="resources/{seq_platform}/{sample}/{SRA}/alignment_focused_dedup.bam",
         metrics="resources/{seq_platform}/{sample}/{SRA}/alignment_focused_dedup.metrics.txt",
     log:
-        "logs/alignment/{seq_platform}/{sample}/markduplicates_{SRA}.log",
+        "logs/bwameth/aligned_reads_markduplicates/{seq_platform}_{sample}_{SRA}.log",
     params:
         extra="--REMOVE_DUPLICATES true",
     resources:
@@ -176,7 +156,7 @@ rule aligned_reads_merge_sras:
     output:
         "resources/{seq_platform, [^/]+}/{sample,[^/]+}/alignment_focused_dedup.bam",
     log:
-        "logs/alignment/{seq_platform}/{sample}/merge_sras.log",
+        "logs/bwameth/aligned_reads_merge_sras/{seq_platform}_{sample}.log",
     conda:
         "../envs/samtools.yaml"
     wildcard_constraints:
@@ -191,7 +171,7 @@ rule aligned_reads_downsample:
     output:
         "resources/{seq_platform}/{sample}/alignment_focused_downsampled_dedup.bam",
     log:
-        "logs/alignment/{seq_platform}/{sample}/downsample.log",
+        "logs/bwameth/aligned_reads_downsample/{seq_platform}_{sample}.log",
     conda:
         "../envs/samtools.yaml"
     shell:
@@ -204,7 +184,7 @@ rule aligned_reads_downsampled_index:
     output:
         "resources/{seq_platform}/{sample}/alignment_focused_downsampled_dedup.bam.bai",
     log:
-        "logs/alignment/{seq_platform}/{sample}/downsample_index.log",
+        "logs/bwameth/aligned_reads_downsampled_index/{seq_platform}_{sample}.log",
     conda:
         "../envs/samtools.yaml"
     shell:
@@ -213,11 +193,11 @@ rule aligned_reads_downsampled_index:
 
 rule aligned_reads_rename_chromosomes:
     input:
-        "resources/{seq_platform}/{sample, [^(?!simulated_data$)]}/alignment_focused_downsampled_dedup.bam",
+        "resources/{seq_platform}/{sample}/alignment_focused_downsampled_dedup.bam",
     output:
         "resources/{seq_platform}/{sample}/alignment_focused_downsampled_dedup_renamed.bam",
     log:
-        "logs/alignment/{seq_platform}/{sample}/rename_chromosome.log",
+        "logs/bwameth/aligned_reads_rename_chromosomes/{seq_platform}_{sample}.log",
     wildcard_constraints:
         sample="(?!simulated_data).*",
     conda:
@@ -232,7 +212,7 @@ rule aligned_reads_renamed_index:
     output:
         "resources/{seq_platform}/{sample}/alignment_focused_downsampled_dedup_renamed.bam.bai",
     log:
-        "logs/alignment/{seq_platform}/{sample}/renamed_index.log",
+        "logs/bwameth/aligned_reads_renamed_index/{seq_platform}_{sample}.log",
     conda:
         "../envs/samtools.yaml"
     shell:
@@ -247,7 +227,7 @@ rule aligned_reads_candidates_region:
     output:
         "resources/{seq_platform}/{sample}/candidate_specific/alignment_{scatteritem}.bam",
     log:
-        "logs/alignment/{seq_platform}/{sample}/candidates_region_{scatteritem}.log",
+        "logs/bwameth/aligned_reads_candidates_region/{seq_platform}_{sample}_{scatteritem}.log",
     conda:
         "../envs/samtools.yaml"
     params:
@@ -279,7 +259,7 @@ rule aligned_reads_candidates_region_index:
     output:
         "resources/{seq_platform}/{sample}/candidate_specific/alignment_{scatteritem}.bam.bai",
     log:
-        "logs/alignment/{seq_platform}/{sample}/candidates_region_index_{scatteritem}.log",
+        "logs/bwameth/aligned_reads_candidates_region_index/{seq_platform}_{sample}_{scatteritem}.log",
     conda:
         "../envs/samtools.yaml"
     shell:

@@ -1,9 +1,12 @@
+# Fake data to simulate reads with Mason2
+
+
 rule mason_download:
     output:
         mason_dir=directory("resources/tools/seqan/apps/mason2"),
         mason="resources/tools/seqan/apps/mason2/methylation_levels.h",
     log:
-        "../logs/mason/download.log",
+        "logs/mason/mason_download/download.log",
     conda:
         "../envs/shell_cmds.yaml"
     shell:
@@ -17,12 +20,13 @@ rule mason_download:
 rule mason_fake_methylation:
     input:
         chrom="resources/chromosome_{chrom}.fasta",
+        index="resources/chromosome_{chrom}.fasta.fai",
     output:
         methylation="resources/Illumina_pe/simulated_data_{REP}/chromosome_{chrom}_meth.fa",
     conda:
         "../envs/mason.yaml"
     log:
-        "logs/mason_methylation/fake_methylation_{chrom}_{REP}.log",
+        "logs/mason/mason_fake_methylation/{chrom}_{REP}.log",
     shell:
         """
         mkdir -p $(dirname {output.methylation})
@@ -36,33 +40,41 @@ rule mason_fake_methylation:
 
 rule mason_fake_variants:
     input:
-        "resources/chromosome_{chrom}.fasta",
+        chrom="resources/chromosome_{chrom}.fasta",
     output:
         "resources/Illumina_pe/simulated_data_{REP}/chromosome_{chrom}_variants.vcf",
     conda:
         "../envs/mason.yaml"
     log:
-        "logs/mason_variants/fake_variants_{chrom}_{REP}.log",
+        "logs/mason/mason_fake_variants/{chrom}_{REP}.log",
     shell:
         """
         mason_variator --in-reference {input} \
             --out-vcf {output}  2> {log}
         """
-        # --snp-rate 0.01 \
 
 
 rule mason_fake_reads:
     input:
-        genome="resources/chromosome_{chrom}.fasta",
-        variants="resources/Illumina_pe/simulated_data_{REP}/chromosome_{chrom}_variants.vcf",
-        methylation="resources/Illumina_pe/simulated_data_{REP}/chromosome_{chrom}_meth.fa",
+        genome=expand(
+            "resources/chromosome_{chrom}.fasta",
+            chrom=config["seq_platforms"].get("Illumina_pe"),
+        ),
+        variants=expand(
+            "resources/Illumina_pe/simulated_data_{{REP}}/chromosome_{chrom}_variants.vcf",
+            chrom=config["seq_platforms"].get("Illumina_pe"),
+        ),
+        methylation=expand(
+            "resources/Illumina_pe/simulated_data_{{REP}}/chromosome_{chrom}_meth.fa",
+            chrom=config["seq_platforms"].get("Illumina_pe"),
+        ),
     output:
-        f1="resources/Illumina_pe/simulated_data_{REP}/chromosome_{chrom}_f1.fastq",
-        f2="resources/Illumina_pe/simulated_data_{REP}/chromosome_{chrom}_f2.fastq",
+        f1="resources/Illumina_pe/simulated_data_{REP}/{SRA}/{SRA}_1.fastq",
+        f2="resources/Illumina_pe/simulated_data_{REP}/{SRA}/{SRA}_2.fastq",
     conda:
         "../envs/mason.yaml"
     log:
-        "logs/mason_reads/fake_reads_{chrom}_{REP}.log",
+        "logs/mason/mason_fake_reads/{SRA}_{REP}.log",
     params:
         num_fragments=config.get("num_simulated_reads"),
     shell:
@@ -89,19 +101,23 @@ rule mason_align_reads:
             chrom=config["seq_platforms"].get("Illumina_pe"),
         ),
         f1=expand(
-            "resources/Illumina_pe/simulated_data_{{REP}}/chromosome_{chrom}_f1.fastq",
-            chrom=config["seq_platforms"].get("Illumina_pe"),
+            "resources/Illumina_pe/simulated_data_{{REP}}/{SRA}/{SRA}_1.fastq",
+            SRA=lambda wildcards: config["data"]["Illumina_pe"][
+            f"simulated_data_{wildcards.REP}"
+            ],
         ),
         f2=expand(
-            "resources/Illumina_pe/simulated_data_{{REP}}/chromosome_{chrom}_f2.fastq",
-            chrom=config["seq_platforms"].get("Illumina_pe"),
+            "resources/Illumina_pe/simulated_data_{{REP}}/{SRA}/{SRA}_2.fastq",
+            SRA=lambda wildcards: config["data"]["Illumina_pe"][
+            f"simulated_data_{wildcards.REP}"
+            ],
         ),
     output:
         "resources/Illumina_pe/simulated_data_{REP}/alignment.sam",
     conda:
         "../envs/bwa-meth.yaml"
     log:
-        "logs/mason/align_reads_{REP}.log",
+        "logs/mason/mason_align_reads/{REP}.log",
     threads: 30
     shell:
         """
@@ -119,7 +135,7 @@ rule mason_sam_to_bam:
     conda:
         "../envs/samtools.yaml"
     log:
-        "logs/mason/sam_to_bam_{REP}.log",
+        "logs/mason/mason_sam_to_bam/{REP}.log",
     threads: 30
     shell:
         "samtools view -Sb {input} > {output} 2> {log}"
@@ -134,7 +150,7 @@ rule mason_sort_reads:
     conda:
         "../envs/samtools.yaml"
     log:
-        "logs/mason/sort_reads_{REP}.log",
+        "logs/mason/mason_sort_reads/{REP}.log",
     threads: 10
     shell:
         "samtools sort -@ {threads}  {input} -o {output} 2> {log}"
@@ -152,7 +168,7 @@ rule mason_alignment_forward:
     conda:
         "../envs/samtools.yaml"
     log:
-        "logs/mason/alignment_forward_{REP}.log",
+        "logs/mason/mason_alignment_forward/{REP}.log",
     shell:
         """
         samtools view -b -f 64 -F 16 {input} > {output.first} 2> {log}
@@ -171,7 +187,7 @@ rule mason_alignment_reverse:
     conda:
         "../envs/samtools.yaml"
     log:
-        "logs/mason/alignment_reverse_{REP}.log",
+        "logs/mason/mason_alignment_reverse/{REP}.log",
     shell:
         """
         samtools view -b -f 16 -f 64 {input} > {output.first} 2> {log}
@@ -189,7 +205,7 @@ rule mason_sort_oriented_reads:
         "../envs/samtools.yaml"
     threads: 10
     log:
-        "logs/mason/sort_oriented_reads_{orientation}_{REP}.log",
+        "logs/mason/mason_sort_oriented_reads/{orientation}_{REP}.log",
     shell:
         "samtools sort -@ {threads}  {input} -o {output} 2> {log}"
 
@@ -202,7 +218,7 @@ rule mason_index_oriented_alignment:
     conda:
         "../envs/samtools.yaml"
     log:
-        "logs/mason/index_oriented_alignment_{orientation}_{REP}.log",
+        "logs/mason/mason_index_oriented_alignment/{orientation}_{REP}.log",
     shell:
         "samtools index {input} 2> {log}"
 
@@ -221,7 +237,7 @@ rule mason_coverage:
         "resources/Illumina_pe/simulated_data_{REP}/{orientation}_cov.regions.bed.gz",
         summary="resources/Illumina_pe/simulated_data_{REP}/{orientation}_cov.mosdepth.summary.txt",  # this named output is required for prefix parsing
     log:
-        "logs/mason/coverage_{orientation}_{REP}.log",
+        "logs/mason/mason_coverage/{orientation}_{REP}.log",
     params:
         extra="--no-per-base --use-median",  # optional
     threads: 4  # This value - 1 will be sent to `--threads`
@@ -235,9 +251,11 @@ rule mason_unzip_coverage:
     output:
         "resources/Illumina_pe/simulated_data_{REP}/{orientation}_cov.regions.bed",
     log:
-        "logs/mason/unzip_coverage_{orientation}_{REP}.log",
+        "logs/mason/mason_unzip_coverage/{orientation}_{REP}.log",
+    conda:
+        "../envs/general.yaml"
     shell:
-        "gunzip {input} 2> {log}"
+        "gunzip -c {input} > {output} 2> {log}"
 
 
 rule mason_compute_truth:
@@ -251,6 +269,6 @@ rule mason_compute_truth:
     conda:
         "../envs/python.yaml"
     log:
-        "logs/mason/compute_truth_{chrom}_{REP}.log",
+        "logs/mason/mason_compute_truth/{chrom}_{REP}.log",
     script:
         "../scripts/mason_ascii_to_meth.py"

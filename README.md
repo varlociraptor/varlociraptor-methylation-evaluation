@@ -4,6 +4,7 @@
 
 A Snakemake workflow for the evaluation of the methylation calling of varlociraptor.
 
+---
 
 # Methylation Calling with Varlociraptor
 
@@ -31,6 +32,7 @@ The workflow produces multiple benchmarking outputs, enabling a comprehensive co
 
 The usage of this workflow is described in the [Snakemake Workflow Catalog](https://snakemake.github.io/snakemake-workflow-catalog/?usage=varlociraptor%2Fvarlociraptor-methylation-evaluation).
 
+If you want to try a minimal version with simulated data set `configfile: "config/config.yaml"` to `configfile: "config/config_simulate.yaml"` in the Snakefile.
 If you use this workflow in a paper, don't forget to give credits to the authors by citing the URL of this (original) repository and its DOI (see above).
 
 ---
