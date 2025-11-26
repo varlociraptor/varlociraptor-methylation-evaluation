@@ -1,0 +1,6 @@
+samples:
+  normal:
+    universe: "[0.0,1.0]"
+
+events:
+  present: "normal:]0.0,1.0]"

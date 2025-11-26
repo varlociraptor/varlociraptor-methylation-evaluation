@@ -81,6 +81,9 @@ def get_sample_sra(wildcards) -> List[str]:
     if wildcards.seq_platform not in config["data"]:
         return []
     if wildcards.sample not in config["data"].get(wildcards.seq_platform, {}):
+        # We use the untreated sample only for CETA benchmarking
+        if wildcards.sample == "untreated":
+            return [f"{base_path}/dummy/alignment_focused_dedup.bam"]
         return []
 
     accession_numbers = (

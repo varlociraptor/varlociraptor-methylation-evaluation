@@ -1,0 +1,7 @@
+samples:
+  normal:
+    universe: "[0.0,1.0]"
+    conversion: C>T
+
+events:
+  present: "normal:]0.0,1.0]"

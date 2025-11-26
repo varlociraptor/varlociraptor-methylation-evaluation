@@ -75,7 +75,7 @@ np_rep2: https://42basepairs.com/download/s3/ont-open-data/giab_2025.01/basecall
 # Define minimum mapping quality to keep in alignment
 min_mapping_quality: 10
 # Number of scatter gather items (used for parallelization of varlociraptor methylation calling)
-scatter_number: 20
+scatter_number: 5
 # Define FDR alpha levels for varlociraptor methylation filtering
 fdr_alpha: [1.0, 0.1, 0.01]
 
