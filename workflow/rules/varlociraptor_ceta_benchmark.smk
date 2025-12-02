@@ -87,7 +87,7 @@ rule bwa_mem:
         "v7.6.0/bio/bwa/mem"
 
 
-rule download_variant_bcf:
+rule download_variant_truth:
     output:
         "resources/ceta/candidates_variants.vcf.gz",
     params:
@@ -96,7 +96,7 @@ rule download_variant_bcf:
         "wget -q -O {output} {params.url}"
 
 
-rule index_vcf:
+rule index_variant_truth:
     input:
         "resources/ceta/candidates_variants.vcf.gz",
     output:
@@ -105,12 +105,12 @@ rule index_vcf:
         "bcftools index -f {input}"
 
 
-rule variants_chromosome:
+rule variants_focus_chromosome:
     input:
         vcf="resources/ceta/candidates_variants.vcf.gz",
         idx="resources/ceta/candidates_variants.vcf.gz.csi",
     output:
-        "resources/ceta/candidates_variants.bcf",
+        "resources/ceta/variants_focus_chromosome.bcf",
     threads: 4
     shell:
         """
@@ -121,23 +121,9 @@ rule variants_chromosome:
         """
 
 
-rule variants_c_to_t:
-    input:
-        "resources/ceta/candidates_variants.bcf",
-    output:
-        "resources/ceta/candidates_variants_c_to_t.bcf",
-    threads: 4
-    log:
-        "logs/variants/variants_c_to_t.log",
-    shell:
-        """
-        bcftools view -i 'REF="C" && ALT="T"' -Ob -o {output} {input} 2> {log}
-        """
-
-
 rule rename_variant_chromosome:
     input:
-        "resources/ceta/candidates_variants_c_to_t.bcf",
+        "resources/ceta/variants_focus_chromosome.bcf",
     output:
         "resources/ceta/candidates_variants_renamed.bcf",
     threads: 4
@@ -149,25 +135,40 @@ rule rename_variant_chromosome:
         """
 
 
-rule variants_filter_on_cg_positions:
+rule variants_focus_cg_positions:
     input:
-        "resources/ceta/candidates_variants.bcf",
+        cg_candidates="resources/21/candidates.bcf",
+        variants="resources/ceta/candidates_variants_renamed.bcf",
     output:
-        cg_pos="resources/ceta/cg_positions.bcf",
-        variants="resources/ceta/candidates_variants_c_to_t_filtered.bcf",
+        cg_pos="resources/ceta/cg_pos.bcf",
+        variants="resources/ceta/variants_focus_cg_positions.bcf",
     threads: 4
     log:
-        "logs/variants/variants_filter_on_cg_positions.log",
+        "logs/variants/variants_focus_cg_positions.log",
     shell:
         """
-        bcftools query -f '%CHROM\t%POS\n' resources/21/candidates.bcf > {output.cg_pos}
-        bcftools view -T {output.cg_pos} -O b -o {output.variants} {input} 2> {log}
+        bcftools query -f '%CHROM\t%POS\n' {input.cg_candidates} > {output.cg_pos}
+        bcftools view -T {output.cg_pos} -O b -o {output.variants} {input.variants} 2> {log}
+        """
+
+
+rule variants_focus_ct_conversions:
+    input:
+        "resources/ceta/variants_focus_cg_positions.bcf",
+    output:
+        "resources/ceta/candidates_variants.bcf",
+    threads: 4
+    log:
+        "logs/variants/variants_focus_ct_conversions.log",
+    shell:
+        """
+        bcftools view -i 'REF="C" && ALT="T"' -Ob -o {output} {input} 2> {log}
         """
 
 
 rule split_ceta_candidates:
     input:
-        "resources/ceta/candidates_variants_c_to_t_filtered.bcf",
+        "resources/ceta/candidates_variants.bcf",
     output:
         scatter.split_candidates("resources/ceta/candidates_{scatteritem}.bcf"),
     log:
@@ -237,17 +238,34 @@ rule varlociraptor_ceta_call_multi:
         "{input.varlo} call variants generic --scenario {input.scenario} --obs  emseq={input.emseq}  untreated={input.untreated} > {output} 2> {log}"
 
 
+rule event_probs_df:
+    input:
+        tool="results/ceta_benchmark/Illumina_pe/called/{sample}/result_files/varlo.bed",
+    output:
+        "results/ceta_benchmark/Illumina_pe/called/{sample}/result_files/events_{fdr}.parquet",
+    conda:
+        "../envs/plot.yaml"
+    log:
+        "logs/plot_results/event_probs_df/{sample}_{fdr}.log",
+    params:
+        alpha=lambda wildcards: wildcards.fdr,
+    resources:
+        mem_mb=64000,
+    script:
+        "../scripts/event_probs_df.py"
+
+
 rule plot_ceta_probs:
     input:
-        "results/ceta_benchmark/Illumina_pe/called/MethylSeq_HG002_LAB01_REP01/result_files/varlo_{fdr}.parquet",
-        "results/ceta_benchmark/Illumina_pe/called/EMSeq_HG002_LAB01_REP01/result_files/varlo_{fdr}.parquet",
-        "results/ceta_benchmark/Illumina_pe/called/ceta_multi/result_files/varlo_{fdr}.parquet",
-        "results/ceta_benchmark/Illumina_pe/called/untreated/result_files/varlo_{fdr}.parquet",
+        "results/ceta_benchmark/Illumina_pe/called/MethylSeq_HG002_LAB01_REP01/result_files/events_{fdr}.parquet",
+        "results/ceta_benchmark/Illumina_pe/called/EMSeq_HG002_LAB01_REP01/result_files/events_{fdr}.parquet",
+        "results/ceta_benchmark/Illumina_pe/called/ceta_multi/result_files/events_{fdr}.parquet",
+        "results/ceta_benchmark/Illumina_pe/called/untreated/result_files/events_{fdr}.parquet",
     output:
-        "results/ceta_benchmark/Illumina_pe/called/result_files/combined_{fdr}.txt",
+        "results/ceta_benchmark/Illumina_pe/called/result_files/combined_{fdr}.html",
     conda:
         "../envs/plot.yaml"
     log:
         "logs/plots/plot_ceta_probs_{fdr}.log",
-    shell:
-        "touch {output}"
+    script:
+        "../scripts/plot_ceta_probs.py"

@@ -56,9 +56,9 @@ rule varlociraptor_call:
 # TODO: Skip this step, right now it would be useless since I debug so much
 rule calls_to_vcf:
     input:
-        "results/{call_type}/{seq_platform}/{sample}/calls_{scatteritem}.bcf",
+        "results/{call_type}/{seq_platform}/called/{sample}/calls_{scatteritem}.bcf",
     output:
-        "results/{call_type}/{seq_platform}/{sample}/calls_{scatteritem}.vcf",
+        "results/{call_type}/{seq_platform}/called/{sample}/calls_{scatteritem}.vcf",
     conda:
         "../envs/samtools.yaml"
     log:
@@ -72,24 +72,13 @@ rule calls_to_vcf:
 rule gather_calls:
     input:
         gather.split_candidates(
-            "results/{{call_type}}/{{seq_platform}}/{{sample}}/calls_{scatteritem}.vcf"
+            "results/{{call_type}}/{{seq_platform}}/called/{{sample}}/calls_{scatteritem}.vcf"
         ),
     output:
-        "results/{call_type}/{seq_platform}/{sample}/result_files/varlo.bed",
+        "results/{call_type}/{seq_platform}/called/{sample}/result_files/varlo.bed",
     log:
         "logs/varlociraptor_single/gather_calls/{call_type}_{seq_platform}_{sample}.log",
     conda:
         "../envs/general.yaml"
     shell:
         "cat {input} > {output} 2> {log}"
-
-
-# rule rename_varlo_output:
-#     input:
-#         "results/{seq_platform}/{sample}/varlo.vcf",
-#     output:
-#         "results/{seq_platform}/{sample}/result_files/varlo.bed",
-#     log:
-#         "logs/varlociraptor/{seq_platform}/{sample}/rename_varlo_output.log",
-#     shell:
-#         "mv {input} {output}"
