@@ -54,13 +54,21 @@ def read_tool_file(filepath: str, file_name: str) -> pd.DataFrame:
             alpha = float(snakemake.params["alpha"])
 
             def phred_to_prob(score):
-                return 0 if score == "." else 10 ** (-float(score) / 10)
+                return pd.NA if score == "." else 10 ** (-float(score) / 10)
 
             prob_present = phred_to_prob(info_dict["PROB_PRESENT"])
             prob_absent = phred_to_prob(info_dict.get("PROB_ABSENT", 0))
             prob_artifact = phred_to_prob(info_dict.get("PROB_ARTIFACT", 0))
+            is_na = (
+                pd.isna(prob_absent) or pd.isna(prob_artifact) or pd.isna(prob_present)
+            )
+            if alpha == 1.0:
+                records.append(
+                    [chrom, position, prob_present, prob_absent, prob_artifact]
+                )
+                continue
 
-            if max(prob_present, prob_absent + prob_artifact) < (1 - alpha):
+            if is_na or max(prob_present, prob_absent + prob_artifact) < (1 - alpha):
                 print(
                     f"Low confidence site skipped: {chrom}:{position}",
                     file=sys.stderr,
