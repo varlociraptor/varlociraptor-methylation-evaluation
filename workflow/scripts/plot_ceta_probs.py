@@ -12,7 +12,6 @@ pl.Config.set_tbl_cols(-1)  # show all columns
 
 files = snakemake.input
 
-
 method_to_name = {
     "MethylSeq_HG002_LAB01_REP01": "MethylSeq",
     "EMSeq_HG002_LAB01_REP01": "EMSeq",
@@ -39,6 +38,7 @@ for f in files:
     dfs.append(df)
 
 df = pl.concat(dfs)
+
 bin_size = 20
 intervals = [i / bin_size for i in range(bin_size)]
 interval_labels = ["missing"] + [
@@ -56,34 +56,38 @@ df = df.with_columns(
     .cut(intervals, labels=interval_labels, left_closed=True)
     .alias("prob_artifact_bin"),
 )
-
-
-
-# print(
-#     df.filter(pl.col("prob_absent_bin").is_in([32225333, 14102609]))
-#       .collect()
-#       .head(200)
+print(df.collect().head())
+# ---- Neue Filterspalte basierend auf cg_pos und c_to_t ----
+# df = df.with_columns(
+#     pl.when(pl.col("c_to_t") == True)
+#     .then("c_to_t")
+#     .otherwise("complete")
+#     .alias("filter_option")
 # )
 
-# df = df.with_columns(pl.all().fill_null("0"))
 
-# ---- Funktion für die Histogramme ----
 def make_plot(df, category):
-    df = df.sort("method", f"prob_{category}_bin")
-    # df = df.filter(pl.col(f"prob_{category}_bin").is_null())
-    # print(
-    print(df.collect().tail(20))
- 
-    
     df = df.collect().to_pandas()
     col = f"prob_{category}_bin"
     df[col] = df[col].cat.add_categories(["missing"]).fillna("missing")
 
-    df[f"prob_{category}_bin"] = df[f"prob_{category}_bin"].fillna("missing")
-    print(df.tail(20))
-    # df.fillna(-1, inplace=True)
-    
-    # df = df.sort_values(by=["method"])
+    filter_param = alt.param(
+        name="Filter",
+        bind=alt.binding_select(
+            options=[
+                "complete",
+                "cg",
+                "c2t",
+                "cg & c2t",
+                "cg & !c2t",
+                "!cg & c2t",
+                "!cg & !c2t",
+            ],
+            name="Filter: ",
+        ),
+        value="complete",
+    )
+
     chart = (
         alt.Chart(df)
         .mark_bar()
@@ -96,15 +100,33 @@ def make_plot(df, category):
             ),
             xOffset=alt.XOffset("method:N"),
             y=alt.Y("count()", title="Count"),
-            color=alt.Color("method:N", title="Method", scale=alt.Scale(range=colorblind_safe_palette)),
+            color=alt.Color(
+                "method:N",
+                title="Method",
+                scale=alt.Scale(range=colorblind_safe_palette),
+            ),
             tooltip=["method:N", f"prob_{category}_bin:N", "count()"],
         )
+        .transform_filter(
+            (filter_param == "complete")
+            | ((filter_param == "cg") & (alt.datum.cg_pos))
+            | ((filter_param == "c2t") & (alt.datum.c_to_t))
+            | ((filter_param == "cg & c2t") & (alt.datum.cg_pos) & (alt.datum.c_to_t))
+            | ((filter_param == "cg & !c2t") & (alt.datum.cg_pos) & (~alt.datum.c_to_t))
+            | ((filter_param == "!cg & c2t") & (~alt.datum.cg_pos) & (alt.datum.c_to_t))
+            | (
+                (filter_param == "!cg & !c2t")
+                & (~alt.datum.cg_pos)
+                & (~alt.datum.c_to_t)
+            )
+        )
+        .add_params(filter_param)
         .properties(title=f"Distribution of prob_{category}")
     )
+
     return chart
 
 
-# ---- Drei Plots erzeugen ----
 plot_present = make_plot(df, "present")
 plot_absent = make_plot(df, "absent")
 plot_artifact = make_plot(df, "artifact")
@@ -112,6 +134,5 @@ plot_artifact = make_plot(df, "artifact")
 heatmap_plots = alt.vconcat(plot_present, plot_absent, plot_artifact).resolve_scale(
     y="shared"
 )
-
 
 heatmap_plots.save(snakemake.output[0], embed_options={"actions": False}, inline=False)

@@ -66,7 +66,7 @@ rule bwa_index:
     params:
         extra=lambda w: f"-a {w.alg}",
     wildcard_constraints:
-        alg="(?!bwameth)"
+        alg="(?!bwameth)",
     wrapper:
         "v5.10.0/bio/bwa/index"
 
@@ -97,7 +97,7 @@ rule download_variant_truth:
     params:
         url="https://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/release/AshkenazimTrio/HG002_NA24385_son/latest/GRCh38/HG002_GRCh38_1_22_v4.2.1_benchmark.vcf.gz",
     log:
-        "logs/variants/download_variant_truth.log", 
+        "logs/variants/download_variant_truth.log",
     shell:
         "wget -q -O {output} {params.url} 2> {log}"
 
@@ -143,37 +143,6 @@ rule rename_variant_chromosome:
         """
         bcftools annotate --rename-chrs <(echo -e "chr21\t21") -o {output} -O b {input} 2> {log}
         """
-
-
-# rule variants_focus_cg_positions:
-#     input:
-#         cg_candidates="resources/21/candidates.bcf",
-#         variants="resources/ceta/candidates_variants_renamed.bcf",
-#     output:
-#         cg_pos="resources/ceta/cg_pos.bcf",
-#         variants="resources/ceta/variants_focus_cg_positions.bcf",
-#     threads: 4
-#     log:
-#         "logs/variants/variants_focus_cg_positions.log",
-#     shell:
-#         """
-#         bcftools query -f '%CHROM\t%POS\n' {input.cg_candidates} > {output.cg_pos}
-#         bcftools view -T {output.cg_pos} -O b -o {output.variants} {input.variants} 2> {log}
-#         """
-
-
-# rule variants_focus_ct_conversions:
-#     input:
-#         "resources/ceta/variants_focus_cg_positions.bcf",
-#     output:
-#         "resources/ceta/candidates_variants.bcf",
-#     threads: 4
-#     log:
-#         "logs/variants/variants_focus_ct_conversions.log",
-#     shell:
-#         """
-#         bcftools view -i 'REF="C" && ALT="T"' -Ob -o {output} {input} 2> {log}
-#         """
 
 
 rule split_ceta_candidates:
@@ -251,6 +220,7 @@ rule varlociraptor_ceta_call_multi:
 rule event_probs_df:
     input:
         tool="results/ceta_benchmark/Illumina_pe/called/{sample}/result_files/varlo.bed",
+        cg_candidates="resources/21/candidates.bcf",
     output:
         "results/ceta_benchmark/Illumina_pe/called/{sample}/result_files/events_{fdr}.parquet",
     conda:
@@ -270,7 +240,7 @@ rule plot_ceta_probs:
         "results/ceta_benchmark/Illumina_pe/called/MethylSeq_HG002_LAB01_REP01/result_files/events_{fdr}.parquet",
         "results/ceta_benchmark/Illumina_pe/called/EMSeq_HG002_LAB01_REP01/result_files/events_{fdr}.parquet",
         "results/ceta_benchmark/Illumina_pe/called/ceta_multi/result_files/events_{fdr}.parquet",
-        # "results/ceta_benchmark/Illumina_pe/called/untreated/result_files/events_{fdr}.parquet",
+        "results/ceta_benchmark/Illumina_pe/called/untreated/result_files/events_{fdr}.parquet",
     output:
         "results/ceta_benchmark/Illumina_pe/called/result_files/combined_{fdr}.html",
     conda:
