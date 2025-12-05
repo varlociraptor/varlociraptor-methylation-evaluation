@@ -135,40 +135,40 @@ rule rename_variant_chromosome:
         """
 
 
-rule variants_focus_cg_positions:
-    input:
-        cg_candidates="resources/21/candidates.bcf",
-        variants="resources/ceta/candidates_variants_renamed.bcf",
-    output:
-        cg_pos="resources/ceta/cg_pos.bcf",
-        variants="resources/ceta/variants_focus_cg_positions.bcf",
-    threads: 4
-    log:
-        "logs/variants/variants_focus_cg_positions.log",
-    shell:
-        """
-        bcftools query -f '%CHROM\t%POS\n' {input.cg_candidates} > {output.cg_pos}
-        bcftools view -T {output.cg_pos} -O b -o {output.variants} {input.variants} 2> {log}
-        """
+# rule variants_focus_cg_positions:
+#     input:
+#         cg_candidates="resources/21/candidates.bcf",
+#         variants="resources/ceta/candidates_variants_renamed.bcf",
+#     output:
+#         cg_pos="resources/ceta/cg_pos.bcf",
+#         variants="resources/ceta/variants_focus_cg_positions.bcf",
+#     threads: 4
+#     log:
+#         "logs/variants/variants_focus_cg_positions.log",
+#     shell:
+#         """
+#         bcftools query -f '%CHROM\t%POS\n' {input.cg_candidates} > {output.cg_pos}
+#         bcftools view -T {output.cg_pos} -O b -o {output.variants} {input.variants} 2> {log}
+#         """
 
 
-rule variants_focus_ct_conversions:
-    input:
-        "resources/ceta/variants_focus_cg_positions.bcf",
-    output:
-        "resources/ceta/candidates_variants.bcf",
-    threads: 4
-    log:
-        "logs/variants/variants_focus_ct_conversions.log",
-    shell:
-        """
-        bcftools view -i 'REF="C" && ALT="T"' -Ob -o {output} {input} 2> {log}
-        """
+# rule variants_focus_ct_conversions:
+#     input:
+#         "resources/ceta/variants_focus_cg_positions.bcf",
+#     output:
+#         "resources/ceta/candidates_variants.bcf",
+#     threads: 4
+#     log:
+#         "logs/variants/variants_focus_ct_conversions.log",
+#     shell:
+#         """
+#         bcftools view -i 'REF="C" && ALT="T"' -Ob -o {output} {input} 2> {log}
+#         """
 
 
 rule split_ceta_candidates:
     input:
-        "resources/ceta/candidates_variants.bcf",
+        "resources/ceta/candidates_variants_renamed.bcf",
     output:
         scatter.split_candidates("resources/ceta/candidates_{scatteritem}.bcf"),
     log:
@@ -260,7 +260,7 @@ rule plot_ceta_probs:
         "results/ceta_benchmark/Illumina_pe/called/MethylSeq_HG002_LAB01_REP01/result_files/events_{fdr}.parquet",
         "results/ceta_benchmark/Illumina_pe/called/EMSeq_HG002_LAB01_REP01/result_files/events_{fdr}.parquet",
         "results/ceta_benchmark/Illumina_pe/called/ceta_multi/result_files/events_{fdr}.parquet",
-        "results/ceta_benchmark/Illumina_pe/called/untreated/result_files/events_{fdr}.parquet",
+        # "results/ceta_benchmark/Illumina_pe/called/untreated/result_files/events_{fdr}.parquet",
     output:
         "results/ceta_benchmark/Illumina_pe/called/result_files/combined_{fdr}.html",
     conda:
