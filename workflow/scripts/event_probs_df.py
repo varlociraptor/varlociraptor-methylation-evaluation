@@ -2,6 +2,7 @@ import sys
 import os
 import re
 import pandas as pd
+import pysam
 
 # Redirect stderr to Snakemake log
 sys.stderr = open(snakemake.log[0], "w")
@@ -43,7 +44,9 @@ def read_tool_file(filepath: str, file_name: str) -> pd.DataFrame:
             chrom = parts[0]
             position = int(parts[1])
             info_field = parts[7]
-
+            ref = parts[3]
+            alt = parts[4]
+            c_to_t = True if ref == "C" and alt == "T" else False
             # Parse INFO fields
             info_dict = dict(
                 item.split("=", 1)
@@ -62,20 +65,17 @@ def read_tool_file(filepath: str, file_name: str) -> pd.DataFrame:
             is_na = (
                 pd.isna(prob_absent) or pd.isna(prob_artifact) or pd.isna(prob_present)
             )
-            if alpha == 1.0:
-                records.append(
-                    [chrom, position, prob_present, prob_absent, prob_artifact]
-                )
-                continue
 
-            if is_na or max(prob_present, prob_absent + prob_artifact) < (1 - alpha):
-                print(
-                    f"Low confidence site skipped: {chrom}:{position}",
-                    file=sys.stderr,
-                )
-                continue
-            records.append([chrom, position, prob_present, prob_absent, prob_artifact])
-
+            if not is_na:
+                if max(prob_present, prob_absent + prob_artifact) < (1 - alpha):
+                    print(
+                        f"Low confidence site skipped: {chrom}:{position}",
+                        file=sys.stderr,
+                    )
+                    continue
+            records.append(
+                [chrom, position, prob_present, prob_absent, prob_artifact, c_to_t]
+            )
     return pd.DataFrame(
         records,
         columns=[
@@ -84,6 +84,7 @@ def read_tool_file(filepath: str, file_name: str) -> pd.DataFrame:
             "prob_present",
             "prob_absent",
             "prob_artifact",
+            "c_to_t",
         ],
     )
 
@@ -95,6 +96,15 @@ tool_file = snakemake.input["tool"]
 file_name = os.path.splitext(os.path.basename(tool_file))[0]
 
 df = read_tool_file(tool_file, file_name)
+
+vcf = pysam.VariantFile(snakemake.input["cg_candidates"])
+
+positions_in_bcf = set((record.chrom, record.pos) for record in vcf.fetch())
+
+df["cg_pos"] = df.apply(
+    lambda row: (row["chromosome"], row["position"]) in positions_in_bcf, axis=1
+)
+
 
 # Save standardized output
 df.to_parquet(snakemake.output[0], engine="pyarrow", compression="snappy")
