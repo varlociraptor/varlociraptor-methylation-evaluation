@@ -60,9 +60,13 @@ rule bwa_index:
     input:
         "resources/genome.fasta",
     output:
-        idx=multiext("resources/genome", ".amb", ".ann", ".bwt", ".pac", ".sa"),
+        idx=multiext("resources/genome.{alg}", ".amb", ".ann", ".bwt", ".pac", ".sa"),
     log:
-        "logs/bwa_index/bwa_index.log",
+        "logs/bwa_index/resources/genome.{alg}.log",
+    params:
+        extra=lambda w: f"-a {w.alg}",
+    wildcard_constraints:
+        alg="(?!bwameth)"
     wrapper:
         "v5.10.0/bio/bwa/index"
 
@@ -92,8 +96,10 @@ rule download_variant_truth:
         "resources/ceta/candidates_variants.vcf.gz",
     params:
         url="https://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/release/AshkenazimTrio/HG002_NA24385_son/latest/GRCh38/HG002_GRCh38_1_22_v4.2.1_benchmark.vcf.gz",
+    log:
+        "logs/variants/download_variant_truth.log", 
     shell:
-        "wget -q -O {output} {params.url}"
+        "wget -q -O {output} {params.url} 2> {log}"
 
 
 rule index_variant_truth:
@@ -101,8 +107,12 @@ rule index_variant_truth:
         "resources/ceta/candidates_variants.vcf.gz",
     output:
         "resources/ceta/candidates_variants.vcf.gz.csi",
+    log:
+        "logs/variants/index_variant_truth.log",
+    conda:
+        "../envs/samtools.yaml"
     shell:
-        "bcftools index -f {input}"
+        "bcftools index -f {input} 2> {log}"
 
 
 rule variants_focus_chromosome:
