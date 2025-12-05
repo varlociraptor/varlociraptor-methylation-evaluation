@@ -14,3 +14,4 @@ dependencies:
   - pytables=3.10
   - pandas=2.2
   - pyarrow=14.0
+  - polars=1.35
