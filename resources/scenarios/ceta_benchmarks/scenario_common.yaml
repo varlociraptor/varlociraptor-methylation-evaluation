@@ -6,4 +6,4 @@ samples:
     universe: "[0.0, 1.0]"
 
 events:
-  present: "emseq:]0.0,1.0] & trueOX == untreated"
+  present: "emseq:]0.0,1.0] & emseq == untreated"

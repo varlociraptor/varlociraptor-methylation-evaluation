@@ -79,6 +79,9 @@ rule aligned_reads_sort:
         "logs/bwameth/align_reads_sort/{seq_platform}_{sample}_{SRA}.log",
     conda:
         "../envs/samtools.yaml"
+    resources:
+        mem_mb=16000
+    threads: 16
     shell:
         "samtools sort -@ {threads}  {input} -o {output} 2> {log}"
 
@@ -113,7 +116,9 @@ rule aligned_reads_focus_on_chromosome:
             or wildcards.seq_platform == "Nanopore"
             else chromosome_by_seq_platform[wildcards.seq_platform]
         ),
-    threads: 1
+    threads: 16
+    resources:
+        mem_mb=16000
     shell:
         "samtools view -b -o {output.bam} {input} {params.chromosome} 2> {log}"
 
@@ -129,7 +134,7 @@ rule aligned_reads_filter_on_mapq:
         "../envs/samtools.yaml"
     params:
         min_quality=config["min_mapping_quality"],
-    threads: 1
+    threads: 16
     shell:
         "samtools view -q {params.min_quality} -b -o {output} {input} 2> {log}"
 
