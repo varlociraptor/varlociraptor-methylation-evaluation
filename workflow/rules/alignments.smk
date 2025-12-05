@@ -44,7 +44,7 @@ rule align_reads_pe:
         "logs/bwameth/align_reads_pe/{sample}_{SRA}.log",
     threads: 30
     resources:
-        mem_mb=512,
+        mem_mb=64000,
     shell:
         """
         touch {input.fasta_index}
