@@ -201,7 +201,7 @@ rule varlociraptor_ceta_call_single:
         "{input.varlo} call variants generic --scenario {input.scenario} --obs normal={input.preprocess_obs} > {output} 2> {log}"
 
 
-rule varlociraptor_ceta_call_multi:
+rule varlociraptor_ceta_call_multi_emseq:
     input:
         varlo="resources/tools/ceta_comp/varlociraptor/target/debug/varlociraptor",
         emseq="results/ceta_benchmark/preprocessed/Illumina_pe/EMSeq_HG002_LAB01_REP01/normal_{scatteritem}.bcf",
@@ -215,6 +215,22 @@ rule varlociraptor_ceta_call_multi:
         "../envs/varlociraptor.yaml"
     shell:
         "{input.varlo} call variants generic --scenario {input.scenario} --obs  emseq={input.emseq}  untreated={input.untreated} > {output} 2> {log}"
+
+rule varlociraptor_ceta_call_multi_all:
+    input:
+        varlo="resources/tools/ceta_comp/varlociraptor/target/debug/varlociraptor",
+        emseq="results/ceta_benchmark/preprocessed/Illumina_pe/EMSeq_HG002_LAB01_REP01/normal_{scatteritem}.bcf",
+        untreated="results/ceta_benchmark/preprocessed/Illumina_pe/untreated/normal_{scatteritem}.bcf",
+        methylseq="results/ceta_benchmark/preprocessed/Illumina_pe/MethylSeq_HG002_LAB01_REP01/normal_{scatteritem}.bcf",
+        scenario="resources/scenarios/ceta_benchmarks/scenario_common_all.yaml",
+    output:
+        "results/ceta_benchmark/Illumina_pe/called/ceta_multi_all/calls_{scatteritem}.bcf",
+    log:
+        "logs/varlociraptor/multi_sample/untreated_emseq/call_methylation_{scatteritem}.log",
+    conda:
+        "../envs/varlociraptor.yaml"
+    shell:
+        "{input.varlo} call variants generic --scenario {input.scenario} --obs  emseq={input.emseq} methylseq={input.methylseq} untreated={input.untreated} > {output} 2> {log}"
 
 
 rule event_probs_df:
@@ -240,6 +256,7 @@ rule plot_ceta_probs:
         "results/ceta_benchmark/Illumina_pe/called/MethylSeq_HG002_LAB01_REP01/result_files/events_{fdr}.parquet",
         "results/ceta_benchmark/Illumina_pe/called/EMSeq_HG002_LAB01_REP01/result_files/events_{fdr}.parquet",
         "results/ceta_benchmark/Illumina_pe/called/ceta_multi/result_files/events_{fdr}.parquet",
+        "results/ceta_benchmark/Illumina_pe/called/ceta_multi_all/result_files/events_{fdr}.parquet",
         "results/ceta_benchmark/Illumina_pe/called/untreated/result_files/events_{fdr}.parquet",
     output:
         "results/ceta_benchmark/Illumina_pe/called/result_files/combined_{fdr}.html",
@@ -247,5 +264,7 @@ rule plot_ceta_probs:
         "../envs/plot.yaml"
     log:
         "logs/plots/plot_ceta_probs_{fdr}.log",
+    resources:
+        mem_mb=16000,
     script:
         "../scripts/plot_ceta_probs.py"

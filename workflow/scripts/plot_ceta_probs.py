@@ -15,7 +15,8 @@ files = snakemake.input
 method_to_name = {
     "MethylSeq_HG002_LAB01_REP01": "MethylSeq",
     "EMSeq_HG002_LAB01_REP01": "EMSeq",
-    "ceta_multi": "EMSeq + MethylSeq",
+    "ceta_multi": "EMSeq + Untreated",
+    "ceta_multi_all": "EMSeq + Untreated + MethylSeq",
     "untreated": "Untreated",
 }
 
