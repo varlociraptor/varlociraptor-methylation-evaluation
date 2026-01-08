@@ -1,10 +1,12 @@
+# /home/adrian/Documents/varlociraptor-methylation-evaluation/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor call variants --testcase-locus 21:9593279 --testcase-prefix test_prinz_ceta_both generic --scenario /home/adrian/Documents/varlociraptor-methylation-evaluation/resources/scenarios/ceta_benchmarks/multi_sample/scenario_common_both.yaml --obs emseq=/home/adrian/Documents/varlociraptor-methylation-evaluation/results/ceta_benchmark/preprocessed/Illumina_pe/EMSeq_HG002_LAB01_REP01/normal_1-of-5.bcf untreated=/home/adrian/Documents/varlociraptor-methylation-evaluation/results/ceta_benchmark/preprocessed/Illumina_pe/untreated/normal_1-of-5.bcf
+
 
 rule download_varlociraptor:
     output:
         direc=directory(
             "resources/tools/ceta_comp/varlociraptor",
         ),
-        execu="resources/tools/ceta_comp/varlociraptor/target/debug/varlociraptor",
+        execu="resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor",
     log:
         "logs/download_varlociraptor.log",
     shell:
@@ -160,7 +162,7 @@ rule split_ceta_candidates:
 
 rule varlociraptor_ceta_preprocess:
     input:
-        varlo="resources/tools/ceta_comp/varlociraptor/target/debug/varlociraptor",
+        varlo="resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor",
         chromosome="resources/chromosome_21.fasta",
         genome_index="resources/chromosome_21.fasta.fai",
         alignments="resources/Illumina_pe/{sample}/candidate_specific/alignment_{scatteritem}.bam",
@@ -180,19 +182,19 @@ rule varlociraptor_ceta_preprocess:
         """
 
 
-rule varlociraptor_ceta_call_single:
+rule varlociraptor_ceta_call_single_no_prior:
     input:
-        varlo="resources/tools/ceta_comp/varlociraptor/target/debug/varlociraptor",
+        varlo="resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor",
         preprocess_obs="results/ceta_benchmark/preprocessed/Illumina_pe/{sample}/normal_{scatteritem}.bcf",
         scenario=lambda wc: (
-            f"resources/scenarios/ceta_benchmarks/scenario_untreated.yaml"
+            f"resources/scenarios/ceta_benchmarks/single_sample/scenario_untreated_no_prior.yaml"
             if wc.sample == "untreated"
-            else f"resources/scenarios/ceta_benchmarks/scenario_converted.yaml"
+            else f"resources/scenarios/ceta_benchmarks/single_sample/scenario_converted_no_prior.yaml"
         ),
     output:
-        "results/ceta_benchmark/Illumina_pe/called/{sample}/calls_{scatteritem}.bcf",
+        "results/ceta_benchmark/Illumina_pe/called/{sample}_no_prior/calls_{scatteritem}.bcf",
     log:
-        "logs/varlociraptor/Illumina_pe/called/{sample}/call_methylation_{scatteritem}.log",
+        "logs/varlociraptor/Illumina_pe/called/{sample}_no_prior/call_methylation_{scatteritem}.log",
     wildcard_constraints:
         sample="(?!ceta_multi).*",
     conda:
@@ -201,28 +203,54 @@ rule varlociraptor_ceta_call_single:
         "{input.varlo} call variants generic --scenario {input.scenario} --obs normal={input.preprocess_obs} > {output} 2> {log}"
 
 
-rule varlociraptor_ceta_call_multi_emseq:
+rule varlociraptor_ceta_call_single_with_prior:
     input:
-        varlo="resources/tools/ceta_comp/varlociraptor/target/debug/varlociraptor",
+        varlo="resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor",
+        preprocess_obs="results/ceta_benchmark/preprocessed/Illumina_pe/{sample}/normal_{scatteritem}.bcf",
+        scenario=lambda wc: (
+            f"resources/scenarios/ceta_benchmarks/single_sample/scenario_untreated_with_prior.yaml"
+            if wc.sample == "untreated"
+            else f"resources/scenarios/ceta_benchmarks/single_sample/scenario_converted_with_prior.yaml"
+        ),
+    output:
+        "results/ceta_benchmark/Illumina_pe/called/{sample}_with_prior/calls_{scatteritem}.bcf",
+    log:
+        "logs/varlociraptor/Illumina_pe/called/{sample}_with_prior/call_methylation_{scatteritem}.log",
+    wildcard_constraints:
+        sample="(?!ceta_multi).*",
+    conda:
+        "../envs/varlociraptor.yaml"
+    shell:
+        """
+        {input.varlo} call variants generic --scenario {input.scenario} --obs normal={input.preprocess_obs} > {output} 2> {log}
+        """
+
+
+rule varlociraptor_ceta_call_multi:
+    input:
+        varlo="resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor",
         emseq="results/ceta_benchmark/preprocessed/Illumina_pe/EMSeq_HG002_LAB01_REP01/normal_{scatteritem}.bcf",
         untreated="results/ceta_benchmark/preprocessed/Illumina_pe/untreated/normal_{scatteritem}.bcf",
-        scenario="resources/scenarios/ceta_benchmarks/scenario_common.yaml",
+        scenario="resources/scenarios/ceta_benchmarks/multi_sample/scenario_common_{type}.yaml",
     output:
-        "results/ceta_benchmark/Illumina_pe/called/ceta_multi/calls_{scatteritem}.bcf",
+        "results/ceta_benchmark/Illumina_pe/called/ceta_multi_{type}/calls_{scatteritem}.bcf",
     log:
-        "logs/varlociraptor/multi_sample/untreated_emseq/call_methylation_{scatteritem}.log",
+        "logs/varlociraptor/multi_sample/untreated_emseq/call_methylation_{scatteritem}_{type}.log",
+    wildcard_constraints:
+        type="(?!all).*",
     conda:
         "../envs/varlociraptor.yaml"
     shell:
         "{input.varlo} call variants generic --scenario {input.scenario} --obs  emseq={input.emseq}  untreated={input.untreated} > {output} 2> {log}"
 
+
 rule varlociraptor_ceta_call_multi_all:
     input:
-        varlo="resources/tools/ceta_comp/varlociraptor/target/debug/varlociraptor",
+        varlo="resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor",
         emseq="results/ceta_benchmark/preprocessed/Illumina_pe/EMSeq_HG002_LAB01_REP01/normal_{scatteritem}.bcf",
         untreated="results/ceta_benchmark/preprocessed/Illumina_pe/untreated/normal_{scatteritem}.bcf",
         methylseq="results/ceta_benchmark/preprocessed/Illumina_pe/MethylSeq_HG002_LAB01_REP01/normal_{scatteritem}.bcf",
-        scenario="resources/scenarios/ceta_benchmarks/scenario_common_all.yaml",
+        scenario="resources/scenarios/ceta_benchmarks/multi_sample/scenario_common_all.yaml",
     output:
         "results/ceta_benchmark/Illumina_pe/called/ceta_multi_all/calls_{scatteritem}.bcf",
     log:
@@ -253,11 +281,18 @@ rule event_probs_df:
 
 rule plot_ceta_probs:
     input:
-        "results/ceta_benchmark/Illumina_pe/called/MethylSeq_HG002_LAB01_REP01/result_files/events_{fdr}.parquet",
-        "results/ceta_benchmark/Illumina_pe/called/EMSeq_HG002_LAB01_REP01/result_files/events_{fdr}.parquet",
-        "results/ceta_benchmark/Illumina_pe/called/ceta_multi/result_files/events_{fdr}.parquet",
+        "results/ceta_benchmark/Illumina_pe/called/MethylSeq_HG002_LAB01_REP01_no_prior/result_files/events_{fdr}.parquet",
+        "results/ceta_benchmark/Illumina_pe/called/MethylSeq_HG002_LAB01_REP01_with_prior/result_files/events_{fdr}.parquet",
+        "results/ceta_benchmark/Illumina_pe/called/EMSeq_HG002_LAB01_REP01_no_prior/result_files/events_{fdr}.parquet",
+        "results/ceta_benchmark/Illumina_pe/called/EMSeq_HG002_LAB01_REP01_with_prior/result_files/events_{fdr}.parquet",
+        # "results/ceta_benchmark/Illumina_pe/called/ceta_multi/result_files/events_{fdr}.parquet",
         "results/ceta_benchmark/Illumina_pe/called/ceta_multi_all/result_files/events_{fdr}.parquet",
-        "results/ceta_benchmark/Illumina_pe/called/untreated/result_files/events_{fdr}.parquet",
+        "results/ceta_benchmark/Illumina_pe/called/ceta_multi_both/result_files/events_{fdr}.parquet",
+        "results/ceta_benchmark/Illumina_pe/called/ceta_multi_emseq/result_files/events_{fdr}.parquet",
+        "results/ceta_benchmark/Illumina_pe/called/ceta_multi_untreated/result_files/events_{fdr}.parquet",
+        "results/ceta_benchmark/Illumina_pe/called/ceta_multi_not_equal/result_files/events_{fdr}.parquet",
+        "results/ceta_benchmark/Illumina_pe/called/untreated_no_prior/result_files/events_{fdr}.parquet",
+        "results/ceta_benchmark/Illumina_pe/called/untreated_with_prior/result_files/events_{fdr}.parquet",
     output:
         "results/ceta_benchmark/Illumina_pe/called/result_files/combined_{fdr}.html",
     conda:

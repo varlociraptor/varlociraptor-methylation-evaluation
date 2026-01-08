@@ -12,7 +12,9 @@ rule bissnp_download:
         touch {log}
         mkdir -p resources/ref_tools
         cd resources/ref_tools
-        git clone https://github.com/dnaase/Bis-tools.git
+        if [ ! -d Bis-tools ]; then
+            git clone https://github.com/dnaase/Bis-tools.git
+        fi
         cd Bis-tools
         wget -O BisSNP-0.82.2.jar https://sourceforge.net/projects/bissnp/files/BisSNP-0.82.2/BisSNP-0.82.2.jar/download
         """

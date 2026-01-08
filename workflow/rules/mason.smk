@@ -1,22 +1,6 @@
 # Fake data to simulate reads with Mason2
 
 
-rule mason_download:
-    output:
-        mason_dir=directory("resources/tools/seqan/apps/mason2"),
-        mason="resources/tools/seqan/apps/mason2/methylation_levels.h",
-    log:
-        "logs/mason/mason_download/download.log",
-    conda:
-        "../envs/shell_cmds.yaml"
-    shell:
-        """
-        mkdir -p resources/tools 2> {log}
-        cd resources/tools 2> {log}
-        git clone git@github.com:seqan/seqan.git 2> {log}
-        """
-
-
 rule mason_fake_methylation:
     input:
         chrom="resources/chromosome_{chrom}.fasta",
@@ -103,13 +87,13 @@ rule mason_align_reads:
         f1=expand(
             "resources/Illumina_pe/simulated_data_{{REP}}/{SRA}/{SRA}_1.fastq",
             SRA=lambda wildcards: config["data"]["Illumina_pe"][
-            f"simulated_data_{wildcards.REP}"
+                f"simulated_data_{wildcards.REP}"
             ],
         ),
         f2=expand(
             "resources/Illumina_pe/simulated_data_{{REP}}/{SRA}/{SRA}_2.fastq",
             SRA=lambda wildcards: config["data"]["Illumina_pe"][
-            f"simulated_data_{wildcards.REP}"
+                f"simulated_data_{wildcards.REP}"
             ],
         ),
     output:

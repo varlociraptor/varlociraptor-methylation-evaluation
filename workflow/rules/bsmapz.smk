@@ -12,12 +12,11 @@ rule bsmapz_clone_and_build:
         """
         mkdir -p resources/ref_tools
         cd resources/ref_tools
-        # if [ ! -d BSMAPz ]; then
-        git clone https://github.com/zyndagj/BSMAPz.git
-        # fi
+        if [ ! -d BSMAPz ]; then
+            git clone https://github.com/zyndagj/BSMAPz.git
+        fi
         cd BSMAPz
         make bsmapz
-        cp bsmapz ../../bsmapz
         """
 
 

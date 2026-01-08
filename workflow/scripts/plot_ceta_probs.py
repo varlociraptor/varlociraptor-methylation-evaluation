@@ -12,26 +12,38 @@ pl.Config.set_tbl_cols(-1)  # show all columns
 
 files = snakemake.input
 
-method_to_name = {
-    "MethylSeq_HG002_LAB01_REP01": "MethylSeq",
-    "EMSeq_HG002_LAB01_REP01": "EMSeq",
-    "ceta_multi": "EMSeq + Untreated",
-    "ceta_multi_all": "EMSeq + Untreated + MethylSeq",
-    "untreated": "Untreated",
+name_to_method = {
+    "MethylSeq_HG002_LAB01_REP01_with_prior": "MethylSeq with Prior",
+    "EMSeq_HG002_LAB01_REP01_with_prior": "EMSeq with Prior",
+    "MethylSeq_HG002_LAB01_REP01_no_prior": "MethylSeq no Prior",
+    "EMSeq_HG002_LAB01_REP01_no_prior": "EMSeq no Prior",
+    "ceta_multi": "Common",
+    "ceta_multi_all": "Common all",
+    "ceta_multi_both": "Common both",
+    "ceta_multi_emseq": "Common emseq",
+    "ceta_multi_untreated": "Common untreated",
+    "untreated_with_prior": "Untreated with Prior",
+    "untreated_no_prior": "Untreated no Prior",
 }
 
-colorblind_safe_palette = [
-    "#D81B60",
-    "#1E88E5",
-    "#FFC107",
-    "#05AA8F",
-    "#004D40",
-]
 
+colorblind_safe_palette = [
+    "#034D40",
+    "#078A72",
+    "#0EC5A4",
+    "#14F8CE",
+    "#75F8E0",
+    "#D81B60",
+    "#E05387",
+    "#386791",
+    "#1E88E5",
+    "#B89B46",
+    "#FFC107",
+]
 dfs = []
 
 for f in files:
-    method = method_to_name.get(Path(f).parts[-3], "Unknown")
+    method = name_to_method.get(Path(f).parts[-3], "Unknown")
 
     # Load parquet
     df = pl.scan_parquet(f)
@@ -40,8 +52,9 @@ for f in files:
 
 df = pl.concat(dfs)
 
-bin_size = 20
+bin_size = 50
 intervals = [i / bin_size for i in range(bin_size)]
+print(intervals)
 interval_labels = ["missing"] + [
     f"{i / bin_size} - { (i + 1) / bin_size}" for i in range(bin_size)
 ]
@@ -72,23 +85,6 @@ def make_plot(df, category):
     col = f"prob_{category}_bin"
     df[col] = df[col].cat.add_categories(["missing"]).fillna("missing")
 
-    filter_param = alt.param(
-        name="Filter",
-        bind=alt.binding_select(
-            options=[
-                "complete",
-                "cg",
-                "c2t",
-                "cg & c2t",
-                "cg & !c2t",
-                "!cg & c2t",
-                "!cg & !c2t",
-            ],
-            name="Filter: ",
-        ),
-        value="complete",
-    )
-
     chart = (
         alt.Chart(df)
         .mark_bar()
@@ -105,7 +101,9 @@ def make_plot(df, category):
                 "method:N",
                 title="Method",
                 scale=alt.Scale(range=colorblind_safe_palette),
+                legend=alt.Legend(labelLimit=0),
             ),
+            opacity=alt.condition(method_select, alt.value(1), alt.value(0.1)),
             tooltip=["method:N", f"prob_{category}_bin:N", "count()"],
         )
         .transform_filter(
@@ -121,12 +119,38 @@ def make_plot(df, category):
                 & (~alt.datum.c_to_t)
             )
         )
-        .add_params(filter_param)
+        .transform_filter(
+            alt.FieldOneOfPredicate(field="method", oneOf=name_to_method.values())
+        )
+        .add_params(filter_param, method_select)
+        .add_params(method_select)
         .properties(title=f"Distribution of prob_{category}")
     )
 
     return chart
 
+
+# method_radio = alt.binding_radio(options=list(name_to_method.values()), name="Method")
+# method_select = alt.selection_point(fields=["method"], bind=method_radio)
+
+method_select = alt.selection_point(fields=["method"])
+
+filter_param = alt.param(
+    name="Filter",
+    bind=alt.binding_select(
+        options=[
+            "complete",
+            "cg",
+            "c2t",
+            "cg & c2t",
+            "cg & !c2t",
+            "!cg & c2t",
+            "!cg & !c2t",
+        ],
+        name="Filter: ",
+    ),
+    value="complete",
+)
 
 plot_present = make_plot(df, "present")
 plot_absent = make_plot(df, "absent")

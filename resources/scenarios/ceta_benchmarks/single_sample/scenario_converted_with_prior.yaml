@@ -1,0 +1,23 @@
+species:
+  heterozygosity: 0.001
+  germline-mutation-rate: 1e-3
+  ploidy:
+    male:
+      all: 2
+      X: 1
+      Y: 1
+    female:
+      all: 2
+      X: 2
+      Y: 0
+  genome-size: 3.5e9
+
+samples:
+  normal:
+    sex: male
+    somatic-effective-mutation-rate: 1e-6
+    conversion: C>T
+    universe: "[0.0,1.0]"
+
+events:
+  present: "normal:0.5 | normal:1.0"
