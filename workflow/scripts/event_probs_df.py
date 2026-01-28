@@ -74,13 +74,24 @@ def read_tool_file(filepath: str, file_name: str) -> pd.DataFrame:
                     )
                     continue
             records.append(
-                [chrom, position, prob_present, prob_absent, prob_artifact, c_to_t]
+                [
+                    chrom,
+                    position,
+                    ref,
+                    alt,
+                    prob_present,
+                    prob_absent,
+                    prob_artifact,
+                    c_to_t,
+                ]
             )
     return pd.DataFrame(
         records,
         columns=[
             "chromosome",
             "position",
+            "ref",
+            "alt",
             "prob_present",
             "prob_absent",
             "prob_artifact",

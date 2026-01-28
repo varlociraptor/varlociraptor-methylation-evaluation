@@ -237,11 +237,27 @@ rule varlociraptor_ceta_call_multi:
     log:
         "logs/varlociraptor/multi_sample/untreated_emseq/call_methylation_{scatteritem}_{type}.log",
     wildcard_constraints:
-        type="(?!all).*",
+        type="(?!all|no_untreated).*",
     conda:
         "../envs/varlociraptor.yaml"
     shell:
         "{input.varlo} call variants generic --scenario {input.scenario} --obs  emseq={input.emseq}  untreated={input.untreated} > {output} 2> {log}"
+
+
+rule varlociraptor_ceta_call_multi_no_untreated:
+    input:
+        varlo="resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor",
+        emseq="results/ceta_benchmark/preprocessed/Illumina_pe/EMSeq_HG002_LAB01_REP01/normal_{scatteritem}.bcf",
+        methylseq="results/ceta_benchmark/preprocessed/Illumina_pe/MethylSeq_HG002_LAB01_REP01/normal_{scatteritem}.bcf",
+        scenario="resources/scenarios/ceta_benchmarks/multi_sample/scenario_common_no_untreated.yaml",
+    output:
+        "results/ceta_benchmark/Illumina_pe/called/ceta_multi_no_untreated/calls_{scatteritem}.bcf",
+    log:
+        "logs/varlociraptor/multi_sample/untreated_emseq/call_methylation_{scatteritem}.log",
+    conda:
+        "../envs/varlociraptor.yaml"
+    shell:
+        "{input.varlo} call variants generic --scenario {input.scenario} --obs  emseq={input.emseq} methylseq={input.methylseq} > {output} 2> {log}"
 
 
 rule varlociraptor_ceta_call_multi_all:
@@ -279,6 +295,45 @@ rule event_probs_df:
         "../scripts/event_probs_df.py"
 
 
+# TODO: this will not stay we have this method only to find positions that are different without sorting samples lexicographicallly and without conversion to find a nice test case
+rule varlociraptor_ceta_call_no_conversion:
+    input:
+        # varlo="resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor",
+        varlo="../varlociraptor/target/release/varlociraptor",
+        emseq="results/ceta_benchmark/preprocessed/Illumina_pe/EMSeq_HG002_LAB01_REP01/normal_{scatteritem}.bcf",
+        untreated="results/ceta_benchmark/preprocessed/Illumina_pe/untreated/normal_{scatteritem}.bcf",
+        scenario="resources/scenarios/ceta_benchmarks/no_conversion/scenario_common_{type}.yaml",
+    output:
+        "results/ceta_benchmark/Illumina_pe/called/no_conversion_{type}/calls_{scatteritem}.bcf",
+    log:
+        "logs/varlociraptor/multi_sample/untreated_emseq/call_methylation_{scatteritem}_{type}.log",
+    wildcard_constraints:
+        type="(?!all|no_untreated).*",
+    conda:
+        "../envs/varlociraptor.yaml"
+    shell:
+        "{input.varlo} call variants generic --scenario {input.scenario} --obs  emseq={input.emseq}  untreated={input.untreated} > {output} 2> {log}"
+
+
+# We also do not need this method for ceta_benchmarking:
+# Sho positions with different probs bwetween emseq and untreated samples where we do not convert the samples lexicographically
+rule show_diff_no_conversion:
+    input:
+        "results/ceta_benchmark/Illumina_pe/called/no_conversion_untreated/result_files/events_1.0.parquet",
+        "results/ceta_benchmark/Illumina_pe/called/no_conversion_emseq/result_files/events_1.0.parquet",
+        "results/ceta_benchmark/Illumina_pe/called/no_conversion_both/result_files/events_1.0.parquet",
+    output:
+        "results/ceta_benchmark/Illumina_pe/called/no_conversion/result_files/diff_positions_1.0.tsv",
+    conda:
+        "../envs/plot.yaml"
+    log:
+        "logs/plot_results/show_diff_no_conversion.log",
+    resources:
+        mem_mb=16000,
+    script:
+        "../scripts/show_diff_no_conversion.py"
+
+
 rule plot_ceta_probs:
     input:
         "results/ceta_benchmark/Illumina_pe/called/MethylSeq_HG002_LAB01_REP01_no_prior/result_files/events_{fdr}.parquet",
@@ -289,7 +344,8 @@ rule plot_ceta_probs:
         "results/ceta_benchmark/Illumina_pe/called/ceta_multi_all/result_files/events_{fdr}.parquet",
         "results/ceta_benchmark/Illumina_pe/called/ceta_multi_both/result_files/events_{fdr}.parquet",
         "results/ceta_benchmark/Illumina_pe/called/ceta_multi_emseq/result_files/events_{fdr}.parquet",
-        "results/ceta_benchmark/Illumina_pe/called/ceta_multi_untreated/result_files/events_{fdr}.parquet",
+        # "results/ceta_benchmark/Illumina_pe/called/ceta_multi_untreated/result_files/events_{fdr}.parquet",
+        "results/ceta_benchmark/Illumina_pe/called/ceta_multi_no_untreated/result_files/events_{fdr}.parquet",
         "results/ceta_benchmark/Illumina_pe/called/ceta_multi_not_equal/result_files/events_{fdr}.parquet",
         "results/ceta_benchmark/Illumina_pe/called/untreated_no_prior/result_files/events_{fdr}.parquet",
         "results/ceta_benchmark/Illumina_pe/called/untreated_with_prior/result_files/events_{fdr}.parquet",

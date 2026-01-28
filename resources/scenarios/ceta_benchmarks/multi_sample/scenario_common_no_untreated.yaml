@@ -5,8 +5,6 @@ samples:
   methylseq:
     universe: "[0.0, 1.0]"
     conversion: C>T
-  untreated:
-    universe: "[0.0, 1.0]"
 
 events:
-  present: "untreated:]0.0,1.0] & emseq == untreated & emseq == methylseq"
+  present: "emseq:]0.0,1.0] & methylseq:]0.0,1.0] & emseq == methylseq"

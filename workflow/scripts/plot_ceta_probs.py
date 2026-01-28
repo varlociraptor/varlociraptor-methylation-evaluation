@@ -22,6 +22,7 @@ name_to_method = {
     "ceta_multi_both": "Common both",
     "ceta_multi_emseq": "Common emseq",
     "ceta_multi_untreated": "Common untreated",
+    "ceta_multi_no_untreated": "Common no untreated",
     "untreated_with_prior": "Untreated with Prior",
     "untreated_no_prior": "Untreated no Prior",
 }
@@ -32,7 +33,7 @@ colorblind_safe_palette = [
     "#078A72",
     "#0EC5A4",
     "#14F8CE",
-    "#75F8E0",
+    # "#26FAEC",
     "#D81B60",
     "#E05387",
     "#386791",
@@ -52,11 +53,11 @@ for f in files:
 
 df = pl.concat(dfs)
 
-bin_size = 50
+bin_size = 20
 intervals = [i / bin_size for i in range(bin_size)]
 print(intervals)
 interval_labels = ["missing"] + [
-    f"{i / bin_size} - { (i + 1) / bin_size}" for i in range(bin_size)
+    f"{i/ bin_size} - {(i+1)/ bin_size}" for i in range(bin_size)
 ]
 
 df = df.with_columns(
