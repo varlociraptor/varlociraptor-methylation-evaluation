@@ -237,21 +237,21 @@ rule varlociraptor_ceta_call_multi:
     log:
         "logs/varlociraptor/multi_sample/untreated_emseq/call_methylation_{scatteritem}_{type}.log",
     wildcard_constraints:
-        type="(?!all|no_untreated).*",
+        type="(?!all|emseq_methylseq).*",
     conda:
         "../envs/varlociraptor.yaml"
     shell:
         "{input.varlo} call variants generic --scenario {input.scenario} --obs  emseq={input.emseq}  untreated={input.untreated} > {output} 2> {log}"
 
 
-rule varlociraptor_ceta_call_multi_no_untreated:
+rule varlociraptor_ceta_call_multi_emseq_methylseq:
     input:
         varlo="resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor",
         emseq="results/ceta_benchmark/preprocessed/Illumina_pe/EMSeq_HG002_LAB01_REP01/normal_{scatteritem}.bcf",
         methylseq="results/ceta_benchmark/preprocessed/Illumina_pe/MethylSeq_HG002_LAB01_REP01/normal_{scatteritem}.bcf",
-        scenario="resources/scenarios/ceta_benchmarks/multi_sample/scenario_common_no_untreated.yaml",
+        scenario="resources/scenarios/ceta_benchmarks/multi_sample/scenario_common_emseq_methylseq.yaml",
     output:
-        "results/ceta_benchmark/Illumina_pe/called/ceta_multi_no_untreated/calls_{scatteritem}.bcf",
+        "results/ceta_benchmark/Illumina_pe/called/ceta_multi_emseq_methylseq/calls_{scatteritem}.bcf",
     log:
         "logs/varlociraptor/multi_sample/untreated_emseq/call_methylation_{scatteritem}.log",
     conda:
@@ -342,11 +342,11 @@ rule plot_ceta_probs:
         "results/ceta_benchmark/Illumina_pe/called/EMSeq_HG002_LAB01_REP01_with_prior/result_files/events_{fdr}.parquet",
         # "results/ceta_benchmark/Illumina_pe/called/ceta_multi/result_files/events_{fdr}.parquet",
         "results/ceta_benchmark/Illumina_pe/called/ceta_multi_all/result_files/events_{fdr}.parquet",
-        "results/ceta_benchmark/Illumina_pe/called/ceta_multi_both/result_files/events_{fdr}.parquet",
-        "results/ceta_benchmark/Illumina_pe/called/ceta_multi_emseq/result_files/events_{fdr}.parquet",
-        # "results/ceta_benchmark/Illumina_pe/called/ceta_multi_untreated/result_files/events_{fdr}.parquet",
-        "results/ceta_benchmark/Illumina_pe/called/ceta_multi_no_untreated/result_files/events_{fdr}.parquet",
-        "results/ceta_benchmark/Illumina_pe/called/ceta_multi_not_equal/result_files/events_{fdr}.parquet",
+        # "results/ceta_benchmark/Illumina_pe/called/ceta_multi_both/result_files/events_{fdr}.parquet",
+        "results/ceta_benchmark/Illumina_pe/called/ceta_multi_emseq_untreated/result_files/events_{fdr}.parquet",
+        "results/ceta_benchmark/Illumina_pe/called/ceta_multi_emseq_methylseq/result_files/events_{fdr}.parquet",
+        # "results/ceta_benchmark/Illumina_pe/called/ceta_multi_no_untreated/result_files/events_{fdr}.parquet",
+        # "results/ceta_benchmark/Illumina_pe/called/ceta_multi_not_equal/result_files/events_{fdr}.parquet",
         "results/ceta_benchmark/Illumina_pe/called/untreated_no_prior/result_files/events_{fdr}.parquet",
         "results/ceta_benchmark/Illumina_pe/called/untreated_with_prior/result_files/events_{fdr}.parquet",
     output:
