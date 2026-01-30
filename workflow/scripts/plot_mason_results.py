@@ -26,24 +26,47 @@ df = truth_df.join(
 )
 
 
-def compute_mape(true: pl.Series, pred: pl.Series) -> float:
-    # Nulls entfernen (wichtig!)
-    mask = pred.is_not_null()
-    true = true.filter(mask)
-    pred = pred.filter(mask)
-
-    denom = np.maximum(true.to_numpy(), pred.to_numpy())
-    denom[denom == 0] = 1.0
-
-    mape = np.mean(np.abs(true.to_numpy() - pred.to_numpy()) / denom) * 100
+def compute_mape(df, meth_caller) -> float:
+    df = df.with_columns(
+        pl.max_horizontal(
+            pl.col(f"{meth_caller}_methylation"),
+            pl.col("true_methylation"),
+        ).alias("denom")
+    ).with_columns(
+        pl.when(pl.col("denom") == 0)
+        .then(0.0)
+        .otherwise(
+            (pl.col(f"{meth_caller}_methylation") - pl.col("true_methylation")).abs()
+            / pl.col("denom")
+        )
+        .alias("mape_row")
+    )
+    mape = df.select(pl.col("mape_row").mean() * 100).item()
     return float(mape)
 
 
-mapes = {}
+def compute_mae(df, meth_caller) -> float:
+    df = df.with_columns(
+        (pl.col(f"{meth_caller}_methylation") - pl.col("true_methylation"))
+        .abs()
+        .alias("mae_row")
+    )
+    mae = df.select(pl.col("mae_row").mean()).item()
+    return float(mae)
+
+
+distance_rows = []
+
 for caller in meth_callers:
-    mape = compute_mape(df["true_methylation"], df[f"{caller}_methylation"])
-    mapes[f"{caller}"] = mape
-    print(f"{caller} MAPE: {mape}%")
+    distance_rows.append(
+        {
+            "meth_caller": caller,
+            "mape": compute_mape(df, caller),
+            "mae": compute_mae(df, caller),
+        }
+    )
+
+distance_df = pl.DataFrame(distance_rows)
 
 long_df = df.melt(
     id_vars=["chrom", "pos", "true_methylation"],
@@ -65,31 +88,24 @@ long_df = (
 )
 
 
-# Polars → Pandas für Altair
 heatmap_data = long_df.to_pandas()
-# Alle Bins definieren
 bins = np.arange(0, 101, bin_size)
 
-# Alle Caller
 callers = long_df["caller"].unique()
 # Remove suffix "_methylation"
-# Erstelle ein Grid aller Kombinationen
+# Grid for all combinations
 grid = pd.MultiIndex.from_product(
     [callers, bins, bins], names=["caller", "true_bin", "caller_bin"]
 ).to_frame(index=False)
 
-# Merge mit den vorhandenen Counts, fehlende auf 0 setzen
 heatmap_data_full = pd.merge(
     grid, heatmap_data, on=["caller", "true_bin", "caller_bin"], how="left"
 ).fillna({"count": 0})
 
 max_count = heatmap_data_full["count"].max()
 
-print(mapes)
-print(heatmap_data_full.head())
 
-
-def plot_heatmap(meth_caller, df):
+def plot_heatmap(meth_caller, df, distance_df):
     """Log-scaled heatmap for replicate methylation counts."""
     df = df[df["caller"] == f"{meth_caller}_methylation"]
     heatmap = (
@@ -97,7 +113,7 @@ def plot_heatmap(meth_caller, df):
             df,
             title=alt.Title(
                 f"{meth_caller}",
-                subtitle=f" N = {df['count'].sum():.0f} MAPE = {mapes[meth_caller]:.2f}%",
+                subtitle=f" N = {df['count'].sum():.0f} MAPE = {distance_df.filter(pl.col('meth_caller')== meth_caller)['mape'].item():.2f}%, MAE = {distance_df.filter(pl.col('meth_caller')== meth_caller)['mae'].item():.2f}%",
             ),
         )
         .mark_rect()
@@ -117,18 +133,46 @@ def plot_heatmap(meth_caller, df):
             tooltip=["true_bin:O", "caller_bin:O", "count:Q"],
         )
     )
+
     return heatmap
 
 
 heatmaps = []
-callers = [c.replace("_methylation", "") for c in callers]
-
-for meth_caller in callers:
-    heatmap = plot_heatmap(meth_caller, heatmap_data_full)
+for meth_caller in meth_callers:
+    heatmap = plot_heatmap(meth_caller, heatmap_data_full, distance_df)
     heatmaps.append(heatmap)
 heatmap = alt.hconcat(*heatmaps)
-# =============================
-# 5️⃣ Speichern
-# =============================
+print(heatmap_data_full)
 
-heatmap.save(snakemake.output[0])
+heatmap_data_full["distance"] = (
+    heatmap_data_full["caller_bin"] - heatmap_data_full["true_bin"]
+).abs()
+
+distance_plot_df = heatmap_data_full.groupby(["caller", "distance"], as_index=False)[
+    "count"
+].sum()
+print(distance_plot_df)
+distance_plot = (
+    alt.Chart(distance_plot_df)
+    .mark_line()
+    .encode(
+        x=alt.X(
+            "distance:O",
+            title="caller_bin − true_bin",
+            sort="ascending",
+        ),
+        y=alt.Y(
+            "count:Q",
+            title="Count",
+        ),
+        tooltip=["distance:O", "count:Q"],
+        color=alt.Color(
+            "caller:O",
+            scale=alt.Scale(scheme="category10"),
+            title="Methylation Caller",
+        ),
+    )
+)
+plot = alt.vconcat(heatmap, distance_plot).resolve_scale(color="independent")
+
+plot.save(snakemake.output[0])
