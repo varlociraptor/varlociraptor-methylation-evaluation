@@ -27,6 +27,8 @@ rule mason_fake_methylation:
         "../envs/mason.yaml"
     log:
         "logs/mason/mason_fake_methylation/{chrom}_{REP}.log",
+    params:
+        seed=lambda wildcards: 0 if wildcards.REP == "REP01" else 1,
     shell:
         """
         mkdir -p $(dirname {output.methylation})
@@ -34,6 +36,7 @@ rule mason_fake_methylation:
             --methylation-levels \
             --meth-cg-sigma 0.3 \
             --meth-cg-mu 0.5 \
+            --seed {params.seed} \
             --out {output.methylation}  2> {log}
         """
 
@@ -103,13 +106,13 @@ rule mason_align_reads:
         f1=expand(
             "resources/Illumina_pe/simulated_data_{{REP}}/{SRA}/{SRA}_1.fastq",
             SRA=lambda wildcards: config["data"]["Illumina_pe"][
-            f"simulated_data_{wildcards.REP}"
+                f"simulated_data_{wildcards.REP}"
             ],
         ),
         f2=expand(
             "resources/Illumina_pe/simulated_data_{{REP}}/{SRA}/{SRA}_2.fastq",
             SRA=lambda wildcards: config["data"]["Illumina_pe"][
-            f"simulated_data_{wildcards.REP}"
+                f"simulated_data_{wildcards.REP}"
             ],
         ),
     output:
@@ -223,6 +226,12 @@ rule mason_index_oriented_alignment:
         "samtools index {input} 2> {log}"
 
 
+# bcftools query -f '%CHROM\t%POS\t%REF\n' \
+#   resources/J02459/candidates_1-of-1.bcf \
+# | awk '{print $1 "\t" $2-1 "\t" $2-1+length($3)}' \
+# > candidates.bed
+
+
 rule mason_coverage:
     input:
         bam="resources/Illumina_pe/simulated_data_{REP}/alignment_sorted_{orientation}.bam",
@@ -258,6 +267,21 @@ rule mason_unzip_coverage:
         "gunzip -c {input} > {output} 2> {log}"
 
 
+rule mason_candidates_vcf:
+    input:
+        "resources/{chrom}/candidates.bcf",
+    output:
+        "resources/{chrom}/candidates.vcf",
+    conda:
+        "../envs/samtools.yaml"
+    log:
+        "logs/mason/mason_candidates_vcf/{chrom}.log",
+    shell:
+        """
+        bcftools view -o {output} {input} 2> {log}
+        """
+
+
 rule mason_compute_truth:
     input:
         cov_forward="resources/Illumina_pe/simulated_data_{REP}/forward_cov.regions.bed",
@@ -265,10 +289,28 @@ rule mason_compute_truth:
         methylation="resources/Illumina_pe/simulated_data_{REP}/chromosome_{chrom}_meth.fa",
         candidates="resources/{chrom}/candidates.vcf",
     output:
-        "resources/Illumina_pe/simulated_data_{REP}/chromosome_{chrom}_truth.bed",
+        "resources/Illumina_pe/simulated_data_{REP}/chromosome_{chrom}_truth.csv",
     conda:
         "../envs/python.yaml"
     log:
         "logs/mason/mason_compute_truth/{chrom}_{REP}.log",
     script:
         "../scripts/mason_ascii_to_meth.py"
+
+
+rule mason_plot_truth_to_results:
+    input:
+        truth="resources/Illumina_pe/simulated_data_{REP}/chromosome_{chrom}_truth.csv",
+        results_rep="results/single_sample/Illumina_pe/result_files/sample_df_simulated_data_{REP}.parquet",
+    output:
+        "results/single_sample/Illumina_pe/plots/simulated_{REP}_{chrom}.html",
+    conda:
+        "../envs/python.yaml"
+    log:
+        "logs/mason/mason_plot_truth_to_results/{chrom}_{REP}.log",
+    params:
+        meth_callers=lambda wildcards: config["ref_tools"].get("Illumina_pe", [])
+        + [f"varlo_{fdr}" for fdr in config["fdr_alpha"]],
+        bin_size=lambda wildcards: config["heatmap_bin_size"],
+    script:
+        "../scripts/plot_mason_results.py"
