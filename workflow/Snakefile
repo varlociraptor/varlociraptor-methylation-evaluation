@@ -22,7 +22,7 @@ seq_platform = config["data"]
 report: "report/workflow.rst"
 
 
-include: "rules/download_data.smk"
+# include: "rules/download_data.smk"
 include: "rules/common.smk"
 include: "rules/alignments.smk"
 include: "rules/bisSnp.smk"

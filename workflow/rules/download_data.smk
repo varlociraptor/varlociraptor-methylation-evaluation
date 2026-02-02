@@ -1,7 +1,6 @@
 ref_gene = config.get("sample", {})
 chromosomes = set(chromosome for chromosome in config["seq_platforms"].values())
 
-
 rule download_genome:
     output:
         "resources/genome.fasta",
