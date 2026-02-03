@@ -75,15 +75,15 @@ rule rename_chromosome_in_fasta:
 # We need to call the wildcard accession and not SRA because of the wrapper
 rule get_fastq_pe:
     output:
-        "resources/Illumina_pe/{sample,(?!simulated_data).*}/{SRA}/{accession}_1.fastq",
-        "resources/Illumina_pe/{sample,(?!simulated_data).*}/{SRA}/{accession}_2.fastq",
+        "resources/Illumina_pe/{sample}/{SRA}/{accession}_1.fastq",
+        "resources/Illumina_pe/{sample}/{SRA}/{accession}_2.fastq",
     log:
         "logs/download_data/get_fastq_pe/{sample}_{SRA}_{accession}.log",
     params:
         extra="--skip-technical",
     threads: 6
-    # wildcard_constraints:
-    #     sample="^(?!simulated_data$).*",
+    wildcard_constraints:
+        sample="(?!simulated_data$).*"
     wrapper:
         "v7.1.0/bio/sra-tools/fasterq-dump"
 
@@ -102,19 +102,31 @@ rule get_fastq_se:
 
 rule trim_fastq_pe:
     input:
-        first="resources/Illumina_pe/{sample,(?!simulated_data).*}/{SRA}/{accession}_1.fastq",
-        second="resources/Illumina_pe/{sample,(?!simulated_data).*}/{SRA}/{accession}_2.fastq",
+        first="resources/Illumina_pe/{sample}/{SRA}/{SRA}_1.fastq",
+        second="resources/Illumina_pe/{sample}/{SRA}/{SRA}_2.fastq",
     output:
-        first="resources/Illumina_pe/{sample,(?!simulated_data).*}/{SRA}/{accession}_1_trimmed.fastq",
-        second="resources/Illumina_pe/{sample,(?!simulated_data).*}/{SRA}/{accession}_2_trimmed.fastq",
+        first="resources/Illumina_pe/{sample}/{SRA}/{SRA}_1_trimmed.fastq",
+        second="resources/Illumina_pe/{sample}/{SRA}/{SRA}_2_trimmed.fastq",
     log:
-        "logs/download_data/trim_fastq_pe/{sample}_{SRA}_{accession}.log",
+        "logs/download_data/trim_fastq_pe/{sample}_{SRA}_{SRA}.log",
     conda:
         "../envs/fastp.yaml"
     wildcard_constraints:
-        sample="^(?!simulated_data$).*",
+        sample="(?!simulated_data$).*"
     shell:
-        "fastp --in1 {input.first} --in2 {input.second} --out1 {output.first} --out2 {output.second} --length_required 2 --disable_quality_filtering -z 4 --trim_poly_g --overrepresentation_analysis 2> {log}"
+        """
+        fastp \
+          --in1 {input.first} \
+          --in2 {input.second} \
+          --out1 {output.first} \
+          --out2 {output.second} \
+          --length_required 2 \
+          --disable_quality_filtering \
+          -z 4 \
+          --trim_poly_g \
+          --overrepresentation_analysis \
+          2> {log}
+        """
 
 
 rule trim_fastq_se:

@@ -1,4 +1,6 @@
 channels:
+  - conda-forge
+  - bioconda
   - zyndagj
 dependencies:
   - bsmapz=1.1.3

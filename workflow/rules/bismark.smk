@@ -54,8 +54,8 @@ rule bismark_prepare_genome:
 
 rule bismark_align:
     input:
-        fq_1="resources/Illumina_pe/{sample}/{SRA}/{SRA}_1.fastq",
-        fq_2="resources/Illumina_pe/{sample}/{SRA}/{SRA}_2.fastq",
+        fq_1="resources/Illumina_pe/{sample}/{SRA}/{SRA}_1_trimmed.fastq",
+        fq_2="resources/Illumina_pe/{sample}/{SRA}/{SRA}_2_trimmed.fastq",
         genome=expand(
             "resources/ref_tools/bismark/chromosome_{chrom}.fasta",
             chrom=config["seq_platforms"].get("Illumina_pe"),
