@@ -147,6 +147,92 @@ rule rename_variant_chromosome:
         """
 
 
+####################### Find false positives ###########################
+# Ich versuche als nachstes fuer das Ceta benchmarking false positives zu generieren, indem ich mit freebayes Varianten finde, die in EMSEQ oder Untreated sind. Diese vereinigen, nur Varianten behalten, die in Konfidenzregionen liegen (Finde ich ueber GIAB heraus) und davon ziehe ich nochmal alle echten Varianten ab.
+# Das sollte mit bedtools intersect funktionieren.
+rule freebayes_untreated:
+    input:
+        bam="resources/Illumina_pe/untreated/alignment_focused_downsampled_dedup_renamed.bam",
+        # bai="resources/Illumina_pe/untreated/dummy/alignment.bam.bai",
+        ref="resources/chromosome_21.fasta",
+    output:
+        "resources/ceta/untreated_freebayes.vcf",
+    log:
+        "logs/variants/freebayes_untreated.log",
+    conda:
+        "../envs/freebayes.yaml"
+    shell:
+        """
+        freebayes -f {input.ref} {input.bam} --min-alternate-fraction 0.2 --min-alternate-count 3 > {output} 2> {log}
+        """
+
+
+rule freebayes_emseq:
+    input:
+        bam="resources/Illumina_pe/EMSeq_HG002_LAB01_REP01/alignment_focused_downsampled_dedup_renamed.bam",
+        # bai="resources/Illumina_pe/EMSeq_HG002_LAB01_REP01/alignment_focused_downsampled_dedup_renamed.bam.bai",
+        ref="resources/chromosome_21.fasta",
+    output:
+        "resources/ceta/emseq_freebayes.vcf",
+    log:
+        "logs/variants/freebayes_emseq.log",
+    conda:
+        "../envs/freebayes.yaml"
+    shell:
+        """
+        freebayes -f {input.ref} {input.bam} --min-alternate-fraction 0.2 --min-alternate-count 3 > {output} 2> {log}
+        """
+
+
+rule all_freebayes_variants:
+    input:
+        untreated="resources/ceta/untreated_freebayes.vcf",
+        emseq="resources/ceta/emseq_freebayes.vcf",
+    output:
+        "resources/ceta/common_freebayes_variants.vcf",
+    log:
+        "logs/variants/common_freebayes_variants.log",
+    conda:
+        "../envs/bedtools.yaml"
+    shell:
+        """
+        bcftools concat -a {input.untreated} {input.emseq} | \
+        bcftools sort -Ov -o {output} 2> {log}
+        """
+
+
+rule download_confident_intervals:
+    output:
+        "resources/ceta/benchmark_noinconsistent.bed",
+    params:
+        url="https://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/release/AshkenazimTrio/HG002_NA24385_son/latest/GRCh38/HG002_GRCh38_1_22_v4.2.1_benchmark_noinconsistent.bed",
+    log:
+        "logs/variants/download_variant_truth.log",
+    shell:
+        "wget -q -O {output} {params.url} 2> {log}"
+
+
+rule filter_false_positives:
+    input:
+        common_variants="resources/ceta/common_freebayes_variants.vcf",
+        confident_intervals="resources/ceta/benchmark_noinconsistent.bed",
+        true_variants="resources/ceta/candidates_variants_renamed.bcf",
+    output:
+        "resources/ceta/false_positive_candidates.vcf",
+    log:
+        "logs/variants/filter_false_positives.log",
+    conda:
+        "../envs/bedtools.yaml"
+    shell:
+        """
+        bedtools intersect -a {input.common_variants} -b {input.confident_intervals} | \
+        bedtools intersect -v -a - -b {input.true_variants} > {output} 2> {log}
+        """
+
+
+##########################################################################
+
+
 rule split_ceta_candidates:
     input:
         "resources/ceta/candidates_variants_renamed.bcf",

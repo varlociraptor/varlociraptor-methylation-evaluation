@@ -52,11 +52,9 @@ for f in files:
     dfs.append(df)
 
 df = pl.concat(dfs)
-
 bin_size = 20
 intervals = [i / bin_size for i in range(bin_size)]
-print(intervals)
-interval_labels = ["missing"] + [
+interval_labels = ["no coverage"] + [
     f"{i/ bin_size} - {(i+1)/ bin_size}" for i in range(bin_size)
 ]
 
@@ -71,7 +69,6 @@ df = df.with_columns(
     .cut(intervals, labels=interval_labels, left_closed=True)
     .alias("prob_artifact_bin"),
 )
-print(df.collect().head())
 # ---- Neue Filterspalte basierend auf cg_pos und c_to_t ----
 # df = df.with_columns(
 #     pl.when(pl.col("c_to_t") == True)
@@ -84,29 +81,16 @@ print(df.collect().head())
 def make_plot(df, category):
     df = df.collect().to_pandas()
     col = f"prob_{category}_bin"
-    df[col] = df[col].cat.add_categories(["missing"]).fillna("missing")
-
-    chart = (
+    df[col] = df[col].cat.add_categories(["no coverage"]).fillna("no coverage")
+    print(
+        df[
+            (df["c_to_t"] == False)
+            & (df["cg_pos"] == True)
+            & (df["prob_present_bin"] == "0.6 - 0.65")
+        ]
+    )
+    base = (
         alt.Chart(df)
-        .mark_bar()
-        .encode(
-            x=alt.X(
-                f"prob_{category}_bin:N",
-                title=None,
-                scale=alt.Scale(domain=interval_labels),
-                axis=alt.Axis(labelAngle=-45),
-            ),
-            xOffset=alt.XOffset("method:N"),
-            y=alt.Y("count()", title="Count"),
-            color=alt.Color(
-                "method:N",
-                title="Method",
-                scale=alt.Scale(range=colorblind_safe_palette),
-                legend=alt.Legend(labelLimit=0),
-            ),
-            opacity=alt.condition(method_select, alt.value(1), alt.value(0.1)),
-            tooltip=["method:N", f"prob_{category}_bin:N", "count()"],
-        )
         .transform_filter(
             (filter_param == "complete")
             | ((filter_param == "cg") & (alt.datum.cg_pos))
@@ -121,14 +105,105 @@ def make_plot(df, category):
             )
         )
         .transform_filter(
-            alt.FieldOneOfPredicate(field="method", oneOf=name_to_method.values())
+            alt.FieldOneOfPredicate(field="method", oneOf=list(name_to_method.values()))
         )
-        .add_params(filter_param, method_select)
-        .add_params(method_select)
-        .properties(title=f"Distribution of prob_{category}")
     )
 
-    return chart
+    base_line = base.transform_filter(
+        alt.datum[col] != "no coverage"
+    )
+
+    line = base_line.mark_line(strokeWidth=2).encode(
+        x=alt.X(
+            f"{col}:N",
+            title=None,
+            scale=alt.Scale(domain=interval_labels),
+            axis=alt.Axis(labelAngle=-45),
+        ),
+        y=alt.Y("count()", title="Count"),
+        color=alt.Color(
+            "method:N",
+            title="Method",
+            scale=alt.Scale(range=colorblind_safe_palette),
+            legend=alt.Legend(labelLimit=0),
+        ),
+        opacity=alt.condition(method_select, alt.value(1), alt.value(0.1)),
+    )
+
+    points = base_line.mark_point(size=15, filled=True).encode(
+        x=alt.X(f"{col}:N", scale=alt.Scale(domain=interval_labels)),
+        y=alt.Y("count()"),
+        color=alt.Color("method:N", scale=alt.Scale(range=colorblind_safe_palette)),
+        opacity=alt.condition(method_select, alt.value(1), alt.value(0.1)),
+        tooltip=["method:N", f"{col}:N", "count()"],
+    )
+
+    points_no_cov = base.transform_filter(
+        alt.datum[col] == "no coverage"
+    ).mark_point(
+        size=15,
+        filled=True,
+        shape="circle"
+    ).encode(
+        x=alt.X(f"{col}:N", scale=alt.Scale(domain=interval_labels)),
+        y=alt.Y("count()"),
+        color=alt.Color(
+            "method:N",
+            scale=alt.Scale(range=colorblind_safe_palette),
+        ),
+        opacity=alt.condition(method_select, alt.value(1), alt.value(0.1)),
+        tooltip=["method:N", f"{col}:N", "count()"],
+    )
+
+
+    # line = base.mark_line(strokeWidth=2).encode(
+    #     x=alt.X(
+    #         f"{col}:N",
+    #         title=None,
+    #         scale=alt.Scale(domain=interval_labels),
+    #         axis=alt.Axis(labelAngle=-45),
+    #     ),
+    #     y=alt.Y("count()", title="Count"),
+    #     color=alt.Color(
+    #         "method:N",
+    #         title="Method",
+    #         scale=alt.Scale(range=colorblind_safe_palette),
+    #         legend=alt.Legend(labelLimit=0),
+    #     ),
+    #     opacity=alt.condition(method_select, alt.value(1), alt.value(0.1)),
+    # )
+
+    # points = base.mark_point(size=10, filled=True).encode(
+    #     x=alt.X(
+    #         f"{col}:N",
+    #         scale=alt.Scale(domain=interval_labels),
+    #     ),
+    #     y=alt.Y("count()"),
+    #     color=alt.Color(
+    #         "method:N",
+    #         scale=alt.Scale(range=colorblind_safe_palette),
+    #     ),
+    #     opacity=alt.condition(method_select, alt.value(1), alt.value(0.1)),
+    #     tooltip=["method:N", f"{col}:N", "count()"],
+    # )
+
+    # text = base.mark_text(
+    #     dy=-5,
+    #     size=5,
+    #     color="black",
+    # ).encode(
+    #     x=alt.X(f"{col}:N", scale=alt.Scale(domain=interval_labels)),
+    #     xOffset=alt.XOffset("method:N"),
+    #     y=alt.Y("count()"),
+    #     text=alt.Text("count():Q"),
+    #     opacity=alt.condition(method_select, alt.value(1), alt.value(0)),
+    # )
+
+    return (
+        (line + points + points_no_cov)
+        .add_params(filter_param, method_select)
+        .properties(title=f"Distribution of prob_{category}")
+    )
 
 
 # method_radio = alt.binding_radio(options=list(name_to_method.values()), name="Method")
