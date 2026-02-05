@@ -106,3 +106,20 @@ def get_sample_sra_bismark(wildcards) -> List[str]:
         f"resources/ref_tools/bismark/bams/{wildcards.sample}_pe_{sra}_unsorted.bam"
         for sra in accession_numbers
     ]
+
+
+rule compress_vcf:
+    input:
+        "resources/ceta/{name}.vcf",
+    output:
+        "resources/ceta/{name}.vcf.gz",
+        "resources/ceta/{name}.vcf.gz.tbi",
+    log:
+        "logs/variants/compress_{name}.log",
+    conda:
+        "../envs/samtools.yaml"
+    shell:
+        """
+        bgzip -c {input} > {output[0]} 2>> {log}
+        tabix -p vcf {output[0]} 2>> {log}
+        """
