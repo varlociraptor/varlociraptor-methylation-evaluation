@@ -156,10 +156,12 @@ def read_tool_file(filepath: str, file_name: str) -> pd.DataFrame:
             # modkit format
             # -----------------------------
             elif file_name == "modkit":
+
                 chrom = parts[0].removeprefix("chr")
                 position = int(parts[2])
                 modified_base = parts[3]
                 details = parts[9].split()
+                print(parts, details, file=sys.stderr)
                 meth_rate = float(details[1])
 
                 if modified_base == "m":

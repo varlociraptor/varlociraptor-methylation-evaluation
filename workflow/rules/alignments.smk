@@ -48,26 +48,9 @@ rule align_reads_pe:
     shell:
         """
         touch {input.fasta_index}
-        bwameth.py --reference {input.fasta} {input.reads1} {input.reads2} -t {threads}  | samtools view -b - > {output} 2> {log}
+        bwameth.py --reference {input.fasta} {input.reads1} {input.reads2} -t {threads}  | samtools view -h -b - > {output} 2> {log}
         """
 
-
-rule align_reads_se:
-    input:
-        fasta_index="resources/genome.fasta.bwameth.c2t",
-        fasta="resources/genome.fasta",
-        reads1="resources/Illumina_se/{sample}/{SRA}/{SRA}_trimmed.fastq",
-    output:
-        "resources/Illumina_se/{sample}/{SRA}/alignment.bam",
-    conda:
-        "../envs/bwa-meth.yaml"
-    log:
-        "logs/bwameth/align_reads_se/{sample}_{SRA}.log",
-    threads: 30
-    resources:
-        mem_mb=512,
-    shell:
-        "bwameth.py --threads {threads} --reference {input.fasta} | samtools view -S -b - > {output} 2> {log}"
 
 
 rule aligned_reads_sort:
@@ -115,7 +98,7 @@ rule aligned_reads_focus_on_chromosome:
         ),
     threads: 1
     shell:
-        "samtools view -b -o {output.bam} {input} {params.chromosome} 2> {log}"
+        "samtools view -h -b -o {output.bam} {input} {params.chromosome} 2> {log}"
 
 
 rule aligned_reads_filter_on_mapq:
@@ -131,7 +114,7 @@ rule aligned_reads_filter_on_mapq:
         min_quality=config["min_mapping_quality"],
     threads: 1
     shell:
-        "samtools view -q {params.min_quality} -b -o {output} {input} 2> {log}"
+        "samtools view -h -q {params.min_quality} -b -o {output} {input} 2> {log}"
 
 
 rule aligned_reads_markduplicates:
@@ -175,7 +158,7 @@ rule aligned_reads_downsample:
     conda:
         "../envs/samtools.yaml"
     shell:
-        "samtools view -s 0.99 -b -o {output} {input} 2> {log}"
+        "samtools view -h -s 0.99 -b -o {output} {input} 2> {log}"
 
 
 rule aligned_reads_downsampled_index:
@@ -242,7 +225,7 @@ rule aligned_reads_candidates_region:
 
         start=$(bcftools query -f '%POS\n' {input.candidate} | head -n1)
         end=$(bcftools query -f '%POS\n' {input.candidate} | tail -n1)
-        samtools view -b {input.alignment} "{params.chromosome}:$start-$end" > {output}
+        samtools view -h -b {input.alignment} "{params.chromosome}:$start-$end" > {output}
 
         if [ $(samtools view -c {output}) -eq 0 ]; then
             samtools view -H {input.alignment} > temp.sam

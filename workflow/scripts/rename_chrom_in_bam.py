@@ -23,18 +23,20 @@ def rename_chromosomes_bam(input_bam: str, output_bam: str) -> None:
             "HD": original_header.get("HD", {}),
             "RG": original_header.get("RG", []),
             "SQ": [],
+            "PG": original_header.get("PG", []),  # wichtig!
         }
 
-        # Create mapping between old and new reference names
+        print(original_header, file=sys.stderr)
+        print("----->", file=sys.stderr)
+        print(new_header, file=sys.stderr)
+
         name_map = {}
         for sq in original_header.get("SQ", []):
             old_name = sq["SN"]
-            new_name = (
-                old_name.removeprefix("chr") if old_name.startswith("chr") else old_name
-            )
+            new_name = old_name.removeprefix("chr") if old_name.startswith("chr") else old_name
             new_header["SQ"].append({**sq, "SN": new_name})
             name_map[old_name] = new_name
-
+            
         # Map reference names to new IDs
         ref_name_to_id = {sq["SN"]: i for i, sq in enumerate(new_header["SQ"])}
 

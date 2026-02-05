@@ -173,3 +173,24 @@ rule get_nanopore_data:
         "../envs/samtools.yaml"
     shell:
         "samtools view -b {params.url} {params.chromosome} > {output.alignment} 2> {log}"
+# rule get_nanopore_data:
+#     output:
+#         alignment="resources/Nanopore/{sample}/{SRA}/alignment.bam",
+#     params:
+#         url=lambda wc: config[str(wc.SRA)],
+#         chromosome=lambda wc: f"chr{config['seq_platforms']['Nanopore']}",
+#     log:
+#         "logs/download_data/get_nanopore_data/{sample}_{SRA}.log",
+#     resources:
+#         mem_mb=4096,
+#     conda:
+#         "../envs/samtools.yaml"
+#     shell:
+#         r"""
+#         set -euo pipefail
+#         mkdir -p $(dirname {output.alignment})
+
+#         wget -qO- "{params.url}" \
+#         | samtools view -b - "{params.chromosome}" \
+#         > "{output.alignment}" 2> "{log}"
+#         """
