@@ -1,4 +1,4 @@
 channels:
   - bioconda
 dependencies:
-  -  fastp =1.1
+  - bedtools =2.31
