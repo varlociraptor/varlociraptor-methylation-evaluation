@@ -1,0 +1,35 @@
+channels:
+  - conda-forge
+  - bioconda
+  - nodefaults
+
+dependencies:
+  # core tools
+  - varlociraptor=8.4
+  - vega-lite-cli=5.16
+
+  # compiler + toolchain
+  - rust=1.89       # <= existiert auf conda-forge
+  - gcc=14
+  - gxx=14
+  - binutils        # <- stellt `ar` bereit
+
+  # build tools
+  - pkg-config
+  - make
+  - cmake
+
+  # libs for openssl-sys and dep crates
+  - openssl
+  - zlib
+  - bzip2
+  - xz
+
+  # scientific libs
+  - gsl
+  - libcblas
+  - blis
+
+  # clang libs
+  - libclang
+  - clangdev

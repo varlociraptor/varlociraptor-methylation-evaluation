@@ -3,22 +3,27 @@
 
 rule download_varlociraptor:
     output:
-        direc=directory(
-            "resources/tools/ceta_comp/varlociraptor",
-        ),
         execu="resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor",
     log:
         "logs/download_varlociraptor.log",
+    conda:
+        "../envs/build_varlo.yaml"
+    params:
+        repo_dir="varlociraptor",
     shell:
         """
-        PARENT_DIR=$(dirname {output.direc})        
-        mkdir -p $PARENT_DIR        
-        cd $PARENT_DIR
-        git clone https://github.com/varlociraptor/varlociraptor.git
-        cd varlociraptor
-        git checkout ceta_benchmarking
+        if [ ! -d {params.repo_dir} ]; then
+            git clone https://github.com/varlociraptor/varlociraptor.git {params.repo_dir}
+        fi
+        cd {params.repo_dir}
+        git checkout feat/conversion-support
         cargo build --release
+        cd ..
+        mkdir -p $(dirname {output.execu})
+        cp varlociraptor/target/release/varlociraptor {output.execu}
+        rm -rf varlociraptor
         """
+
 
 
 # candidates with variant:    https://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/release/AshkenazimTrio/HG002_NA24385_son/latest/GRCh38/
@@ -202,19 +207,19 @@ rule freebayes_emseq:
         """
 
 
-rule focus_freebayes_c_to_t:
-    input:
-        "resources/ceta/{type}_freebayes.vcf",
-    output:
-        "resources/ceta/{type}_freebayes_focused.vcf",
-    log:
-        "logs/variants/focus_freebayes_c_to_t_{type}.log",
-    conda:
-        "../envs/samtools.yaml"
-    shell:
-        """
-        bcftools view -i 'REF="C" & ALT="T" | REF="G" & ALT="A"' {input} -o {output} 2>> {log}
-        """
+# rule focus_freebayes_c_to_t:
+#     input:
+#         "resources/ceta/{type}_freebayes.vcf",
+#     output:
+#         "resources/ceta/{type}_freebayes_focused.vcf",
+#     log:
+#         "logs/variants/focus_freebayes_c_to_t_{type}.log",
+#     conda:
+#         "../envs/samtools.yaml"
+#     shell:
+#         """
+#         bcftools view -i 'REF="C" & ALT="T" | REF="G" & ALT="A"' {input} -o {output} 2>> {log}
+#         """
 
 
 rule all_freebayes_variants:
@@ -269,11 +274,15 @@ rule positives_in_confident_intervals:
         """
 
 
+
+
 # Now we have candidate false positives, we need to remove all true variants from them to get only false positives
 rule positives_no_true_variants:
     input:
         positives="resources/ceta/false_positive_candidates.vcf.gz",
+        positives_idx="resources/ceta/false_positive_candidates.vcf.gz.tbi",
         true_variants="resources/ceta/candidates_variants_renamed.vcf.gz",
+        true_variants_idx="resources/ceta/candidates_variants_renamed.vcf.gz.tbi",
     output:
         "resources/ceta/false_positives.vcf",
     log:
@@ -281,7 +290,11 @@ rule positives_no_true_variants:
     conda:
         "../envs/samtools.yaml"
     shell:
-        "bcftools isec -C -w1 -O v {input.positives} {input.true_variants} > {output} 2>> {log}"
+        """
+        bcftools isec -C -w1 -O v \
+            {input.positives} {input.true_variants} \
+            > {output} 2>> {log}
+        """
         # """
         # bcftools isec -C -p /dev/stdout {input.positives} {input.true_variants} > {output} 2>> {log}
         # """
@@ -349,6 +362,7 @@ rule varlociraptor_ceta_preprocess:
         mem_mb=16000,
     shell:
         """
+        chmod +x {input.varlo}
         {input.varlo} preprocess variants --omit-mapq-adjustment {input.chromosome} --candidates {input.candidates} --bam {input.alignments} --max-depth 5000 > {output} 2> {log}
         """
 
@@ -371,7 +385,10 @@ rule varlociraptor_ceta_call_single_no_prior:
     conda:
         "../envs/varlociraptor.yaml"
     shell:
-        "{input.varlo} call variants generic --scenario {input.scenario} --obs normal={input.preprocess_obs} > {output} 2> {log}"
+        """
+        chmod +x {input.varlo}
+        {input.varlo} call variants generic --scenario {input.scenario} --obs normal={input.preprocess_obs} > {output} 2> {log}
+        """
 
 
 rule varlociraptor_ceta_call_single_with_prior:
@@ -393,6 +410,7 @@ rule varlociraptor_ceta_call_single_with_prior:
         "../envs/varlociraptor.yaml"
     shell:
         """
+        chmod +x {input.varlo}
         {input.varlo} call variants generic --scenario {input.scenario} --obs normal={input.preprocess_obs} > {output} 2> {log}
         """
 
@@ -412,7 +430,10 @@ rule varlociraptor_ceta_call_multi:
     conda:
         "../envs/varlociraptor.yaml"
     shell:
-        "{input.varlo} call variants generic --scenario {input.scenario} --obs  emseq={input.emseq}  untreated={input.untreated} > {output} 2> {log}"
+        """
+        chmod +x {input.varlo}
+        {input.varlo} call variants generic --scenario {input.scenario} --obs  emseq={input.emseq}  untreated={input.untreated} > {output} 2> {log}
+        """
 
 
 rule varlociraptor_ceta_call_multi_emseq_methylseq:
@@ -428,7 +449,10 @@ rule varlociraptor_ceta_call_multi_emseq_methylseq:
     conda:
         "../envs/varlociraptor.yaml"
     shell:
-        "{input.varlo} call variants generic --scenario {input.scenario} --obs  emseq={input.emseq} methylseq={input.methylseq} > {output} 2> {log}"
+        """
+        chmod +x {input.varlo}
+        {input.varlo} call variants generic --scenario {input.scenario} --obs  emseq={input.emseq} methylseq={input.methylseq} > {output} 2> {log}
+        """
 
 
 rule varlociraptor_ceta_call_multi_all:
@@ -445,7 +469,10 @@ rule varlociraptor_ceta_call_multi_all:
     conda:
         "../envs/varlociraptor.yaml"
     shell:
-        "{input.varlo} call variants generic --scenario {input.scenario} --obs  emseq={input.emseq} methylseq={input.methylseq} untreated={input.untreated} > {output} 2> {log}"
+        """
+        chmod +x {input.varlo}
+        {input.varlo} call variants generic --scenario {input.scenario} --obs  emseq={input.emseq} methylseq={input.methylseq} untreated={input.untreated} > {output} 2> {log}
+        """
 
 
 rule event_probs_df:
@@ -507,9 +534,9 @@ rule show_diff_no_conversion:
 
 rule plot_ceta_probs:
     input:
-        "results/ceta_benchmark/{candidates}/Illumina_pe/called/MethylSeq_HG002_LAB01_REP01_no_prior/result_files/events_{fdr}.parquet",
+        # "results/ceta_benchmark/{candidates}/Illumina_pe/called/MethylSeq_HG002_LAB01_REP01_no_prior/result_files/events_{fdr}.parquet",
         "results/ceta_benchmark/{candidates}/Illumina_pe/called/MethylSeq_HG002_LAB01_REP01_with_prior/result_files/events_{fdr}.parquet",
-        "results/ceta_benchmark/{candidates}/Illumina_pe/called/EMSeq_HG002_LAB01_REP01_no_prior/result_files/events_{fdr}.parquet",
+        # "results/ceta_benchmark/{candidates}/Illumina_pe/called/EMSeq_HG002_LAB01_REP01_no_prior/result_files/events_{fdr}.parquet",
         "results/ceta_benchmark/{candidates}/Illumina_pe/called/EMSeq_HG002_LAB01_REP01_with_prior/result_files/events_{fdr}.parquet",
         # "results/ceta_benchmark/{candidates}/Illumina_pe/called/ceta_multi/result_files/events_{fdr}.parquet",
         "results/ceta_benchmark/{candidates}/Illumina_pe/called/ceta_multi_all/result_files/events_{fdr}.parquet",
@@ -518,7 +545,7 @@ rule plot_ceta_probs:
         "results/ceta_benchmark/{candidates}/Illumina_pe/called/ceta_multi_emseq_methylseq/result_files/events_{fdr}.parquet",
         # "results/ceta_benchmark/{candidates}/Illumina_pe/called/ceta_multi_no_untreated/result_files/events_{fdr}.parquet",
         # "results/ceta_benchmark/{candidates}/Illumina_pe/called/ceta_multi_not_equal/result_files/events_{fdr}.parquet",
-        "results/ceta_benchmark/{candidates}/Illumina_pe/called/untreated_no_prior/result_files/events_{fdr}.parquet",
+        # "results/ceta_benchmark/{candidates}/Illumina_pe/called/untreated_no_prior/result_files/events_{fdr}.parquet",
         "results/ceta_benchmark/{candidates}/Illumina_pe/called/untreated_with_prior/result_files/events_{fdr}.parquet",
     output:
         "results/ceta_benchmark/{candidates}/Illumina_pe/called/result_files/combined_{fdr}.html",
