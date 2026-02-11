@@ -1,0 +1,1241 @@
+Workflow defines that rule download_genome is eligible for caching between workflows (use the --cache argument to enable this).
+host: compute03
+Building DAG of jobs...
+Job stats:
+job                                              count
+---------------------------------------------  -------
+calls_to_vcf                                        30
+compress_vcf                                         1
+event_probs_df                                       6
+false_positives_to_bcf                               1
+gather_calls                                         6
+plot_ceta_probs                                      1
+positives_in_confident_intervals                     1
+positives_no_true_variants                           1
+split_ceta_candidates_false_positives                1
+varlociraptor_ceta_call_multi                        5
+varlociraptor_ceta_call_multi_all                    5
+varlociraptor_ceta_call_multi_emseq_methylseq        5
+varlociraptor_ceta_call_single_with_prior           15
+varlociraptor_ceta_preprocess                       15
+total                                               93
+
+
+[Wed Feb 11 10:38:25 2026]
+rule positives_in_confident_intervals:
+    input: s3://koesterlab/ceta-benchmarking/resources/ceta/common_freebayes_variants.vcf (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/ceta/benchmark_noinconsistent.bed (retrieve from storage)
+    output: s3://koesterlab/ceta-benchmarking/resources/ceta/false_positive_candidates.vcf (send to storage)
+    log: s3://koesterlab/ceta-benchmarking/logs/variants/filter_false_positives.log (send to storage)
+    jobid: 47
+    reason: Updated input files: s3://koesterlab/ceta-benchmarking/resources/ceta/common_freebayes_variants.vcf (in storage)
+    resources: mem_mb=<TBD>, disk_mb=<TBD>, tmpdir=<TBD>
+Shell command: 
+        bedtools intersect -header -a .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/ceta/common_freebayes_variants.vcf -b .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/ceta/benchmark_noinconsistent.bed > .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/ceta/false_positive_candidates.vcf 2> .snakemake/storage/s3/koesterlab/ceta-benchmarking/logs/variants/filter_false_positives.log
+        
+
+[Wed Feb 11 10:38:25 2026]
+rule compress_vcf:
+    input: s3://koesterlab/ceta-benchmarking/resources/ceta/false_positive_candidates.vcf (retrieve from storage)
+    output: s3://koesterlab/ceta-benchmarking/resources/ceta/false_positive_candidates.vcf.gz (send to storage), s3://koesterlab/ceta-benchmarking/resources/ceta/false_positive_candidates.vcf.gz.tbi (send to storage)
+    log: s3://koesterlab/ceta-benchmarking/logs/variants/compress_false_positive_candidates.log (send to storage)
+    jobid: 46
+    reason: Input files updated by another job: s3://koesterlab/ceta-benchmarking/resources/ceta/false_positive_candidates.vcf (in storage)
+    wildcards: name=false_positive_candidates
+    resources: mem_mb=<TBD>, disk_mb=<TBD>, tmpdir=<TBD>
+Shell command: 
+        bgzip -c .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/ceta/false_positive_candidates.vcf > .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/ceta/false_positive_candidates.vcf.gz 2>> .snakemake/storage/s3/koesterlab/ceta-benchmarking/logs/variants/compress_false_positive_candidates.log
+        tabix -p vcf .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/ceta/false_positive_candidates.vcf.gz 2>> .snakemake/storage/s3/koesterlab/ceta-benchmarking/logs/variants/compress_false_positive_candidates.log
+        
+
+[Wed Feb 11 10:38:25 2026]
+rule positives_no_true_variants:
+    input: s3://koesterlab/ceta-benchmarking/resources/ceta/false_positive_candidates.vcf.gz (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/ceta/false_positive_candidates.vcf.gz.tbi (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/ceta/candidates_variants_renamed.vcf.gz (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/ceta/candidates_variants_renamed.vcf.gz.tbi (retrieve from storage)
+    output: s3://koesterlab/ceta-benchmarking/resources/ceta/false_positives.vcf (send to storage)
+    log: s3://koesterlab/ceta-benchmarking/logs/variants/filter_false_positives.log (send to storage)
+    jobid: 45
+    reason: Input files updated by another job: s3://koesterlab/ceta-benchmarking/resources/ceta/false_positive_candidates.vcf.gz.tbi (in storage), s3://koesterlab/ceta-benchmarking/resources/ceta/false_positive_candidates.vcf.gz (in storage)
+    resources: mem_mb=<TBD>, disk_mb=<TBD>, tmpdir=<TBD>
+Shell command: 
+        bcftools isec -C -w1 -O v             .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/ceta/false_positive_candidates.vcf.gz .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/ceta/candidates_variants_renamed.vcf.gz             > .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/ceta/false_positives.vcf 2>> .snakemake/storage/s3/koesterlab/ceta-benchmarking/logs/variants/filter_false_positives.log
+        
+
+[Wed Feb 11 10:38:25 2026]
+rule false_positives_to_bcf:
+    input: s3://koesterlab/ceta-benchmarking/resources/ceta/false_positives.vcf (retrieve from storage)
+    output: s3://koesterlab/ceta-benchmarking/resources/ceta/false_positives.bcf (send to storage)
+    log: s3://koesterlab/ceta-benchmarking/logs/variants/false_positives_to_bcf.log (send to storage)
+    jobid: 44
+    reason: Input files updated by another job: s3://koesterlab/ceta-benchmarking/resources/ceta/false_positives.vcf (in storage)
+    resources: mem_mb=<TBD>, disk_mb=<TBD>, tmpdir=<TBD>
+Shell command: bcftools view -o .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/ceta/false_positives.bcf .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/ceta/false_positives.vcf 2> .snakemake/storage/s3/koesterlab/ceta-benchmarking/logs/variants/false_positives_to_bcf.log
+
+[Wed Feb 11 10:38:25 2026]
+rule split_ceta_candidates_false_positives:
+    input: s3://koesterlab/ceta-benchmarking/resources/ceta/false_positives.bcf (retrieve from storage)
+    output: s3://koesterlab/ceta-benchmarking/resources/ceta/false_positives/candidates_1-of-5.bcf (send to storage), s3://koesterlab/ceta-benchmarking/resources/ceta/false_positives/candidates_2-of-5.bcf (send to storage), s3://koesterlab/ceta-benchmarking/resources/ceta/false_positives/candidates_3-of-5.bcf (send to storage), s3://koesterlab/ceta-benchmarking/resources/ceta/false_positives/candidates_4-of-5.bcf (send to storage), s3://koesterlab/ceta-benchmarking/resources/ceta/false_positives/candidates_5-of-5.bcf (send to storage)
+    log: s3://koesterlab/ceta-benchmarking/logs/candidates/split_ceta_candidates.log (send to storage)
+    jobid: 43
+    reason: Input files updated by another job: s3://koesterlab/ceta-benchmarking/resources/ceta/false_positives.bcf (in storage)
+    resources: mem_mb=<TBD>, disk_mb=<TBD>, tmpdir=<TBD>
+Shell command: rbt vcf-split .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/ceta/false_positives.bcf .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/ceta/false_positives/candidates_1-of-5.bcf .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/ceta/false_positives/candidates_2-of-5.bcf .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/ceta/false_positives/candidates_3-of-5.bcf .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/ceta/false_positives/candidates_4-of-5.bcf .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/ceta/false_positives/candidates_5-of-5.bcf 2> .snakemake/storage/s3/koesterlab/ceta-benchmarking/logs/candidates/split_ceta_candidates.log
+
+[Wed Feb 11 10:38:25 2026]
+rule varlociraptor_ceta_preprocess:
+    input: s3://koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/chromosome_21.fasta (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/chromosome_21.fasta.fai (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/Illumina_pe/untreated/candidate_specific/alignment_1-of-5.bam (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/Illumina_pe/untreated/candidate_specific/alignment_1-of-5.bam.bai (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/ceta/false_positives/candidates_1-of-5.bcf (retrieve from storage)
+    output: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/untreated/normal_1-of-5.bcf (send to storage)
+    log: s3://koesterlab/ceta-benchmarking/logs/varlociraptor/Illumina_pe/untreated/compute_meth_observations_1-of-5_false_positives.log (send to storage)
+    jobid: 134
+    reason: Input files updated by another job: s3://koesterlab/ceta-benchmarking/resources/ceta/false_positives/candidates_1-of-5.bcf (in storage)
+    wildcards: candidates=false_positives, sample=untreated, scatteritem=1-of-5
+    resources: mem_mb=16000, mem_mib=15259, disk_mb=<TBD>, tmpdir=<TBD>
+Shell command: 
+        chmod +x .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor
+        .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor preprocess variants --omit-mapq-adjustment .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/chromosome_21.fasta --candidates .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/ceta/false_positives/candidates_1-of-5.bcf --bam .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/Illumina_pe/untreated/candidate_specific/alignment_1-of-5.bam --max-depth 5000 > .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/untreated/normal_1-of-5.bcf 2> .snakemake/storage/s3/koesterlab/ceta-benchmarking/logs/varlociraptor/Illumina_pe/untreated/compute_meth_observations_1-of-5_false_positives.log
+        
+
+[Wed Feb 11 10:38:25 2026]
+rule varlociraptor_ceta_preprocess:
+    input: s3://koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/chromosome_21.fasta (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/chromosome_21.fasta.fai (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/Illumina_pe/untreated/candidate_specific/alignment_5-of-5.bam (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/Illumina_pe/untreated/candidate_specific/alignment_5-of-5.bam.bai (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/ceta/false_positives/candidates_5-of-5.bcf (retrieve from storage)
+    output: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/untreated/normal_5-of-5.bcf (send to storage)
+    log: s3://koesterlab/ceta-benchmarking/logs/varlociraptor/Illumina_pe/untreated/compute_meth_observations_5-of-5_false_positives.log (send to storage)
+    jobid: 155
+    reason: Input files updated by another job: s3://koesterlab/ceta-benchmarking/resources/ceta/false_positives/candidates_5-of-5.bcf (in storage)
+    wildcards: candidates=false_positives, sample=untreated, scatteritem=5-of-5
+    resources: mem_mb=16000, mem_mib=15259, disk_mb=<TBD>, tmpdir=<TBD>
+Shell command: 
+        chmod +x .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor
+        .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor preprocess variants --omit-mapq-adjustment .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/chromosome_21.fasta --candidates .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/ceta/false_positives/candidates_5-of-5.bcf --bam .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/Illumina_pe/untreated/candidate_specific/alignment_5-of-5.bam --max-depth 5000 > .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/untreated/normal_5-of-5.bcf 2> .snakemake/storage/s3/koesterlab/ceta-benchmarking/logs/varlociraptor/Illumina_pe/untreated/compute_meth_observations_5-of-5_false_positives.log
+        
+
+[Wed Feb 11 10:38:25 2026]
+rule varlociraptor_ceta_preprocess:
+    input: s3://koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/chromosome_21.fasta (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/chromosome_21.fasta.fai (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/Illumina_pe/MethylSeq_HG002_LAB01_REP01/candidate_specific/alignment_4-of-5.bam (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/Illumina_pe/MethylSeq_HG002_LAB01_REP01/candidate_specific/alignment_4-of-5.bam.bai (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/ceta/false_positives/candidates_4-of-5.bcf (retrieve from storage)
+    output: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/MethylSeq_HG002_LAB01_REP01/normal_4-of-5.bcf (send to storage)
+    log: s3://koesterlab/ceta-benchmarking/logs/varlociraptor/Illumina_pe/MethylSeq_HG002_LAB01_REP01/compute_meth_observations_4-of-5_false_positives.log (send to storage)
+    jobid: 94
+    reason: Input files updated by another job: s3://koesterlab/ceta-benchmarking/resources/ceta/false_positives/candidates_4-of-5.bcf (in storage)
+    wildcards: candidates=false_positives, sample=MethylSeq_HG002_LAB01_REP01, scatteritem=4-of-5
+    resources: mem_mb=16000, mem_mib=15259, disk_mb=<TBD>, tmpdir=<TBD>
+Shell command: 
+        chmod +x .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor
+        .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor preprocess variants --omit-mapq-adjustment .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/chromosome_21.fasta --candidates .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/ceta/false_positives/candidates_4-of-5.bcf --bam .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/Illumina_pe/MethylSeq_HG002_LAB01_REP01/candidate_specific/alignment_4-of-5.bam --max-depth 5000 > .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/MethylSeq_HG002_LAB01_REP01/normal_4-of-5.bcf 2> .snakemake/storage/s3/koesterlab/ceta-benchmarking/logs/varlociraptor/Illumina_pe/MethylSeq_HG002_LAB01_REP01/compute_meth_observations_4-of-5_false_positives.log
+        
+
+[Wed Feb 11 10:38:25 2026]
+rule varlociraptor_ceta_preprocess:
+    input: s3://koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/chromosome_21.fasta (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/chromosome_21.fasta.fai (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/Illumina_pe/EMSeq_HG002_LAB01_REP01/candidate_specific/alignment_2-of-5.bam (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/Illumina_pe/EMSeq_HG002_LAB01_REP01/candidate_specific/alignment_2-of-5.bam.bai (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/ceta/false_positives/candidates_2-of-5.bcf (retrieve from storage)
+    output: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/EMSeq_HG002_LAB01_REP01/normal_2-of-5.bcf (send to storage)
+    log: s3://koesterlab/ceta-benchmarking/logs/varlociraptor/Illumina_pe/EMSeq_HG002_LAB01_REP01/compute_meth_observations_2-of-5_false_positives.log (send to storage)
+    jobid: 112
+    reason: Input files updated by another job: s3://koesterlab/ceta-benchmarking/resources/ceta/false_positives/candidates_2-of-5.bcf (in storage)
+    wildcards: candidates=false_positives, sample=EMSeq_HG002_LAB01_REP01, scatteritem=2-of-5
+    resources: mem_mb=16000, mem_mib=15259, disk_mb=<TBD>, tmpdir=<TBD>
+Shell command: 
+        chmod +x .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor
+        .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor preprocess variants --omit-mapq-adjustment .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/chromosome_21.fasta --candidates .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/ceta/false_positives/candidates_2-of-5.bcf --bam .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/Illumina_pe/EMSeq_HG002_LAB01_REP01/candidate_specific/alignment_2-of-5.bam --max-depth 5000 > .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/EMSeq_HG002_LAB01_REP01/normal_2-of-5.bcf 2> .snakemake/storage/s3/koesterlab/ceta-benchmarking/logs/varlociraptor/Illumina_pe/EMSeq_HG002_LAB01_REP01/compute_meth_observations_2-of-5_false_positives.log
+        
+
+[Wed Feb 11 10:38:25 2026]
+rule varlociraptor_ceta_preprocess:
+    input: s3://koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/chromosome_21.fasta (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/chromosome_21.fasta.fai (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/Illumina_pe/MethylSeq_HG002_LAB01_REP01/candidate_specific/alignment_5-of-5.bam (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/Illumina_pe/MethylSeq_HG002_LAB01_REP01/candidate_specific/alignment_5-of-5.bam.bai (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/ceta/false_positives/candidates_5-of-5.bcf (retrieve from storage)
+    output: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/MethylSeq_HG002_LAB01_REP01/normal_5-of-5.bcf (send to storage)
+    log: s3://koesterlab/ceta-benchmarking/logs/varlociraptor/Illumina_pe/MethylSeq_HG002_LAB01_REP01/compute_meth_observations_5-of-5_false_positives.log (send to storage)
+    jobid: 99
+    reason: Input files updated by another job: s3://koesterlab/ceta-benchmarking/resources/ceta/false_positives/candidates_5-of-5.bcf (in storage)
+    wildcards: candidates=false_positives, sample=MethylSeq_HG002_LAB01_REP01, scatteritem=5-of-5
+    resources: mem_mb=16000, mem_mib=15259, disk_mb=<TBD>, tmpdir=<TBD>
+Shell command: 
+        chmod +x .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor
+        .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor preprocess variants --omit-mapq-adjustment .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/chromosome_21.fasta --candidates .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/ceta/false_positives/candidates_5-of-5.bcf --bam .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/Illumina_pe/MethylSeq_HG002_LAB01_REP01/candidate_specific/alignment_5-of-5.bam --max-depth 5000 > .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/MethylSeq_HG002_LAB01_REP01/normal_5-of-5.bcf 2> .snakemake/storage/s3/koesterlab/ceta-benchmarking/logs/varlociraptor/Illumina_pe/MethylSeq_HG002_LAB01_REP01/compute_meth_observations_5-of-5_false_positives.log
+        
+
+[Wed Feb 11 10:38:25 2026]
+rule varlociraptor_ceta_preprocess:
+    input: s3://koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/chromosome_21.fasta (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/chromosome_21.fasta.fai (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/Illumina_pe/EMSeq_HG002_LAB01_REP01/candidate_specific/alignment_3-of-5.bam (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/Illumina_pe/EMSeq_HG002_LAB01_REP01/candidate_specific/alignment_3-of-5.bam.bai (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/ceta/false_positives/candidates_3-of-5.bcf (retrieve from storage)
+    output: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/EMSeq_HG002_LAB01_REP01/normal_3-of-5.bcf (send to storage)
+    log: s3://koesterlab/ceta-benchmarking/logs/varlociraptor/Illumina_pe/EMSeq_HG002_LAB01_REP01/compute_meth_observations_3-of-5_false_positives.log (send to storage)
+    jobid: 117
+    reason: Input files updated by another job: s3://koesterlab/ceta-benchmarking/resources/ceta/false_positives/candidates_3-of-5.bcf (in storage)
+    wildcards: candidates=false_positives, sample=EMSeq_HG002_LAB01_REP01, scatteritem=3-of-5
+    resources: mem_mb=16000, mem_mib=15259, disk_mb=<TBD>, tmpdir=<TBD>
+Shell command: 
+        chmod +x .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor
+        .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor preprocess variants --omit-mapq-adjustment .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/chromosome_21.fasta --candidates .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/ceta/false_positives/candidates_3-of-5.bcf --bam .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/Illumina_pe/EMSeq_HG002_LAB01_REP01/candidate_specific/alignment_3-of-5.bam --max-depth 5000 > .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/EMSeq_HG002_LAB01_REP01/normal_3-of-5.bcf 2> .snakemake/storage/s3/koesterlab/ceta-benchmarking/logs/varlociraptor/Illumina_pe/EMSeq_HG002_LAB01_REP01/compute_meth_observations_3-of-5_false_positives.log
+        
+
+[Wed Feb 11 10:38:25 2026]
+rule varlociraptor_ceta_preprocess:
+    input: s3://koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/chromosome_21.fasta (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/chromosome_21.fasta.fai (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/Illumina_pe/EMSeq_HG002_LAB01_REP01/candidate_specific/alignment_4-of-5.bam (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/Illumina_pe/EMSeq_HG002_LAB01_REP01/candidate_specific/alignment_4-of-5.bam.bai (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/ceta/false_positives/candidates_4-of-5.bcf (retrieve from storage)
+    output: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/EMSeq_HG002_LAB01_REP01/normal_4-of-5.bcf (send to storage)
+    log: s3://koesterlab/ceta-benchmarking/logs/varlociraptor/Illumina_pe/EMSeq_HG002_LAB01_REP01/compute_meth_observations_4-of-5_false_positives.log (send to storage)
+    jobid: 122
+    reason: Input files updated by another job: s3://koesterlab/ceta-benchmarking/resources/ceta/false_positives/candidates_4-of-5.bcf (in storage)
+    wildcards: candidates=false_positives, sample=EMSeq_HG002_LAB01_REP01, scatteritem=4-of-5
+    resources: mem_mb=16000, mem_mib=15259, disk_mb=<TBD>, tmpdir=<TBD>
+Shell command: 
+        chmod +x .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor
+        .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor preprocess variants --omit-mapq-adjustment .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/chromosome_21.fasta --candidates .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/ceta/false_positives/candidates_4-of-5.bcf --bam .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/Illumina_pe/EMSeq_HG002_LAB01_REP01/candidate_specific/alignment_4-of-5.bam --max-depth 5000 > .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/EMSeq_HG002_LAB01_REP01/normal_4-of-5.bcf 2> .snakemake/storage/s3/koesterlab/ceta-benchmarking/logs/varlociraptor/Illumina_pe/EMSeq_HG002_LAB01_REP01/compute_meth_observations_4-of-5_false_positives.log
+        
+
+[Wed Feb 11 10:38:25 2026]
+rule varlociraptor_ceta_preprocess:
+    input: s3://koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/chromosome_21.fasta (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/chromosome_21.fasta.fai (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/Illumina_pe/EMSeq_HG002_LAB01_REP01/candidate_specific/alignment_1-of-5.bam (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/Illumina_pe/EMSeq_HG002_LAB01_REP01/candidate_specific/alignment_1-of-5.bam.bai (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/ceta/false_positives/candidates_1-of-5.bcf (retrieve from storage)
+    output: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/EMSeq_HG002_LAB01_REP01/normal_1-of-5.bcf (send to storage)
+    log: s3://koesterlab/ceta-benchmarking/logs/varlociraptor/Illumina_pe/EMSeq_HG002_LAB01_REP01/compute_meth_observations_1-of-5_false_positives.log (send to storage)
+    jobid: 106
+    reason: Input files updated by another job: s3://koesterlab/ceta-benchmarking/resources/ceta/false_positives/candidates_1-of-5.bcf (in storage)
+    wildcards: candidates=false_positives, sample=EMSeq_HG002_LAB01_REP01, scatteritem=1-of-5
+    resources: mem_mb=16000, mem_mib=15259, disk_mb=<TBD>, tmpdir=<TBD>
+Shell command: 
+        chmod +x .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor
+        .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor preprocess variants --omit-mapq-adjustment .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/chromosome_21.fasta --candidates .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/ceta/false_positives/candidates_1-of-5.bcf --bam .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/Illumina_pe/EMSeq_HG002_LAB01_REP01/candidate_specific/alignment_1-of-5.bam --max-depth 5000 > .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/EMSeq_HG002_LAB01_REP01/normal_1-of-5.bcf 2> .snakemake/storage/s3/koesterlab/ceta-benchmarking/logs/varlociraptor/Illumina_pe/EMSeq_HG002_LAB01_REP01/compute_meth_observations_1-of-5_false_positives.log
+        
+
+[Wed Feb 11 10:38:25 2026]
+rule varlociraptor_ceta_preprocess:
+    input: s3://koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/chromosome_21.fasta (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/chromosome_21.fasta.fai (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/Illumina_pe/untreated/candidate_specific/alignment_2-of-5.bam (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/Illumina_pe/untreated/candidate_specific/alignment_2-of-5.bam.bai (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/ceta/false_positives/candidates_2-of-5.bcf (retrieve from storage)
+    output: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/untreated/normal_2-of-5.bcf (send to storage)
+    log: s3://koesterlab/ceta-benchmarking/logs/varlociraptor/Illumina_pe/untreated/compute_meth_observations_2-of-5_false_positives.log (send to storage)
+    jobid: 140
+    reason: Input files updated by another job: s3://koesterlab/ceta-benchmarking/resources/ceta/false_positives/candidates_2-of-5.bcf (in storage)
+    wildcards: candidates=false_positives, sample=untreated, scatteritem=2-of-5
+    resources: mem_mb=16000, mem_mib=15259, disk_mb=<TBD>, tmpdir=<TBD>
+Shell command: 
+        chmod +x .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor
+        .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor preprocess variants --omit-mapq-adjustment .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/chromosome_21.fasta --candidates .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/ceta/false_positives/candidates_2-of-5.bcf --bam .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/Illumina_pe/untreated/candidate_specific/alignment_2-of-5.bam --max-depth 5000 > .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/untreated/normal_2-of-5.bcf 2> .snakemake/storage/s3/koesterlab/ceta-benchmarking/logs/varlociraptor/Illumina_pe/untreated/compute_meth_observations_2-of-5_false_positives.log
+        
+
+[Wed Feb 11 10:38:25 2026]
+rule varlociraptor_ceta_preprocess:
+    input: s3://koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/chromosome_21.fasta (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/chromosome_21.fasta.fai (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/Illumina_pe/EMSeq_HG002_LAB01_REP01/candidate_specific/alignment_5-of-5.bam (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/Illumina_pe/EMSeq_HG002_LAB01_REP01/candidate_specific/alignment_5-of-5.bam.bai (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/ceta/false_positives/candidates_5-of-5.bcf (retrieve from storage)
+    output: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/EMSeq_HG002_LAB01_REP01/normal_5-of-5.bcf (send to storage)
+    log: s3://koesterlab/ceta-benchmarking/logs/varlociraptor/Illumina_pe/EMSeq_HG002_LAB01_REP01/compute_meth_observations_5-of-5_false_positives.log (send to storage)
+    jobid: 127
+    reason: Input files updated by another job: s3://koesterlab/ceta-benchmarking/resources/ceta/false_positives/candidates_5-of-5.bcf (in storage)
+    wildcards: candidates=false_positives, sample=EMSeq_HG002_LAB01_REP01, scatteritem=5-of-5
+    resources: mem_mb=16000, mem_mib=15259, disk_mb=<TBD>, tmpdir=<TBD>
+Shell command: 
+        chmod +x .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor
+        .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor preprocess variants --omit-mapq-adjustment .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/chromosome_21.fasta --candidates .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/ceta/false_positives/candidates_5-of-5.bcf --bam .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/Illumina_pe/EMSeq_HG002_LAB01_REP01/candidate_specific/alignment_5-of-5.bam --max-depth 5000 > .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/EMSeq_HG002_LAB01_REP01/normal_5-of-5.bcf 2> .snakemake/storage/s3/koesterlab/ceta-benchmarking/logs/varlociraptor/Illumina_pe/EMSeq_HG002_LAB01_REP01/compute_meth_observations_5-of-5_false_positives.log
+        
+
+[Wed Feb 11 10:38:25 2026]
+rule varlociraptor_ceta_preprocess:
+    input: s3://koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/chromosome_21.fasta (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/chromosome_21.fasta.fai (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/Illumina_pe/untreated/candidate_specific/alignment_3-of-5.bam (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/Illumina_pe/untreated/candidate_specific/alignment_3-of-5.bam.bai (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/ceta/false_positives/candidates_3-of-5.bcf (retrieve from storage)
+    output: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/untreated/normal_3-of-5.bcf (send to storage)
+    log: s3://koesterlab/ceta-benchmarking/logs/varlociraptor/Illumina_pe/untreated/compute_meth_observations_3-of-5_false_positives.log (send to storage)
+    jobid: 145
+    reason: Input files updated by another job: s3://koesterlab/ceta-benchmarking/resources/ceta/false_positives/candidates_3-of-5.bcf (in storage)
+    wildcards: candidates=false_positives, sample=untreated, scatteritem=3-of-5
+    resources: mem_mb=16000, mem_mib=15259, disk_mb=<TBD>, tmpdir=<TBD>
+Shell command: 
+        chmod +x .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor
+        .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor preprocess variants --omit-mapq-adjustment .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/chromosome_21.fasta --candidates .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/ceta/false_positives/candidates_3-of-5.bcf --bam .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/Illumina_pe/untreated/candidate_specific/alignment_3-of-5.bam --max-depth 5000 > .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/untreated/normal_3-of-5.bcf 2> .snakemake/storage/s3/koesterlab/ceta-benchmarking/logs/varlociraptor/Illumina_pe/untreated/compute_meth_observations_3-of-5_false_positives.log
+        
+
+[Wed Feb 11 10:38:25 2026]
+rule varlociraptor_ceta_preprocess:
+    input: s3://koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/chromosome_21.fasta (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/chromosome_21.fasta.fai (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/Illumina_pe/MethylSeq_HG002_LAB01_REP01/candidate_specific/alignment_2-of-5.bam (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/Illumina_pe/MethylSeq_HG002_LAB01_REP01/candidate_specific/alignment_2-of-5.bam.bai (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/ceta/false_positives/candidates_2-of-5.bcf (retrieve from storage)
+    output: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/MethylSeq_HG002_LAB01_REP01/normal_2-of-5.bcf (send to storage)
+    log: s3://koesterlab/ceta-benchmarking/logs/varlociraptor/Illumina_pe/MethylSeq_HG002_LAB01_REP01/compute_meth_observations_2-of-5_false_positives.log (send to storage)
+    jobid: 84
+    reason: Input files updated by another job: s3://koesterlab/ceta-benchmarking/resources/ceta/false_positives/candidates_2-of-5.bcf (in storage)
+    wildcards: candidates=false_positives, sample=MethylSeq_HG002_LAB01_REP01, scatteritem=2-of-5
+    resources: mem_mb=16000, mem_mib=15259, disk_mb=<TBD>, tmpdir=<TBD>
+Shell command: 
+        chmod +x .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor
+        .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor preprocess variants --omit-mapq-adjustment .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/chromosome_21.fasta --candidates .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/ceta/false_positives/candidates_2-of-5.bcf --bam .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/Illumina_pe/MethylSeq_HG002_LAB01_REP01/candidate_specific/alignment_2-of-5.bam --max-depth 5000 > .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/MethylSeq_HG002_LAB01_REP01/normal_2-of-5.bcf 2> .snakemake/storage/s3/koesterlab/ceta-benchmarking/logs/varlociraptor/Illumina_pe/MethylSeq_HG002_LAB01_REP01/compute_meth_observations_2-of-5_false_positives.log
+        
+
+[Wed Feb 11 10:38:25 2026]
+rule varlociraptor_ceta_preprocess:
+    input: s3://koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/chromosome_21.fasta (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/chromosome_21.fasta.fai (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/Illumina_pe/MethylSeq_HG002_LAB01_REP01/candidate_specific/alignment_1-of-5.bam (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/Illumina_pe/MethylSeq_HG002_LAB01_REP01/candidate_specific/alignment_1-of-5.bam.bai (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/ceta/false_positives/candidates_1-of-5.bcf (retrieve from storage)
+    output: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/MethylSeq_HG002_LAB01_REP01/normal_1-of-5.bcf (send to storage)
+    log: s3://koesterlab/ceta-benchmarking/logs/varlociraptor/Illumina_pe/MethylSeq_HG002_LAB01_REP01/compute_meth_observations_1-of-5_false_positives.log (send to storage)
+    jobid: 6
+    reason: Input files updated by another job: s3://koesterlab/ceta-benchmarking/resources/ceta/false_positives/candidates_1-of-5.bcf (in storage)
+    wildcards: candidates=false_positives, sample=MethylSeq_HG002_LAB01_REP01, scatteritem=1-of-5
+    resources: mem_mb=16000, mem_mib=15259, disk_mb=<TBD>, tmpdir=<TBD>
+Shell command: 
+        chmod +x .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor
+        .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor preprocess variants --omit-mapq-adjustment .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/chromosome_21.fasta --candidates .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/ceta/false_positives/candidates_1-of-5.bcf --bam .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/Illumina_pe/MethylSeq_HG002_LAB01_REP01/candidate_specific/alignment_1-of-5.bam --max-depth 5000 > .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/MethylSeq_HG002_LAB01_REP01/normal_1-of-5.bcf 2> .snakemake/storage/s3/koesterlab/ceta-benchmarking/logs/varlociraptor/Illumina_pe/MethylSeq_HG002_LAB01_REP01/compute_meth_observations_1-of-5_false_positives.log
+        
+
+[Wed Feb 11 10:38:25 2026]
+rule varlociraptor_ceta_preprocess:
+    input: s3://koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/chromosome_21.fasta (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/chromosome_21.fasta.fai (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/Illumina_pe/untreated/candidate_specific/alignment_4-of-5.bam (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/Illumina_pe/untreated/candidate_specific/alignment_4-of-5.bam.bai (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/ceta/false_positives/candidates_4-of-5.bcf (retrieve from storage)
+    output: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/untreated/normal_4-of-5.bcf (send to storage)
+    log: s3://koesterlab/ceta-benchmarking/logs/varlociraptor/Illumina_pe/untreated/compute_meth_observations_4-of-5_false_positives.log (send to storage)
+    jobid: 150
+    reason: Input files updated by another job: s3://koesterlab/ceta-benchmarking/resources/ceta/false_positives/candidates_4-of-5.bcf (in storage)
+    wildcards: candidates=false_positives, sample=untreated, scatteritem=4-of-5
+    resources: mem_mb=16000, mem_mib=15259, disk_mb=<TBD>, tmpdir=<TBD>
+Shell command: 
+        chmod +x .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor
+        .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor preprocess variants --omit-mapq-adjustment .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/chromosome_21.fasta --candidates .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/ceta/false_positives/candidates_4-of-5.bcf --bam .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/Illumina_pe/untreated/candidate_specific/alignment_4-of-5.bam --max-depth 5000 > .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/untreated/normal_4-of-5.bcf 2> .snakemake/storage/s3/koesterlab/ceta-benchmarking/logs/varlociraptor/Illumina_pe/untreated/compute_meth_observations_4-of-5_false_positives.log
+        
+
+[Wed Feb 11 10:38:25 2026]
+rule varlociraptor_ceta_preprocess:
+    input: s3://koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/chromosome_21.fasta (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/chromosome_21.fasta.fai (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/Illumina_pe/MethylSeq_HG002_LAB01_REP01/candidate_specific/alignment_3-of-5.bam (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/Illumina_pe/MethylSeq_HG002_LAB01_REP01/candidate_specific/alignment_3-of-5.bam.bai (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/ceta/false_positives/candidates_3-of-5.bcf (retrieve from storage)
+    output: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/MethylSeq_HG002_LAB01_REP01/normal_3-of-5.bcf (send to storage)
+    log: s3://koesterlab/ceta-benchmarking/logs/varlociraptor/Illumina_pe/MethylSeq_HG002_LAB01_REP01/compute_meth_observations_3-of-5_false_positives.log (send to storage)
+    jobid: 89
+    reason: Input files updated by another job: s3://koesterlab/ceta-benchmarking/resources/ceta/false_positives/candidates_3-of-5.bcf (in storage)
+    wildcards: candidates=false_positives, sample=MethylSeq_HG002_LAB01_REP01, scatteritem=3-of-5
+    resources: mem_mb=16000, mem_mib=15259, disk_mb=<TBD>, tmpdir=<TBD>
+Shell command: 
+        chmod +x .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor
+        .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor preprocess variants --omit-mapq-adjustment .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/chromosome_21.fasta --candidates .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/ceta/false_positives/candidates_3-of-5.bcf --bam .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/Illumina_pe/MethylSeq_HG002_LAB01_REP01/candidate_specific/alignment_3-of-5.bam --max-depth 5000 > .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/MethylSeq_HG002_LAB01_REP01/normal_3-of-5.bcf 2> .snakemake/storage/s3/koesterlab/ceta-benchmarking/logs/varlociraptor/Illumina_pe/MethylSeq_HG002_LAB01_REP01/compute_meth_observations_3-of-5_false_positives.log
+        
+
+[Wed Feb 11 10:38:25 2026]
+rule varlociraptor_ceta_call_multi_all:
+    input: s3://koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor (retrieve from storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/EMSeq_HG002_LAB01_REP01/normal_2-of-5.bcf (retrieve from storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/untreated/normal_2-of-5.bcf (retrieve from storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/MethylSeq_HG002_LAB01_REP01/normal_2-of-5.bcf (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/scenarios/ceta_benchmarks/multi_sample/scenario_common_all.yaml (retrieve from storage)
+    output: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_all/calls_2-of-5.bcf (send to storage)
+    log: s3://koesterlab/ceta-benchmarking/logs/varlociraptor/multi_sample/untreated_emseq/call_methylation_2-of-5_false_positives.log (send to storage)
+    jobid: 139
+    reason: Input files updated by another job: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/untreated/normal_2-of-5.bcf (in storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/MethylSeq_HG002_LAB01_REP01/normal_2-of-5.bcf (in storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/EMSeq_HG002_LAB01_REP01/normal_2-of-5.bcf (in storage)
+    wildcards: candidates=false_positives, scatteritem=2-of-5
+    resources: mem_mb=<TBD>, disk_mb=<TBD>, tmpdir=<TBD>
+Shell command: 
+        chmod +x .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor
+        .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor call variants generic --scenario .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/scenarios/ceta_benchmarks/multi_sample/scenario_common_all.yaml --obs  emseq=.snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/EMSeq_HG002_LAB01_REP01/normal_2-of-5.bcf methylseq=.snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/MethylSeq_HG002_LAB01_REP01/normal_2-of-5.bcf untreated=.snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/untreated/normal_2-of-5.bcf > .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_all/calls_2-of-5.bcf 2> .snakemake/storage/s3/koesterlab/ceta-benchmarking/logs/varlociraptor/multi_sample/untreated_emseq/call_methylation_2-of-5_false_positives.log
+        
+
+[Wed Feb 11 10:38:25 2026]
+rule varlociraptor_ceta_call_single_with_prior:
+    input: s3://koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor (retrieve from storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/EMSeq_HG002_LAB01_REP01/normal_5-of-5.bcf (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/scenarios/ceta_benchmarks/single_sample/scenario_converted_with_prior.yaml (retrieve from storage)
+    output: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/EMSeq_HG002_LAB01_REP01_with_prior/calls_5-of-5.bcf (send to storage)
+    log: s3://koesterlab/ceta-benchmarking/logs/varlociraptor/Illumina_pe/called/EMSeq_HG002_LAB01_REP01_with_prior/call_methylation_5-of-5_false_positives.log (send to storage)
+    jobid: 126
+    reason: Input files updated by another job: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/EMSeq_HG002_LAB01_REP01/normal_5-of-5.bcf (in storage)
+    wildcards: candidates=false_positives, sample=EMSeq_HG002_LAB01_REP01, scatteritem=5-of-5
+    resources: mem_mb=<TBD>, disk_mb=<TBD>, tmpdir=<TBD>
+Shell command: 
+        chmod +x .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor
+        .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor call variants generic --scenario .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/scenarios/ceta_benchmarks/single_sample/scenario_converted_with_prior.yaml --obs normal=.snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/EMSeq_HG002_LAB01_REP01/normal_5-of-5.bcf > .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/EMSeq_HG002_LAB01_REP01_with_prior/calls_5-of-5.bcf 2> .snakemake/storage/s3/koesterlab/ceta-benchmarking/logs/varlociraptor/Illumina_pe/called/EMSeq_HG002_LAB01_REP01_with_prior/call_methylation_5-of-5_false_positives.log
+        
+
+[Wed Feb 11 10:38:25 2026]
+rule varlociraptor_ceta_call_single_with_prior:
+    input: s3://koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor (retrieve from storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/untreated/normal_1-of-5.bcf (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/scenarios/ceta_benchmarks/single_sample/scenario_untreated_with_prior.yaml (retrieve from storage)
+    output: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/untreated_with_prior/calls_1-of-5.bcf (send to storage)
+    log: s3://koesterlab/ceta-benchmarking/logs/varlociraptor/Illumina_pe/called/untreated_with_prior/call_methylation_1-of-5_false_positives.log (send to storage)
+    jobid: 185
+    reason: Input files updated by another job: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/untreated/normal_1-of-5.bcf (in storage)
+    wildcards: candidates=false_positives, sample=untreated, scatteritem=1-of-5
+    resources: mem_mb=<TBD>, disk_mb=<TBD>, tmpdir=<TBD>
+Shell command: 
+        chmod +x .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor
+        .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor call variants generic --scenario .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/scenarios/ceta_benchmarks/single_sample/scenario_untreated_with_prior.yaml --obs normal=.snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/untreated/normal_1-of-5.bcf > .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/untreated_with_prior/calls_1-of-5.bcf 2> .snakemake/storage/s3/koesterlab/ceta-benchmarking/logs/varlociraptor/Illumina_pe/called/untreated_with_prior/call_methylation_1-of-5_false_positives.log
+        
+
+[Wed Feb 11 10:38:25 2026]
+rule varlociraptor_ceta_call_multi_emseq_methylseq:
+    input: s3://koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor (retrieve from storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/EMSeq_HG002_LAB01_REP01/normal_5-of-5.bcf (retrieve from storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/MethylSeq_HG002_LAB01_REP01/normal_5-of-5.bcf (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/scenarios/ceta_benchmarks/multi_sample/scenario_common_emseq_methylseq.yaml (retrieve from storage)
+    output: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_methylseq/calls_5-of-5.bcf (send to storage)
+    log: s3://koesterlab/ceta-benchmarking/logs/varlociraptor/multi_sample/untreated_emseq/call_methylation_5-of-5_false_positives.log (send to storage)
+    jobid: 181
+    reason: Input files updated by another job: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/EMSeq_HG002_LAB01_REP01/normal_5-of-5.bcf (in storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/MethylSeq_HG002_LAB01_REP01/normal_5-of-5.bcf (in storage)
+    wildcards: candidates=false_positives, scatteritem=5-of-5
+    resources: mem_mb=<TBD>, disk_mb=<TBD>, tmpdir=<TBD>
+Shell command: 
+        chmod +x .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor
+        .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor call variants generic --scenario .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/scenarios/ceta_benchmarks/multi_sample/scenario_common_emseq_methylseq.yaml --obs  emseq=.snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/EMSeq_HG002_LAB01_REP01/normal_5-of-5.bcf methylseq=.snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/MethylSeq_HG002_LAB01_REP01/normal_5-of-5.bcf > .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_methylseq/calls_5-of-5.bcf 2> .snakemake/storage/s3/koesterlab/ceta-benchmarking/logs/varlociraptor/multi_sample/untreated_emseq/call_methylation_5-of-5_false_positives.log
+        
+
+[Wed Feb 11 10:38:25 2026]
+rule varlociraptor_ceta_call_multi:
+    input: s3://koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor (retrieve from storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/EMSeq_HG002_LAB01_REP01/normal_1-of-5.bcf (retrieve from storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/untreated/normal_1-of-5.bcf (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/scenarios/ceta_benchmarks/multi_sample/scenario_common_emseq_untreated.yaml (retrieve from storage)
+    output: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_untreated/calls_1-of-5.bcf (send to storage)
+    log: s3://koesterlab/ceta-benchmarking/logs/varlociraptor/multi_sample/untreated_emseq/call_methylation_1-of-5_emseq_untreated_false_positives.log (send to storage)
+    jobid: 161
+    reason: Input files updated by another job: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/untreated/normal_1-of-5.bcf (in storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/EMSeq_HG002_LAB01_REP01/normal_1-of-5.bcf (in storage)
+    wildcards: candidates=false_positives, type=emseq_untreated, scatteritem=1-of-5
+    resources: mem_mb=<TBD>, disk_mb=<TBD>, tmpdir=<TBD>
+Shell command: 
+        chmod +x .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor
+        .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor call variants generic --scenario .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/scenarios/ceta_benchmarks/multi_sample/scenario_common_emseq_untreated.yaml --obs  emseq=.snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/EMSeq_HG002_LAB01_REP01/normal_1-of-5.bcf  untreated=.snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/untreated/normal_1-of-5.bcf > .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_untreated/calls_1-of-5.bcf 2> .snakemake/storage/s3/koesterlab/ceta-benchmarking/logs/varlociraptor/multi_sample/untreated_emseq/call_methylation_1-of-5_emseq_untreated_false_positives.log
+        
+
+[Wed Feb 11 10:38:25 2026]
+rule varlociraptor_ceta_call_multi_all:
+    input: s3://koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor (retrieve from storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/EMSeq_HG002_LAB01_REP01/normal_4-of-5.bcf (retrieve from storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/untreated/normal_4-of-5.bcf (retrieve from storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/MethylSeq_HG002_LAB01_REP01/normal_4-of-5.bcf (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/scenarios/ceta_benchmarks/multi_sample/scenario_common_all.yaml (retrieve from storage)
+    output: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_all/calls_4-of-5.bcf (send to storage)
+    log: s3://koesterlab/ceta-benchmarking/logs/varlociraptor/multi_sample/untreated_emseq/call_methylation_4-of-5_false_positives.log (send to storage)
+    jobid: 149
+    reason: Input files updated by another job: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/untreated/normal_4-of-5.bcf (in storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/MethylSeq_HG002_LAB01_REP01/normal_4-of-5.bcf (in storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/EMSeq_HG002_LAB01_REP01/normal_4-of-5.bcf (in storage)
+    wildcards: candidates=false_positives, scatteritem=4-of-5
+    resources: mem_mb=<TBD>, disk_mb=<TBD>, tmpdir=<TBD>
+Shell command: 
+        chmod +x .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor
+        .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor call variants generic --scenario .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/scenarios/ceta_benchmarks/multi_sample/scenario_common_all.yaml --obs  emseq=.snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/EMSeq_HG002_LAB01_REP01/normal_4-of-5.bcf methylseq=.snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/MethylSeq_HG002_LAB01_REP01/normal_4-of-5.bcf untreated=.snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/untreated/normal_4-of-5.bcf > .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_all/calls_4-of-5.bcf 2> .snakemake/storage/s3/koesterlab/ceta-benchmarking/logs/varlociraptor/multi_sample/untreated_emseq/call_methylation_4-of-5_false_positives.log
+        
+
+[Wed Feb 11 10:38:25 2026]
+rule varlociraptor_ceta_call_single_with_prior:
+    input: s3://koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor (retrieve from storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/untreated/normal_2-of-5.bcf (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/scenarios/ceta_benchmarks/single_sample/scenario_untreated_with_prior.yaml (retrieve from storage)
+    output: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/untreated_with_prior/calls_2-of-5.bcf (send to storage)
+    log: s3://koesterlab/ceta-benchmarking/logs/varlociraptor/Illumina_pe/called/untreated_with_prior/call_methylation_2-of-5_false_positives.log (send to storage)
+    jobid: 187
+    reason: Input files updated by another job: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/untreated/normal_2-of-5.bcf (in storage)
+    wildcards: candidates=false_positives, sample=untreated, scatteritem=2-of-5
+    resources: mem_mb=<TBD>, disk_mb=<TBD>, tmpdir=<TBD>
+Shell command: 
+        chmod +x .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor
+        .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor call variants generic --scenario .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/scenarios/ceta_benchmarks/single_sample/scenario_untreated_with_prior.yaml --obs normal=.snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/untreated/normal_2-of-5.bcf > .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/untreated_with_prior/calls_2-of-5.bcf 2> .snakemake/storage/s3/koesterlab/ceta-benchmarking/logs/varlociraptor/Illumina_pe/called/untreated_with_prior/call_methylation_2-of-5_false_positives.log
+        
+
+[Wed Feb 11 10:38:25 2026]
+rule varlociraptor_ceta_call_multi:
+    input: s3://koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor (retrieve from storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/EMSeq_HG002_LAB01_REP01/normal_2-of-5.bcf (retrieve from storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/untreated/normal_2-of-5.bcf (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/scenarios/ceta_benchmarks/multi_sample/scenario_common_emseq_untreated.yaml (retrieve from storage)
+    output: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_untreated/calls_2-of-5.bcf (send to storage)
+    log: s3://koesterlab/ceta-benchmarking/logs/varlociraptor/multi_sample/untreated_emseq/call_methylation_2-of-5_emseq_untreated_false_positives.log (send to storage)
+    jobid: 163
+    reason: Input files updated by another job: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/untreated/normal_2-of-5.bcf (in storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/EMSeq_HG002_LAB01_REP01/normal_2-of-5.bcf (in storage)
+    wildcards: candidates=false_positives, type=emseq_untreated, scatteritem=2-of-5
+    resources: mem_mb=<TBD>, disk_mb=<TBD>, tmpdir=<TBD>
+Shell command: 
+        chmod +x .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor
+        .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor call variants generic --scenario .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/scenarios/ceta_benchmarks/multi_sample/scenario_common_emseq_untreated.yaml --obs  emseq=.snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/EMSeq_HG002_LAB01_REP01/normal_2-of-5.bcf  untreated=.snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/untreated/normal_2-of-5.bcf > .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_untreated/calls_2-of-5.bcf 2> .snakemake/storage/s3/koesterlab/ceta-benchmarking/logs/varlociraptor/multi_sample/untreated_emseq/call_methylation_2-of-5_emseq_untreated_false_positives.log
+        
+
+[Wed Feb 11 10:38:25 2026]
+rule varlociraptor_ceta_call_single_with_prior:
+    input: s3://koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor (retrieve from storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/untreated/normal_3-of-5.bcf (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/scenarios/ceta_benchmarks/single_sample/scenario_untreated_with_prior.yaml (retrieve from storage)
+    output: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/untreated_with_prior/calls_3-of-5.bcf (send to storage)
+    log: s3://koesterlab/ceta-benchmarking/logs/varlociraptor/Illumina_pe/called/untreated_with_prior/call_methylation_3-of-5_false_positives.log (send to storage)
+    jobid: 189
+    reason: Input files updated by another job: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/untreated/normal_3-of-5.bcf (in storage)
+    wildcards: candidates=false_positives, sample=untreated, scatteritem=3-of-5
+    resources: mem_mb=<TBD>, disk_mb=<TBD>, tmpdir=<TBD>
+Shell command: 
+        chmod +x .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor
+        .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor call variants generic --scenario .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/scenarios/ceta_benchmarks/single_sample/scenario_untreated_with_prior.yaml --obs normal=.snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/untreated/normal_3-of-5.bcf > .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/untreated_with_prior/calls_3-of-5.bcf 2> .snakemake/storage/s3/koesterlab/ceta-benchmarking/logs/varlociraptor/Illumina_pe/called/untreated_with_prior/call_methylation_3-of-5_false_positives.log
+        
+
+[Wed Feb 11 10:38:25 2026]
+rule varlociraptor_ceta_call_multi:
+    input: s3://koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor (retrieve from storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/EMSeq_HG002_LAB01_REP01/normal_3-of-5.bcf (retrieve from storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/untreated/normal_3-of-5.bcf (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/scenarios/ceta_benchmarks/multi_sample/scenario_common_emseq_untreated.yaml (retrieve from storage)
+    output: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_untreated/calls_3-of-5.bcf (send to storage)
+    log: s3://koesterlab/ceta-benchmarking/logs/varlociraptor/multi_sample/untreated_emseq/call_methylation_3-of-5_emseq_untreated_false_positives.log (send to storage)
+    jobid: 165
+    reason: Input files updated by another job: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/untreated/normal_3-of-5.bcf (in storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/EMSeq_HG002_LAB01_REP01/normal_3-of-5.bcf (in storage)
+    wildcards: candidates=false_positives, type=emseq_untreated, scatteritem=3-of-5
+    resources: mem_mb=<TBD>, disk_mb=<TBD>, tmpdir=<TBD>
+Shell command: 
+        chmod +x .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor
+        .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor call variants generic --scenario .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/scenarios/ceta_benchmarks/multi_sample/scenario_common_emseq_untreated.yaml --obs  emseq=.snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/EMSeq_HG002_LAB01_REP01/normal_3-of-5.bcf  untreated=.snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/untreated/normal_3-of-5.bcf > .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_untreated/calls_3-of-5.bcf 2> .snakemake/storage/s3/koesterlab/ceta-benchmarking/logs/varlociraptor/multi_sample/untreated_emseq/call_methylation_3-of-5_emseq_untreated_false_positives.log
+        
+
+[Wed Feb 11 10:38:25 2026]
+rule varlociraptor_ceta_call_single_with_prior:
+    input: s3://koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor (retrieve from storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/MethylSeq_HG002_LAB01_REP01/normal_3-of-5.bcf (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/scenarios/ceta_benchmarks/single_sample/scenario_converted_with_prior.yaml (retrieve from storage)
+    output: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/MethylSeq_HG002_LAB01_REP01_with_prior/calls_3-of-5.bcf (send to storage)
+    log: s3://koesterlab/ceta-benchmarking/logs/varlociraptor/Illumina_pe/called/MethylSeq_HG002_LAB01_REP01_with_prior/call_methylation_3-of-5_false_positives.log (send to storage)
+    jobid: 88
+    reason: Input files updated by another job: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/MethylSeq_HG002_LAB01_REP01/normal_3-of-5.bcf (in storage)
+    wildcards: candidates=false_positives, sample=MethylSeq_HG002_LAB01_REP01, scatteritem=3-of-5
+    resources: mem_mb=<TBD>, disk_mb=<TBD>, tmpdir=<TBD>
+Shell command: 
+        chmod +x .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor
+        .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor call variants generic --scenario .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/scenarios/ceta_benchmarks/single_sample/scenario_converted_with_prior.yaml --obs normal=.snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/MethylSeq_HG002_LAB01_REP01/normal_3-of-5.bcf > .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/MethylSeq_HG002_LAB01_REP01_with_prior/calls_3-of-5.bcf 2> .snakemake/storage/s3/koesterlab/ceta-benchmarking/logs/varlociraptor/Illumina_pe/called/MethylSeq_HG002_LAB01_REP01_with_prior/call_methylation_3-of-5_false_positives.log
+        
+
+[Wed Feb 11 10:38:25 2026]
+rule varlociraptor_ceta_call_multi_all:
+    input: s3://koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor (retrieve from storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/EMSeq_HG002_LAB01_REP01/normal_1-of-5.bcf (retrieve from storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/untreated/normal_1-of-5.bcf (retrieve from storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/MethylSeq_HG002_LAB01_REP01/normal_1-of-5.bcf (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/scenarios/ceta_benchmarks/multi_sample/scenario_common_all.yaml (retrieve from storage)
+    output: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_all/calls_1-of-5.bcf (send to storage)
+    log: s3://koesterlab/ceta-benchmarking/logs/varlociraptor/multi_sample/untreated_emseq/call_methylation_1-of-5_false_positives.log (send to storage)
+    jobid: 133
+    reason: Input files updated by another job: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/untreated/normal_1-of-5.bcf (in storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/EMSeq_HG002_LAB01_REP01/normal_1-of-5.bcf (in storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/MethylSeq_HG002_LAB01_REP01/normal_1-of-5.bcf (in storage)
+    wildcards: candidates=false_positives, scatteritem=1-of-5
+    resources: mem_mb=<TBD>, disk_mb=<TBD>, tmpdir=<TBD>
+Shell command: 
+        chmod +x .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor
+        .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor call variants generic --scenario .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/scenarios/ceta_benchmarks/multi_sample/scenario_common_all.yaml --obs  emseq=.snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/EMSeq_HG002_LAB01_REP01/normal_1-of-5.bcf methylseq=.snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/MethylSeq_HG002_LAB01_REP01/normal_1-of-5.bcf untreated=.snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/untreated/normal_1-of-5.bcf > .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_all/calls_1-of-5.bcf 2> .snakemake/storage/s3/koesterlab/ceta-benchmarking/logs/varlociraptor/multi_sample/untreated_emseq/call_methylation_1-of-5_false_positives.log
+        
+
+[Wed Feb 11 10:38:25 2026]
+rule varlociraptor_ceta_call_single_with_prior:
+    input: s3://koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor (retrieve from storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/EMSeq_HG002_LAB01_REP01/normal_2-of-5.bcf (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/scenarios/ceta_benchmarks/single_sample/scenario_converted_with_prior.yaml (retrieve from storage)
+    output: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/EMSeq_HG002_LAB01_REP01_with_prior/calls_2-of-5.bcf (send to storage)
+    log: s3://koesterlab/ceta-benchmarking/logs/varlociraptor/Illumina_pe/called/EMSeq_HG002_LAB01_REP01_with_prior/call_methylation_2-of-5_false_positives.log (send to storage)
+    jobid: 111
+    reason: Input files updated by another job: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/EMSeq_HG002_LAB01_REP01/normal_2-of-5.bcf (in storage)
+    wildcards: candidates=false_positives, sample=EMSeq_HG002_LAB01_REP01, scatteritem=2-of-5
+    resources: mem_mb=<TBD>, disk_mb=<TBD>, tmpdir=<TBD>
+Shell command: 
+        chmod +x .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor
+        .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor call variants generic --scenario .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/scenarios/ceta_benchmarks/single_sample/scenario_converted_with_prior.yaml --obs normal=.snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/EMSeq_HG002_LAB01_REP01/normal_2-of-5.bcf > .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/EMSeq_HG002_LAB01_REP01_with_prior/calls_2-of-5.bcf 2> .snakemake/storage/s3/koesterlab/ceta-benchmarking/logs/varlociraptor/Illumina_pe/called/EMSeq_HG002_LAB01_REP01_with_prior/call_methylation_2-of-5_false_positives.log
+        
+
+[Wed Feb 11 10:38:25 2026]
+rule varlociraptor_ceta_call_single_with_prior:
+    input: s3://koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor (retrieve from storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/MethylSeq_HG002_LAB01_REP01/normal_5-of-5.bcf (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/scenarios/ceta_benchmarks/single_sample/scenario_converted_with_prior.yaml (retrieve from storage)
+    output: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/MethylSeq_HG002_LAB01_REP01_with_prior/calls_5-of-5.bcf (send to storage)
+    log: s3://koesterlab/ceta-benchmarking/logs/varlociraptor/Illumina_pe/called/MethylSeq_HG002_LAB01_REP01_with_prior/call_methylation_5-of-5_false_positives.log (send to storage)
+    jobid: 98
+    reason: Input files updated by another job: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/MethylSeq_HG002_LAB01_REP01/normal_5-of-5.bcf (in storage)
+    wildcards: candidates=false_positives, sample=MethylSeq_HG002_LAB01_REP01, scatteritem=5-of-5
+    resources: mem_mb=<TBD>, disk_mb=<TBD>, tmpdir=<TBD>
+Shell command: 
+        chmod +x .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor
+        .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor call variants generic --scenario .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/scenarios/ceta_benchmarks/single_sample/scenario_converted_with_prior.yaml --obs normal=.snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/MethylSeq_HG002_LAB01_REP01/normal_5-of-5.bcf > .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/MethylSeq_HG002_LAB01_REP01_with_prior/calls_5-of-5.bcf 2> .snakemake/storage/s3/koesterlab/ceta-benchmarking/logs/varlociraptor/Illumina_pe/called/MethylSeq_HG002_LAB01_REP01_with_prior/call_methylation_5-of-5_false_positives.log
+        
+
+[Wed Feb 11 10:38:25 2026]
+rule varlociraptor_ceta_call_single_with_prior:
+    input: s3://koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor (retrieve from storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/untreated/normal_4-of-5.bcf (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/scenarios/ceta_benchmarks/single_sample/scenario_untreated_with_prior.yaml (retrieve from storage)
+    output: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/untreated_with_prior/calls_4-of-5.bcf (send to storage)
+    log: s3://koesterlab/ceta-benchmarking/logs/varlociraptor/Illumina_pe/called/untreated_with_prior/call_methylation_4-of-5_false_positives.log (send to storage)
+    jobid: 191
+    reason: Input files updated by another job: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/untreated/normal_4-of-5.bcf (in storage)
+    wildcards: candidates=false_positives, sample=untreated, scatteritem=4-of-5
+    resources: mem_mb=<TBD>, disk_mb=<TBD>, tmpdir=<TBD>
+Shell command: 
+        chmod +x .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor
+        .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor call variants generic --scenario .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/scenarios/ceta_benchmarks/single_sample/scenario_untreated_with_prior.yaml --obs normal=.snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/untreated/normal_4-of-5.bcf > .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/untreated_with_prior/calls_4-of-5.bcf 2> .snakemake/storage/s3/koesterlab/ceta-benchmarking/logs/varlociraptor/Illumina_pe/called/untreated_with_prior/call_methylation_4-of-5_false_positives.log
+        
+
+[Wed Feb 11 10:38:25 2026]
+rule varlociraptor_ceta_call_multi_emseq_methylseq:
+    input: s3://koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor (retrieve from storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/EMSeq_HG002_LAB01_REP01/normal_4-of-5.bcf (retrieve from storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/MethylSeq_HG002_LAB01_REP01/normal_4-of-5.bcf (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/scenarios/ceta_benchmarks/multi_sample/scenario_common_emseq_methylseq.yaml (retrieve from storage)
+    output: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_methylseq/calls_4-of-5.bcf (send to storage)
+    log: s3://koesterlab/ceta-benchmarking/logs/varlociraptor/multi_sample/untreated_emseq/call_methylation_4-of-5_false_positives.log (send to storage)
+    jobid: 179
+    reason: Input files updated by another job: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/MethylSeq_HG002_LAB01_REP01/normal_4-of-5.bcf (in storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/EMSeq_HG002_LAB01_REP01/normal_4-of-5.bcf (in storage)
+    wildcards: candidates=false_positives, scatteritem=4-of-5
+    resources: mem_mb=<TBD>, disk_mb=<TBD>, tmpdir=<TBD>
+Shell command: 
+        chmod +x .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor
+        .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor call variants generic --scenario .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/scenarios/ceta_benchmarks/multi_sample/scenario_common_emseq_methylseq.yaml --obs  emseq=.snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/EMSeq_HG002_LAB01_REP01/normal_4-of-5.bcf methylseq=.snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/MethylSeq_HG002_LAB01_REP01/normal_4-of-5.bcf > .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_methylseq/calls_4-of-5.bcf 2> .snakemake/storage/s3/koesterlab/ceta-benchmarking/logs/varlociraptor/multi_sample/untreated_emseq/call_methylation_4-of-5_false_positives.log
+        
+
+[Wed Feb 11 10:38:25 2026]
+rule varlociraptor_ceta_call_single_with_prior:
+    input: s3://koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor (retrieve from storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/EMSeq_HG002_LAB01_REP01/normal_4-of-5.bcf (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/scenarios/ceta_benchmarks/single_sample/scenario_converted_with_prior.yaml (retrieve from storage)
+    output: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/EMSeq_HG002_LAB01_REP01_with_prior/calls_4-of-5.bcf (send to storage)
+    log: s3://koesterlab/ceta-benchmarking/logs/varlociraptor/Illumina_pe/called/EMSeq_HG002_LAB01_REP01_with_prior/call_methylation_4-of-5_false_positives.log (send to storage)
+    jobid: 121
+    reason: Input files updated by another job: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/EMSeq_HG002_LAB01_REP01/normal_4-of-5.bcf (in storage)
+    wildcards: candidates=false_positives, sample=EMSeq_HG002_LAB01_REP01, scatteritem=4-of-5
+    resources: mem_mb=<TBD>, disk_mb=<TBD>, tmpdir=<TBD>
+Shell command: 
+        chmod +x .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor
+        .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor call variants generic --scenario .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/scenarios/ceta_benchmarks/single_sample/scenario_converted_with_prior.yaml --obs normal=.snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/EMSeq_HG002_LAB01_REP01/normal_4-of-5.bcf > .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/EMSeq_HG002_LAB01_REP01_with_prior/calls_4-of-5.bcf 2> .snakemake/storage/s3/koesterlab/ceta-benchmarking/logs/varlociraptor/Illumina_pe/called/EMSeq_HG002_LAB01_REP01_with_prior/call_methylation_4-of-5_false_positives.log
+        
+
+[Wed Feb 11 10:38:25 2026]
+rule varlociraptor_ceta_call_multi:
+    input: s3://koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor (retrieve from storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/EMSeq_HG002_LAB01_REP01/normal_4-of-5.bcf (retrieve from storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/untreated/normal_4-of-5.bcf (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/scenarios/ceta_benchmarks/multi_sample/scenario_common_emseq_untreated.yaml (retrieve from storage)
+    output: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_untreated/calls_4-of-5.bcf (send to storage)
+    log: s3://koesterlab/ceta-benchmarking/logs/varlociraptor/multi_sample/untreated_emseq/call_methylation_4-of-5_emseq_untreated_false_positives.log (send to storage)
+    jobid: 167
+    reason: Input files updated by another job: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/untreated/normal_4-of-5.bcf (in storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/EMSeq_HG002_LAB01_REP01/normal_4-of-5.bcf (in storage)
+    wildcards: candidates=false_positives, type=emseq_untreated, scatteritem=4-of-5
+    resources: mem_mb=<TBD>, disk_mb=<TBD>, tmpdir=<TBD>
+Shell command: 
+        chmod +x .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor
+        .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor call variants generic --scenario .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/scenarios/ceta_benchmarks/multi_sample/scenario_common_emseq_untreated.yaml --obs  emseq=.snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/EMSeq_HG002_LAB01_REP01/normal_4-of-5.bcf  untreated=.snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/untreated/normal_4-of-5.bcf > .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_untreated/calls_4-of-5.bcf 2> .snakemake/storage/s3/koesterlab/ceta-benchmarking/logs/varlociraptor/multi_sample/untreated_emseq/call_methylation_4-of-5_emseq_untreated_false_positives.log
+        
+
+[Wed Feb 11 10:38:25 2026]
+rule varlociraptor_ceta_call_multi_emseq_methylseq:
+    input: s3://koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor (retrieve from storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/EMSeq_HG002_LAB01_REP01/normal_1-of-5.bcf (retrieve from storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/MethylSeq_HG002_LAB01_REP01/normal_1-of-5.bcf (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/scenarios/ceta_benchmarks/multi_sample/scenario_common_emseq_methylseq.yaml (retrieve from storage)
+    output: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_methylseq/calls_1-of-5.bcf (send to storage)
+    log: s3://koesterlab/ceta-benchmarking/logs/varlociraptor/multi_sample/untreated_emseq/call_methylation_1-of-5_false_positives.log (send to storage)
+    jobid: 173
+    reason: Input files updated by another job: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/EMSeq_HG002_LAB01_REP01/normal_1-of-5.bcf (in storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/MethylSeq_HG002_LAB01_REP01/normal_1-of-5.bcf (in storage)
+    wildcards: candidates=false_positives, scatteritem=1-of-5
+    resources: mem_mb=<TBD>, disk_mb=<TBD>, tmpdir=<TBD>
+Shell command: 
+        chmod +x .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor
+        .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor call variants generic --scenario .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/scenarios/ceta_benchmarks/multi_sample/scenario_common_emseq_methylseq.yaml --obs  emseq=.snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/EMSeq_HG002_LAB01_REP01/normal_1-of-5.bcf methylseq=.snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/MethylSeq_HG002_LAB01_REP01/normal_1-of-5.bcf > .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_methylseq/calls_1-of-5.bcf 2> .snakemake/storage/s3/koesterlab/ceta-benchmarking/logs/varlociraptor/multi_sample/untreated_emseq/call_methylation_1-of-5_false_positives.log
+        
+
+[Wed Feb 11 10:38:25 2026]
+rule varlociraptor_ceta_call_single_with_prior:
+    input: s3://koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor (retrieve from storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/MethylSeq_HG002_LAB01_REP01/normal_2-of-5.bcf (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/scenarios/ceta_benchmarks/single_sample/scenario_converted_with_prior.yaml (retrieve from storage)
+    output: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/MethylSeq_HG002_LAB01_REP01_with_prior/calls_2-of-5.bcf (send to storage)
+    log: s3://koesterlab/ceta-benchmarking/logs/varlociraptor/Illumina_pe/called/MethylSeq_HG002_LAB01_REP01_with_prior/call_methylation_2-of-5_false_positives.log (send to storage)
+    jobid: 83
+    reason: Input files updated by another job: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/MethylSeq_HG002_LAB01_REP01/normal_2-of-5.bcf (in storage)
+    wildcards: candidates=false_positives, sample=MethylSeq_HG002_LAB01_REP01, scatteritem=2-of-5
+    resources: mem_mb=<TBD>, disk_mb=<TBD>, tmpdir=<TBD>
+Shell command: 
+        chmod +x .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor
+        .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor call variants generic --scenario .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/scenarios/ceta_benchmarks/single_sample/scenario_converted_with_prior.yaml --obs normal=.snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/MethylSeq_HG002_LAB01_REP01/normal_2-of-5.bcf > .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/MethylSeq_HG002_LAB01_REP01_with_prior/calls_2-of-5.bcf 2> .snakemake/storage/s3/koesterlab/ceta-benchmarking/logs/varlociraptor/Illumina_pe/called/MethylSeq_HG002_LAB01_REP01_with_prior/call_methylation_2-of-5_false_positives.log
+        
+
+[Wed Feb 11 10:38:25 2026]
+rule varlociraptor_ceta_call_single_with_prior:
+    input: s3://koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor (retrieve from storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/untreated/normal_5-of-5.bcf (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/scenarios/ceta_benchmarks/single_sample/scenario_untreated_with_prior.yaml (retrieve from storage)
+    output: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/untreated_with_prior/calls_5-of-5.bcf (send to storage)
+    log: s3://koesterlab/ceta-benchmarking/logs/varlociraptor/Illumina_pe/called/untreated_with_prior/call_methylation_5-of-5_false_positives.log (send to storage)
+    jobid: 193
+    reason: Input files updated by another job: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/untreated/normal_5-of-5.bcf (in storage)
+    wildcards: candidates=false_positives, sample=untreated, scatteritem=5-of-5
+    resources: mem_mb=<TBD>, disk_mb=<TBD>, tmpdir=<TBD>
+Shell command: 
+        chmod +x .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor
+        .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor call variants generic --scenario .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/scenarios/ceta_benchmarks/single_sample/scenario_untreated_with_prior.yaml --obs normal=.snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/untreated/normal_5-of-5.bcf > .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/untreated_with_prior/calls_5-of-5.bcf 2> .snakemake/storage/s3/koesterlab/ceta-benchmarking/logs/varlociraptor/Illumina_pe/called/untreated_with_prior/call_methylation_5-of-5_false_positives.log
+        
+
+[Wed Feb 11 10:38:25 2026]
+rule varlociraptor_ceta_call_multi_all:
+    input: s3://koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor (retrieve from storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/EMSeq_HG002_LAB01_REP01/normal_3-of-5.bcf (retrieve from storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/untreated/normal_3-of-5.bcf (retrieve from storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/MethylSeq_HG002_LAB01_REP01/normal_3-of-5.bcf (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/scenarios/ceta_benchmarks/multi_sample/scenario_common_all.yaml (retrieve from storage)
+    output: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_all/calls_3-of-5.bcf (send to storage)
+    log: s3://koesterlab/ceta-benchmarking/logs/varlociraptor/multi_sample/untreated_emseq/call_methylation_3-of-5_false_positives.log (send to storage)
+    jobid: 144
+    reason: Input files updated by another job: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/untreated/normal_3-of-5.bcf (in storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/EMSeq_HG002_LAB01_REP01/normal_3-of-5.bcf (in storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/MethylSeq_HG002_LAB01_REP01/normal_3-of-5.bcf (in storage)
+    wildcards: candidates=false_positives, scatteritem=3-of-5
+    resources: mem_mb=<TBD>, disk_mb=<TBD>, tmpdir=<TBD>
+Shell command: 
+        chmod +x .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor
+        .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor call variants generic --scenario .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/scenarios/ceta_benchmarks/multi_sample/scenario_common_all.yaml --obs  emseq=.snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/EMSeq_HG002_LAB01_REP01/normal_3-of-5.bcf methylseq=.snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/MethylSeq_HG002_LAB01_REP01/normal_3-of-5.bcf untreated=.snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/untreated/normal_3-of-5.bcf > .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_all/calls_3-of-5.bcf 2> .snakemake/storage/s3/koesterlab/ceta-benchmarking/logs/varlociraptor/multi_sample/untreated_emseq/call_methylation_3-of-5_false_positives.log
+        
+
+[Wed Feb 11 10:38:25 2026]
+rule varlociraptor_ceta_call_multi:
+    input: s3://koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor (retrieve from storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/EMSeq_HG002_LAB01_REP01/normal_5-of-5.bcf (retrieve from storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/untreated/normal_5-of-5.bcf (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/scenarios/ceta_benchmarks/multi_sample/scenario_common_emseq_untreated.yaml (retrieve from storage)
+    output: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_untreated/calls_5-of-5.bcf (send to storage)
+    log: s3://koesterlab/ceta-benchmarking/logs/varlociraptor/multi_sample/untreated_emseq/call_methylation_5-of-5_emseq_untreated_false_positives.log (send to storage)
+    jobid: 169
+    reason: Input files updated by another job: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/EMSeq_HG002_LAB01_REP01/normal_5-of-5.bcf (in storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/untreated/normal_5-of-5.bcf (in storage)
+    wildcards: candidates=false_positives, type=emseq_untreated, scatteritem=5-of-5
+    resources: mem_mb=<TBD>, disk_mb=<TBD>, tmpdir=<TBD>
+Shell command: 
+        chmod +x .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor
+        .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor call variants generic --scenario .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/scenarios/ceta_benchmarks/multi_sample/scenario_common_emseq_untreated.yaml --obs  emseq=.snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/EMSeq_HG002_LAB01_REP01/normal_5-of-5.bcf  untreated=.snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/untreated/normal_5-of-5.bcf > .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_untreated/calls_5-of-5.bcf 2> .snakemake/storage/s3/koesterlab/ceta-benchmarking/logs/varlociraptor/multi_sample/untreated_emseq/call_methylation_5-of-5_emseq_untreated_false_positives.log
+        
+
+[Wed Feb 11 10:38:25 2026]
+rule varlociraptor_ceta_call_multi_all:
+    input: s3://koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor (retrieve from storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/EMSeq_HG002_LAB01_REP01/normal_5-of-5.bcf (retrieve from storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/untreated/normal_5-of-5.bcf (retrieve from storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/MethylSeq_HG002_LAB01_REP01/normal_5-of-5.bcf (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/scenarios/ceta_benchmarks/multi_sample/scenario_common_all.yaml (retrieve from storage)
+    output: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_all/calls_5-of-5.bcf (send to storage)
+    log: s3://koesterlab/ceta-benchmarking/logs/varlociraptor/multi_sample/untreated_emseq/call_methylation_5-of-5_false_positives.log (send to storage)
+    jobid: 154
+    reason: Input files updated by another job: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/EMSeq_HG002_LAB01_REP01/normal_5-of-5.bcf (in storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/untreated/normal_5-of-5.bcf (in storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/MethylSeq_HG002_LAB01_REP01/normal_5-of-5.bcf (in storage)
+    wildcards: candidates=false_positives, scatteritem=5-of-5
+    resources: mem_mb=<TBD>, disk_mb=<TBD>, tmpdir=<TBD>
+Shell command: 
+        chmod +x .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor
+        .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor call variants generic --scenario .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/scenarios/ceta_benchmarks/multi_sample/scenario_common_all.yaml --obs  emseq=.snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/EMSeq_HG002_LAB01_REP01/normal_5-of-5.bcf methylseq=.snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/MethylSeq_HG002_LAB01_REP01/normal_5-of-5.bcf untreated=.snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/untreated/normal_5-of-5.bcf > .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_all/calls_5-of-5.bcf 2> .snakemake/storage/s3/koesterlab/ceta-benchmarking/logs/varlociraptor/multi_sample/untreated_emseq/call_methylation_5-of-5_false_positives.log
+        
+
+[Wed Feb 11 10:38:25 2026]
+rule varlociraptor_ceta_call_multi_emseq_methylseq:
+    input: s3://koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor (retrieve from storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/EMSeq_HG002_LAB01_REP01/normal_2-of-5.bcf (retrieve from storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/MethylSeq_HG002_LAB01_REP01/normal_2-of-5.bcf (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/scenarios/ceta_benchmarks/multi_sample/scenario_common_emseq_methylseq.yaml (retrieve from storage)
+    output: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_methylseq/calls_2-of-5.bcf (send to storage)
+    log: s3://koesterlab/ceta-benchmarking/logs/varlociraptor/multi_sample/untreated_emseq/call_methylation_2-of-5_false_positives.log (send to storage)
+    jobid: 175
+    reason: Input files updated by another job: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/MethylSeq_HG002_LAB01_REP01/normal_2-of-5.bcf (in storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/EMSeq_HG002_LAB01_REP01/normal_2-of-5.bcf (in storage)
+    wildcards: candidates=false_positives, scatteritem=2-of-5
+    resources: mem_mb=<TBD>, disk_mb=<TBD>, tmpdir=<TBD>
+Shell command: 
+        chmod +x .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor
+        .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor call variants generic --scenario .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/scenarios/ceta_benchmarks/multi_sample/scenario_common_emseq_methylseq.yaml --obs  emseq=.snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/EMSeq_HG002_LAB01_REP01/normal_2-of-5.bcf methylseq=.snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/MethylSeq_HG002_LAB01_REP01/normal_2-of-5.bcf > .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_methylseq/calls_2-of-5.bcf 2> .snakemake/storage/s3/koesterlab/ceta-benchmarking/logs/varlociraptor/multi_sample/untreated_emseq/call_methylation_2-of-5_false_positives.log
+        
+
+[Wed Feb 11 10:38:25 2026]
+rule varlociraptor_ceta_call_single_with_prior:
+    input: s3://koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor (retrieve from storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/MethylSeq_HG002_LAB01_REP01/normal_1-of-5.bcf (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/scenarios/ceta_benchmarks/single_sample/scenario_converted_with_prior.yaml (retrieve from storage)
+    output: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/MethylSeq_HG002_LAB01_REP01_with_prior/calls_1-of-5.bcf (send to storage)
+    log: s3://koesterlab/ceta-benchmarking/logs/varlociraptor/Illumina_pe/called/MethylSeq_HG002_LAB01_REP01_with_prior/call_methylation_1-of-5_false_positives.log (send to storage)
+    jobid: 4
+    reason: Input files updated by another job: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/MethylSeq_HG002_LAB01_REP01/normal_1-of-5.bcf (in storage)
+    wildcards: candidates=false_positives, sample=MethylSeq_HG002_LAB01_REP01, scatteritem=1-of-5
+    resources: mem_mb=<TBD>, disk_mb=<TBD>, tmpdir=<TBD>
+Shell command: 
+        chmod +x .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor
+        .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor call variants generic --scenario .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/scenarios/ceta_benchmarks/single_sample/scenario_converted_with_prior.yaml --obs normal=.snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/MethylSeq_HG002_LAB01_REP01/normal_1-of-5.bcf > .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/MethylSeq_HG002_LAB01_REP01_with_prior/calls_1-of-5.bcf 2> .snakemake/storage/s3/koesterlab/ceta-benchmarking/logs/varlociraptor/Illumina_pe/called/MethylSeq_HG002_LAB01_REP01_with_prior/call_methylation_1-of-5_false_positives.log
+        
+
+[Wed Feb 11 10:38:25 2026]
+rule varlociraptor_ceta_call_single_with_prior:
+    input: s3://koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor (retrieve from storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/EMSeq_HG002_LAB01_REP01/normal_1-of-5.bcf (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/scenarios/ceta_benchmarks/single_sample/scenario_converted_with_prior.yaml (retrieve from storage)
+    output: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/EMSeq_HG002_LAB01_REP01_with_prior/calls_1-of-5.bcf (send to storage)
+    log: s3://koesterlab/ceta-benchmarking/logs/varlociraptor/Illumina_pe/called/EMSeq_HG002_LAB01_REP01_with_prior/call_methylation_1-of-5_false_positives.log (send to storage)
+    jobid: 105
+    reason: Input files updated by another job: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/EMSeq_HG002_LAB01_REP01/normal_1-of-5.bcf (in storage)
+    wildcards: candidates=false_positives, sample=EMSeq_HG002_LAB01_REP01, scatteritem=1-of-5
+    resources: mem_mb=<TBD>, disk_mb=<TBD>, tmpdir=<TBD>
+Shell command: 
+        chmod +x .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor
+        .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor call variants generic --scenario .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/scenarios/ceta_benchmarks/single_sample/scenario_converted_with_prior.yaml --obs normal=.snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/EMSeq_HG002_LAB01_REP01/normal_1-of-5.bcf > .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/EMSeq_HG002_LAB01_REP01_with_prior/calls_1-of-5.bcf 2> .snakemake/storage/s3/koesterlab/ceta-benchmarking/logs/varlociraptor/Illumina_pe/called/EMSeq_HG002_LAB01_REP01_with_prior/call_methylation_1-of-5_false_positives.log
+        
+
+[Wed Feb 11 10:38:25 2026]
+rule varlociraptor_ceta_call_multi_emseq_methylseq:
+    input: s3://koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor (retrieve from storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/EMSeq_HG002_LAB01_REP01/normal_3-of-5.bcf (retrieve from storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/MethylSeq_HG002_LAB01_REP01/normal_3-of-5.bcf (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/scenarios/ceta_benchmarks/multi_sample/scenario_common_emseq_methylseq.yaml (retrieve from storage)
+    output: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_methylseq/calls_3-of-5.bcf (send to storage)
+    log: s3://koesterlab/ceta-benchmarking/logs/varlociraptor/multi_sample/untreated_emseq/call_methylation_3-of-5_false_positives.log (send to storage)
+    jobid: 177
+    reason: Input files updated by another job: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/EMSeq_HG002_LAB01_REP01/normal_3-of-5.bcf (in storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/MethylSeq_HG002_LAB01_REP01/normal_3-of-5.bcf (in storage)
+    wildcards: candidates=false_positives, scatteritem=3-of-5
+    resources: mem_mb=<TBD>, disk_mb=<TBD>, tmpdir=<TBD>
+Shell command: 
+        chmod +x .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor
+        .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor call variants generic --scenario .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/scenarios/ceta_benchmarks/multi_sample/scenario_common_emseq_methylseq.yaml --obs  emseq=.snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/EMSeq_HG002_LAB01_REP01/normal_3-of-5.bcf methylseq=.snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/MethylSeq_HG002_LAB01_REP01/normal_3-of-5.bcf > .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_methylseq/calls_3-of-5.bcf 2> .snakemake/storage/s3/koesterlab/ceta-benchmarking/logs/varlociraptor/multi_sample/untreated_emseq/call_methylation_3-of-5_false_positives.log
+        
+
+[Wed Feb 11 10:38:25 2026]
+rule varlociraptor_ceta_call_single_with_prior:
+    input: s3://koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor (retrieve from storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/MethylSeq_HG002_LAB01_REP01/normal_4-of-5.bcf (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/scenarios/ceta_benchmarks/single_sample/scenario_converted_with_prior.yaml (retrieve from storage)
+    output: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/MethylSeq_HG002_LAB01_REP01_with_prior/calls_4-of-5.bcf (send to storage)
+    log: s3://koesterlab/ceta-benchmarking/logs/varlociraptor/Illumina_pe/called/MethylSeq_HG002_LAB01_REP01_with_prior/call_methylation_4-of-5_false_positives.log (send to storage)
+    jobid: 93
+    reason: Input files updated by another job: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/MethylSeq_HG002_LAB01_REP01/normal_4-of-5.bcf (in storage)
+    wildcards: candidates=false_positives, sample=MethylSeq_HG002_LAB01_REP01, scatteritem=4-of-5
+    resources: mem_mb=<TBD>, disk_mb=<TBD>, tmpdir=<TBD>
+Shell command: 
+        chmod +x .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor
+        .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor call variants generic --scenario .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/scenarios/ceta_benchmarks/single_sample/scenario_converted_with_prior.yaml --obs normal=.snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/MethylSeq_HG002_LAB01_REP01/normal_4-of-5.bcf > .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/MethylSeq_HG002_LAB01_REP01_with_prior/calls_4-of-5.bcf 2> .snakemake/storage/s3/koesterlab/ceta-benchmarking/logs/varlociraptor/Illumina_pe/called/MethylSeq_HG002_LAB01_REP01_with_prior/call_methylation_4-of-5_false_positives.log
+        
+
+[Wed Feb 11 10:38:25 2026]
+rule varlociraptor_ceta_call_single_with_prior:
+    input: s3://koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor (retrieve from storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/EMSeq_HG002_LAB01_REP01/normal_3-of-5.bcf (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/scenarios/ceta_benchmarks/single_sample/scenario_converted_with_prior.yaml (retrieve from storage)
+    output: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/EMSeq_HG002_LAB01_REP01_with_prior/calls_3-of-5.bcf (send to storage)
+    log: s3://koesterlab/ceta-benchmarking/logs/varlociraptor/Illumina_pe/called/EMSeq_HG002_LAB01_REP01_with_prior/call_methylation_3-of-5_false_positives.log (send to storage)
+    jobid: 116
+    reason: Input files updated by another job: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/EMSeq_HG002_LAB01_REP01/normal_3-of-5.bcf (in storage)
+    wildcards: candidates=false_positives, sample=EMSeq_HG002_LAB01_REP01, scatteritem=3-of-5
+    resources: mem_mb=<TBD>, disk_mb=<TBD>, tmpdir=<TBD>
+Shell command: 
+        chmod +x .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor
+        .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor call variants generic --scenario .snakemake/storage/s3/koesterlab/ceta-benchmarking/resources/scenarios/ceta_benchmarks/single_sample/scenario_converted_with_prior.yaml --obs normal=.snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/preprocessed/Illumina_pe/EMSeq_HG002_LAB01_REP01/normal_3-of-5.bcf > .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/EMSeq_HG002_LAB01_REP01_with_prior/calls_3-of-5.bcf 2> .snakemake/storage/s3/koesterlab/ceta-benchmarking/logs/varlociraptor/Illumina_pe/called/EMSeq_HG002_LAB01_REP01_with_prior/call_methylation_3-of-5_false_positives.log
+        
+
+[Wed Feb 11 10:38:25 2026]
+rule calls_to_vcf:
+    input: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_methylseq/calls_2-of-5.bcf (retrieve from storage)
+    output: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_methylseq/calls_2-of-5.vcf (send to storage)
+    log: s3://koesterlab/ceta-benchmarking/logs/varlociraptor_single/calls_to_vcf/ceta_benchmark/false_positives_Illumina_pe_ceta_multi_emseq_methylseq_2-of-5.log (send to storage)
+    jobid: 174
+    reason: Input files updated by another job: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_methylseq/calls_2-of-5.bcf (in storage)
+    wildcards: call_type=ceta_benchmark/false_positives, seq_platform=Illumina_pe, sample=ceta_multi_emseq_methylseq, scatteritem=2-of-5
+    threads: 10
+    resources: mem_mb=<TBD>, disk_mb=<TBD>, tmpdir=<TBD>
+Shell command: bcftools view --threads 10 .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_methylseq/calls_2-of-5.bcf -o .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_methylseq/calls_2-of-5.vcf 2> .snakemake/storage/s3/koesterlab/ceta-benchmarking/logs/varlociraptor_single/calls_to_vcf/ceta_benchmark/false_positives_Illumina_pe_ceta_multi_emseq_methylseq_2-of-5.log
+
+[Wed Feb 11 10:38:25 2026]
+rule calls_to_vcf:
+    input: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/MethylSeq_HG002_LAB01_REP01_with_prior/calls_1-of-5.bcf (retrieve from storage)
+    output: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/MethylSeq_HG002_LAB01_REP01_with_prior/calls_1-of-5.vcf (send to storage)
+    log: s3://koesterlab/ceta-benchmarking/logs/varlociraptor_single/calls_to_vcf/ceta_benchmark/false_positives_Illumina_pe_MethylSeq_HG002_LAB01_REP01_with_prior_1-of-5.log (send to storage)
+    jobid: 3
+    reason: Input files updated by another job: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/MethylSeq_HG002_LAB01_REP01_with_prior/calls_1-of-5.bcf (in storage)
+    wildcards: call_type=ceta_benchmark/false_positives, seq_platform=Illumina_pe, sample=MethylSeq_HG002_LAB01_REP01_with_prior, scatteritem=1-of-5
+    threads: 10
+    resources: mem_mb=<TBD>, disk_mb=<TBD>, tmpdir=<TBD>
+Shell command: bcftools view --threads 10 .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/MethylSeq_HG002_LAB01_REP01_with_prior/calls_1-of-5.bcf -o .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/MethylSeq_HG002_LAB01_REP01_with_prior/calls_1-of-5.vcf 2> .snakemake/storage/s3/koesterlab/ceta-benchmarking/logs/varlociraptor_single/calls_to_vcf/ceta_benchmark/false_positives_Illumina_pe_MethylSeq_HG002_LAB01_REP01_with_prior_1-of-5.log
+
+[Wed Feb 11 10:38:25 2026]
+rule calls_to_vcf:
+    input: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/EMSeq_HG002_LAB01_REP01_with_prior/calls_1-of-5.bcf (retrieve from storage)
+    output: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/EMSeq_HG002_LAB01_REP01_with_prior/calls_1-of-5.vcf (send to storage)
+    log: s3://koesterlab/ceta-benchmarking/logs/varlociraptor_single/calls_to_vcf/ceta_benchmark/false_positives_Illumina_pe_EMSeq_HG002_LAB01_REP01_with_prior_1-of-5.log (send to storage)
+    jobid: 104
+    reason: Input files updated by another job: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/EMSeq_HG002_LAB01_REP01_with_prior/calls_1-of-5.bcf (in storage)
+    wildcards: call_type=ceta_benchmark/false_positives, seq_platform=Illumina_pe, sample=EMSeq_HG002_LAB01_REP01_with_prior, scatteritem=1-of-5
+    threads: 10
+    resources: mem_mb=<TBD>, disk_mb=<TBD>, tmpdir=<TBD>
+Shell command: bcftools view --threads 10 .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/EMSeq_HG002_LAB01_REP01_with_prior/calls_1-of-5.bcf -o .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/EMSeq_HG002_LAB01_REP01_with_prior/calls_1-of-5.vcf 2> .snakemake/storage/s3/koesterlab/ceta-benchmarking/logs/varlociraptor_single/calls_to_vcf/ceta_benchmark/false_positives_Illumina_pe_EMSeq_HG002_LAB01_REP01_with_prior_1-of-5.log
+
+[Wed Feb 11 10:38:25 2026]
+rule calls_to_vcf:
+    input: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_all/calls_4-of-5.bcf (retrieve from storage)
+    output: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_all/calls_4-of-5.vcf (send to storage)
+    log: s3://koesterlab/ceta-benchmarking/logs/varlociraptor_single/calls_to_vcf/ceta_benchmark/false_positives_Illumina_pe_ceta_multi_all_4-of-5.log (send to storage)
+    jobid: 148
+    reason: Input files updated by another job: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_all/calls_4-of-5.bcf (in storage)
+    wildcards: call_type=ceta_benchmark/false_positives, seq_platform=Illumina_pe, sample=ceta_multi_all, scatteritem=4-of-5
+    threads: 10
+    resources: mem_mb=<TBD>, disk_mb=<TBD>, tmpdir=<TBD>
+Shell command: bcftools view --threads 10 .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_all/calls_4-of-5.bcf -o .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_all/calls_4-of-5.vcf 2> .snakemake/storage/s3/koesterlab/ceta-benchmarking/logs/varlociraptor_single/calls_to_vcf/ceta_benchmark/false_positives_Illumina_pe_ceta_multi_all_4-of-5.log
+
+[Wed Feb 11 10:38:25 2026]
+rule calls_to_vcf:
+    input: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_methylseq/calls_3-of-5.bcf (retrieve from storage)
+    output: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_methylseq/calls_3-of-5.vcf (send to storage)
+    log: s3://koesterlab/ceta-benchmarking/logs/varlociraptor_single/calls_to_vcf/ceta_benchmark/false_positives_Illumina_pe_ceta_multi_emseq_methylseq_3-of-5.log (send to storage)
+    jobid: 176
+    reason: Input files updated by another job: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_methylseq/calls_3-of-5.bcf (in storage)
+    wildcards: call_type=ceta_benchmark/false_positives, seq_platform=Illumina_pe, sample=ceta_multi_emseq_methylseq, scatteritem=3-of-5
+    threads: 10
+    resources: mem_mb=<TBD>, disk_mb=<TBD>, tmpdir=<TBD>
+Shell command: bcftools view --threads 10 .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_methylseq/calls_3-of-5.bcf -o .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_methylseq/calls_3-of-5.vcf 2> .snakemake/storage/s3/koesterlab/ceta-benchmarking/logs/varlociraptor_single/calls_to_vcf/ceta_benchmark/false_positives_Illumina_pe_ceta_multi_emseq_methylseq_3-of-5.log
+
+[Wed Feb 11 10:38:25 2026]
+rule calls_to_vcf:
+    input: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/MethylSeq_HG002_LAB01_REP01_with_prior/calls_2-of-5.bcf (retrieve from storage)
+    output: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/MethylSeq_HG002_LAB01_REP01_with_prior/calls_2-of-5.vcf (send to storage)
+    log: s3://koesterlab/ceta-benchmarking/logs/varlociraptor_single/calls_to_vcf/ceta_benchmark/false_positives_Illumina_pe_MethylSeq_HG002_LAB01_REP01_with_prior_2-of-5.log (send to storage)
+    jobid: 82
+    reason: Input files updated by another job: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/MethylSeq_HG002_LAB01_REP01_with_prior/calls_2-of-5.bcf (in storage)
+    wildcards: call_type=ceta_benchmark/false_positives, seq_platform=Illumina_pe, sample=MethylSeq_HG002_LAB01_REP01_with_prior, scatteritem=2-of-5
+    threads: 10
+    resources: mem_mb=<TBD>, disk_mb=<TBD>, tmpdir=<TBD>
+Shell command: bcftools view --threads 10 .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/MethylSeq_HG002_LAB01_REP01_with_prior/calls_2-of-5.bcf -o .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/MethylSeq_HG002_LAB01_REP01_with_prior/calls_2-of-5.vcf 2> .snakemake/storage/s3/koesterlab/ceta-benchmarking/logs/varlociraptor_single/calls_to_vcf/ceta_benchmark/false_positives_Illumina_pe_MethylSeq_HG002_LAB01_REP01_with_prior_2-of-5.log
+
+[Wed Feb 11 10:38:25 2026]
+rule calls_to_vcf:
+    input: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/EMSeq_HG002_LAB01_REP01_with_prior/calls_3-of-5.bcf (retrieve from storage)
+    output: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/EMSeq_HG002_LAB01_REP01_with_prior/calls_3-of-5.vcf (send to storage)
+    log: s3://koesterlab/ceta-benchmarking/logs/varlociraptor_single/calls_to_vcf/ceta_benchmark/false_positives_Illumina_pe_EMSeq_HG002_LAB01_REP01_with_prior_3-of-5.log (send to storage)
+    jobid: 115
+    reason: Input files updated by another job: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/EMSeq_HG002_LAB01_REP01_with_prior/calls_3-of-5.bcf (in storage)
+    wildcards: call_type=ceta_benchmark/false_positives, seq_platform=Illumina_pe, sample=EMSeq_HG002_LAB01_REP01_with_prior, scatteritem=3-of-5
+    threads: 10
+    resources: mem_mb=<TBD>, disk_mb=<TBD>, tmpdir=<TBD>
+Shell command: bcftools view --threads 10 .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/EMSeq_HG002_LAB01_REP01_with_prior/calls_3-of-5.bcf -o .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/EMSeq_HG002_LAB01_REP01_with_prior/calls_3-of-5.vcf 2> .snakemake/storage/s3/koesterlab/ceta-benchmarking/logs/varlociraptor_single/calls_to_vcf/ceta_benchmark/false_positives_Illumina_pe_EMSeq_HG002_LAB01_REP01_with_prior_3-of-5.log
+
+[Wed Feb 11 10:38:25 2026]
+rule calls_to_vcf:
+    input: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_all/calls_5-of-5.bcf (retrieve from storage)
+    output: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_all/calls_5-of-5.vcf (send to storage)
+    log: s3://koesterlab/ceta-benchmarking/logs/varlociraptor_single/calls_to_vcf/ceta_benchmark/false_positives_Illumina_pe_ceta_multi_all_5-of-5.log (send to storage)
+    jobid: 153
+    reason: Input files updated by another job: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_all/calls_5-of-5.bcf (in storage)
+    wildcards: call_type=ceta_benchmark/false_positives, seq_platform=Illumina_pe, sample=ceta_multi_all, scatteritem=5-of-5
+    threads: 10
+    resources: mem_mb=<TBD>, disk_mb=<TBD>, tmpdir=<TBD>
+Shell command: bcftools view --threads 10 .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_all/calls_5-of-5.bcf -o .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_all/calls_5-of-5.vcf 2> .snakemake/storage/s3/koesterlab/ceta-benchmarking/logs/varlociraptor_single/calls_to_vcf/ceta_benchmark/false_positives_Illumina_pe_ceta_multi_all_5-of-5.log
+
+[Wed Feb 11 10:38:25 2026]
+rule calls_to_vcf:
+    input: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_methylseq/calls_4-of-5.bcf (retrieve from storage)
+    output: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_methylseq/calls_4-of-5.vcf (send to storage)
+    log: s3://koesterlab/ceta-benchmarking/logs/varlociraptor_single/calls_to_vcf/ceta_benchmark/false_positives_Illumina_pe_ceta_multi_emseq_methylseq_4-of-5.log (send to storage)
+    jobid: 178
+    reason: Input files updated by another job: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_methylseq/calls_4-of-5.bcf (in storage)
+    wildcards: call_type=ceta_benchmark/false_positives, seq_platform=Illumina_pe, sample=ceta_multi_emseq_methylseq, scatteritem=4-of-5
+    threads: 10
+    resources: mem_mb=<TBD>, disk_mb=<TBD>, tmpdir=<TBD>
+Shell command: bcftools view --threads 10 .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_methylseq/calls_4-of-5.bcf -o .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_methylseq/calls_4-of-5.vcf 2> .snakemake/storage/s3/koesterlab/ceta-benchmarking/logs/varlociraptor_single/calls_to_vcf/ceta_benchmark/false_positives_Illumina_pe_ceta_multi_emseq_methylseq_4-of-5.log
+
+[Wed Feb 11 10:38:25 2026]
+rule calls_to_vcf:
+    input: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/MethylSeq_HG002_LAB01_REP01_with_prior/calls_3-of-5.bcf (retrieve from storage)
+    output: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/MethylSeq_HG002_LAB01_REP01_with_prior/calls_3-of-5.vcf (send to storage)
+    log: s3://koesterlab/ceta-benchmarking/logs/varlociraptor_single/calls_to_vcf/ceta_benchmark/false_positives_Illumina_pe_MethylSeq_HG002_LAB01_REP01_with_prior_3-of-5.log (send to storage)
+    jobid: 87
+    reason: Input files updated by another job: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/MethylSeq_HG002_LAB01_REP01_with_prior/calls_3-of-5.bcf (in storage)
+    wildcards: call_type=ceta_benchmark/false_positives, seq_platform=Illumina_pe, sample=MethylSeq_HG002_LAB01_REP01_with_prior, scatteritem=3-of-5
+    threads: 10
+    resources: mem_mb=<TBD>, disk_mb=<TBD>, tmpdir=<TBD>
+Shell command: bcftools view --threads 10 .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/MethylSeq_HG002_LAB01_REP01_with_prior/calls_3-of-5.bcf -o .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/MethylSeq_HG002_LAB01_REP01_with_prior/calls_3-of-5.vcf 2> .snakemake/storage/s3/koesterlab/ceta-benchmarking/logs/varlociraptor_single/calls_to_vcf/ceta_benchmark/false_positives_Illumina_pe_MethylSeq_HG002_LAB01_REP01_with_prior_3-of-5.log
+
+[Wed Feb 11 10:38:25 2026]
+rule calls_to_vcf:
+    input: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/untreated_with_prior/calls_1-of-5.bcf (retrieve from storage)
+    output: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/untreated_with_prior/calls_1-of-5.vcf (send to storage)
+    log: s3://koesterlab/ceta-benchmarking/logs/varlociraptor_single/calls_to_vcf/ceta_benchmark/false_positives_Illumina_pe_untreated_with_prior_1-of-5.log (send to storage)
+    jobid: 184
+    reason: Input files updated by another job: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/untreated_with_prior/calls_1-of-5.bcf (in storage)
+    wildcards: call_type=ceta_benchmark/false_positives, seq_platform=Illumina_pe, sample=untreated_with_prior, scatteritem=1-of-5
+    threads: 10
+    resources: mem_mb=<TBD>, disk_mb=<TBD>, tmpdir=<TBD>
+Shell command: bcftools view --threads 10 .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/untreated_with_prior/calls_1-of-5.bcf -o .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/untreated_with_prior/calls_1-of-5.vcf 2> .snakemake/storage/s3/koesterlab/ceta-benchmarking/logs/varlociraptor_single/calls_to_vcf/ceta_benchmark/false_positives_Illumina_pe_untreated_with_prior_1-of-5.log
+
+[Wed Feb 11 10:38:25 2026]
+rule calls_to_vcf:
+    input: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/EMSeq_HG002_LAB01_REP01_with_prior/calls_2-of-5.bcf (retrieve from storage)
+    output: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/EMSeq_HG002_LAB01_REP01_with_prior/calls_2-of-5.vcf (send to storage)
+    log: s3://koesterlab/ceta-benchmarking/logs/varlociraptor_single/calls_to_vcf/ceta_benchmark/false_positives_Illumina_pe_EMSeq_HG002_LAB01_REP01_with_prior_2-of-5.log (send to storage)
+    jobid: 110
+    reason: Input files updated by another job: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/EMSeq_HG002_LAB01_REP01_with_prior/calls_2-of-5.bcf (in storage)
+    wildcards: call_type=ceta_benchmark/false_positives, seq_platform=Illumina_pe, sample=EMSeq_HG002_LAB01_REP01_with_prior, scatteritem=2-of-5
+    threads: 10
+    resources: mem_mb=<TBD>, disk_mb=<TBD>, tmpdir=<TBD>
+Shell command: bcftools view --threads 10 .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/EMSeq_HG002_LAB01_REP01_with_prior/calls_2-of-5.bcf -o .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/EMSeq_HG002_LAB01_REP01_with_prior/calls_2-of-5.vcf 2> .snakemake/storage/s3/koesterlab/ceta-benchmarking/logs/varlociraptor_single/calls_to_vcf/ceta_benchmark/false_positives_Illumina_pe_EMSeq_HG002_LAB01_REP01_with_prior_2-of-5.log
+
+[Wed Feb 11 10:38:25 2026]
+rule calls_to_vcf:
+    input: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_methylseq/calls_5-of-5.bcf (retrieve from storage)
+    output: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_methylseq/calls_5-of-5.vcf (send to storage)
+    log: s3://koesterlab/ceta-benchmarking/logs/varlociraptor_single/calls_to_vcf/ceta_benchmark/false_positives_Illumina_pe_ceta_multi_emseq_methylseq_5-of-5.log (send to storage)
+    jobid: 180
+    reason: Input files updated by another job: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_methylseq/calls_5-of-5.bcf (in storage)
+    wildcards: call_type=ceta_benchmark/false_positives, seq_platform=Illumina_pe, sample=ceta_multi_emseq_methylseq, scatteritem=5-of-5
+    threads: 10
+    resources: mem_mb=<TBD>, disk_mb=<TBD>, tmpdir=<TBD>
+Shell command: bcftools view --threads 10 .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_methylseq/calls_5-of-5.bcf -o .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_methylseq/calls_5-of-5.vcf 2> .snakemake/storage/s3/koesterlab/ceta-benchmarking/logs/varlociraptor_single/calls_to_vcf/ceta_benchmark/false_positives_Illumina_pe_ceta_multi_emseq_methylseq_5-of-5.log
+
+[Wed Feb 11 10:38:25 2026]
+rule calls_to_vcf:
+    input: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_untreated/calls_1-of-5.bcf (retrieve from storage)
+    output: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_untreated/calls_1-of-5.vcf (send to storage)
+    log: s3://koesterlab/ceta-benchmarking/logs/varlociraptor_single/calls_to_vcf/ceta_benchmark/false_positives_Illumina_pe_ceta_multi_emseq_untreated_1-of-5.log (send to storage)
+    jobid: 160
+    reason: Input files updated by another job: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_untreated/calls_1-of-5.bcf (in storage)
+    wildcards: call_type=ceta_benchmark/false_positives, seq_platform=Illumina_pe, sample=ceta_multi_emseq_untreated, scatteritem=1-of-5
+    threads: 10
+    resources: mem_mb=<TBD>, disk_mb=<TBD>, tmpdir=<TBD>
+Shell command: bcftools view --threads 10 .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_untreated/calls_1-of-5.bcf -o .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_untreated/calls_1-of-5.vcf 2> .snakemake/storage/s3/koesterlab/ceta-benchmarking/logs/varlociraptor_single/calls_to_vcf/ceta_benchmark/false_positives_Illumina_pe_ceta_multi_emseq_untreated_1-of-5.log
+
+[Wed Feb 11 10:38:25 2026]
+rule calls_to_vcf:
+    input: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/MethylSeq_HG002_LAB01_REP01_with_prior/calls_4-of-5.bcf (retrieve from storage)
+    output: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/MethylSeq_HG002_LAB01_REP01_with_prior/calls_4-of-5.vcf (send to storage)
+    log: s3://koesterlab/ceta-benchmarking/logs/varlociraptor_single/calls_to_vcf/ceta_benchmark/false_positives_Illumina_pe_MethylSeq_HG002_LAB01_REP01_with_prior_4-of-5.log (send to storage)
+    jobid: 92
+    reason: Input files updated by another job: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/MethylSeq_HG002_LAB01_REP01_with_prior/calls_4-of-5.bcf (in storage)
+    wildcards: call_type=ceta_benchmark/false_positives, seq_platform=Illumina_pe, sample=MethylSeq_HG002_LAB01_REP01_with_prior, scatteritem=4-of-5
+    threads: 10
+    resources: mem_mb=<TBD>, disk_mb=<TBD>, tmpdir=<TBD>
+Shell command: bcftools view --threads 10 .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/MethylSeq_HG002_LAB01_REP01_with_prior/calls_4-of-5.bcf -o .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/MethylSeq_HG002_LAB01_REP01_with_prior/calls_4-of-5.vcf 2> .snakemake/storage/s3/koesterlab/ceta-benchmarking/logs/varlociraptor_single/calls_to_vcf/ceta_benchmark/false_positives_Illumina_pe_MethylSeq_HG002_LAB01_REP01_with_prior_4-of-5.log
+
+[Wed Feb 11 10:38:25 2026]
+rule calls_to_vcf:
+    input: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/untreated_with_prior/calls_2-of-5.bcf (retrieve from storage)
+    output: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/untreated_with_prior/calls_2-of-5.vcf (send to storage)
+    log: s3://koesterlab/ceta-benchmarking/logs/varlociraptor_single/calls_to_vcf/ceta_benchmark/false_positives_Illumina_pe_untreated_with_prior_2-of-5.log (send to storage)
+    jobid: 186
+    reason: Input files updated by another job: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/untreated_with_prior/calls_2-of-5.bcf (in storage)
+    wildcards: call_type=ceta_benchmark/false_positives, seq_platform=Illumina_pe, sample=untreated_with_prior, scatteritem=2-of-5
+    threads: 10
+    resources: mem_mb=<TBD>, disk_mb=<TBD>, tmpdir=<TBD>
+Shell command: bcftools view --threads 10 .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/untreated_with_prior/calls_2-of-5.bcf -o .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/untreated_with_prior/calls_2-of-5.vcf 2> .snakemake/storage/s3/koesterlab/ceta-benchmarking/logs/varlociraptor_single/calls_to_vcf/ceta_benchmark/false_positives_Illumina_pe_untreated_with_prior_2-of-5.log
+
+[Wed Feb 11 10:38:25 2026]
+rule calls_to_vcf:
+    input: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/EMSeq_HG002_LAB01_REP01_with_prior/calls_4-of-5.bcf (retrieve from storage)
+    output: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/EMSeq_HG002_LAB01_REP01_with_prior/calls_4-of-5.vcf (send to storage)
+    log: s3://koesterlab/ceta-benchmarking/logs/varlociraptor_single/calls_to_vcf/ceta_benchmark/false_positives_Illumina_pe_EMSeq_HG002_LAB01_REP01_with_prior_4-of-5.log (send to storage)
+    jobid: 120
+    reason: Input files updated by another job: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/EMSeq_HG002_LAB01_REP01_with_prior/calls_4-of-5.bcf (in storage)
+    wildcards: call_type=ceta_benchmark/false_positives, seq_platform=Illumina_pe, sample=EMSeq_HG002_LAB01_REP01_with_prior, scatteritem=4-of-5
+    threads: 10
+    resources: mem_mb=<TBD>, disk_mb=<TBD>, tmpdir=<TBD>
+Shell command: bcftools view --threads 10 .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/EMSeq_HG002_LAB01_REP01_with_prior/calls_4-of-5.bcf -o .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/EMSeq_HG002_LAB01_REP01_with_prior/calls_4-of-5.vcf 2> .snakemake/storage/s3/koesterlab/ceta-benchmarking/logs/varlociraptor_single/calls_to_vcf/ceta_benchmark/false_positives_Illumina_pe_EMSeq_HG002_LAB01_REP01_with_prior_4-of-5.log
+
+[Wed Feb 11 10:38:25 2026]
+rule calls_to_vcf:
+    input: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_untreated/calls_2-of-5.bcf (retrieve from storage)
+    output: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_untreated/calls_2-of-5.vcf (send to storage)
+    log: s3://koesterlab/ceta-benchmarking/logs/varlociraptor_single/calls_to_vcf/ceta_benchmark/false_positives_Illumina_pe_ceta_multi_emseq_untreated_2-of-5.log (send to storage)
+    jobid: 162
+    reason: Input files updated by another job: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_untreated/calls_2-of-5.bcf (in storage)
+    wildcards: call_type=ceta_benchmark/false_positives, seq_platform=Illumina_pe, sample=ceta_multi_emseq_untreated, scatteritem=2-of-5
+    threads: 10
+    resources: mem_mb=<TBD>, disk_mb=<TBD>, tmpdir=<TBD>
+Shell command: bcftools view --threads 10 .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_untreated/calls_2-of-5.bcf -o .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_untreated/calls_2-of-5.vcf 2> .snakemake/storage/s3/koesterlab/ceta-benchmarking/logs/varlociraptor_single/calls_to_vcf/ceta_benchmark/false_positives_Illumina_pe_ceta_multi_emseq_untreated_2-of-5.log
+
+[Wed Feb 11 10:38:25 2026]
+rule calls_to_vcf:
+    input: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/MethylSeq_HG002_LAB01_REP01_with_prior/calls_5-of-5.bcf (retrieve from storage)
+    output: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/MethylSeq_HG002_LAB01_REP01_with_prior/calls_5-of-5.vcf (send to storage)
+    log: s3://koesterlab/ceta-benchmarking/logs/varlociraptor_single/calls_to_vcf/ceta_benchmark/false_positives_Illumina_pe_MethylSeq_HG002_LAB01_REP01_with_prior_5-of-5.log (send to storage)
+    jobid: 97
+    reason: Input files updated by another job: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/MethylSeq_HG002_LAB01_REP01_with_prior/calls_5-of-5.bcf (in storage)
+    wildcards: call_type=ceta_benchmark/false_positives, seq_platform=Illumina_pe, sample=MethylSeq_HG002_LAB01_REP01_with_prior, scatteritem=5-of-5
+    threads: 10
+    resources: mem_mb=<TBD>, disk_mb=<TBD>, tmpdir=<TBD>
+Shell command: bcftools view --threads 10 .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/MethylSeq_HG002_LAB01_REP01_with_prior/calls_5-of-5.bcf -o .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/MethylSeq_HG002_LAB01_REP01_with_prior/calls_5-of-5.vcf 2> .snakemake/storage/s3/koesterlab/ceta-benchmarking/logs/varlociraptor_single/calls_to_vcf/ceta_benchmark/false_positives_Illumina_pe_MethylSeq_HG002_LAB01_REP01_with_prior_5-of-5.log
+
+[Wed Feb 11 10:38:25 2026]
+rule calls_to_vcf:
+    input: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/untreated_with_prior/calls_3-of-5.bcf (retrieve from storage)
+    output: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/untreated_with_prior/calls_3-of-5.vcf (send to storage)
+    log: s3://koesterlab/ceta-benchmarking/logs/varlociraptor_single/calls_to_vcf/ceta_benchmark/false_positives_Illumina_pe_untreated_with_prior_3-of-5.log (send to storage)
+    jobid: 188
+    reason: Input files updated by another job: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/untreated_with_prior/calls_3-of-5.bcf (in storage)
+    wildcards: call_type=ceta_benchmark/false_positives, seq_platform=Illumina_pe, sample=untreated_with_prior, scatteritem=3-of-5
+    threads: 10
+    resources: mem_mb=<TBD>, disk_mb=<TBD>, tmpdir=<TBD>
+Shell command: bcftools view --threads 10 .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/untreated_with_prior/calls_3-of-5.bcf -o .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/untreated_with_prior/calls_3-of-5.vcf 2> .snakemake/storage/s3/koesterlab/ceta-benchmarking/logs/varlociraptor_single/calls_to_vcf/ceta_benchmark/false_positives_Illumina_pe_untreated_with_prior_3-of-5.log
+
+[Wed Feb 11 10:38:25 2026]
+rule calls_to_vcf:
+    input: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/EMSeq_HG002_LAB01_REP01_with_prior/calls_5-of-5.bcf (retrieve from storage)
+    output: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/EMSeq_HG002_LAB01_REP01_with_prior/calls_5-of-5.vcf (send to storage)
+    log: s3://koesterlab/ceta-benchmarking/logs/varlociraptor_single/calls_to_vcf/ceta_benchmark/false_positives_Illumina_pe_EMSeq_HG002_LAB01_REP01_with_prior_5-of-5.log (send to storage)
+    jobid: 125
+    reason: Input files updated by another job: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/EMSeq_HG002_LAB01_REP01_with_prior/calls_5-of-5.bcf (in storage)
+    wildcards: call_type=ceta_benchmark/false_positives, seq_platform=Illumina_pe, sample=EMSeq_HG002_LAB01_REP01_with_prior, scatteritem=5-of-5
+    threads: 10
+    resources: mem_mb=<TBD>, disk_mb=<TBD>, tmpdir=<TBD>
+Shell command: bcftools view --threads 10 .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/EMSeq_HG002_LAB01_REP01_with_prior/calls_5-of-5.bcf -o .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/EMSeq_HG002_LAB01_REP01_with_prior/calls_5-of-5.vcf 2> .snakemake/storage/s3/koesterlab/ceta-benchmarking/logs/varlociraptor_single/calls_to_vcf/ceta_benchmark/false_positives_Illumina_pe_EMSeq_HG002_LAB01_REP01_with_prior_5-of-5.log
+
+[Wed Feb 11 10:38:25 2026]
+rule calls_to_vcf:
+    input: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_untreated/calls_3-of-5.bcf (retrieve from storage)
+    output: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_untreated/calls_3-of-5.vcf (send to storage)
+    log: s3://koesterlab/ceta-benchmarking/logs/varlociraptor_single/calls_to_vcf/ceta_benchmark/false_positives_Illumina_pe_ceta_multi_emseq_untreated_3-of-5.log (send to storage)
+    jobid: 164
+    reason: Input files updated by another job: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_untreated/calls_3-of-5.bcf (in storage)
+    wildcards: call_type=ceta_benchmark/false_positives, seq_platform=Illumina_pe, sample=ceta_multi_emseq_untreated, scatteritem=3-of-5
+    threads: 10
+    resources: mem_mb=<TBD>, disk_mb=<TBD>, tmpdir=<TBD>
+Shell command: bcftools view --threads 10 .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_untreated/calls_3-of-5.bcf -o .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_untreated/calls_3-of-5.vcf 2> .snakemake/storage/s3/koesterlab/ceta-benchmarking/logs/varlociraptor_single/calls_to_vcf/ceta_benchmark/false_positives_Illumina_pe_ceta_multi_emseq_untreated_3-of-5.log
+
+[Wed Feb 11 10:38:25 2026]
+rule calls_to_vcf:
+    input: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_all/calls_1-of-5.bcf (retrieve from storage)
+    output: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_all/calls_1-of-5.vcf (send to storage)
+    log: s3://koesterlab/ceta-benchmarking/logs/varlociraptor_single/calls_to_vcf/ceta_benchmark/false_positives_Illumina_pe_ceta_multi_all_1-of-5.log (send to storage)
+    jobid: 132
+    reason: Input files updated by another job: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_all/calls_1-of-5.bcf (in storage)
+    wildcards: call_type=ceta_benchmark/false_positives, seq_platform=Illumina_pe, sample=ceta_multi_all, scatteritem=1-of-5
+    threads: 10
+    resources: mem_mb=<TBD>, disk_mb=<TBD>, tmpdir=<TBD>
+Shell command: bcftools view --threads 10 .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_all/calls_1-of-5.bcf -o .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_all/calls_1-of-5.vcf 2> .snakemake/storage/s3/koesterlab/ceta-benchmarking/logs/varlociraptor_single/calls_to_vcf/ceta_benchmark/false_positives_Illumina_pe_ceta_multi_all_1-of-5.log
+
+[Wed Feb 11 10:38:25 2026]
+rule calls_to_vcf:
+    input: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/untreated_with_prior/calls_4-of-5.bcf (retrieve from storage)
+    output: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/untreated_with_prior/calls_4-of-5.vcf (send to storage)
+    log: s3://koesterlab/ceta-benchmarking/logs/varlociraptor_single/calls_to_vcf/ceta_benchmark/false_positives_Illumina_pe_untreated_with_prior_4-of-5.log (send to storage)
+    jobid: 190
+    reason: Input files updated by another job: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/untreated_with_prior/calls_4-of-5.bcf (in storage)
+    wildcards: call_type=ceta_benchmark/false_positives, seq_platform=Illumina_pe, sample=untreated_with_prior, scatteritem=4-of-5
+    threads: 10
+    resources: mem_mb=<TBD>, disk_mb=<TBD>, tmpdir=<TBD>
+Shell command: bcftools view --threads 10 .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/untreated_with_prior/calls_4-of-5.bcf -o .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/untreated_with_prior/calls_4-of-5.vcf 2> .snakemake/storage/s3/koesterlab/ceta-benchmarking/logs/varlociraptor_single/calls_to_vcf/ceta_benchmark/false_positives_Illumina_pe_untreated_with_prior_4-of-5.log
+
+[Wed Feb 11 10:38:25 2026]
+rule calls_to_vcf:
+    input: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_untreated/calls_4-of-5.bcf (retrieve from storage)
+    output: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_untreated/calls_4-of-5.vcf (send to storage)
+    log: s3://koesterlab/ceta-benchmarking/logs/varlociraptor_single/calls_to_vcf/ceta_benchmark/false_positives_Illumina_pe_ceta_multi_emseq_untreated_4-of-5.log (send to storage)
+    jobid: 166
+    reason: Input files updated by another job: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_untreated/calls_4-of-5.bcf (in storage)
+    wildcards: call_type=ceta_benchmark/false_positives, seq_platform=Illumina_pe, sample=ceta_multi_emseq_untreated, scatteritem=4-of-5
+    threads: 10
+    resources: mem_mb=<TBD>, disk_mb=<TBD>, tmpdir=<TBD>
+Shell command: bcftools view --threads 10 .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_untreated/calls_4-of-5.bcf -o .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_untreated/calls_4-of-5.vcf 2> .snakemake/storage/s3/koesterlab/ceta-benchmarking/logs/varlociraptor_single/calls_to_vcf/ceta_benchmark/false_positives_Illumina_pe_ceta_multi_emseq_untreated_4-of-5.log
+
+[Wed Feb 11 10:38:25 2026]
+rule calls_to_vcf:
+    input: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_all/calls_3-of-5.bcf (retrieve from storage)
+    output: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_all/calls_3-of-5.vcf (send to storage)
+    log: s3://koesterlab/ceta-benchmarking/logs/varlociraptor_single/calls_to_vcf/ceta_benchmark/false_positives_Illumina_pe_ceta_multi_all_3-of-5.log (send to storage)
+    jobid: 143
+    reason: Input files updated by another job: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_all/calls_3-of-5.bcf (in storage)
+    wildcards: call_type=ceta_benchmark/false_positives, seq_platform=Illumina_pe, sample=ceta_multi_all, scatteritem=3-of-5
+    threads: 10
+    resources: mem_mb=<TBD>, disk_mb=<TBD>, tmpdir=<TBD>
+Shell command: bcftools view --threads 10 .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_all/calls_3-of-5.bcf -o .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_all/calls_3-of-5.vcf 2> .snakemake/storage/s3/koesterlab/ceta-benchmarking/logs/varlociraptor_single/calls_to_vcf/ceta_benchmark/false_positives_Illumina_pe_ceta_multi_all_3-of-5.log
+
+[Wed Feb 11 10:38:25 2026]
+rule calls_to_vcf:
+    input: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/untreated_with_prior/calls_5-of-5.bcf (retrieve from storage)
+    output: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/untreated_with_prior/calls_5-of-5.vcf (send to storage)
+    log: s3://koesterlab/ceta-benchmarking/logs/varlociraptor_single/calls_to_vcf/ceta_benchmark/false_positives_Illumina_pe_untreated_with_prior_5-of-5.log (send to storage)
+    jobid: 192
+    reason: Input files updated by another job: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/untreated_with_prior/calls_5-of-5.bcf (in storage)
+    wildcards: call_type=ceta_benchmark/false_positives, seq_platform=Illumina_pe, sample=untreated_with_prior, scatteritem=5-of-5
+    threads: 10
+    resources: mem_mb=<TBD>, disk_mb=<TBD>, tmpdir=<TBD>
+Shell command: bcftools view --threads 10 .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/untreated_with_prior/calls_5-of-5.bcf -o .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/untreated_with_prior/calls_5-of-5.vcf 2> .snakemake/storage/s3/koesterlab/ceta-benchmarking/logs/varlociraptor_single/calls_to_vcf/ceta_benchmark/false_positives_Illumina_pe_untreated_with_prior_5-of-5.log
+
+[Wed Feb 11 10:38:25 2026]
+rule calls_to_vcf:
+    input: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_methylseq/calls_1-of-5.bcf (retrieve from storage)
+    output: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_methylseq/calls_1-of-5.vcf (send to storage)
+    log: s3://koesterlab/ceta-benchmarking/logs/varlociraptor_single/calls_to_vcf/ceta_benchmark/false_positives_Illumina_pe_ceta_multi_emseq_methylseq_1-of-5.log (send to storage)
+    jobid: 172
+    reason: Input files updated by another job: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_methylseq/calls_1-of-5.bcf (in storage)
+    wildcards: call_type=ceta_benchmark/false_positives, seq_platform=Illumina_pe, sample=ceta_multi_emseq_methylseq, scatteritem=1-of-5
+    threads: 10
+    resources: mem_mb=<TBD>, disk_mb=<TBD>, tmpdir=<TBD>
+Shell command: bcftools view --threads 10 .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_methylseq/calls_1-of-5.bcf -o .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_methylseq/calls_1-of-5.vcf 2> .snakemake/storage/s3/koesterlab/ceta-benchmarking/logs/varlociraptor_single/calls_to_vcf/ceta_benchmark/false_positives_Illumina_pe_ceta_multi_emseq_methylseq_1-of-5.log
+
+[Wed Feb 11 10:38:25 2026]
+rule calls_to_vcf:
+    input: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_untreated/calls_5-of-5.bcf (retrieve from storage)
+    output: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_untreated/calls_5-of-5.vcf (send to storage)
+    log: s3://koesterlab/ceta-benchmarking/logs/varlociraptor_single/calls_to_vcf/ceta_benchmark/false_positives_Illumina_pe_ceta_multi_emseq_untreated_5-of-5.log (send to storage)
+    jobid: 168
+    reason: Input files updated by another job: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_untreated/calls_5-of-5.bcf (in storage)
+    wildcards: call_type=ceta_benchmark/false_positives, seq_platform=Illumina_pe, sample=ceta_multi_emseq_untreated, scatteritem=5-of-5
+    threads: 10
+    resources: mem_mb=<TBD>, disk_mb=<TBD>, tmpdir=<TBD>
+Shell command: bcftools view --threads 10 .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_untreated/calls_5-of-5.bcf -o .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_untreated/calls_5-of-5.vcf 2> .snakemake/storage/s3/koesterlab/ceta-benchmarking/logs/varlociraptor_single/calls_to_vcf/ceta_benchmark/false_positives_Illumina_pe_ceta_multi_emseq_untreated_5-of-5.log
+
+[Wed Feb 11 10:38:25 2026]
+rule calls_to_vcf:
+    input: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_all/calls_2-of-5.bcf (retrieve from storage)
+    output: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_all/calls_2-of-5.vcf (send to storage)
+    log: s3://koesterlab/ceta-benchmarking/logs/varlociraptor_single/calls_to_vcf/ceta_benchmark/false_positives_Illumina_pe_ceta_multi_all_2-of-5.log (send to storage)
+    jobid: 138
+    reason: Input files updated by another job: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_all/calls_2-of-5.bcf (in storage)
+    wildcards: call_type=ceta_benchmark/false_positives, seq_platform=Illumina_pe, sample=ceta_multi_all, scatteritem=2-of-5
+    threads: 10
+    resources: mem_mb=<TBD>, disk_mb=<TBD>, tmpdir=<TBD>
+Shell command: bcftools view --threads 10 .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_all/calls_2-of-5.bcf -o .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_all/calls_2-of-5.vcf 2> .snakemake/storage/s3/koesterlab/ceta-benchmarking/logs/varlociraptor_single/calls_to_vcf/ceta_benchmark/false_positives_Illumina_pe_ceta_multi_all_2-of-5.log
+
+[Wed Feb 11 10:38:25 2026]
+rule gather_calls:
+    input: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_methylseq/calls_1-of-5.vcf (retrieve from storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_methylseq/calls_2-of-5.vcf (retrieve from storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_methylseq/calls_3-of-5.vcf (retrieve from storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_methylseq/calls_4-of-5.vcf (retrieve from storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_methylseq/calls_5-of-5.vcf (retrieve from storage)
+    output: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_methylseq/result_files/varlo.bed (send to storage)
+    log: s3://koesterlab/ceta-benchmarking/logs/varlociraptor_single/gather_calls/ceta_benchmark/false_positives_Illumina_pe_ceta_multi_emseq_methylseq.log (send to storage)
+    jobid: 171
+    reason: Input files updated by another job: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_methylseq/calls_5-of-5.vcf (in storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_methylseq/calls_3-of-5.vcf (in storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_methylseq/calls_1-of-5.vcf (in storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_methylseq/calls_4-of-5.vcf (in storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_methylseq/calls_2-of-5.vcf (in storage)
+    wildcards: call_type=ceta_benchmark/false_positives, seq_platform=Illumina_pe, sample=ceta_multi_emseq_methylseq
+    resources: mem_mb=<TBD>, disk_mb=<TBD>, tmpdir=<TBD>
+Shell command: cat .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_methylseq/calls_1-of-5.vcf .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_methylseq/calls_2-of-5.vcf .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_methylseq/calls_3-of-5.vcf .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_methylseq/calls_4-of-5.vcf .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_methylseq/calls_5-of-5.vcf > .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_methylseq/result_files/varlo.bed 2> .snakemake/storage/s3/koesterlab/ceta-benchmarking/logs/varlociraptor_single/gather_calls/ceta_benchmark/false_positives_Illumina_pe_ceta_multi_emseq_methylseq.log
+
+[Wed Feb 11 10:38:25 2026]
+rule gather_calls:
+    input: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_untreated/calls_1-of-5.vcf (retrieve from storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_untreated/calls_2-of-5.vcf (retrieve from storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_untreated/calls_3-of-5.vcf (retrieve from storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_untreated/calls_4-of-5.vcf (retrieve from storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_untreated/calls_5-of-5.vcf (retrieve from storage)
+    output: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_untreated/result_files/varlo.bed (send to storage)
+    log: s3://koesterlab/ceta-benchmarking/logs/varlociraptor_single/gather_calls/ceta_benchmark/false_positives_Illumina_pe_ceta_multi_emseq_untreated.log (send to storage)
+    jobid: 159
+    reason: Input files updated by another job: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_untreated/calls_4-of-5.vcf (in storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_untreated/calls_1-of-5.vcf (in storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_untreated/calls_3-of-5.vcf (in storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_untreated/calls_5-of-5.vcf (in storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_untreated/calls_2-of-5.vcf (in storage)
+    wildcards: call_type=ceta_benchmark/false_positives, seq_platform=Illumina_pe, sample=ceta_multi_emseq_untreated
+    resources: mem_mb=<TBD>, disk_mb=<TBD>, tmpdir=<TBD>
+Shell command: cat .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_untreated/calls_1-of-5.vcf .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_untreated/calls_2-of-5.vcf .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_untreated/calls_3-of-5.vcf .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_untreated/calls_4-of-5.vcf .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_untreated/calls_5-of-5.vcf > .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_untreated/result_files/varlo.bed 2> .snakemake/storage/s3/koesterlab/ceta-benchmarking/logs/varlociraptor_single/gather_calls/ceta_benchmark/false_positives_Illumina_pe_ceta_multi_emseq_untreated.log
+
+[Wed Feb 11 10:38:25 2026]
+rule gather_calls:
+    input: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_all/calls_1-of-5.vcf (retrieve from storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_all/calls_2-of-5.vcf (retrieve from storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_all/calls_3-of-5.vcf (retrieve from storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_all/calls_4-of-5.vcf (retrieve from storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_all/calls_5-of-5.vcf (retrieve from storage)
+    output: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_all/result_files/varlo.bed (send to storage)
+    log: s3://koesterlab/ceta-benchmarking/logs/varlociraptor_single/gather_calls/ceta_benchmark/false_positives_Illumina_pe_ceta_multi_all.log (send to storage)
+    jobid: 131
+    reason: Input files updated by another job: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_all/calls_2-of-5.vcf (in storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_all/calls_1-of-5.vcf (in storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_all/calls_3-of-5.vcf (in storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_all/calls_4-of-5.vcf (in storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_all/calls_5-of-5.vcf (in storage)
+    wildcards: call_type=ceta_benchmark/false_positives, seq_platform=Illumina_pe, sample=ceta_multi_all
+    resources: mem_mb=<TBD>, disk_mb=<TBD>, tmpdir=<TBD>
+Shell command: cat .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_all/calls_1-of-5.vcf .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_all/calls_2-of-5.vcf .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_all/calls_3-of-5.vcf .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_all/calls_4-of-5.vcf .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_all/calls_5-of-5.vcf > .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_all/result_files/varlo.bed 2> .snakemake/storage/s3/koesterlab/ceta-benchmarking/logs/varlociraptor_single/gather_calls/ceta_benchmark/false_positives_Illumina_pe_ceta_multi_all.log
+
+[Wed Feb 11 10:38:25 2026]
+rule gather_calls:
+    input: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/MethylSeq_HG002_LAB01_REP01_with_prior/calls_1-of-5.vcf (retrieve from storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/MethylSeq_HG002_LAB01_REP01_with_prior/calls_2-of-5.vcf (retrieve from storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/MethylSeq_HG002_LAB01_REP01_with_prior/calls_3-of-5.vcf (retrieve from storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/MethylSeq_HG002_LAB01_REP01_with_prior/calls_4-of-5.vcf (retrieve from storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/MethylSeq_HG002_LAB01_REP01_with_prior/calls_5-of-5.vcf (retrieve from storage)
+    output: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/MethylSeq_HG002_LAB01_REP01_with_prior/result_files/varlo.bed (send to storage)
+    log: s3://koesterlab/ceta-benchmarking/logs/varlociraptor_single/gather_calls/ceta_benchmark/false_positives_Illumina_pe_MethylSeq_HG002_LAB01_REP01_with_prior.log (send to storage)
+    jobid: 2
+    reason: Input files updated by another job: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/MethylSeq_HG002_LAB01_REP01_with_prior/calls_2-of-5.vcf (in storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/MethylSeq_HG002_LAB01_REP01_with_prior/calls_4-of-5.vcf (in storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/MethylSeq_HG002_LAB01_REP01_with_prior/calls_3-of-5.vcf (in storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/MethylSeq_HG002_LAB01_REP01_with_prior/calls_5-of-5.vcf (in storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/MethylSeq_HG002_LAB01_REP01_with_prior/calls_1-of-5.vcf (in storage)
+    wildcards: call_type=ceta_benchmark/false_positives, seq_platform=Illumina_pe, sample=MethylSeq_HG002_LAB01_REP01_with_prior
+    resources: mem_mb=<TBD>, disk_mb=<TBD>, tmpdir=<TBD>
+Shell command: cat .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/MethylSeq_HG002_LAB01_REP01_with_prior/calls_1-of-5.vcf .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/MethylSeq_HG002_LAB01_REP01_with_prior/calls_2-of-5.vcf .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/MethylSeq_HG002_LAB01_REP01_with_prior/calls_3-of-5.vcf .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/MethylSeq_HG002_LAB01_REP01_with_prior/calls_4-of-5.vcf .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/MethylSeq_HG002_LAB01_REP01_with_prior/calls_5-of-5.vcf > .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/MethylSeq_HG002_LAB01_REP01_with_prior/result_files/varlo.bed 2> .snakemake/storage/s3/koesterlab/ceta-benchmarking/logs/varlociraptor_single/gather_calls/ceta_benchmark/false_positives_Illumina_pe_MethylSeq_HG002_LAB01_REP01_with_prior.log
+
+[Wed Feb 11 10:38:25 2026]
+rule gather_calls:
+    input: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/EMSeq_HG002_LAB01_REP01_with_prior/calls_1-of-5.vcf (retrieve from storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/EMSeq_HG002_LAB01_REP01_with_prior/calls_2-of-5.vcf (retrieve from storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/EMSeq_HG002_LAB01_REP01_with_prior/calls_3-of-5.vcf (retrieve from storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/EMSeq_HG002_LAB01_REP01_with_prior/calls_4-of-5.vcf (retrieve from storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/EMSeq_HG002_LAB01_REP01_with_prior/calls_5-of-5.vcf (retrieve from storage)
+    output: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/EMSeq_HG002_LAB01_REP01_with_prior/result_files/varlo.bed (send to storage)
+    log: s3://koesterlab/ceta-benchmarking/logs/varlociraptor_single/gather_calls/ceta_benchmark/false_positives_Illumina_pe_EMSeq_HG002_LAB01_REP01_with_prior.log (send to storage)
+    jobid: 103
+    reason: Input files updated by another job: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/EMSeq_HG002_LAB01_REP01_with_prior/calls_3-of-5.vcf (in storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/EMSeq_HG002_LAB01_REP01_with_prior/calls_5-of-5.vcf (in storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/EMSeq_HG002_LAB01_REP01_with_prior/calls_4-of-5.vcf (in storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/EMSeq_HG002_LAB01_REP01_with_prior/calls_2-of-5.vcf (in storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/EMSeq_HG002_LAB01_REP01_with_prior/calls_1-of-5.vcf (in storage)
+    wildcards: call_type=ceta_benchmark/false_positives, seq_platform=Illumina_pe, sample=EMSeq_HG002_LAB01_REP01_with_prior
+    resources: mem_mb=<TBD>, disk_mb=<TBD>, tmpdir=<TBD>
+Shell command: cat .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/EMSeq_HG002_LAB01_REP01_with_prior/calls_1-of-5.vcf .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/EMSeq_HG002_LAB01_REP01_with_prior/calls_2-of-5.vcf .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/EMSeq_HG002_LAB01_REP01_with_prior/calls_3-of-5.vcf .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/EMSeq_HG002_LAB01_REP01_with_prior/calls_4-of-5.vcf .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/EMSeq_HG002_LAB01_REP01_with_prior/calls_5-of-5.vcf > .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/EMSeq_HG002_LAB01_REP01_with_prior/result_files/varlo.bed 2> .snakemake/storage/s3/koesterlab/ceta-benchmarking/logs/varlociraptor_single/gather_calls/ceta_benchmark/false_positives_Illumina_pe_EMSeq_HG002_LAB01_REP01_with_prior.log
+
+[Wed Feb 11 10:38:25 2026]
+rule gather_calls:
+    input: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/untreated_with_prior/calls_1-of-5.vcf (retrieve from storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/untreated_with_prior/calls_2-of-5.vcf (retrieve from storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/untreated_with_prior/calls_3-of-5.vcf (retrieve from storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/untreated_with_prior/calls_4-of-5.vcf (retrieve from storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/untreated_with_prior/calls_5-of-5.vcf (retrieve from storage)
+    output: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/untreated_with_prior/result_files/varlo.bed (send to storage)
+    log: s3://koesterlab/ceta-benchmarking/logs/varlociraptor_single/gather_calls/ceta_benchmark/false_positives_Illumina_pe_untreated_with_prior.log (send to storage)
+    jobid: 183
+    reason: Input files updated by another job: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/untreated_with_prior/calls_1-of-5.vcf (in storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/untreated_with_prior/calls_2-of-5.vcf (in storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/untreated_with_prior/calls_4-of-5.vcf (in storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/untreated_with_prior/calls_3-of-5.vcf (in storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/untreated_with_prior/calls_5-of-5.vcf (in storage)
+    wildcards: call_type=ceta_benchmark/false_positives, seq_platform=Illumina_pe, sample=untreated_with_prior
+    resources: mem_mb=<TBD>, disk_mb=<TBD>, tmpdir=<TBD>
+Shell command: cat .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/untreated_with_prior/calls_1-of-5.vcf .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/untreated_with_prior/calls_2-of-5.vcf .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/untreated_with_prior/calls_3-of-5.vcf .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/untreated_with_prior/calls_4-of-5.vcf .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/untreated_with_prior/calls_5-of-5.vcf > .snakemake/storage/s3/koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/untreated_with_prior/result_files/varlo.bed 2> .snakemake/storage/s3/koesterlab/ceta-benchmarking/logs/varlociraptor_single/gather_calls/ceta_benchmark/false_positives_Illumina_pe_untreated_with_prior.log
+
+[Wed Feb 11 10:38:25 2026]
+rule event_probs_df:
+    input: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/MethylSeq_HG002_LAB01_REP01_with_prior/result_files/varlo.bed (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/21/candidates.bcf (retrieve from storage)
+    output: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/MethylSeq_HG002_LAB01_REP01_with_prior/result_files/events_1.0.parquet (send to storage)
+    log: s3://koesterlab/ceta-benchmarking/logs/plot_results/event_probs_df/MethylSeq_HG002_LAB01_REP01_with_prior_1.0_false_positives.log (send to storage)
+    jobid: 1
+    reason: Input files updated by another job: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/MethylSeq_HG002_LAB01_REP01_with_prior/result_files/varlo.bed (in storage)
+    wildcards: candidates=false_positives, sample=MethylSeq_HG002_LAB01_REP01_with_prior, fdr=1.0
+    resources: mem_mb=64000, mem_mib=61036, disk_mb=<TBD>, tmpdir=<TBD>
+Shell command: None
+
+[Wed Feb 11 10:38:25 2026]
+rule event_probs_df:
+    input: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/untreated_with_prior/result_files/varlo.bed (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/21/candidates.bcf (retrieve from storage)
+    output: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/untreated_with_prior/result_files/events_1.0.parquet (send to storage)
+    log: s3://koesterlab/ceta-benchmarking/logs/plot_results/event_probs_df/untreated_with_prior_1.0_false_positives.log (send to storage)
+    jobid: 182
+    reason: Input files updated by another job: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/untreated_with_prior/result_files/varlo.bed (in storage)
+    wildcards: candidates=false_positives, sample=untreated_with_prior, fdr=1.0
+    resources: mem_mb=64000, mem_mib=61036, disk_mb=<TBD>, tmpdir=<TBD>
+Shell command: None
+
+[Wed Feb 11 10:38:25 2026]
+rule event_probs_df:
+    input: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_untreated/result_files/varlo.bed (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/21/candidates.bcf (retrieve from storage)
+    output: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_untreated/result_files/events_1.0.parquet (send to storage)
+    log: s3://koesterlab/ceta-benchmarking/logs/plot_results/event_probs_df/ceta_multi_emseq_untreated_1.0_false_positives.log (send to storage)
+    jobid: 158
+    reason: Input files updated by another job: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_untreated/result_files/varlo.bed (in storage)
+    wildcards: candidates=false_positives, sample=ceta_multi_emseq_untreated, fdr=1.0
+    resources: mem_mb=64000, mem_mib=61036, disk_mb=<TBD>, tmpdir=<TBD>
+Shell command: None
+
+[Wed Feb 11 10:38:25 2026]
+rule event_probs_df:
+    input: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/EMSeq_HG002_LAB01_REP01_with_prior/result_files/varlo.bed (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/21/candidates.bcf (retrieve from storage)
+    output: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/EMSeq_HG002_LAB01_REP01_with_prior/result_files/events_1.0.parquet (send to storage)
+    log: s3://koesterlab/ceta-benchmarking/logs/plot_results/event_probs_df/EMSeq_HG002_LAB01_REP01_with_prior_1.0_false_positives.log (send to storage)
+    jobid: 102
+    reason: Input files updated by another job: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/EMSeq_HG002_LAB01_REP01_with_prior/result_files/varlo.bed (in storage)
+    wildcards: candidates=false_positives, sample=EMSeq_HG002_LAB01_REP01_with_prior, fdr=1.0
+    resources: mem_mb=64000, mem_mib=61036, disk_mb=<TBD>, tmpdir=<TBD>
+Shell command: None
+
+[Wed Feb 11 10:38:25 2026]
+rule event_probs_df:
+    input: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_methylseq/result_files/varlo.bed (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/21/candidates.bcf (retrieve from storage)
+    output: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_methylseq/result_files/events_1.0.parquet (send to storage)
+    log: s3://koesterlab/ceta-benchmarking/logs/plot_results/event_probs_df/ceta_multi_emseq_methylseq_1.0_false_positives.log (send to storage)
+    jobid: 170
+    reason: Input files updated by another job: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_methylseq/result_files/varlo.bed (in storage)
+    wildcards: candidates=false_positives, sample=ceta_multi_emseq_methylseq, fdr=1.0
+    resources: mem_mb=64000, mem_mib=61036, disk_mb=<TBD>, tmpdir=<TBD>
+Shell command: None
+
+[Wed Feb 11 10:38:25 2026]
+rule event_probs_df:
+    input: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_all/result_files/varlo.bed (retrieve from storage), s3://koesterlab/ceta-benchmarking/resources/21/candidates.bcf (retrieve from storage)
+    output: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_all/result_files/events_1.0.parquet (send to storage)
+    log: s3://koesterlab/ceta-benchmarking/logs/plot_results/event_probs_df/ceta_multi_all_1.0_false_positives.log (send to storage)
+    jobid: 130
+    reason: Input files updated by another job: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_all/result_files/varlo.bed (in storage)
+    wildcards: candidates=false_positives, sample=ceta_multi_all, fdr=1.0
+    resources: mem_mb=64000, mem_mib=61036, disk_mb=<TBD>, tmpdir=<TBD>
+Shell command: None
+
+[Wed Feb 11 10:38:25 2026]
+rule plot_ceta_probs:
+    input: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/MethylSeq_HG002_LAB01_REP01_with_prior/result_files/events_1.0.parquet (retrieve from storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/EMSeq_HG002_LAB01_REP01_with_prior/result_files/events_1.0.parquet (retrieve from storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_all/result_files/events_1.0.parquet (retrieve from storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_untreated/result_files/events_1.0.parquet (retrieve from storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_methylseq/result_files/events_1.0.parquet (retrieve from storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/untreated_with_prior/result_files/events_1.0.parquet (retrieve from storage)
+    output: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/result_files/combined_1.0.html (send to storage)
+    log: s3://koesterlab/ceta-benchmarking/logs/plots/plot_ceta_probs_1.0_false_positives.log (send to storage)
+    jobid: 0
+    reason: Input files updated by another job: s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_untreated/result_files/events_1.0.parquet (in storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/MethylSeq_HG002_LAB01_REP01_with_prior/result_files/events_1.0.parquet (in storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_all/result_files/events_1.0.parquet (in storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/untreated_with_prior/result_files/events_1.0.parquet (in storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/ceta_multi_emseq_methylseq/result_files/events_1.0.parquet (in storage), s3://koesterlab/ceta-benchmarking/results/ceta_benchmark/false_positives/Illumina_pe/called/EMSeq_HG002_LAB01_REP01_with_prior/result_files/events_1.0.parquet (in storage)
+    wildcards: candidates=false_positives, fdr=1.0
+    resources: mem_mb=16000, mem_mib=15259, disk_mb=<TBD>, tmpdir=<TBD>
+Shell command: None
+Job stats:
+job                                              count
+---------------------------------------------  -------
+calls_to_vcf                                        30
+compress_vcf                                         1
+event_probs_df                                       6
+false_positives_to_bcf                               1
+gather_calls                                         6
+plot_ceta_probs                                      1
+positives_in_confident_intervals                     1
+positives_no_true_variants                           1
+split_ceta_candidates_false_positives                1
+varlociraptor_ceta_call_multi                        5
+varlociraptor_ceta_call_multi_all                    5
+varlociraptor_ceta_call_multi_emseq_methylseq        5
+varlociraptor_ceta_call_single_with_prior           15
+varlociraptor_ceta_preprocess                       15
+total                                               93
+
+Reasons:
+    (check individual jobs above for details)
+    input files updated by another job:
+        calls_to_vcf, compress_vcf, event_probs_df, false_positives_to_bcf, gather_calls, plot_ceta_probs, positives_no_true_variants, split_ceta_candidates_false_positives, varlociraptor_ceta_call_multi, varlociraptor_ceta_call_multi_all, varlociraptor_ceta_call_multi_emseq_methylseq, varlociraptor_ceta_call_single_with_prior, varlociraptor_ceta_preprocess
+    updated input files:
+        positives_in_confident_intervals
+33 jobs have missing provenance/metadata so that it in part cannot be used to trigger re-runs.
+Rules with missing metadata: align_reads_pe aligned_reads_focus_on_chromosome aligned_reads_index aligned_reads_sort bwameth_index download_genome download_untreated_fastqs download_variant_truth focus_genome_on_chromosome get_fastq_pe trim_fastq_pe trim_untreated_fastqs
+This was a dry-run (flag -n). The order of jobs does not reflect the order of execution.
