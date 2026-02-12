@@ -162,7 +162,7 @@ def read_tool_file(filepath: str, file_name: str) -> pd.DataFrame:
                 modified_base = parts[3]
                 details = parts[9].split()
                 print(parts, details, file=sys.stderr)
-                meth_rate = float(details[1])
+                meth_rate = float(details[0])
 
                 if modified_base == "m":
                     records.append([chrom, position, meth_rate, pd.NA])

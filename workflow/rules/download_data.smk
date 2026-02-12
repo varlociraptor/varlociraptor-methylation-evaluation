@@ -157,22 +157,38 @@ rule get_pacbio_data:
     shell:
         "samtools view -b {params.url} {params.chromosome} > {output.alignment} 2> {log}"
 
+rule get_nanopore_index:
+    output:
+        "resources/Nanopore/{sample}/{SRA}/alignment.bam.bai",
+    log:
+        "logs/download_data/get_nanopore_index/{sample}_{SRA}.log",
+    conda:
+        "../envs/samtools.yaml"
+    params:
+        url=lambda wildcards: config.get(str(wildcards.SRA)),
+    shell:
+        "wget {params.url}.bai -O {output} 2> {log}"
 
 # TODO: Does not work for replicate2. You have to download this manually with wget right now
 rule get_nanopore_data:
     output:
-        alignment="resources/Nanopore/{sample}/{SRA}/alignment.bam",
+        alignment="resources/Nanopore/{sample}/{SRA}/alignment.bam"
     params:
-        url=lambda wildcards: config.get(str(wildcards.SRA)),
-        chromosome=f"chr{config['seq_platforms'].get('Nanopore')}",
+        url=lambda wc: config.get(str(wc.SRA)),
+        chromosome=lambda wc: f"chr{config['seq_platforms']['Nanopore']}"
     log:
-        "logs/download_data/get_nanopore_data/{sample}_{SRA}.log",
+        "logs/download_data/get_nanopore_data/{sample}_{SRA}.log"
     resources:
-        mem_mb=4096,
+        mem_mb=4096
     conda:
         "../envs/samtools.yaml"
     shell:
-        "samtools view -b {params.url} {params.chromosome} > {output.alignment} 2> {log}"
+        """
+        mkdir -p $(dirname {output.alignment}) \
+         && wget -qO- {params.url} \
+        | samtools view -b - {params.chromosome} > {output.alignment} 2> {log}
+        """
+
 # rule get_nanopore_data:
 #     output:
 #         alignment="resources/Nanopore/{sample}/{SRA}/alignment.bam",

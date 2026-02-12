@@ -9,3 +9,4 @@ dependencies:
   - gcc =15.2
   - make =4.3
   - gxx =15.2
+  - unix-ar =0.2
