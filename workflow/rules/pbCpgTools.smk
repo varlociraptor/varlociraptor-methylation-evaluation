@@ -19,8 +19,8 @@
 
 rule pb_CpG_compute_methylation:
     input:
-        runner="resources/ref_tools/pb-CpG-tools/pb-CpG-tools-v2.3.1-x86_64-unknown-linux-gnu/bin/aligned_bam_to_cpg_scores",
-        model="resources/ref_tools/pb-CpG-tools/pb-CpG-tools-v2.3.1-x86_64-unknown-linux-gnu/models/pileup_calling_model.v1.tflite",
+        # runner="resources/ref_tools/pb-CpG-tools/pb-CpG-tools-v2.3.1-x86_64-unknown-linux-gnu/bin/aligned_bam_to_cpg_scores",
+        # model="resources/ref_tools/pb-CpG-tools/pb-CpG-tools-v2.3.1-x86_64-unknown-linux-gnu/models/pileup_calling_model.v1.tflite",
         alignment="resources/{platform}/{sample}/alignment_focused_downsampled_dedup_renamed.bam",
         alignment_index="resources/{platform}/{sample}/alignment_focused_downsampled_dedup_renamed.bam.bai",
         chromosome=lambda wildcards: expand(
@@ -28,13 +28,16 @@ rule pb_CpG_compute_methylation:
             chromosome=chromosome_by_seq_platform.get(wildcards.platform),
         ),
     output:
-        "results/single_sample/{platform}/called/{sample}/result_files/alignments_CpG.combined.bed",
+        "results/single_sample/{platform}/called/{sample}/result_files/alignments_CpG.combined.bed.gz",
     log:
         "logs/pb_CpG_tools/pb_CpG_compute_methylation/{platform}_{sample}.log",
     params:
-        prefix=lambda wildcards, input, output: os.path.splitext(output[0])[0].replace(
-            ".combined", ""
-        ),
+        # prefix=lambda wildcards, input, output: os.path.splitext(output[0])[0].replace(
+        #     ".combined", ""
+        # ),
+        # params:
+        prefix=lambda wildcards, input, output: output[0].replace(".combined.bed.gz", "")
+
     threads: 1
     conda:
         "../envs/pbcpgtools.yaml"
@@ -43,6 +46,18 @@ rule pb_CpG_compute_methylation:
     shell:
         "aligned_bam_to_cpg_scores --bam {input.alignment} --output-prefix {params.prefix} --threads {threads} 2> {log}"
 
+
+rule unpack_pb_CpG_output:
+    input:
+        "results/single_sample/{platform}/called/{sample}/result_files/alignments_CpG.combined.bed.gz",
+    output:
+        "results/single_sample/{platform}/called/{sample}/result_files/alignments_CpG.combined.bed",
+    log:
+        "logs/pb_CpG_tools/pb_CpG_unpack_output/{platform}_{sample}.log",
+    conda:
+        "../envs/general.yaml"
+    shell:
+        "gunzip -c {input} > {output} 2> {log}"
 
 rule pb_CpG_rename_output:
     input:
