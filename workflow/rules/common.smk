@@ -24,6 +24,9 @@ def compute_results() -> List[List[str]]:
         inputs.append(
             f"results/single_sample/Illumina_pe/plots/bar_plot_single_samples.{config['plot_type']}"
         )
+        inputs.append(
+            f"results/single_sample/Illumina_pe/plots/simulated_data_21.html"
+        )
 
     # Multi-sample common heatmaps
     inputs.append(heatmap_replicates_common())
@@ -96,6 +99,7 @@ def get_sample_sra_bismark(wildcards) -> List[str]:
     """
     Return Bismark alignment BAM file paths for a given sample.
     """
+    print(wildcards)
     base_path = Path("resources/ref_tools/bismark/alignment") / wildcards.sample
     accession_numbers = config["data"]["Illumina_pe"][wildcards.sample]
 

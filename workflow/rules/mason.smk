@@ -61,15 +61,15 @@ rule mason_fake_reads:
     input:
         genome=expand(
             "resources/chromosome_{chrom}.fasta",
-            chrom=config["seq_platforms"].get("Illumina_pe"),
+            chrom=config["seq_platforms"].get("Illumina_pe", []),
         ),
         variants=expand(
             "resources/Illumina_pe/simulated_data_{{REP}}/chromosome_{chrom}_variants.vcf",
-            chrom=config["seq_platforms"].get("Illumina_pe"),
+            chrom=config["seq_platforms"].get("Illumina_pe", []),
         ),
         methylation=expand(
             "resources/Illumina_pe/simulated_data_{{REP}}/chromosome_{chrom}_meth.fa",
-            chrom=config["seq_platforms"].get("Illumina_pe"),
+            chrom=config["seq_platforms"].get("Illumina_pe", []),
         ),
     output:
         f1="resources/Illumina_pe/simulated_data_{REP}/{SRA}/{SRA}_1.fastq",
@@ -97,23 +97,19 @@ rule mason_align_reads:
     input:
         fasta=expand(
             "resources/chromosome_{chrom}.fasta",
-            chrom=config["seq_platforms"].get("Illumina_pe"),
+            chrom=config["seq_platforms"].get("Illumina_pe", []),
         ),
         fasta_index=expand(
             "resources/chromosome_{chrom}.fasta.bwameth.c2t",
-            chrom=config["seq_platforms"].get("Illumina_pe"),
+            chrom=config["seq_platforms"].get("Illumina_pe", []),
         ),
         f1=expand(
             "resources/Illumina_pe/simulated_data_{{REP}}/{SRA}/{SRA}_1.fastq",
-            SRA=lambda wildcards: config["data"]["Illumina_pe"][
-                f"simulated_data_{wildcards.REP}"
-            ],
+            SRA=lambda wildcards: config["data"].get("simulated_data", []),
         ),
         f2=expand(
             "resources/Illumina_pe/simulated_data_{{REP}}/{SRA}/{SRA}_2.fastq",
-            SRA=lambda wildcards: config["data"]["Illumina_pe"][
-                f"simulated_data_{wildcards.REP}"
-            ],
+            SRA=lambda wildcards: config["data"].get("simulated_data", []),
         ),
     output:
         "resources/Illumina_pe/simulated_data_{REP}/alignment.sam",
@@ -231,6 +227,21 @@ rule mason_index_oriented_alignment:
 # | awk '{print $1 "\t" $2-1 "\t" $2-1+length($3)}' \
 # > candidates.bed
 
+rule candidates_to_bed:
+    input:
+        "resources/{chrom}/candidates.bcf",
+    output:
+        "resources/{chrom}/candidates.bed",
+    conda:
+        "../envs/samtools.yaml"
+    log:
+        "logs/mason/candidates_to_bed/{chrom}.log",
+    shell:
+        """
+        bcftools query -f '%CHROM\t%POS\t%REF\n' {input} 2> {log} | \
+        awk '{{print $1 "\t" $2-1 "\t" $2-1+length($3)}}' > {output}
+        """
+
 
 rule mason_coverage:
     input:
@@ -303,7 +314,14 @@ rule mason_plot_truth_to_results:
         truth="resources/Illumina_pe/simulated_data_{REP}/chromosome_{chrom}_truth.csv",
         results_rep="results/single_sample/Illumina_pe/result_files/sample_df_simulated_data_{REP}.parquet",
     output:
-        "results/single_sample/Illumina_pe/plots/simulated_{REP}_{chrom}.html",
+        report("results/single_sample/Illumina_pe/plots/simulated_{REP}_{chrom}.html",
+                category="simulated_data",
+                labels=lambda wildcards: {
+                    "file": "heatmap",
+                    "sample": f"simulated_data",
+                },
+                caption="../report/heatmap.rst",
+                ),
     conda:
         "../envs/python.yaml"
     log:

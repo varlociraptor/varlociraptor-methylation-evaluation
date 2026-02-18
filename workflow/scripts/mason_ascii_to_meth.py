@@ -3,7 +3,7 @@ import re
 import polars as pl
 
 # Redirect standard error to snakemake log file
-# sys.stderr = open(snakemake.log[0], "w")
+sys.stderr = open(snakemake.log[0], "w")
 pl.Config.set_tbl_cols(20)
 
 

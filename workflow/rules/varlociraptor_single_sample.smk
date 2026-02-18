@@ -26,7 +26,7 @@ rule varlociraptor_preprocess:
         mem_mb=16000,
     shell:
         """
-        if [[ "{wildcards.seq_platform}" == "Illumina_pe" || "{wildcards.seq_platform}" == "Illumina_se" ]]; then
+        if [[ "{wildcards.seq_platform}" == "Illumina_pe" || "{wildcards.seq_platform}" == "Illumina_se" || "{wildcards.seq_platform}" == "Simulated" ]]; then
             meth="converted"
         else
             meth="annotated"

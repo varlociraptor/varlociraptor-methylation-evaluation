@@ -38,8 +38,9 @@ rule common_tool_df:
         tools=lambda wildcards: expand(
             "results/{{call_type}}/{{seq_platform}}/called/{{sample}}/result_files/{method}.parquet",
             method=config["ref_tools"].get(
-                wildcards.seq_platform,
-                config["ref_tools"].get(wildcards.call_type, []),
+                wildcards.seq_platform, []
+
+                # config["ref_tools"].get(wildcards.call_type, []),
             ),
         ),
         varlo=expand(

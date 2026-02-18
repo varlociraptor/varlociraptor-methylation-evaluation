@@ -3,6 +3,7 @@ import altair as alt
 import numpy as np
 import pandas as pd
 
+sys.stderr = open(snakemake.log[0], "w")
 pd.set_option("display.max_rows", 1000)
 
 
