@@ -4,7 +4,7 @@ rule methylDackel_compute_meth:
         genome=lambda wildcards: (
             expand(
                 "resources/chromosome_{chrom}.fasta",
-                chrom=config["seq_platforms"].get("Illumina_pe"),
+                chrom=config["seq_platforms"].get(wildcards.platform),
             )
             if wildcards.sample.startswith("simulated_data")
             else ["resources/genome.fasta"]
@@ -12,7 +12,7 @@ rule methylDackel_compute_meth:
         genome_index=lambda wildcards: (
             expand(
                 "resources/chromosome_{chrom}.fasta.fai",
-                chrom=config["seq_platforms"].get("Illumina_pe"),
+                chrom=config["seq_platforms"].get(wildcards.platform),
             )
             if wildcards.sample.startswith("simulated_data")
             else ["resources/genome.fasta.fai"]
@@ -25,16 +25,16 @@ rule methylDackel_compute_meth:
         #     "resources/chromosome_{chrom}.fasta.fai",
         #     chrom=config["seq_platforms"].get("Illumina_pe"),
         # ),
-        alignment="resources/Illumina_pe/{sample}/alignment_focused_downsampled_dedup_renamed.bam",
-        alignment_index="resources/Illumina_pe/{sample}/alignment_focused_downsampled_dedup_renamed.bam.bai",
+        alignment="resources/{platform}/{sample}/alignment_focused_downsampled_dedup_renamed.bam",
+        alignment_index="resources/{platform}/{sample}/alignment_focused_downsampled_dedup_renamed.bam.bai",
     output:
-        "results/single_sample/Illumina_pe/called/{sample}/result_files/alignments_CpG.bedGraph",
+        "results/single_sample/{platform}/called/{sample}/result_files/alignments_CpG.bedGraph",
     conda:
         "../envs/methylDackel.yaml"
     log:
-        "logs/methylDackel/methylDackel_compute_meth/{sample}.log",
+        "logs/methylDackel/methylDackel_compute_meth/{platform}_{sample}.log",
     benchmark:
-        "benchmarks/Illumina_pe/methylDackel/methylDackel/{sample}.bwa.benchmark.txt"
+        "benchmarks/{platform}/methylDackel/methylDackel/{sample}.bwa.benchmark.txt"
     params:
         prefix=lambda wildcards, input, output: os.path.splitext(output[0])[0].replace(
             ".combined", ".bedGraph"
@@ -51,11 +51,11 @@ rule methylDackel_compute_meth:
 
 rule methylDackel_rename_output:
     input:
-        "results/single_sample/Illumina_pe/called/{sample}/result_files/alignments_CpG.bedGraph",
+        "results/single_sample/{platform}/called/{sample}/result_files/alignments_CpG.bedGraph",
     output:
-        "results/single_sample/Illumina_pe/called/{sample}/result_files/methylDackel.bed",
+        "results/single_sample/{platform}/called/{sample}/result_files/methylDackel.bed",
     log:
-        "logs/methylDackel/methylDackel_rename_output/{sample}.log",
+        "logs/methylDackel/methylDackel_rename_output/{platform}_{sample}.log",
     conda:
         "../envs/general.yaml"
     shell:

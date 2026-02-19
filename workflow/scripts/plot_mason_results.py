@@ -5,12 +5,12 @@ import pandas as pd
 
 sys.stderr = open(snakemake.log[0], "w")
 pd.set_option("display.max_rows", 1000)
+pl.Config.set_tbl_cols(100)
 
-
-truth_df = pl.read_csv(snakemake.input.truth)
+truth_df = pl.read_csv(snakemake.input.truth).with_columns(
+    pl.col("chrom").cast(pl.Utf8))
 replicate_df = pl.read_parquet(snakemake.input.results_rep)
 meth_callers = snakemake.params.meth_callers
-
 
 df = truth_df.join(
     replicate_df,
@@ -53,6 +53,7 @@ def compute_mae(df, meth_caller) -> float:
         .alias("mae_row")
     )
     mae = df.select(pl.col("mae_row").mean()).item()
+    print(df.head(), file=sys.stderr)
     return float(mae)
 
 

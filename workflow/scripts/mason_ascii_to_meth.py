@@ -33,6 +33,7 @@ def parse_cov(file_path, strand, df):
         .select(["chrom", "pos", "coverage"])
         .with_columns(pl.col("coverage").alias(f"coverage_{strand}"))
         .drop("coverage")
+        .with_columns(pl.col("chrom").cast(pl.Utf8))
     ).with_columns(
         pl.col("pos") + 1  # Convert to 1-based position
     )

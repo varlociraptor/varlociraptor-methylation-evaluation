@@ -153,7 +153,7 @@ rule deduplicate_bismark:
 #         output_dir="resources/ref_tools/bismark/meth",  # optional output dir
 #         extra="--gzip --comprehensive --bedGraph --zero_based",  # optional params string
 #     benchmark:
-#         "benchmarks/Illumina_pe/bismark/bismark_methylation_extractor/{sample}.bwa.benchmark.txt"
+#         "benchmarks/{platform}/bismark/bismark_methylation_extractor/{sample}.bwa.benchmark.txt"
 #     resources:
 #         mem_mb=16000,
 #     wrapper:
@@ -168,7 +168,7 @@ rule bismark_extract:
     conda:
         "../envs/bismark.yaml"
     log:
-        "logs/bismark/{sample}/extract_results.log",
+        "logs/bismark_extract/{sample}.log",
     benchmark:
         "benchmarks/Illumina_pe/bismark/bismark_methylation_extractor/{sample}.bwa.benchmark.txt"
     resources:
@@ -194,9 +194,9 @@ rule bismark_merge_positions:
             chrom=config["seq_platforms"].get("Illumina_pe"),
         ),
     output:
-        "results/single_sample/Illumina_pe/called/{sample}/result_files/bismark.bed",
+        "results/single_sample/{platform}/called/{sample}/result_files/bismark.bed",
     log:
-        "logs/bismark/bismark_merge_positions/{sample}.log",
+        "logs/bismark/bismark_merge_positions/{platform}_{sample}.log",
     conda:
         "../envs/pysam.yaml"
     script:

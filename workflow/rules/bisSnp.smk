@@ -30,8 +30,8 @@ rule bissnp_prepare:
             "resources/chromosome_{chrom}.fasta.fai",
             chrom=config["seq_platforms"].get("Illumina_pe"),
         ),
-        alignment="resources/Illumina_pe/{sample}/alignment_focused_downsampled_dedup_renamed.bam",
-        alignment_index="resources/Illumina_pe/{sample}/alignment_focused_downsampled_dedup_renamed.bam.bai",
+        alignment="resources/{platform}/{sample}/alignment_focused_downsampled_dedup_renamed.bam",
+        alignment_index="resources/{platform}/{sample}/alignment_focused_downsampled_dedup_renamed.bam.bai",
     output:
         jar="resources/ref_tools/Bis-tools/{sample}/BisSNP-0.82.2.jar",
         genome="resources/ref_tools/Bis-tools/{sample}/genome.fasta",
@@ -129,8 +129,8 @@ rule bissnp_extract:
         alignment="resources/ref_tools/Bis-tools/{sample}/alignment.bam",
         alignment_index="resources/ref_tools/Bis-tools/{sample}/alignment.bam.bai",
     output:
-        cpg="results/single_sample/Illumina_pe/called/{sample}/result_files/cpg.raw.vcf",
-        snp="results/single_sample/Illumina_pe/called/{sample}/result_files/snp.raw.vcf",
+        cpg="results/single_sample/{platform}/called/{sample}/result_files/cpg.raw.vcf",
+        snp="results/single_sample/{platform}/called/{sample}/result_files/snp.raw.vcf",
     conda:
         "../envs/openjdk.yaml"
     params:
@@ -139,9 +139,9 @@ rule bissnp_extract:
         ),
         chromosome=chromosome_by_seq_platform.get("Illumina_pe"),
     log:
-        "logs/bissnp/bissnp_extract/{sample}.log",
+        "logs/bissnp/bissnp_extract/{platform}_{sample}.log",
     benchmark:
-        "benchmarks/Illumina_pe/bisSNP/bissnp_extract/{sample}.txt"
+        "benchmarks/{platform}/bisSNP/bissnp_extract/{sample}.txt"
     resources:
         mem_mb=64000,
     shell:
@@ -151,16 +151,16 @@ rule bissnp_extract:
 rule gather_bisSnp:
     input:
         cpg=gather.split_candidates(
-            "results/single_sample/Illumina_pe/called/{{sample}}/result_files/cpg.raw.vcf",
+            "results/single_sample/{{platform}}/called/{{sample}}/result_files/cpg.raw.vcf",
         ),
         snp=gather.split_candidates(
-            "results/single_sample/Illumina_pe/called/{{sample}}/result_files/snp.raw.vcf",
+            "results/single_sample/{{platform}}/called/{{sample}}/result_files/snp.raw.vcf",
         ),
     output:
-        cpg="results/single_sample/Illumina_pe/called/{sample}/result_files/cpg.raw.vcf",
-        snp="results/single_sample/Illumina_pe/called/{sample}/result_files/snp.raw.vcf",
+        cpg="results/single_sample/{platform}/called/{sample}/result_files/cpg.raw.vcf",
+        snp="results/single_sample/{platform}/called/{sample}/result_files/snp.raw.vcf",
     log:
-        "logs/bissnp/gather_bissnp/{sample}.log",
+        "logs/bissnp/gather_bissnp/{platform}_{sample}.log",
     conda:
         "../envs/general.yaml"
     shell:
@@ -178,11 +178,11 @@ rule gather_bisSnp:
 rule bissnp_create_bedgraph:
     input:
         perl_script="workflow/scripts/bissnp_bedGraph.pl",
-        cpg="results/single_sample/Illumina_pe/called/{sample}/result_files/cpg.raw.vcf",
+        cpg="results/single_sample/{platform}/called/{sample}/result_files/cpg.raw.vcf",
     output:
-        "results/single_sample/Illumina_pe/called/{sample}/result_files/cpg.raw.CG.bedgraph",
+        "results/single_sample/{platform}/called/{sample}/result_files/cpg.raw.CG.bedgraph",
     log:
-        "logs/bissnp/bissnp_create_bedgraph/{sample}.log",
+        "logs/bissnp/bissnp_create_bedgraph/{platform}_{sample}.log",
     conda:
         "../envs/openjdk.yaml"
     shell:
@@ -191,7 +191,7 @@ rule bissnp_create_bedgraph:
 
 rule bissnp_merge_positions:
     input:
-        bedgraph="results/single_sample/Illumina_pe/called/{sample}/result_files/cpg.raw.CG.bedgraph",
+        bedgraph="results/single_sample/{platform}/called/{sample}/result_files/cpg.raw.CG.bedgraph",
         candidates=expand(
             "resources/{chrom}/candidates.bcf",
             chrom=config["seq_platforms"].get("Illumina_pe"),
@@ -201,9 +201,9 @@ rule bissnp_merge_positions:
             chrom=config["seq_platforms"].get("Illumina_pe"),
         ),
     output:
-        "results/single_sample/Illumina_pe/called/{sample}/result_files/bisSNP.bed",
+        "results/single_sample/{platform}/called/{sample}/result_files/bisSNP.bed",
     log:
-        "logs/bissnp/bissnp_merge_positions/{sample}.log",
+        "logs/bissnp/bissnp_merge_positions/{platform}_{sample}.log",
     conda:
         "../envs/pysam.yaml"
     script:

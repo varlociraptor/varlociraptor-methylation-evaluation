@@ -10,8 +10,9 @@ def compute_results() -> List[List[str]]:
 
     # Heatmaps per sequencing platform
     for platform in config["seq_platforms"].keys():
-        inputs.append(heatmap_replicates(platform))
-        inputs.append(bias_replicates(platform))
+        if platform != "Simulate":
+            inputs.append(heatmap_replicates(platform))
+            inputs.append(bias_replicates(platform))
 
     # Single-sample heatmaps across all FDR thresholds
     if "Illumina_pe" in config["seq_platforms"]:
@@ -24,8 +25,10 @@ def compute_results() -> List[List[str]]:
         inputs.append(
             f"results/single_sample/Illumina_pe/plots/bar_plot_single_samples.{config['plot_type']}"
         )
+    if "Simulate" in config["seq_platforms"]:
+        chromosome = config["seq_platforms"]["Simulate"]
         inputs.append(
-            f"results/single_sample/Illumina_pe/plots/simulated_data_21.html"
+            f"results/single_sample/Simulate/plots/simulated_data_{chromosome}.html"
         )
 
     # Multi-sample common heatmaps
