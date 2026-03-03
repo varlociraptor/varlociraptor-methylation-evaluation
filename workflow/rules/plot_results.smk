@@ -87,13 +87,14 @@ rule merge_replicates:
     script:
         "../scripts/merge_replicates.py"
 
-
+# Bin the methylation values for heatmaps and compute the MAPE for each tool and sample, which is used for the bias plot. This is done in one step to avoid redundant computations (binning is needed for both heatmap and bias plot).
+# We offer the option to have {sample} == "all_samples", which means that the resulting df and mapes will contain all samples of the respective platform. This is used for the combined heatmap and bias plot for all Illumina samples.
 rule prepare_plot_df:
     input:
         "results/{call_type}/{seq_platform}/result_files/replicates.parquet",
     output:
         df="results/{call_type}/{seq_platform}/result_files/{sample}_prepared.parquet",
-        mapes="results/{call_type}/{seq_platform}/result_files/{sample}_mapes.parquet",
+        mapes="results/{call_type}/{seq_platform}/result_files/{sample}_distances.parquet",
     conda:
         "../envs/plot.yaml"
     log:
@@ -108,7 +109,7 @@ rule prepare_plot_df:
         sample=lambda wildcards: (
             config["samples"].get("Illumina_pe", [])
             if wildcards.sample == "all_samples"
-            else wildcards.sample
+            else [wildcards.sample]
         ),
         sample_name=lambda wildcards: wildcards.sample,
         bin_size=lambda wildcards: config["heatmap_bin_size"],
@@ -120,7 +121,7 @@ rule prepare_plot_df:
 rule plot_heatmaps:
     input:
         df="results/{call_type}/{seq_platform}/result_files/{sample}_prepared.parquet",
-        mapes="results/{call_type}/{seq_platform}/result_files/{sample}_mapes.parquet",
+        distances="results/{call_type}/{seq_platform}/result_files/{sample}_distances.parquet",
     output:
         heatmap=report(
             "results/{call_type}/{seq_platform}/plots/{sample}_heatmap.{plot_type}",
@@ -152,7 +153,7 @@ rule plots_bars_illumina:
             sample=config["samples"].get("Illumina_pe", []),
         ),
         mapes=expand(
-            "results/single_sample/Illumina_pe/result_files/{sample}_mapes.parquet",
+            "results/single_sample/Illumina_pe/result_files/{sample}_distances.parquet",
             sample=config["samples"].get("Illumina_pe", []),
         ),
     output:

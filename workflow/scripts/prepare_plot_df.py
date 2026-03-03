@@ -6,6 +6,7 @@ import numpy as np
 sys.stderr = open(snakemake.log[0], "w")
 pd.set_option("display.max_columns", None)
 pd.set_option("display.max_rows", 1000)
+np.set_printoptions(threshold=np.inf)
 alt.data_transformers.enable("vegafusion")
 
 
@@ -40,7 +41,10 @@ def compute_replicate_counts(df, bin_size):
             * 100
         )
 
-        mape_records.append({"meth_caller": caller, "mape": mape})
+        mae = np.abs(rep1_vals - rep2_vals).mean()
+        print(f"MAE for {caller}: {mae:.2f}", file=sys.stderr)
+
+        mape_records.append({"meth_caller": caller, "mape": mape, "mae": mae})
 
         temp = temp.assign(
             rep1_bin=bin_methylation(temp[rep1], bin_size),
@@ -74,14 +78,12 @@ def compute_replicate_counts(df, bin_size):
 
 
 samples = snakemake.params["sample"]
-
-if isinstance(samples, str):
-    samples = [samples]
 plot_type = snakemake.params.get("plot_type")
 bin_size = snakemake.params["bin_size"]
 
 
 df = pd.read_parquet(snakemake.input[0], engine="pyarrow")
+
 df = df[df["replicate"].isin(samples)]
 
 
@@ -91,6 +93,7 @@ replicate_dfs, mapes = compute_replicate_counts(df, bin_size)
 sample_name = snakemake.params["sample_name"].replace("_HG002_", "_")
 mapes["sample"] = sample_name
 replicate_dfs["sample"] = sample_name
+
 
 replicate_dfs.to_parquet(snakemake.output["df"], engine="pyarrow")
 mapes.to_parquet(snakemake.output["mapes"], engine="pyarrow")
