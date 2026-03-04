@@ -36,6 +36,7 @@ rule download_untreated_fastq1:
         curl -L -C - {params} | gunzip -c > {output}.tmp && mv {output}.tmp {output}
         """
 
+
 rule download_untreated_fastq2:
     output:
         "resources/Illumina_pe/untreated/dummy/dummy_2.fastq.gz",
@@ -46,6 +47,7 @@ rule download_untreated_fastq2:
         mkdir -p $(dirname {output})
         curl -L -C - {params} | gunzip -c > {output}.tmp && mv {output}.tmp {output}
         """
+
 
 rule unzip_untreated_fastqs:
     input:
@@ -99,7 +101,9 @@ rule bwa_mem2:
             "resources/Illumina_pe/untreated/dummy/dummy_1_trimmed.fastq",
             "resources/Illumina_pe/untreated/dummy/dummy_2_trimmed.fastq",
         ],
-        idx=multiext("resources/genome", ".amb", ".ann", ".bwt.2bit.64", ".pac", ".0123"),
+        idx=multiext(
+            "resources/genome", ".amb", ".ann", ".bwt.2bit.64", ".pac", ".0123"
+        ),
     output:
         "resources/Illumina_pe/untreated/dummy/alignment.bam",
     log:
@@ -288,7 +292,7 @@ rule event_probs_df:
     output:
         "results/ceta_benchmark/Illumina_pe/called/{sample}/result_files/events_{fdr}.parquet",
     conda:
-        "../envs/plot.yaml"
+        "../envs/python.yaml"
     log:
         "logs/plot_results/event_probs_df/{sample}_{fdr}.log",
     params:
@@ -316,7 +320,7 @@ rule plot_ceta_probs:
     output:
         "results/ceta_benchmark/Illumina_pe/called/result_files/combined_{fdr}.html",
     conda:
-        "../envs/plot.yaml"
+        "../envs/python.yaml"
     log:
         "logs/plots/plot_ceta_probs_{fdr}.log",
     resources:

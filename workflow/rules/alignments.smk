@@ -52,7 +52,6 @@ rule align_reads_pe:
         """
 
 
-
 rule aligned_reads_sort:
     input:
         "resources/{seq_platform}/{sample}/{SRA}/alignment.bam",
@@ -184,7 +183,7 @@ rule aligned_reads_rename_chromosomes:
     wildcard_constraints:
         sample="(?!simulated_data).*",
     conda:
-        "../envs/plot.yaml"
+        "../envs/python.yaml"
     script:
         "../scripts/rename_chrom_in_bam.py"
 

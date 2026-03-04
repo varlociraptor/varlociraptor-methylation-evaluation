@@ -7,3 +7,5 @@ dependencies:
   - altair=5.5
   - pyarrow=14.0
   - pandas=2.3
+  - vegafusion=1.6
+  - vl-convert-python = 2.0
