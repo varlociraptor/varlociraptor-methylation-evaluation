@@ -27,7 +27,7 @@ def plot_heatmap(
             df,
             title=alt.Title(
                 meth_caller_name,
-                subtitle=f"N = {df['count'].sum()} | MAPE = {mape:.2f}% | MAE = {mae:.2f}",
+                subtitle=f"N = {df['count'].sum()} | MAPE = {mape:.2f}% | MAE = {mae:.2f}%",
             ),
         )
         .mark_rect()

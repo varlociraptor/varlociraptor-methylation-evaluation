@@ -1,0 +1,8 @@
+samples:
+  methylSeq:
+    universe: "[0.0, 1.0]"
+  nanopore:
+    universe: "[0.0, 1.0]"
+
+events:
+  present: "methylSeq:]0.0,1.0] & methylSeq == nanopore"
