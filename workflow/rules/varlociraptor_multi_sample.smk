@@ -16,35 +16,37 @@ rule call_methylation_together_np_pb:
         "varlociraptor call variants generic --scenario {input.scenario} --obs  pacbio={input.pacbio}  nanopore={input.nanopore} > {output} 2> {log}"
 
 
-rule call_methylation_together_np_trueOX:
+rule call_methylation_together_np_methylSeq:
     input:
-        trueOX="results/preprocessed/Illumina_pe/TrueMethylOX_HG002_LAB01_{replicate}/normal_{scatteritem}.bcf",
+        # trueOX="results/preprocessed/Illumina_pe/TrueMethylOX_HG002_LAB01_{replicate}/normal_{scatteritem}.bcf",
+        methylSeq="results/preprocessed/Illumina_pe/MethylSeq_HG002_LAB01_{replicate}/normal_{scatteritem}.bcf",
         nanopore="results/preprocessed/Nanopore/{replicate}/normal_{scatteritem}.bcf",
-        scenario="resources/scenarios/scenario_common_nanopore_trueOX.yaml",
+        scenario="resources/scenarios/scenario_common_nanopore_methylSeq.yaml",
     output:
-        "results/multi_sample/np_trueOX/called/{replicate}/calls_{scatteritem}.bcf",
+        "results/multi_sample/np_methylSeq/called/{replicate}/calls_{scatteritem}.bcf",
     log:
-        "logs/varlociraptor_multi/call_methylation_together_np_trueOX/{replicate}_{scatteritem}.log",
+        "logs/varlociraptor_multi/call_methylation_together_np_methylSeq/{replicate}_{scatteritem}.log",
     benchmark:
-        "benchmarks/multi_sample/np_trueOX/np_trueOX/{replicate}_{scatteritem}.bwa.benchmark.txt"
+        "benchmarks/multi_sample/np_methylSeq/np_methylSeq/{replicate}_{scatteritem}.bwa.benchmark.txt"
     conda:
         "../envs/varlociraptor.yaml"
     shell:
-        "varlociraptor call variants generic --scenario {input.scenario} --obs  trueOX={input.trueOX}  nanopore={input.nanopore} > {output} 2> {log}"
+        "varlociraptor call variants generic --scenario {input.scenario} --obs  methylSeq={input.methylSeq}  nanopore={input.nanopore} > {output} 2> {log}"
 
 
-rule call_methylation_together_pb_trueOX:
+rule call_methylation_together_pb_methylSeq:
     input:
-        trueOX="results/preprocessed/Illumina_pe/TrueMethylOX_HG002_LAB01_{replicate}/normal_{scatteritem}.bcf",
+        # trueOx="results/preprocessed/Illumina_pe/TrueMethylOX_HG002_LAB01_{replicate}/normal_{scatteritem}.bcf",
+        methylSeq="results/preprocessed/Illumina_pe/MethylSeq_HG002_LAB01_{replicate}/normal_{scatteritem}.bcf",
         pacbio="results/preprocessed/PacBio/{replicate}/normal_{scatteritem}.bcf",
-        scenario="resources/scenarios/scenario_common_pacbio_trueOX.yaml",
+        scenario="resources/scenarios/scenario_common_pacbio_methylSeq.yaml",
     output:
-        "results/multi_sample/pb_trueOX/called/{replicate}/calls_{scatteritem}.bcf",
+        "results/multi_sample/pb_methylSeq/called/{replicate}/calls_{scatteritem}.bcf",
     log:
-        "logs/varlociraptor_multi/call_methylation_together_pb_trueOX/{replicate}_{scatteritem}.log",
+        "logs/varlociraptor_multi/call_methylation_together_pb_methylSeq/{replicate}_{scatteritem}.log",
     benchmark:
-        "benchmarks/multi_sample/pb_trueOX/pb_trueOX/{replicate}_{scatteritem}.bwa.benchmark.txt"
+        "benchmarks/multi_sample/pb_methylSeq/pb_methylSeq/{replicate}_{scatteritem}.bwa.benchmark.txt"
     conda:
         "../envs/varlociraptor.yaml"
     shell:
-        "varlociraptor call variants generic --scenario {input.scenario} --obs  trueOX={input.trueOX}  pacbio={input.pacbio} > {output} 2> {log}"
+        "varlociraptor call variants generic --scenario {input.scenario} --obs  methylSeq={input.methylSeq}  pacbio={input.pacbio} > {output} 2> {log}"

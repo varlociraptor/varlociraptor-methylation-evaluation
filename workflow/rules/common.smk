@@ -57,7 +57,7 @@ def heatmap_replicates_common() -> List[str]:
     base_path = Path("results/multi_sample")
     plot_type = config["plot_type"]
 
-    comparisons = ["np_pb", "pb_trueOX", "np_trueOX"]
+    comparisons = ["np_pb", "pb_methylSeq", "np_methylSeq"]
     return [
         f"{base_path}/{comp}/plots/{sample}_heatmap.{plot_type}"
         for comp in comparisons
