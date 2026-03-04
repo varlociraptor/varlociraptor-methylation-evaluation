@@ -1,6 +1,7 @@
 ref_gene = config.get("sample", {})
 chromosomes = set(chromosome for chromosome in config["seq_platforms"].values())
 
+
 rule download_genome:
     output:
         "resources/genome.fasta",
@@ -83,8 +84,7 @@ rule get_fastq_pe:
         extra="--skip-technical",
     threads: 6
     wildcard_constraints:
-        # sample="(?!simulated_data$).*"
-        sample="^(?!simulated_data).*"
+        sample="^(?!simulated_data).*",
     wrapper:
         "v7.1.0/bio/sra-tools/fasterq-dump"
 
@@ -113,7 +113,8 @@ rule trim_fastq_pe:
     conda:
         "../envs/fastp.yaml"
     wildcard_constraints:
-        sample="(?!simulated_data$).*"
+        sample="^(?!simulated_data).*",
+        # sample="(?!simulated_data$).*"
     shell:
         """
         fastp \
@@ -158,6 +159,7 @@ rule get_pacbio_data:
     shell:
         "samtools view -b {params.url} {params.chromosome} > {output.alignment} 2> {log}"
 
+
 rule get_nanopore_index:
     output:
         "resources/Nanopore/{sample}/{SRA}/alignment.bam.bai",
@@ -170,17 +172,18 @@ rule get_nanopore_index:
     shell:
         "wget {params.url}.bai -O {output} 2> {log}"
 
+
 # TODO: Does not work for replicate2. You have to download this manually with wget right now
 rule get_nanopore_data:
     output:
-        alignment="resources/Nanopore/{sample}/{SRA}/alignment.bam"
+        alignment="resources/Nanopore/{sample}/{SRA}/alignment.bam",
     params:
         url=lambda wc: config.get(str(wc.SRA)),
-        chromosome=lambda wc: f"chr{config['seq_platforms']['Nanopore']}"
+        chromosome=lambda wc: f"chr{config['seq_platforms']['Nanopore']}",
     log:
-        "logs/download_data/get_nanopore_data/{sample}_{SRA}.log"
+        "logs/download_data/get_nanopore_data/{sample}_{SRA}.log",
     resources:
-        mem_mb=4096
+        mem_mb=4096,
     conda:
         "../envs/samtools.yaml"
     shell:
@@ -189,6 +192,7 @@ rule get_nanopore_data:
          && wget -qO- {params.url} \
         | samtools view -b - {params.chromosome} > {output.alignment} 2> {log}
         """
+
 
 # rule get_nanopore_data:
 #     output:
@@ -206,7 +210,6 @@ rule get_nanopore_data:
 #         r"""
 #         set -euo pipefail
 #         mkdir -p $(dirname {output.alignment})
-
 #         wget -qO- "{params.url}" \
 #         | samtools view -b - "{params.chromosome}" \
 #         > "{output.alignment}" 2> "{log}"

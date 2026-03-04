@@ -8,10 +8,12 @@ pd.set_option("display.max_rows", 1000)
 pl.Config.set_tbl_cols(100)
 
 truth_df = pl.read_csv(snakemake.input.truth).with_columns(
-    pl.col("chrom").cast(pl.Utf8))
+    pl.col("chrom").cast(pl.Utf8)
+)
 replicate_df = pl.read_parquet(snakemake.input.results_rep)
 meth_callers = snakemake.params.meth_callers
-
+print(truth_df.head(), file=sys.stderr)
+print(replicate_df.head(), file=sys.stderr)
 df = truth_df.join(
     replicate_df,
     left_on=["chrom", "pos"],
@@ -26,8 +28,11 @@ df = truth_df.join(
     + [pl.col(f"{caller}_methylation") for caller in meth_callers]
 )
 
+print(df.head(), file=sys.stderr),
+
 
 def compute_mape(df, meth_caller) -> float:
+    print(df.head(), file=sys.stderr)
     df = df.with_columns(
         pl.max_horizontal(
             pl.col(f"{meth_caller}_methylation"),

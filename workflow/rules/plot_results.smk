@@ -4,7 +4,7 @@ rule compute_pandas_df:
     output:
         "results/{call_type}/{seq_platform}/called/{sample}/result_files/{method}.parquet",
     conda:
-        "../envs/plot.yaml"
+        "../envs/python.yaml"
     wildcard_constraints:
         method="(?!varlo|sample_df).*",
     log:
@@ -21,7 +21,7 @@ rule compute_varlo_df:
     output:
         "results/{call_type}/{seq_platform}/called/{sample}/result_files/varlo_{fdr}.parquet",
     conda:
-        "../envs/plot.yaml"
+        "../envs/python.yaml"
     log:
         "logs/plot_results/compute_varlo_df/{call_type}_{seq_platform}_{fdr}_{sample}.log",
     params:
@@ -50,7 +50,7 @@ rule common_tool_df:
     output:
         sample_df="results/{call_type}/{seq_platform}/result_files/sample_df_{sample}.parquet",
     conda:
-        "../envs/plot.yaml"
+        "../envs/python.yaml"
     log:
         "logs/plot_results/common_tool_df/{call_type}_{seq_platform}_{sample}.log",
     params:
@@ -74,7 +74,7 @@ rule merge_replicates:
     output:
         "results/{call_type}/{seq_platform}/result_files/replicates.parquet",
     conda:
-        "../envs/plot.yaml"
+        "../envs/python.yaml"
     log:
         "logs/plot_results/merge_replicates/{call_type}_{seq_platform}.log",
     resources:
@@ -96,7 +96,7 @@ rule prepare_plot_df:
         df="results/{call_type}/{seq_platform}/result_files/{sample}_prepared.parquet",
         mapes="results/{call_type}/{seq_platform}/result_files/{sample}_distances.parquet",
     conda:
-        "../envs/plot.yaml"
+        "../envs/python.yaml"
     log:
         "logs/plot_results/prepare_plot_df/{call_type}_{seq_platform}_{sample}.log",
     resources:
@@ -134,7 +134,7 @@ rule plot_heatmaps:
             caption="../report/heatmap.rst",
         ),
     conda:
-        "../envs/plot.yaml"
+        "../envs/python.yaml"
     resources:
         mem_mb=64000,
     log:
@@ -168,7 +168,7 @@ rule plots_bars_illumina:
             caption="../report/bar_plot_illumina.rst",
         ),
     conda:
-        "../envs/plot.yaml"
+        "../envs/python.yaml"
     resources:
         mem_mb=64000,
     log:
@@ -196,7 +196,7 @@ rule plot_bias:
             caption="../report/bias.rst",
         ),
     conda:
-        "../envs/plot.yaml"
+        "../envs/python.yaml"
     resources:
         mem_mb=64000,
     log:
@@ -225,8 +225,57 @@ rule plot_runtime_comparison:
     output:
         tools="results/single_sample/plots/runtime_memory.{plot_type}",
     conda:
-        "../envs/plot.yaml"
+        "../envs/python.yaml"
     log:
         "logs/plot_results/plot_runtime_comparison/{plot_type}.log",
     script:
         "../scripts/plot_runtime_comparison.py"
+
+
+rule cpg_coverage:
+    input:
+        candidates="resources/21/candidates.bcf",
+        alignment="resources/{seq_platform}/{sample}/alignment_focused_downsampled_dedup_renamed.bam",
+        reference="resources/chromosome_21.fasta",
+    output:
+        coverage="results/{call_type}/{seq_platform}/coverages/{sample}.tsv",
+    conda:
+        "../envs/samtools.yaml"
+    log:
+        "logs/plot_results/cpg_coverage/{call_type}_{seq_platform}_{sample}.log",
+    resources:
+        mem_mb=64000,
+    shell:
+        """
+        echo -e "chromosome\tposition\tcoverage" > {output.coverage}
+        bcftools query -f '%CHROM\t%POS\n' {input.candidates} | \
+        samtools mpileup -f {input.reference} -l /dev/stdin {input.alignment} | \
+        awk '{{print $1"\t"$2"\t"$4}}' >> {output.coverage}
+        """
+
+rule plot_coverage_retained:
+    input:
+        coverage="results/{call_type}/{seq_platform}/coverages/{sample}.tsv",
+        meth_data="results/{call_type}/{seq_platform}/result_files/sample_df_{sample}.parquet",
+    output:
+        report(
+            "results/{call_type}/{seq_platform}/plots/{sample}_coverage_retained.{plot_type}",
+            category="{call_type}",
+            subcategory=lambda wildcards: f"{wildcards.seq_platform}",
+            labels={
+                "file": "coverage_retained",
+                "sample": "{sample}",
+            },
+            caption="../report/coverage_retained.rst",
+        ),
+    conda:
+        "../envs/python.yaml"
+    resources:
+        mem_mb=64000,
+    log:
+        "logs/plot_results/plot_coverage_retained/{call_type}_{seq_platform}_{sample}_{plot_type}.log",
+    params:
+        sample=config["samples"].get("Illumina_pe", []),
+        plot_type=lambda wildcards: wildcards.plot_type,
+    script:
+        "../scripts/plot_coverage_retained.py"
