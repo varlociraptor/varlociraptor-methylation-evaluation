@@ -13,6 +13,7 @@ def compute_results() -> List[List[str]]:
         if platform != "Simulate":
             inputs.append(heatmap_replicates(platform))
             inputs.append(bias_replicates(platform))
+            inputs.append(get_coverage_retained(platform))
 
     # Single-sample heatmaps across all FDR thresholds
     if "Illumina_pe" in config["seq_platforms"]:
@@ -103,10 +104,18 @@ def get_sample_sra_bismark(wildcards) -> List[str]:
     Return Bismark alignment BAM file paths for a given sample.
     """
     print(wildcards)
-    base_path = Path("resources/ref_tools/bismark/alignment") / wildcards.sample
-    accession_numbers = config["data"]["Illumina_pe"][wildcards.sample]
+    accession_numbers = config["data"][wildcards.platform][wildcards.sample]
 
     return [
-        f"resources/ref_tools/bismark/bams/{wildcards.sample}_pe_{sra}_unsorted.bam"
+        f"resources/ref_tools/bismark/{wildcards.platform}/bams/{wildcards.sample}_pe_{sra}_unsorted.bam"
         for sra in accession_numbers
+    ]
+
+
+def get_coverage_retained(platform) -> List[str]:
+    plot_type = config["plot_type"]
+
+    return [
+        f"results/single_sample/{platform}/plots/{sample}_coverage_retained.{plot_type}"
+        for sample in config["samples"][platform]
     ]

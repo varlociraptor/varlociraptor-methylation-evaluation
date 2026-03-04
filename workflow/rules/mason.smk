@@ -28,7 +28,7 @@ rule mason_fake_methylation:
     log:
         "logs/mason/mason_fake_methylation/{chrom}.log",
     params:
-        seed=0
+        seed=0,
     shell:
         """
         mkdir -p $(dirname {output.methylation})
@@ -72,12 +72,12 @@ rule mason_fake_reads:
             chrom=config["seq_platforms"].get("Simulate", []),
         ),
     output:
-        f1="resources/Simulate/simulated_data/reads_1.fastq",
-        f2="resources/Simulate/simulated_data/reads_2.fastq",
+        f1="resources/Simulate/{sample}/{SRA}/{SRA}_1_trimmed.fastq",
+        f2="resources/Simulate/{sample}/{SRA}/{SRA}_2_trimmed.fastq",
     conda:
         "../envs/mason.yaml"
     log:
-        "logs/mason/mason_fake_reads.log",
+        "logs/mason/mason_fake_reads/{sample}_{SRA}.log",
     params:
         num_fragments=config.get("num_simulated_reads"),
     shell:
@@ -104,17 +104,21 @@ rule mason_align_reads:
             chrom=config["seq_platforms"].get("Simulate", []),
         ),
         f1=expand(
-            "resources/Simulate/simulated_data/reads_1.fastq",
+            "resources/Simulate/{sample}/{SRA}/{SRA}_1_trimmed.fastq",
+            sample="simulated_data",
+            SRA=config["data"]["Simulate"]["simulated_data"],
         ),
         f2=expand(
-            "resources/Simulate/simulated_data/reads_2.fastq",
+            "resources/Simulate/{sample}/{SRA}/{SRA}_2_trimmed.fastq",
+            sample="simulated_data",
+            SRA=config["data"]["Simulate"]["simulated_data"],
         ),
     output:
         "resources/Simulate/simulated_data/alignment.sam",
     conda:
         "../envs/bwa-meth.yaml"
     log:
-        "logs/mason/mason_align_reads/.log",
+        "logs/mason/mason_align_reads.log",
     threads: 30
     shell:
         """
@@ -225,6 +229,7 @@ rule mason_index_oriented_alignment:
 # | awk '{print $1 "\t" $2-1 "\t" $2-1+length($3)}' \
 # > candidates.bed
 
+
 rule candidates_to_bed:
     input:
         "resources/{chrom}/candidates.bcf",
@@ -312,14 +317,15 @@ rule mason_plot_truth_to_results:
         truth="resources/Simulate/simulated_data/chromosome_{chrom}_truth.csv",
         results_rep="results/single_sample/Simulate/result_files/sample_df_simulated_data.parquet",
     output:
-        report("results/single_sample/Simulate/plots/simulated_data_{chrom}.html",
-                category="simulated_data",
-                labels=lambda wildcards: {
-                    "file": "heatmap",
-                    "sample": f"simulated_data",
-                },
-                caption="../report/heatmap.rst",
-                ),
+        report(
+            "results/single_sample/Simulate/plots/simulated_data_{chrom}.html",
+            category="simulated_data",
+            labels=lambda wildcards: {
+                "file": "heatmap",
+                "sample": f"simulated_data",
+            },
+            caption="../report/heatmap.rst",
+        ),
     conda:
         "../envs/python.yaml"
     log:
