@@ -253,9 +253,45 @@ rule cpg_coverage:
         awk '{{print $1"\t"$2"\t"$4}}' >> {output.coverage}
         """
 
+rule compute_coverage:
+    input:
+        bam="resources/{seq_platform}/{sample}/alignment_focused_downsampled_dedup_renamed.bam",
+        bai="resources/{seq_platform}/{sample}/alignment_focused_downsampled_dedup_renamed.bam.bai",
+        bed=lambda wildcards: expand(
+            "resources/{chrom}/candidates.bed",
+            chrom=config["seq_platforms"].get(wildcards.seq_platform, []),
+        ),
+    output:
+        "results/{call_type}/{seq_platform}/coverages/{sample}.mosdepth.global.dist.txt",
+        "results/{call_type}/{seq_platform}/coverages/{sample}.mosdepth.region.dist.txt",
+        "results/{call_type}/{seq_platform}/coverages/{sample}.regions.bed.gz",
+        summary="results/{call_type}/{seq_platform}/coverages/{sample}.mosdepth.summary.txt",  # this named output is required for prefix parsing
+    log:
+        "logs/mason/mason_coverage/{call_type}_{seq_platform}_{sample}.log",
+    params:
+        extra="--no-per-base --use-median",  # optional
+    threads: 4  # This value - 1 will be sent to `--threads`
+    wrapper:
+        "v5.5.2/bio/mosdepth"
+
+
+rule unzip_coverage:
+    input:
+        "results/{call_type}/{seq_platform}/coverages/{sample}.regions.bed.gz",
+    output:
+        "results/{call_type}/{seq_platform}/coverages/{sample}.regions.bed",
+    log:
+        "logs/mason/mason_unzip_coverage/{call_type}_{seq_platform}_{sample}.log",
+    conda:
+        "../envs/general.yaml"
+    shell:
+        "gunzip -c {input} > {output} 2> {log}"
+
+
+
 rule plot_coverage_retained:
     input:
-        coverage="results/{call_type}/{seq_platform}/coverages/{sample}.tsv",
+        coverage="results/{call_type}/{seq_platform}/coverages/{sample}.regions.bed",
         meth_data="results/{call_type}/{seq_platform}/result_files/sample_df_{sample}.parquet",
     output:
         report(

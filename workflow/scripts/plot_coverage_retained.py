@@ -10,8 +10,17 @@ pl.Config.set_tbl_cols(100)
 alt.data_transformers.enable("vegafusion")
 
 # cast chromosome and position to string and int respectively
-coverage = pl.read_csv(snakemake.input["coverage"], separator="\t").with_columns(
+coverage = pl.read_csv(
+    snakemake.input["coverage"],
+    separator="\t",
+    has_header=False,
+    new_columns=["chromosome", "pos_start", "pos_end", "coverage"],
+).with_columns(
     pl.col("chromosome").cast(pl.Utf8),
+    pl.col("pos_start").cast(pl.Int64),
+    pl.col("pos_end").cast(pl.Int64),
+    pl.col("coverage").cast(pl.Int64),
+    (pl.col("pos_start") + 1).alias("position"),
 )
 
 meth_data = pl.read_parquet(snakemake.input["meth_data"])
