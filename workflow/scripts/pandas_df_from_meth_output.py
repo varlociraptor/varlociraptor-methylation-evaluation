@@ -156,13 +156,10 @@ def read_tool_file(filepath: str, file_name: str) -> pd.DataFrame:
             # modkit format
             # -----------------------------
             elif file_name == "modkit":
-
                 chrom = parts[0].removeprefix("chr")
                 position = int(parts[2])
                 modified_base = parts[3]
-                details = parts[9].split()
-                print(parts, details, file=sys.stderr)
-                meth_rate = float(details[0])
+                meth_rate = float(parts[10])
 
                 if modified_base == "m":
                     records.append([chrom, position, meth_rate, pd.NA])
@@ -188,6 +185,5 @@ tool_file = snakemake.input["tool"]
 file_name = os.path.splitext(os.path.basename(tool_file))[0]
 
 df = read_tool_file(tool_file, file_name)
-
 # Save standardized output
 df.to_parquet(snakemake.output[0], engine="pyarrow", compression="snappy")
