@@ -231,28 +231,6 @@ rule plot_runtime_comparison:
     script:
         "../scripts/plot_runtime_comparison.py"
 
-
-rule cpg_coverage:
-    input:
-        candidates="resources/21/candidates.bcf",
-        alignment="resources/{seq_platform}/{sample}/alignment_focused_downsampled_dedup_renamed.bam",
-        reference="resources/chromosome_21.fasta",
-    output:
-        coverage="results/{call_type}/{seq_platform}/coverages/{sample}.tsv",
-    conda:
-        "../envs/samtools.yaml"
-    log:
-        "logs/plot_results/cpg_coverage/{call_type}_{seq_platform}_{sample}.log",
-    resources:
-        mem_mb=64000,
-    shell:
-        """
-        echo -e "chromosome\tposition\tcoverage" > {output.coverage}
-        bcftools query -f '%CHROM\t%POS\n' {input.candidates} | \
-        samtools mpileup -f {input.reference} -l /dev/stdin {input.alignment} | \
-        awk '{{print $1"\t"$2"\t"$4}}' >> {output.coverage}
-        """
-
 rule compute_coverage:
     input:
         bam="resources/{seq_platform}/{sample}/alignment_focused_downsampled_dedup_renamed.bam",

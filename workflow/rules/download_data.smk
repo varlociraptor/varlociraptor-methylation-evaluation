@@ -39,7 +39,7 @@ rule focus_genome_on_chromosome:
         "logs/download_data/focus_genome_on_chromosome/{chromosome}.log",
     conda:
         "../envs/samtools.yaml"
-    threads: 10
+    threads: 6
     shell:
         "samtools faidx {input} {wildcards.chromosome} > {output} 2> {log}"
 

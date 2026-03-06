@@ -71,7 +71,7 @@ rule bismark_align:
         "benchmarks/{platform}/bismark/bismark_align/{sample}_{SRA}.bwa.benchmark.txt"
     params:
         extra="--nucleotide_coverage",
-    threads: 16
+    threads: 8
     resources:
         mem_mb=48000,
     wrapper:

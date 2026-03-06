@@ -84,7 +84,6 @@ def get_sample_sra(wildcards) -> List[str]:
     Return BAM file paths for a given platform and sample, based on the config.
     """
     base_path = Path("resources") / wildcards.seq_platform / wildcards.sample
-
     if wildcards.seq_platform not in config["data"]:
         return []
     if wildcards.sample not in config["data"].get(wildcards.seq_platform, {}):
@@ -103,7 +102,6 @@ def get_sample_sra_bismark(wildcards) -> List[str]:
     """
     Return Bismark alignment BAM file paths for a given sample.
     """
-    print(wildcards)
     accession_numbers = config["data"][wildcards.platform][wildcards.sample]
 
     return [

@@ -58,7 +58,7 @@ rule bsmapz_compute_meth:
         "benchmarks/{platform}/bsmap/bsmap_compute/{sample}.bwa.benchmark.txt"
     conda:
         "../envs/general.yaml"
-    threads: 1
+    threads: 8
     shell:
         """
 

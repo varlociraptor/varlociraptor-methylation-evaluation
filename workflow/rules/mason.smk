@@ -119,7 +119,7 @@ rule mason_align_reads:
         "../envs/bwa-meth.yaml"
     log:
         "logs/mason/mason_align_reads.log",
-    threads: 30
+    threads: 8
     shell:
         """
         set -o pipefail
@@ -137,7 +137,7 @@ rule mason_sam_to_bam:
         "../envs/samtools.yaml"
     log:
         "logs/mason/mason_sam_to_bam/.log",
-    threads: 30
+    threads: 4
     shell:
         "samtools view -Sb {input} > {output} 2> {log}"
 
@@ -152,7 +152,7 @@ rule mason_sort_reads:
         "../envs/samtools.yaml"
     log:
         "logs/mason/mason_sort_reads/.log",
-    threads: 10
+    threads: 4
     shell:
         "samtools sort -@ {threads}  {input} -o {output} 2> {log}"
 
@@ -204,7 +204,7 @@ rule mason_sort_oriented_reads:
         "resources/Simulate/simulated_data/alignment_sorted_{orientation}.bam",
     conda:
         "../envs/samtools.yaml"
-    threads: 10
+    threads: 4
     log:
         "logs/mason/mason_sort_oriented_reads/{orientation}.log",
     shell:

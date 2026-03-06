@@ -63,7 +63,7 @@ rule calls_to_vcf:
         "../envs/samtools.yaml"
     log:
         "logs/varlociraptor_single/calls_to_vcf/{call_type}_{seq_platform}_{sample}_{scatteritem}.log",
-    threads: 10
+    threads: 4
     shell:
         # "touch {output} 2> {log}"
         "bcftools view --threads {threads} {input} -o {output} 2> {log}"

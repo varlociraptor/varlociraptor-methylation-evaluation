@@ -17,7 +17,7 @@ rule modkit_compute_methylation:
         mem_mb=128000,
     benchmark:
         "benchmarks/{platform}/modkit/modkit/{sample}.bwa.benchmark.txt"
-    threads: 4
+    threads: 8
     shell:
         # export PATH=$PATH:~/.cargo/bin 2> {log}
         # export PATH=$PATH:/homes/aprinz/.cargo/bin 2> {log}

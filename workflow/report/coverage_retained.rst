@@ -1,0 +1,1 @@
+Coverage retained plot. The x-axis shows the minimum coverage, the y-axis shows the percentage (left plot) or number (right plot) of the genome that is retained at that coverage. 

@@ -38,7 +38,7 @@ rule pb_CpG_compute_methylation:
         # params:
         prefix=lambda wildcards, input, output: output[0].replace(".combined.bed.gz", "")
 
-    threads: 1
+    threads: 8
     conda:
         "../envs/pbcpgtools.yaml"
     benchmark:
