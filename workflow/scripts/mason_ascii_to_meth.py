@@ -1,5 +1,6 @@
-from collections import defaultdict
 import re
+import sys
+
 import polars as pl
 
 # Redirect standard error to snakemake log file
@@ -81,10 +82,10 @@ def ascii_to_methylation(char):
     """Compute true methylation level according to https://github.com/seqan/seqan/blob/main/apps/mason2/README.mason_methylation"""
     ascii_val = ord(char)
     if ascii_val < ord(">"):
-        L = ((ascii_val - ord("!")) / 80) * 100
+        meth_level = ((ascii_val - ord("!")) / 80) * 100
     else:
-        L = ((ascii_val - ord("!") - 1) / 80) * 100
-    return L
+        meth_level = ((ascii_val - ord("!") - 1) / 80) * 100
+    return meth_level
 
 
 def generate_bed(df):

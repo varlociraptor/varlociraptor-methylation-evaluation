@@ -1,6 +1,6 @@
-import sys
 import os
-import re
+import sys
+
 import pandas as pd
 
 # Redirect stderr to Snakemake log
@@ -14,14 +14,6 @@ pd.set_option("display.max_rows", 10)
 # -----------------------------
 # Helper functions
 # -----------------------------
-
-
-def cb_to_number(s: str) -> int:
-    """
-    Extract all integers from a string (ignoring 'E'/'e') and return their sum.
-    """
-    matches = re.findall(r"\d+(?=[^Ee]|$)", s)
-    return sum(map(int, matches))
 
 
 def read_tool_file(filepath: str, file_name: str) -> pd.DataFrame:

@@ -39,7 +39,6 @@ rule focus_genome_on_chromosome:
         "logs/download_data/focus_genome_on_chromosome/{chromosome}.log",
     conda:
         "../envs/samtools.yaml"
-    threads: 10
     shell:
         "samtools faidx {input} {wildcards.chromosome} > {output} 2> {log}"
 
@@ -59,10 +58,7 @@ rule chromosome_index:
 
 rule rename_chromosome_in_fasta:
     input:
-        expand(
-            "resources/chromosome_{chromosome}.fasta",
-            chromosome=[chr for chr in chromosomes],
-        ),
+        "resources/chromosome_{chromosome}.fasta",
     output:
         "resources/chr_chromosome_{chromosome}.fasta",
     log:

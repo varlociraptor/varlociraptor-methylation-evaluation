@@ -1,5 +1,7 @@
-import sys
 import re
+import sys
+from pathlib import Path
+
 import pandas as pd
 
 # Redirect stderr to Snakemake log file
@@ -26,9 +28,7 @@ replicate_dfs = {}
 
 for sample_file in snakemake.input:
     # Extract replicate name from file path
-    replicate_name = (
-        sample_file.split("/")[-1].replace(".parquet", "").replace("sample_df_", "", 1)
-    )
+    replicate_name = Path(sample_file).stem.removeprefix("sample_df_")
     df = pd.read_parquet(sample_file, engine="pyarrow")
 
     # Normalize sample name (combine replicates)

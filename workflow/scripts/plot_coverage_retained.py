@@ -1,9 +1,10 @@
-import polars as pl
-import altair as alt
 import sys
-import numpy as np
 
-# sys.stderr = open(snakemake.log[0], "w")
+import altair as alt
+import numpy as np
+import polars as pl
+
+sys.stderr = open(snakemake.log[0], "w")
 pl.Config.set_fmt_str_lengths(1000)
 pl.Config.set_tbl_rows(100)
 pl.Config.set_tbl_cols(100)
