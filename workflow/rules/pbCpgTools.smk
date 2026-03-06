@@ -1,20 +1,20 @@
 # TODO MissingOutputException, even if the output is there. You have to rerun the pipeline afterwards
-        # rule pb_CpG_download:
-        #     output:
-        #         "resources/ref_tools/pb-CpG-tools/pb-CpG-tools-v2.3.1-x86_64-unknown-linux-gnu/bin/aligned_bam_to_cpg_scores",
-        #         "resources/ref_tools/pb-CpG-tools/pb-CpG-tools-v2.3.1-x86_64-unknown-linux-gnu/models/pileup_calling_model.v1.tflite",
-        #     log:
-        #         "logs/pb_CpG_tools/pb_CpG_download/download.log",
-        #     conda:
-        #         "../envs/shell_cmds.yaml"
-        #     shell:
-        #         """
+# rule pb_CpG_download:
+#     output:
+#         "resources/ref_tools/pb-CpG-tools/pb-CpG-tools-v2.3.1-x86_64-unknown-linux-gnu/bin/aligned_bam_to_cpg_scores",
+#         "resources/ref_tools/pb-CpG-tools/pb-CpG-tools-v2.3.1-x86_64-unknown-linux-gnu/models/pileup_calling_model.v1.tflite",
+#     log:
+#         "logs/pb_CpG_tools/pb_CpG_download/download.log",
+#     conda:
+#         "../envs/shell_cmds.yaml"
+#     shell:
+#         """
 
-        #         mkdir -p resources/ref_tools/pb-CpG-tools
-        #         cd resources/ref_tools/pb-CpG-tools
-        #         wget https://github.com/PacificBiosciences/pb-CpG-tools/releases/download/v2.3.1/pb-CpG-tools-v2.3.1-x86_64-unknown-linux-gnu.tar.gz
-        #         tar -xzf pb-CpG-tools-v2.3.1-x86_64-unknown-linux-gnu.tar.gz
-        #         """
+#         mkdir -p resources/ref_tools/pb-CpG-tools
+#         cd resources/ref_tools/pb-CpG-tools
+#         wget https://github.com/PacificBiosciences/pb-CpG-tools/releases/download/v2.3.1/pb-CpG-tools-v2.3.1-x86_64-unknown-linux-gnu.tar.gz
+#         tar -xzf pb-CpG-tools-v2.3.1-x86_64-unknown-linux-gnu.tar.gz
+#         """
 
 
 rule pb_CpG_compute_methylation:
@@ -36,9 +36,10 @@ rule pb_CpG_compute_methylation:
         #     ".combined", ""
         # ),
         # params:
-        prefix=lambda wildcards, input, output: output[0].replace(".combined.bed.gz", "")
-
-    threads: 1
+        prefix=lambda wildcards, input, output: output[0].replace(
+            ".combined.bed.gz", ""
+        ),
+    threads: 8
     conda:
         "../envs/pbcpgtools.yaml"
     benchmark:
@@ -58,6 +59,7 @@ rule unpack_pb_CpG_output:
         "../envs/general.yaml"
     shell:
         "gunzip -c {input} > {output} 2> {log}"
+
 
 rule pb_CpG_rename_output:
     input:

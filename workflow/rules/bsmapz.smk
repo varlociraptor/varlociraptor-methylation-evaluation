@@ -49,7 +49,7 @@ rule bsmapz_compute_meth:
         alignment_index="resources/{platform}/{sample}/alignment_focused_downsampled_dedup_renamed.bam.bai",
         bsmapz_binary="resources/ref_tools/BSMAPz/bsmapz",
     output:
-        temp("results/single_sample/{platform}/called/{sample}/result_files/out.sam"),
+        temp("results/single_sample/{platform}/called/{sample}/result_files/out.bam"),
     log:
         "logs/bsmapz/bsmapz_compute/{platform}_{sample}.log",
     resources:
@@ -58,10 +58,9 @@ rule bsmapz_compute_meth:
         "benchmarks/{platform}/bsmap/bsmap_compute/{sample}.bwa.benchmark.txt"
     conda:
         "../envs/general.yaml"
-    threads: 1
+    threads: 8
     shell:
         """
-
         mkdir -p $(dirname {log})
         mkdir -p $(dirname {output})
         chmod +x {input.bsmapz_binary}
@@ -69,7 +68,60 @@ rule bsmapz_compute_meth:
         """
 
 
-# Extract methylation ratios
+# Index out.bam for region-based splitting
+rule bsmapz_index_out_bam:
+    input:
+        "results/single_sample/{platform}/called/{sample}/result_files/out.bam",
+    output:
+        temp(
+            "results/single_sample/{platform}/called/{sample}/result_files/out.bam.bai"
+        ),
+    log:
+        "logs/bsmapz/bsmapz_index_out_bam/{platform}_{sample}.log",
+    conda:
+        "../envs/samtools.yaml"
+    shell:
+        "samtools index {input} 2> {log}"
+
+
+# Split out.bam by candidate region for parallel methylation extraction
+rule bsmapz_extract_split_bam:
+    input:
+        alignment="results/single_sample/{platform}/called/{sample}/result_files/out.bam",
+        index="results/single_sample/{platform}/called/{sample}/result_files/out.bam.bai",
+        candidate=lambda wildcards: f"resources/{chromosome_by_seq_platform.get(wildcards.platform)}/candidates_{wildcards.scatteritem}.bcf",
+    output:
+        temp(
+            "results/single_sample/{platform}/called/{sample}/result_files/out_{scatteritem}.bam"
+        ),
+    log:
+        "logs/bsmapz/bsmapz_extract_split_bam/{platform}_{sample}_{scatteritem}.log",
+    params:
+        chromosome=lambda wildcards: chromosome_by_seq_platform.get(
+            wildcards.platform, "21"
+        ),
+    conda:
+        "../envs/samtools.yaml"
+    shell:
+        """
+        set +o pipefail
+
+        mkdir -p $(dirname {output})
+
+        start=$(bcftools query -f '%POS\n' {input.candidate} | head -n1)
+        end=$(bcftools query -f '%POS\n' {input.candidate} | tail -n1)
+        samtools view -h -b {input.alignment} "{params.chromosome}:$start-$end" > {output} 2> {log}
+
+        if [ $(samtools view -c {output}) -eq 0 ]; then
+            samtools view -H {input.alignment} > {output}.temp.sam
+            samtools view {input.alignment} | tail -n 1 >> {output}.temp.sam
+            samtools view -bS {output}.temp.sam > {output}
+            rm {output}.temp.sam
+        fi
+        """
+
+
+# Extract methylation ratios per region (scattered)
 rule bsmapz_extract:
     input:
         genome=lambda wildcards: expand(
@@ -80,20 +132,43 @@ rule bsmapz_extract:
             "resources/chromosome_{chrom}.fasta.fai",
             chrom=config["seq_platforms"].get(wildcards.platform),
         ),
-        bsmap_sam="results/single_sample/{platform}/called/{sample}/result_files/out.sam",
+        bsmap_bam="results/single_sample/{platform}/called/{sample}/result_files/out_{scatteritem}.bam",
         meth_extractor="resources/ref_tools/BSMAPz/methratio.py",
     output:
-        "results/single_sample/{platform}/called/{sample}/result_files/methylation_ratios.bed",
+        temp(
+            "results/single_sample/{platform}/called/{sample}/result_files/methylation_ratios_{scatteritem}.bed"
+        ),
     log:
-        "logs/bsmapz/bsmapz_extract/{platform}_{sample}.log",
+        "logs/bsmapz/bsmapz_extract/{platform}_{sample}_{scatteritem}.log",
     params:
-        chromosome=lambda wildcards: chromosome_by_seq_platform.get(wildcards.platform, "21"),
+        chromosome=lambda wildcards: chromosome_by_seq_platform.get(
+            wildcards.platform, "21"
+        ),
     conda:
         "../envs/bsmapz.yaml"
     benchmark:
-        "benchmarks/{platform}/bsmap/bsmap_extract/{sample}.bwa.benchmark.txt"
+        "benchmarks/{platform}/bsmap/bsmap_extract/{sample}_{scatteritem}.bwa.benchmark.txt"
     shell:
-        "python {input.meth_extractor} -c={params.chromosome} --ref={input.genome} --out={output} {input.bsmap_sam} -g -x CG 2> {log}"
+        "python {input.meth_extractor} -c={params.chromosome} --ref={input.genome[0]} --out={output} {input.bsmap_bam} -g -x CG 2> {log}"
+
+
+# Gather scattered methylation ratio BEDs into one file
+rule bsmapz_gather_methylation:
+    input:
+        gather.split_candidates(
+            "results/single_sample/{{platform}}/called/{{sample}}/result_files/methylation_ratios_{scatteritem}.bed"
+        ),
+    output:
+        "results/single_sample/{platform}/called/{sample}/result_files/methylation_ratios.bed",
+    log:
+        "logs/bsmapz/bsmapz_gather_methylation/{platform}_{sample}.log",
+    conda:
+        "../envs/general.yaml"
+    shell:
+        """
+        head -n1 $(echo {input} | tr ' ' '\n' | head -n1) > {output} 2> {log}
+        for f in {input}; do tail -n +2 "$f"; done >> {output} 2>> {log}
+        """
 
 
 # Rename output file to standardized name

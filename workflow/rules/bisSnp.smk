@@ -142,10 +142,11 @@ rule bissnp_extract:
         "logs/bissnp/bissnp_extract/{platform}_{sample}.log",
     benchmark:
         "benchmarks/{platform}/bisSNP/bissnp_extract/{sample}.txt"
+    threads: 8
     resources:
         mem_mb=64000,
     shell:
-        "java -Xmx10G -jar {input.jar} -R {input.genome} -T BisulfiteGenotyper -I {input.alignment} -vfn1 {output.cpg} -vfn2 {output.snp} -L {params.chromosome} 2> {log}"
+        "java -Xmx10G -jar {input.jar} -R {input.genome} -nt {threads} -T BisulfiteGenotyper -I {input.alignment} -vfn1 {output.cpg} -vfn2 {output.snp} -L {params.chromosome} 2> {log}"
 
 
 rule gather_bisSnp:
