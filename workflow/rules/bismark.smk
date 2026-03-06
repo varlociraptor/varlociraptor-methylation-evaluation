@@ -173,10 +173,11 @@ rule bismark_extract:
         "benchmarks/{platform}/bismark/bismark_methylation_extractor/{sample}.bwa.benchmark.txt"
     resources:
         mem_mb=16000,
+    threads: 8
     shell:
         """
         mkdir -p $(dirname {output}) 2> {log}
-        bismark_methylation_extractor {input} -o $(dirname {output}) --comprehensive --gzip --comprehensive --bedGraph --zero_based 2> {log}
+        bismark_methylation_extractor {input} -o $(dirname {output}) --parallel {threads} --comprehensive --gzip --comprehensive --bedGraph --zero_based 2> {log}
         """
 
 

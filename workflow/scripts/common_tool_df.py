@@ -1,9 +1,8 @@
-import sys
 import os
+import sys
 from functools import reduce
+
 import pandas as pd
-import altair as alt
-import numpy as np
 
 # Redirect stderr to Snakemake log
 sys.stderr = open(snakemake.log[0], "w")

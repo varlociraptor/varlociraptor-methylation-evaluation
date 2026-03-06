@@ -59,10 +59,7 @@ rule chromosome_index:
 
 rule rename_chromosome_in_fasta:
     input:
-        expand(
-            "resources/chromosome_{chromosome}.fasta",
-            chromosome=[chr for chr in chromosomes],
-        ),
+        "resources/chromosome_{chromosome}.fasta",
     output:
         "resources/chr_chromosome_{chromosome}.fasta",
     log:

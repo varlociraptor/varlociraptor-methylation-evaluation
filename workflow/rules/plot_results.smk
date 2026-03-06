@@ -289,7 +289,7 @@ rule plot_coverage_retained:
     log:
         "logs/plot_results/plot_coverage_retained/{call_type}_{seq_platform}_{sample}_{plot_type}.log",
     params:
-        sample=config["samples"].get("Illumina_pe", []),
+        sample=lambda wildcards: config["samples"].get(wildcards.seq_platform, []),
         plot_type=lambda wildcards: wildcards.plot_type,
     script:
         "../scripts/plot_coverage_retained.py"

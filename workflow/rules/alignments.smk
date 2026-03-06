@@ -61,6 +61,7 @@ rule aligned_reads_sort:
         "logs/bwameth/align_reads_sort/{seq_platform}_{sample}_{SRA}.log",
     conda:
         "../envs/samtools.yaml"
+    threads: 4
     shell:
         "samtools sort -@ {threads}  {input} -o {output} 2> {log}"
 
@@ -74,6 +75,7 @@ rule aligned_reads_index:
         "logs/bwameth/aligned_reads_index/{seq_platform}_{sample}_{SRA}.log",
     conda:
         "../envs/samtools.yaml"
+    threads: 4
     shell:
         "samtools index -@ {threads} {input} 2> {log}"
 
@@ -227,10 +229,10 @@ rule aligned_reads_candidates_region:
         samtools view -h -b {input.alignment} "{params.chromosome}:$start-$end" > {output}
 
         if [ $(samtools view -c {output}) -eq 0 ]; then
-            samtools view -H {input.alignment} > temp.sam
-            samtools view {input.alignment} | tail -n 1 >> temp.sam
-            samtools view -bS temp.sam > {output}
-            rm temp.sam
+            samtools view -H {input.alignment} > {output}.temp.sam
+            samtools view {input.alignment} | tail -n 1 >> {output}.temp.sam
+            samtools view -bS {output}.temp.sam > {output}
+            rm {output}.temp.sam
         fi
         """
 

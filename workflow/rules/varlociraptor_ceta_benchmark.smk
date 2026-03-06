@@ -1,4 +1,3 @@
-# /home/adrian/Documents/varlociraptor-methylation-evaluation/resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor call variants --testcase-locus 21:9593279 --testcase-prefix test_prinz_ceta_both generic --scenario /home/adrian/Documents/varlociraptor-methylation-evaluation/resources/scenarios/ceta_benchmarks/multi_sample/scenario_common_both.yaml --obs emseq=/home/adrian/Documents/varlociraptor-methylation-evaluation/results/ceta_benchmark/preprocessed/Illumina_pe/EMSeq_HG002_LAB01_REP01/normal_1-of-5.bcf untreated=/home/adrian/Documents/varlociraptor-methylation-evaluation/results/ceta_benchmark/preprocessed/Illumina_pe/untreated/normal_1-of-5.bcf
 
 
 rule download_varlociraptor:
@@ -11,8 +10,8 @@ rule download_varlociraptor:
         "logs/download_varlociraptor.log",
     shell:
         """
-        PARENT_DIR=$(dirname {output.direc})        
-        mkdir -p $PARENT_DIR        
+        PARENT_DIR=$(dirname {output.direc})
+        mkdir -p $PARENT_DIR
         cd $PARENT_DIR
         git clone https://github.com/varlociraptor/varlociraptor.git
         cd varlociraptor
