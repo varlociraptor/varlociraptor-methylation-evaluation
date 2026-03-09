@@ -70,19 +70,18 @@ rule rename_chromosome_in_fasta:
         "../scripts/rename_chrom_in_fasta.py"
 
 
-# Call fasterq-dump directly so we can use {SRA} as the sole wildcard, matching
-# what trim_fastq_pe expects as input.
+# We need to call the wildcard accession and not SRA because of the wrapper
 rule get_fastq_pe:
     output:
-        first="resources/Illumina_pe/{sample}/{SRA}/{SRA}_1.fastq",
-        second="resources/Illumina_pe/{sample}/{SRA}/{SRA}_2.fastq",
+        "resources/Illumina_pe/{sample}/{SRA}/{accession}_1.fastq",
+        "resources/Illumina_pe/{sample}/{SRA}/{accession}_2.fastq",
     log:
         "logs/download_data/get_fastq_pe/{sample}_{SRA}_{accession}.log",
     params:
         extra="--skip-technical",
     threads: 6
-    wildcard_constraints:
-        sample="^(?!simulated_data).*",
+    # wildcard_constraints:
+    #     sample="^(?!simulated_data).*",
     wrapper:
         "v7.1.0/bio/sra-tools/fasterq-dump"
 
@@ -109,8 +108,8 @@ rule trim_fastq_pe:
         "logs/download_data/trim_fastq_pe/{sample}_{SRA}_{SRA}.log",
     conda:
         "../envs/fastp.yaml"
-    wildcard_constraints:
-        sample="^(?!simulated_data).*",
+    # wildcard_constraints:
+    #     sample="^(?!simulated_data).*",
         # sample="(?!simulated_data$).*"
     shell:
         """

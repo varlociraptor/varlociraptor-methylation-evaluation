@@ -115,5 +115,5 @@ def get_coverage_retained(platform) -> List[str]:
 
     return [
         f"results/single_sample/{platform}/plots/{sample}_coverage_retained.{plot_type}"
-        for sample in config["samples"][platform]
+        for sample in config["data"][platform].keys()
     ]
