@@ -19,19 +19,4 @@ rule modkit_compute_methylation:
         "benchmarks/{platform}/modkit/modkit/{sample}.bwa.benchmark.txt"
     threads: 8
     shell:
-        # export PATH=$PATH:~/.cargo/bin 2> {log}
-        # export PATH=$PATH:/homes/aprinz/.cargo/bin 2> {log}
-        """
-        modkit pileup {input.alignment} {output} --cpg --ref {input.chromosome} --modified-bases 5mC --threads {threads} --combine-strands --log-filepath {log} 2> {log}
-        """
-
-
-# rule modkit_rename_output:
-#     input:
-#         "results/single_sample/{platform}/called/{sample}/result_files/alignments_CpG.combined.bed",
-#     output:
-#         "results/single_sample/{platform}/called/{sample}/result_files/modkit.bed",
-#     log:
-#         "logs/modkit/{platform}/{sample}/rename_output.log",
-#     shell:
-#         "mv {input} {output} 2> {log}"
+        "modkit pileup {input.alignment} {output} --cpg --ref {input.chromosome} --modified-bases 5mC --threads {threads} --combine-strands --log-filepath {log} 2> {log}"

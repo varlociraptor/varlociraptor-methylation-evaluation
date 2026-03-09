@@ -87,7 +87,9 @@ rule samtools_merge:
     log:
         "logs/bismark/samtools_merge/{sample}_{platform}.log",
     params:
-        extra="-n",  # optional additional parameters as string
+        extra="-n",
+    benchmark:
+        "benchmarks/{platform}/bismark/samtools_merge/{sample}_{platform}.bwa.benchmark.txt"
     threads: 8
     wrapper:
         "v5.9.0/bio/samtools/merge"
@@ -105,6 +107,8 @@ rule samtools_sort:
     threads: 8
     resources:
         mem_mb=32000,
+    benchmark:
+        "benchmarks/{platform}/bismark/samtools_sort/{sample}_{platform}.bwa.benchmark.txt"
     wrapper:
         "v5.9.0/bio/samtools/sort"
 

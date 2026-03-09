@@ -15,7 +15,7 @@ rule bwameth_index:
             )
         ),
     cache: False
-    threads: 1
+    threads: 6
     log:
         "logs/bwameth/bwameth_index/{genome}.log",
     wrapper:
@@ -42,7 +42,7 @@ rule align_reads_pe:
         "../envs/bwa-meth.yaml"
     log:
         "logs/bwameth/align_reads_pe/{sample}_{SRA}.log",
-    threads: 30
+    threads: 16
     resources:
         mem_mb=512,
     shell:
@@ -97,9 +97,9 @@ rule aligned_reads_focus_on_chromosome:
             or wildcards.seq_platform == "Nanopore"
             else chromosome_by_seq_platform[wildcards.seq_platform]
         ),
-    threads: 1
+    threads: 4
     shell:
-        "samtools view -h -b -o {output.bam} {input} {params.chromosome} 2> {log}"
+        "samtools view -h -@ {threads} -b -o {output.bam} {input} {params.chromosome} 2> {log}"
 
 
 rule aligned_reads_filter_on_mapq:
@@ -113,9 +113,9 @@ rule aligned_reads_filter_on_mapq:
         "../envs/samtools.yaml"
     params:
         min_quality=config["min_mapping_quality"],
-    threads: 1
+    threads: 4
     shell:
-        "samtools view -h -q {params.min_quality} -b -o {output} {input} 2> {log}"
+        "samtools view -h -@ {threads} -q {params.min_quality} -b -o {output} {input} 2> {log}"
 
 
 rule aligned_reads_markduplicates:
@@ -158,8 +158,9 @@ rule aligned_reads_downsample:
         "logs/bwameth/aligned_reads_downsample/{seq_platform}_{sample}.log",
     conda:
         "../envs/samtools.yaml"
+    threads: 4
     shell:
-        "samtools view -h -s 0.99 -b -o {output} {input} 2> {log}"
+        "samtools view -h -@ {threads} -s 0.99 -b -o {output} {input} 2> {log}"
 
 
 rule aligned_reads_downsampled_index:

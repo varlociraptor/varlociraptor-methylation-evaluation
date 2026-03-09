@@ -19,8 +19,6 @@
 
 rule pb_CpG_compute_methylation:
     input:
-        # runner="resources/ref_tools/pb-CpG-tools/pb-CpG-tools-v2.3.1-x86_64-unknown-linux-gnu/bin/aligned_bam_to_cpg_scores",
-        # model="resources/ref_tools/pb-CpG-tools/pb-CpG-tools-v2.3.1-x86_64-unknown-linux-gnu/models/pileup_calling_model.v1.tflite",
         alignment="resources/{platform}/{sample}/alignment_focused_downsampled_dedup_renamed.bam",
         alignment_index="resources/{platform}/{sample}/alignment_focused_downsampled_dedup_renamed.bam.bai",
         chromosome=lambda wildcards: expand(
@@ -32,10 +30,6 @@ rule pb_CpG_compute_methylation:
     log:
         "logs/pb_CpG_tools/pb_CpG_compute_methylation/{platform}_{sample}.log",
     params:
-        # prefix=lambda wildcards, input, output: os.path.splitext(output[0])[0].replace(
-        #     ".combined", ""
-        # ),
-        # params:
         prefix=lambda wildcards, input, output: output[0].replace(".combined.bed.gz", "")
     threads: 8
     conda:

@@ -33,13 +33,13 @@ rule bissnp_prepare:
         alignment="resources/{platform}/{sample}/alignment_focused_downsampled_dedup_renamed.bam",
         alignment_index="resources/{platform}/{sample}/alignment_focused_downsampled_dedup_renamed.bam.bai",
     output:
-        jar="resources/ref_tools/Bis-tools/{sample}/BisSNP-0.82.2.jar",
-        genome="resources/ref_tools/Bis-tools/{sample}/genome.fasta",
-        genome_index="resources/ref_tools/Bis-tools/{sample}/genome.fasta.fai",
-        alignment="resources/ref_tools/Bis-tools/{sample}/alignment.bam",
-        alignment_index="resources/ref_tools/Bis-tools/{sample}/alignment.bam.bai",
+        jar="resources/ref_tools/Bis-tools/{platform}_{sample}/BisSNP-0.82.2.jar",
+        genome="resources/ref_tools/Bis-tools/{platform}_{sample}/genome.fasta",
+        genome_index="resources/ref_tools/Bis-tools/{platform}_{sample}/genome.fasta.fai",
+        alignment="resources/ref_tools/Bis-tools/{platform}_{sample}/alignment.bam",
+        alignment_index="resources/ref_tools/Bis-tools/{platform}_{sample}/alignment.bam.bai",
     log:
-        "logs/bissnp/bissnp_prepare/{sample}.log",
+        "logs/bissnp/bissnp_prepare/{platform}_{sample}.log",
     conda:
         "../envs/general.yaml"
     shell:
@@ -54,11 +54,11 @@ rule bissnp_prepare:
 
 rule bissnp_extract:
     input:
-        jar="resources/ref_tools/Bis-tools/{sample}/BisSNP-0.82.2.jar",
-        genome="resources/ref_tools/Bis-tools/{sample}/genome.fasta",
-        genome_index="resources/ref_tools/Bis-tools/{sample}/genome.fasta.fai",
-        alignment="resources/ref_tools/Bis-tools/{sample}/alignment.bam",
-        alignment_index="resources/ref_tools/Bis-tools/{sample}/alignment.bam.bai",
+        jar="resources/ref_tools/Bis-tools/{platform}_{sample}/BisSNP-0.82.2.jar",
+        genome="resources/ref_tools/Bis-tools/{platform}_{sample}/genome.fasta",
+        genome_index="resources/ref_tools/Bis-tools/{platform}_{sample}/genome.fasta.fai",
+        alignment="resources/ref_tools/Bis-tools/{platform}_{sample}/alignment.bam",
+        alignment_index="resources/ref_tools/Bis-tools/{platform}_{sample}/alignment.bam.bai",
     output:
         cpg=temp("results/single_sample/{platform}/called/{sample}/result_files/cpg_{scatteritem}.raw.vcf"),
         snp=temp("results/single_sample/{platform}/called/{sample}/result_files/snp_{scatteritem}.raw.vcf"),
@@ -106,7 +106,7 @@ rule gather_bisSnp:
 #   - line 104: my $out_line = "$chr\t$start\t$end\t$methy\t$ct_reads";
 rule bissnp_create_bedgraph:
     input:
-        perl_script="workflow/scripts/bissnp_bedGraph.pl",
+        perl_script=workflow.source_path("../scripts/bissnp_bedGraph.pl"),
         cpg="results/single_sample/{platform}/called/{sample}/result_files/cpg.raw.vcf",
     output:
         "results/single_sample/{platform}/called/{sample}/result_files/cpg.raw.CG.bedgraph",

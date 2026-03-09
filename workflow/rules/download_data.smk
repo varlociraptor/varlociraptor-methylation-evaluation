@@ -97,7 +97,6 @@ rule get_fastq_se:
     wrapper:
         "v7.1.0/bio/sra-tools/fasterq-dump"
 
-
 rule trim_fastq_pe:
     input:
         first="resources/Illumina_pe/{sample}/{SRA}/{SRA}_1.fastq",
