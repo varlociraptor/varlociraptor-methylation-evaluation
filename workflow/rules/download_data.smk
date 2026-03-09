@@ -70,11 +70,12 @@ rule rename_chromosome_in_fasta:
         "../scripts/rename_chrom_in_fasta.py"
 
 
-# We need to call the wildcard accession and not SRA because of the wrapper
+# Call fasterq-dump directly so we can use {SRA} as the sole wildcard, matching
+# what trim_fastq_pe expects as input.
 rule get_fastq_pe:
     output:
-        "resources/Illumina_pe/{sample}/{SRA}/{accession}_1.fastq",
-        "resources/Illumina_pe/{sample}/{SRA}/{accession}_2.fastq",
+        first="resources/Illumina_pe/{sample}/{SRA}/{SRA}_1.fastq",
+        second="resources/Illumina_pe/{sample}/{SRA}/{SRA}_2.fastq",
     log:
         "logs/download_data/get_fastq_pe/{sample}_{SRA}_{accession}.log",
     params:
