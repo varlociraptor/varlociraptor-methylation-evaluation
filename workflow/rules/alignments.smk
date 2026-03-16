@@ -56,7 +56,7 @@ rule aligned_reads_sort:
     input:
         "resources/{seq_platform}/{sample}/{SRA}/alignment.bam",
     output:
-        "resources/{seq_platform}/{sample}/{SRA}/alignment_sorted.bam",
+        temp("resources/{seq_platform}/{sample}/{SRA}/alignment_sorted.bam"),
     log:
         "logs/bwameth/align_reads_sort/{seq_platform}_{sample}_{SRA}.log",
     conda:
@@ -70,7 +70,7 @@ rule aligned_reads_index:
     input:
         "resources/{seq_platform}/{sample}/{SRA}/alignment_sorted.bam",
     output:
-        "resources/{seq_platform}/{sample}/{SRA}/alignment_sorted.bam.bai",
+        temp("resources/{seq_platform}/{sample}/{SRA}/alignment_sorted.bam.bai"),
     log:
         "logs/bwameth/aligned_reads_index/{seq_platform}_{sample}_{SRA}.log",
     conda:
@@ -186,7 +186,7 @@ rule aligned_reads_rename_chromosomes:
     wildcard_constraints:
         sample="(?!simulated_data).*",
     conda:
-        "../envs/python.yaml"
+        "../envs/pysam.yaml"
     script:
         "../scripts/rename_chrom_in_bam.py"
 

@@ -1,7 +1,7 @@
 channels:
-  - conda-forge
-  - bioconda
-  - anaconda
+    - conda-forge
+    - bioconda
+    - anaconda
 dependencies:
   - python = 3.13.0
   - zlib =1.3

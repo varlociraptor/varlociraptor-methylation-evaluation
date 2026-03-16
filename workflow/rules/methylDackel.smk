@@ -34,7 +34,7 @@ rule methylDackel_compute_meth:
         OUTDIR=$(dirname {output})/alignments_{wildcards.scatteritem}
         mkdir -p "$OUTDIR"
         MethylDackel extract {input.genome} {input.alignment} -o "$OUTDIR" --mergeContext 2> {log}
-        mv "$OUTDIR"/*_CpG.bedGraph {output}
+        mv "$OUTDIR"_CpG.bedGraph {output}
         """
 
 

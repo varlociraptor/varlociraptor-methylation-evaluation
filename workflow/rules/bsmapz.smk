@@ -5,23 +5,17 @@ rule bsmapz_clone_and_build:
         binary="resources/ref_tools/BSMAPz/bsmapz",
         meth_extractor="resources/ref_tools/BSMAPz/methratio.py",
     log:
-        "logs/bsmapz/bsmapz_clone_and_build/download.log",
+        "logs/bsmapz/bsmapz_clone_and_build/download_bsmapz.log",
     conda:
         "../envs/general.yaml"
     shell:
         """
-        mkdir -p resources/ref_tools
-        cd resources/ref_tools
-        if [ ! -d BSMAPz ]; then
-        git clone https://github.com/zyndagj/BSMAPz.git
-        fi
-        cd BSMAPz
-        make bsmapz
-        echo "BSMAPz log output"
-        ls
-        pwd
-        cd ../..
-        cp bsmapz ../../bsmapz
+        build_dir=$(mktemp -d)
+        git clone https://github.com/zyndagj/BSMAPz.git $build_dir/BSMAPz 2> {log}
+        make -C "$build_dir/BSMAPz" bsmapz 2> {log}
+        cp "$build_dir/BSMAPz/bsmapz"      {output.binary}
+        cp "$build_dir/BSMAPz/methratio.py" {output.meth_extractor}
+        rm -rf "$build_dir"
         """
 
 
@@ -49,7 +43,7 @@ rule bsmapz_compute_meth:
         alignment_index="resources/{platform}/{sample}/alignment_focused_downsampled_dedup_renamed.bam.bai",
         bsmapz_binary="resources/ref_tools/BSMAPz/bsmapz",
     output:
-        temp("results/single_sample/{platform}/called/{sample}/result_files/out.bam"),
+        temp("results/single_sample/{platform}/called/{sample}/result_files/out.unsorted.bam"),
     log:
         "logs/bsmapz/bsmapz_compute/{platform}_{sample}.log",
     resources:
@@ -66,6 +60,23 @@ rule bsmapz_compute_meth:
         chmod +x {input.bsmapz_binary}
         {input.bsmapz_binary} -a {input.alignment} -d {input.genome} -o {output} -p {threads} -w 100 -v 0.07 -m 50 -x 300 > {log} 2>&1
         """
+
+# Sort BSMAPz output BAM by coordinate (BSMAPz does not guarantee sorted output)
+rule bsmapz_sort_out_bam:
+    input:
+        "results/single_sample/{platform}/called/{sample}/result_files/out.unsorted.bam",
+    output:
+        temp("results/single_sample/{platform}/called/{sample}/result_files/out.bam"),
+    log:
+        "logs/bsmapz/bsmapz_sort_out_bam/{platform}_{sample}.log",
+    resources:
+        mem_mb=8000,
+    conda:
+        "../envs/samtools.yaml"
+    threads: 4
+    shell:
+        "samtools sort -@ {threads} -o {output} {input} 2> {log}"
+
 
 
 # Index out.bam for region-based splitting

@@ -1,10 +1,11 @@
 import os
 import re
-import pandas as pd
-import altair as alt
 import sys
 from pathlib import Path
+
+import altair as alt
 import numpy as np
+import pandas as pd
 
 sys.stderr = open(snakemake.log[0], "w")
 
@@ -14,7 +15,7 @@ def point_plot(df, x, y, color, shape, x_title, y_title, height=140):
     meth_caller_to_name = {
         "varlociraptor": "Varlociraptor",
         "bismark": "Bismark",
-        "bsmapz": "BSMAPz",
+        "bsmap": "BSMAPz",
         "methylDackel": "MethylDackel",
         "modkit": "Modkit",
         "pb-CpG-tools": "pb-CpG-tools",
@@ -32,10 +33,8 @@ def point_plot(df, x, y, color, shape, x_title, y_title, height=140):
     # Map nicer names
     df = df.copy()
     df["tool_label"] = df[color].map(meth_caller_to_name)
-
     charts = []
     for platform in df["platform"].unique():
-
         subset = df[df["platform"] == platform]
         # tools that appear in this subplot
         present_tools = subset["tool_label"].unique().tolist()
@@ -51,7 +50,7 @@ def point_plot(df, x, y, color, shape, x_title, y_title, height=140):
                     f"{x}:Q",
                     title=x_title,
                     scale=alt.Scale(type="log", domain=[1, subset[x].max() * 1.3 + 1]),
-                    axis=alt.Axis(values=ticks, labelAngle=-45),
+                    axis=alt.Axis(values=ticks, labelAngle=-45, format=".2f"),
                 ),
                 y=alt.Y(f"{y}:Q", title=y_title, scale=alt.Scale(type="log")),
                 color=alt.Color(
@@ -80,23 +79,37 @@ def point_plot(df, x, y, color, shape, x_title, y_title, height=140):
 records = []
 benchmark_path = snakemake.input.benchmarks
 
+# Validate that the benchmark path exists
+if not os.path.exists(benchmark_path):
+    raise FileNotFoundError(f"Benchmark directory not found: {benchmark_path}")
 
 for root, _, files in os.walk(benchmark_path):
     for fname in files:
-        if not fname.endswith(".benchmark.txt"):
+        if not fname.endswith(".bwa.benchmark.txt"):
             continue
 
         full_path = os.path.join(root, fname)
-        df = pd.read_csv(full_path, sep="\t", usecols=["s", "max_rss"])
-        p = Path(full_path)
-        # Extract info from folder structure
-        df["platform"] = p.parts[-4]  # → "Illumina_pe"
-        df["meth_caller"] = p.parts[-3]  # → "varlociraptor"
-        df["task"] = p.parts[-2]  # → "simulated_data_1"
-        replicate = re.sub(r"_\d+-of-\d+", "", fname.replace(".benchmark.txt", ""))
-        df["replicate"] = replicate
-        # Clean up sample/replicate name
-        records.append(df)
+        try:
+            df = pd.read_csv(full_path, sep="\t", usecols=["s", "max_rss"])
+            p = Path(full_path)
+            # Extract info from folder structure
+            df["platform"] = p.parts[-4]  # → "Illumina_pe"
+            df["meth_caller"] = p.parts[-3]  # → "varlociraptor"
+            df["task"] = p.parts[-2]  # → "simulated_data_1"
+            replicate = re.sub(
+                r"_\d+-of-\d+", "", fname.replace(".bwa.benchmark.txt", "")
+            )
+            df["replicate"] = replicate
+            # Clean up sample/replicate name
+            records.append(df)
+        except Exception as e:
+            print(
+                f"Warning: Failed to read benchmark file {full_path}: {e}",
+                file=sys.stderr,
+            )
+
+if not records:
+    raise ValueError(f"No benchmark files found in {benchmark_path}")
 
 df_all = pd.concat(records, ignore_index=True)
 df_all["platform"] = df_all["platform"].replace("Illumina_pe", "Illumina")
@@ -122,7 +135,6 @@ df_compare_callers = (
     .agg({"minutes": "sum", "max_rss_gb": "max"})
     .assign(platform_caller=lambda x: x["platform"] + " - " + x["caller"])
 )
-
 
 # Create runtime and memory plots for all callers
 runtime_chart = point_plot(

@@ -9,14 +9,16 @@ rule bissnp_download:
         "logs/bissnp/bissnp_download/download.log",
     shell:
         """
-        touch {log}
-        mkdir -p resources/ref_tools
-        cd resources/ref_tools
-        git clone https://github.com/dnaase/Bis-tools.git
-        cd Bis-tools
-        wget -O BisSNP-0.82.2.jar https://sourceforge.net/projects/bissnp/files/BisSNP-0.82.2/BisSNP-0.82.2.jar/download
-        """
+        output_dir=$(dirname {output})
+        mkdir -p "$output_dir"
 
+        # clone only if directory is empty
+        if [ -z "$(ls -A "$output_dir")" ]; then
+            git clone https://github.com/dnaase/Bis-tools.git "$output_dir"
+            wget -O "$output_dir/BisSNP-0.82.2.jar" https://sourceforge.net/projects/bissnp/files/BisSNP-0.82.2/BisSNP-0.82.2.jar/download
+        fi
+
+        """
 
 # All files need to be in the same dir
 rule bissnp_prepare:
@@ -30,73 +32,57 @@ rule bissnp_prepare:
             "resources/chromosome_{chrom}.fasta.fai",
             chrom=config["seq_platforms"].get("Illumina_pe"),
         ),
-        alignment="resources/{platform}/{sample}/alignment_focused_downsampled_dedup_renamed.bam",
-        alignment_index="resources/{platform}/{sample}/alignment_focused_downsampled_dedup_renamed.bam.bai",
+        # BisSNP is based on GATK 1.x and requires Bismark-style XR/XG tags to recognize
+        # bisulfite reads. bwa-meth BAMs use YC/YD tags instead, which BisSNP does not
+        # understand, resulting in 0 callable bases. We therefore use the Bismark-deduplicated
+        # BAM as input.
+        alignment="resources/ref_tools/bismark/{platform}/dedup/{sample}.deduplicated.bam",
     output:
-        jar="resources/ref_tools/Bis-tools/{platform}_{sample}/BisSNP-0.82.2.jar",
-        genome="resources/ref_tools/Bis-tools/{platform}_{sample}/genome.fasta",
-        genome_index="resources/ref_tools/Bis-tools/{platform}_{sample}/genome.fasta.fai",
-        alignment="resources/ref_tools/Bis-tools/{platform}_{sample}/alignment.bam",
-        alignment_index="resources/ref_tools/Bis-tools/{platform}_{sample}/alignment.bam.bai",
+        jar="resources/ref_tools/Bis-tools/{platform}/{sample}/BisSNP-0.82.2.jar",
+        genome="resources/ref_tools/Bis-tools/{platform}/{sample}/genome.fasta",
+        genome_index="resources/ref_tools/Bis-tools/{platform}/{sample}/genome.fasta.fai",
+        alignment="resources/ref_tools/Bis-tools/{platform}/{sample}/alignment.bam",
+        alignment_index="resources/ref_tools/Bis-tools/{platform}/{sample}/alignment.bam.bai",
     log:
         "logs/bissnp/bissnp_prepare/{platform}_{sample}.log",
     conda:
-        "../envs/general.yaml"
+        "../envs/samtools.yaml"
+    params:
+        chromosome=lambda wildcards: chromosome_by_seq_platform.get(wildcards.platform),
     shell:
         """
         cp {input.jar} {output.jar} 2> {log}
-        cp {input.genome} {output.genome} 2> {log}
-        cp {input.genome_index} {output.genome_index} 2> {log}
-        cp {input.alignment} {output.alignment} 2> {log}
-        cp {input.alignment_index} {output.alignment_index} 2> {log}
+        cp {input.genome} {output.genome} 2>> {log}
+        cp {input.genome_index} {output.genome_index} 2>> {log}
+        samtools sort -o {output.alignment} {input.alignment} 2>> {log}
+        samtools index {output.alignment} 2>> {log}
         """
 
 
 rule bissnp_extract:
     input:
-        jar="resources/ref_tools/Bis-tools/{platform}_{sample}/BisSNP-0.82.2.jar",
-        genome="resources/ref_tools/Bis-tools/{platform}_{sample}/genome.fasta",
-        genome_index="resources/ref_tools/Bis-tools/{platform}_{sample}/genome.fasta.fai",
-        alignment="resources/ref_tools/Bis-tools/{platform}_{sample}/alignment.bam",
-        alignment_index="resources/ref_tools/Bis-tools/{platform}_{sample}/alignment.bam.bai",
+        jar="resources/ref_tools/Bis-tools/{platform}/{sample}/BisSNP-0.82.2.jar",
+        genome="resources/ref_tools/Bis-tools/{platform}/{sample}/genome.fasta",
+        genome_index="resources/ref_tools/Bis-tools/{platform}/{sample}/genome.fasta.fai",
+        alignment="resources/ref_tools/Bis-tools/{platform}/{sample}/alignment.bam",
+        alignment_index="resources/ref_tools/Bis-tools/{platform}/{sample}/alignment.bam.bai",
     output:
-        cpg=temp("results/single_sample/{platform}/called/{sample}/result_files/cpg_{scatteritem}.raw.vcf"),
-        snp=temp("results/single_sample/{platform}/called/{sample}/result_files/snp_{scatteritem}.raw.vcf"),
+        cpg=temp("results/single_sample/{platform}/called/{sample}/result_files/cpg.raw.vcf"),
+        snp=temp("results/single_sample/{platform}/called/{sample}/result_files/snp.raw.vcf"),
     conda:
         "../envs/openjdk.yaml"
     params:
-        chromosome=chromosome_by_seq_platform.get("Illumina_pe"),
+        chromosome=lambda wildcards: chromosome_by_seq_platform.get(wildcards.platform),
     log:
-        "logs/bissnp/bissnp_extract/{platform}_{sample}_{scatteritem}.log",
+        "logs/bissnp/bissnp_extract/{platform}_{sample}.log",
     benchmark:
-        "benchmarks/{platform}/bisSNP/bissnp_extract/{sample}_{scatteritem}.txt"
+        "benchmarks/{platform}/bisSNP/bissnp_extract/{sample}.txt"
     threads: 8
     resources:
         mem_mb=64000,
     shell:
         "java -Xmx10G -jar {input.jar} -R {input.genome} -nt {threads} -T BisulfiteGenotyper -I {input.alignment} -vfn1 {output.cpg} -vfn2 {output.snp} -L {params.chromosome} 2> {log}"
 
-
-rule gather_bisSnp:
-    input:
-        cpg=gather.split_candidates(
-            "results/single_sample/{{platform}}/called/{{sample}}/result_files/cpg_{scatteritem}.raw.vcf",
-        ),
-        snp=gather.split_candidates(
-            "results/single_sample/{{platform}}/called/{{sample}}/result_files/snp_{scatteritem}.raw.vcf",
-        ),
-    output:
-        cpg="results/single_sample/{platform}/called/{sample}/result_files/cpg.raw.vcf",
-        snp="results/single_sample/{platform}/called/{sample}/result_files/snp.raw.vcf",
-    log:
-        "logs/bissnp/gather_bissnp/{platform}_{sample}.log",
-    conda:
-        "../envs/general.yaml"
-    shell:
-        """
-        cat {input.cpg} > {output.cpg} 2> {log}
-        cat {input.snp} > {output.snp} 2>> {log}
-        """
 
 
 # We do not use the official perl script in resources/ref_tools/Bis-tools/utils/vcf2bedGraph.pl because it does not work
