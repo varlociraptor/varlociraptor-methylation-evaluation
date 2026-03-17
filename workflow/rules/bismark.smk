@@ -68,7 +68,7 @@ rule bismark_align:
     log:
         "logs/bismark/bismark_align/{sample}_{SRA}_{platform}.log",
     benchmark:
-        "benchmarks/{platform}/bismark/bismark_align/{sample}_{SRA}.bwa.benchmark.txt"
+        "benchmarks/{platform}/bismark/bismark_align_{SRA}/{sample}.bwa.benchmark.txt"
     params:
         extra="--nucleotide_coverage",
     threads: 8
@@ -89,7 +89,7 @@ rule samtools_merge:
     params:
         extra="-n",
     benchmark:
-        "benchmarks/{platform}/bismark/samtools_merge/{sample}_{platform}.bwa.benchmark.txt"
+        "benchmarks/{platform}/bismark/samtools_merge/{sample}.bwa.benchmark.txt"
     threads: 8
     wrapper:
         "v5.9.0/bio/samtools/merge"
@@ -108,7 +108,7 @@ rule samtools_sort:
     resources:
         mem_mb=32000,
     benchmark:
-        "benchmarks/{platform}/bismark/samtools_sort/{sample}_{platform}.bwa.benchmark.txt"
+        "benchmarks/{platform}/bismark/samtools_sort/{sample}.bwa.benchmark.txt"
     wrapper:
         "v5.9.0/bio/samtools/sort"
 
