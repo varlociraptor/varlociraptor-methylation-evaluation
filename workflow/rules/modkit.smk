@@ -14,9 +14,9 @@ rule modkit_compute_methylation:
     log:
         "logs/modkit/modkit_compute_methylation/{platform}_{sample}.log",
     resources:
-        mem_mb=128000,
+        mem_mb=16000,
     benchmark:
-        "benchmarks/{platform}/modkit/modkit/{sample}.bwa.benchmark.txt"
+        repeat("benchmarks/{platform}/modkit/modkit/{sample}.bwa.benchmark.txt", 3)
     threads: 8
     shell:
         "modkit pileup {input.alignment} {output} --cpg --ref {input.chromosome} --modified-bases 5mC --threads {threads} --combine-strands --log-filepath {log} 2> {log}"

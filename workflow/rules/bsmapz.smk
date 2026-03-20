@@ -47,9 +47,9 @@ rule bsmapz_compute_meth:
     log:
         "logs/bsmapz/bsmapz_compute/{platform}_{sample}.log",
     resources:
-        mem_mb=32000,
+        mem_mb=16000,
     benchmark:
-        "benchmarks/{platform}/bsmap/bsmap_compute/{sample}.bwa.benchmark.txt"
+        repeat("benchmarks/{platform}/bsmap/bsmap_compute/{sample}.bwa.benchmark.txt", 3)
     conda:
         "../envs/general.yaml"
     threads: 8
@@ -158,7 +158,7 @@ rule bsmapz_extract:
     conda:
         "../envs/bsmapz.yaml"
     benchmark:
-        "benchmarks/{platform}/bsmap/bsmap_extract/{sample}_{scatteritem}.bwa.benchmark.txt"
+        repeat("benchmarks/{platform}/bsmap/bsmap_extract/{sample}_{scatteritem}.bwa.benchmark.txt", 3)
     shell:
         "python {input.meth_extractor} -c={params.chromosome} --ref={input.genome[0]} --out={output} {input.bsmap_bam} -g -x CG 2> {log}"
 

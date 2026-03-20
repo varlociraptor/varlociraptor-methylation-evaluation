@@ -56,26 +56,26 @@ rule bismark_align:
     input:
         fq_1="resources/{platform}/{sample}/{SRA}/{SRA}_1_trimmed.fastq",
         fq_2="resources/{platform}/{sample}/{SRA}/{SRA}_2_trimmed.fastq",
-        genome=lambda wildcards: expand(
-            "resources/ref_tools/bismark/{{platform}}/chromosome_{chrom}.fasta",
-            chrom=config["seq_platforms"].get(wildcards.platform),
-        ),
-        bismark_indexes_dir="resources/ref_tools/bismark/{platform}/Bisulfite_Genome",
+
+        bismark_indexes_dir="resources/ref_tools/bismark/{platform}/",
     output:
         bam="resources/ref_tools/bismark/{platform}/bams/{sample}_pe_{SRA}_unsorted.bam",
         report="resources/ref_tools/bismark/{platform}/bams/{sample}_{SRA}_PE_report.txt",
-        nucleotide_stats="resources/ref_tools/bismark/{platform}/bams/{sample}_{SRA}_pe.nucleotide_stats.txt",
+        fq_unmapped_1="results/ref_tools/bismark/{platform}/{sample}/{SRA}_unmapped_reads_1.fq.gz",  # optional: implicitly activates --unmapped
+        fq_unmapped_2="results/ref_tools/bismark/{platform}/{sample}/{SRA}_unmapped_reads_2.fq.gz",  # optional: implicitly activates --unmapped
+        fq_ambiguous_1="results/ref_tools/bismark/{platform}/{sample}/{SRA}_ambiguous_reads_1.fq.gz",  # optional: implicitly activates --ambiguous
+        fq_ambiguous_2="results/ref_tools/bismark/{platform}/{sample}/{SRA}_ambiguous_reads_2.fq.gz"
     log:
         "logs/bismark/bismark_align/{sample}_{SRA}_{platform}.log",
     benchmark:
-        "benchmarks/{platform}/bismark/bismark_align_{SRA}/{sample}.bwa.benchmark.txt"
+        repeat("benchmarks/{platform}/bismark/bismark_align_{SRA}/{sample}.bwa.benchmark.txt", 3)
     params:
-        extra="--nucleotide_coverage",
+        extra="",
     threads: 8
     resources:
-        mem_mb=48000,
+        mem_mb=16000,
     wrapper:
-        "v5.9.0/bio/bismark/bismark"
+        "v9.3.0/bio/bismark/bismark"
 
 
 # merge bam files from different lanes
@@ -87,9 +87,9 @@ rule samtools_merge:
     log:
         "logs/bismark/samtools_merge/{sample}_{platform}.log",
     params:
-        extra="-n",
+        extra="-n -f",
     benchmark:
-        "benchmarks/{platform}/bismark/samtools_merge/{sample}.bwa.benchmark.txt"
+        repeat("benchmarks/{platform}/bismark/samtools_merge/{sample}.bwa.benchmark.txt", 3)
     threads: 8
     wrapper:
         "v5.9.0/bio/samtools/merge"
@@ -106,9 +106,9 @@ rule samtools_sort:
         extra="-m 4G -n",
     threads: 8
     resources:
-        mem_mb=32000,
+        mem_mb=16000,
     benchmark:
-        "benchmarks/{platform}/bismark/samtools_sort/{sample}.bwa.benchmark.txt"
+        repeat("benchmarks/{platform}/bismark/samtools_sort/{sample}.bwa.benchmark.txt", 3)
     wrapper:
         "v5.9.0/bio/samtools/sort"
 
@@ -124,7 +124,7 @@ rule deduplicate_bismark:
     params:
         extra="",  # optional params string
     benchmark:
-        "benchmarks/{platform}/bismark/deduplicate_bismark/{sample}.bwa.benchmark.txt"
+        repeat("benchmarks/{platform}/bismark/deduplicate_bismark/{sample}.bwa.benchmark.txt", 3)
     resources:
         mem_mb=16000,
     wrapper:
@@ -157,7 +157,7 @@ rule deduplicate_bismark:
 #         output_dir="resources/ref_tools/bismark/{platform}/meth",  # optional output dir
 #         extra="--gzip --comprehensive --bedGraph --zero_based",  # optional params string
 #     benchmark:
-#         "benchmarks/{platform}/bismark/bismark_methylation_extractor/{sample}_{platform}.bwa.benchmark.txt"
+#         repeat("benchmarks/{platform}/bismark/bismark_methylation_extractor/{sample}_{platform}.bwa.benchmark.txt", 3)
 #     resources:
 #         mem_mb=16000,
 #     wrapper:
@@ -174,7 +174,7 @@ rule bismark_extract:
     log:
         "logs/bismark_extract/{sample}_{platform}.log",
     benchmark:
-        "benchmarks/{platform}/bismark/bismark_methylation_extractor/{sample}.bwa.benchmark.txt"
+        repeat("benchmarks/{platform}/bismark/bismark_methylation_extractor/{sample}.bwa.benchmark.txt", 3)
     resources:
         mem_mb=16000,
     threads: 8

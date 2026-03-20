@@ -10,7 +10,7 @@ rule compute_pandas_df:
     log:
         "logs/plot_results/compute_pandas_df/{call_type}_{seq_platform}_{sample}_{method}.log",
     resources:
-        mem_mb=64000,
+        mem_mb=4000,
     script:
         "../scripts/pandas_df_from_meth_output.py"
 
@@ -27,7 +27,7 @@ rule compute_varlo_df:
     params:
         alpha=lambda wildcards: wildcards.fdr,
     resources:
-        mem_mb=64000,
+        mem_mb=4000,
     script:
         "../scripts/pandas_df_from_meth_output.py"
 
@@ -56,7 +56,7 @@ rule common_tool_df:
     params:
         plot_type=config["plot_type"],
     resources:
-        mem_mb=64000,
+        mem_mb=4000,
     script:
         "../scripts/common_tool_df.py"
 
@@ -78,7 +78,7 @@ rule merge_replicates:
     log:
         "logs/plot_results/merge_replicates/{call_type}_{seq_platform}.log",
     resources:
-        mem_mb=64000,
+        mem_mb=4000,
     params:
         meth_callers=lambda wildcards: config["ref_tools"].get(
             wildcards.seq_platform, []
@@ -100,7 +100,7 @@ rule prepare_plot_df:
     log:
         "logs/plot_results/prepare_plot_df/{call_type}_{seq_platform}_{sample}.log",
     resources:
-        mem_mb=64000,
+        mem_mb=4000,
     params:
         meth_callers=lambda wildcards: config["ref_tools"].get(
             wildcards.seq_platform, []
@@ -136,7 +136,7 @@ rule plot_heatmaps:
     conda:
         "../envs/python.yaml"
     resources:
-        mem_mb=64000,
+        mem_mb=4000,
     log:
         "logs/plot_results/plot_heatmaps/{call_type}_{seq_platform}_{sample}_{plot_type}.log",
     params:
@@ -170,7 +170,7 @@ rule plots_bars_illumina:
     conda:
         "../envs/python.yaml"
     resources:
-        mem_mb=64000,
+        mem_mb=4000,
     log:
         "logs/plot_results/plots_bars_illumina/single_sample_Illumina_pe_{plot_type}.log",
     params:
@@ -198,7 +198,7 @@ rule plot_bias:
     conda:
         "../envs/python.yaml"
     resources:
-        mem_mb=64000,
+        mem_mb=4000,
     log:
         "logs/plot_results/plot_bias/{call_type}_{seq_platform}_{sample}_{plot_type}.log",
     params:
@@ -285,7 +285,7 @@ rule plot_coverage_retained:
     conda:
         "../envs/python.yaml"
     resources:
-        mem_mb=64000,
+        mem_mb=4000,
     log:
         "logs/plot_results/plot_coverage_retained/{call_type}_{seq_platform}_{sample}_{plot_type}.log",
     params:

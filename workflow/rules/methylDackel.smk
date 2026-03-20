@@ -26,7 +26,7 @@ rule methylDackel_compute_meth:
     log:
         "logs/methylDackel/methylDackel_compute_meth/{platform}_{sample}_{scatteritem}.log",
     benchmark:
-        "benchmarks/{platform}/methylDackel/methylDackel_compute_meth/{sample}_{scatteritem}.bwa.benchmark.txt"
+        repeat("benchmarks/{platform}/methylDackel/methylDackel_compute_meth/{sample}_{scatteritem}.bwa.benchmark.txt", 3)
     shell:
         """
         mkdir -p $(dirname {log})
@@ -50,7 +50,7 @@ rule methylDackel_gather_meth:
     conda:
         "../envs/general.yaml"
     benchmark:
-        "benchmarks/{platform}/methylDackel/methylDackel_gather_meth/{platform}_{sample}.log"
+        repeat("benchmarks/{platform}/methylDackel/methylDackel_gather_meth/{platform}_{sample}.log", 3)
     shell:
         """
         head -n1 $(echo {input} | tr ' ' '\n' | head -n1) > {output} 2> {log}

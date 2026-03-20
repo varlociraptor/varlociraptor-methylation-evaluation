@@ -89,7 +89,7 @@ rule bwa_mem2_index:
     log:
         "logs/bwa_index/resources/genome.log",
     resources:
-        mem_mb=32000,
+        mem_mb=16000,
     wrapper:
         "v7.2.0/bio/bwa-mem2/index"
 
@@ -297,7 +297,7 @@ rule event_probs_df:
     params:
         alpha=lambda wildcards: wildcards.fdr,
     resources:
-        mem_mb=64000,
+        mem_mb=4000,
     script:
         "../scripts/event_probs_df.py"
 
@@ -323,6 +323,6 @@ rule plot_ceta_probs:
     log:
         "logs/plots/plot_ceta_probs_{fdr}.log",
     resources:
-        mem_mb=16000,
+        mem_mb=4000,
     script:
         "../scripts/plot_ceta_probs.py"

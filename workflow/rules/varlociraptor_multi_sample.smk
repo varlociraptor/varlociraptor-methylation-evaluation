@@ -9,7 +9,7 @@ rule call_methylation_together_np_pb:
     log:
         "logs/varlociraptor_multi/call_methylation_together_np_pb/{replicate}_{scatteritem}.log",
     benchmark:
-        "benchmarks/multi_sample/np_bp/np_pb/{replicate}_{scatteritem}.bwa.benchmark.txt"
+        repeat("benchmarks/multi_sample/np_bp/np_pb/{replicate}_{scatteritem}.bwa.benchmark.txt", 3)
     conda:
         "../envs/varlociraptor.yaml"
     shell:
@@ -27,7 +27,7 @@ rule call_methylation_together_np_methylSeq:
     log:
         "logs/varlociraptor_multi/call_methylation_together_np_methylSeq/{replicate}_{scatteritem}.log",
     benchmark:
-        "benchmarks/multi_sample/np_methylSeq/np_methylSeq/{replicate}_{scatteritem}.bwa.benchmark.txt"
+        repeat("benchmarks/multi_sample/np_methylSeq/np_methylSeq/{replicate}_{scatteritem}.bwa.benchmark.txt", 3)
     conda:
         "../envs/varlociraptor.yaml"
     shell:
@@ -45,7 +45,7 @@ rule call_methylation_together_pb_methylSeq:
     log:
         "logs/varlociraptor_multi/call_methylation_together_pb_methylSeq/{replicate}_{scatteritem}.log",
     benchmark:
-        "benchmarks/multi_sample/pb_methylSeq/pb_methylSeq/{replicate}_{scatteritem}.bwa.benchmark.txt"
+        repeat("benchmarks/multi_sample/pb_methylSeq/pb_methylSeq/{replicate}_{scatteritem}.bwa.benchmark.txt", 3)
     conda:
         "../envs/varlociraptor.yaml"
     shell:
