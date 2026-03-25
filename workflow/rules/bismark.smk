@@ -5,7 +5,7 @@ rule bismark_copy_genome:
     input:
         "resources/genome.fasta",
     output:
-        "resources/ref_tools/bismark/{platform}/genome.fasta",
+        "resources/ref_tools/bismark/genome/{platform}/genome.fasta",
     log:
         "logs/bismark/bismark_copy_genome/copy_{platform}.log",
     conda:
@@ -21,7 +21,7 @@ rule bismark_copy_chromosome:
     input:
         "resources/chromosome_{chrom}.fasta",
     output:
-        "resources/ref_tools/bismark/{platform}/chromosome_{chrom}.fasta",
+        "resources/ref_tools/bismark/genome/{platform}/chromosome_{chrom}.fasta",
     conda:
         "../envs/bismark.yaml"
     log:
@@ -37,11 +37,11 @@ rule bismark_copy_chromosome:
 rule bismark_prepare_genome:
     input:
         lambda wildcards: expand(
-            "resources/ref_tools/bismark/{{platform}}/chromosome_{chrom}.fasta",
+            "resources/ref_tools/bismark/genome/{{platform}}/chromosome_{chrom}.fasta",
             chrom=config["seq_platforms"].get(wildcards.platform),
         ),
     output:
-        directory("resources/ref_tools/bismark/{platform}/Bisulfite_Genome"),
+        directory("resources/ref_tools/bismark/genome/{platform}/Bisulfite_Genome"),
     conda:
         "../envs/bismark.yaml"
     log:
@@ -57,7 +57,7 @@ rule bismark_align:
         fq_1="resources/{platform}/{sample}/{SRA}/{SRA}_1_trimmed.fastq",
         fq_2="resources/{platform}/{sample}/{SRA}/{SRA}_2_trimmed.fastq",
 
-        bismark_indexes_dir="resources/ref_tools/bismark/{platform}/",
+        bismark_indexes_dir="resources/ref_tools/bismark/genome/{platform}/",
     output:
         bam="resources/ref_tools/bismark/{platform}/bams/{sample}_pe_{SRA}_unsorted.bam",
         report="resources/ref_tools/bismark/{platform}/bams/{sample}_{SRA}_PE_report.txt",
@@ -128,7 +128,7 @@ rule deduplicate_bismark:
     resources:
         mem_mb=16000,
     wrapper:
-        "v5.9.0/bio/bismark/deduplicate_bismark"
+        "v9.3.0/bio/bismark/deduplicate_bismark"
 
 
 # rule bismark_methylation_extractor:
