@@ -51,7 +51,7 @@ rule bsmapz_compute_meth:
     benchmark:
         repeat("benchmarks/{platform}/bsmap/bsmap_compute/{sample}.bwa.benchmark.txt", 3)
     conda:
-        "../envs/general.yaml"
+        "../envs/samtools.yaml"
     threads: 8
     shell:
         """

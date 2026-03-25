@@ -36,7 +36,7 @@ rule bissnp_prepare:
         # bisulfite reads. bwa-meth BAMs use YC/YD tags instead, which BisSNP does not
         # understand, resulting in 0 callable bases. We therefore use the Bismark-deduplicated
         # BAM as input.
-        alignment="resources/ref_tools/bismark/{platform}/dedup/{sample}.deduplicated.bam",
+        alignment="resources/{platform}/{sample}/alignment.bam",
     output:
         jar="resources/ref_tools/Bis-tools/{platform}/{sample}/BisSNP-0.82.2.jar",
         genome="resources/ref_tools/Bis-tools/{platform}/{sample}/genome.fasta",
@@ -65,30 +65,13 @@ rule bissnp_prepare:
         rm /tmp/header.sam
         """
 
-rule create_reference_dict:
-    input:
-        "resources/ref_tools/Bis-tools/{platform}/{sample}/genome.fasta",
-    output:
-        "resources/ref_tools/Bis-tools/{platform}/{sample}/genome.dict",
-    log:
-        "logs/picard/create_reference_dict/{platform}_{sample}.log",
-    params:
-        extra="",  # optional: extra arguments for picard.
-    # optional specification of memory usage of the JVM that snakemake will respect with global
-    # resource restrictions (https://snakemake.readthedocs.io/en/latest/snakefiles/rules.html#resources)
-    # and which can be used to request RAM during cluster job submission as `{resources.mem_mb}`:
-    # https://snakemake.readthedocs.io/en/latest/executing/cluster.html#job-properties
-    resources:
-        mem_mb=1024,
-    wrapper:
-        "v7.6.0/bio/picard/createsequencedictionary"
 
 
 rule bissnp_extract:
     input:
         jar="resources/ref_tools/Bis-tools/{platform}/{sample}/BisSNP-0.82.2.jar",
         genome="resources/ref_tools/Bis-tools/{platform}/{sample}/genome.fasta",
-        genome_dict="resources/ref_tools/Bis-tools/{platform}/{sample}/genome.dict",
+        # genome_dict="resources/ref_tools/Bis-tools/{platform}/{sample}/genome.dict",
         genome_index="resources/ref_tools/Bis-tools/{platform}/{sample}/genome.fasta.fai",
         alignment="resources/ref_tools/Bis-tools/{platform}/{sample}/alignment.bam",
         alignment_index="resources/ref_tools/Bis-tools/{platform}/{sample}/alignment.bam.bai",
@@ -133,13 +116,13 @@ rule bissnp_create_bedgraph:
 rule bissnp_merge_positions:
     input:
         bedgraph="results/single_sample/{platform}/called/{sample}/result_files/cpg.raw.CG.bedgraph",
-        candidates=expand(
+        candidates=lambda wildcards: expand(
             "resources/{chrom}/candidates.bcf",
-            chrom=config["seq_platforms"].get("Illumina_pe"),
+            chrom=config["seq_platforms"].get(wildcards.platform),
         ),
-        candidates_index=expand(
+        candidates_index=lambda wildcards: expand(
             "resources/{chrom}/candidates.bcf.csi",
-            chrom=config["seq_platforms"].get("Illumina_pe"),
+            chrom=config["seq_platforms"].get(wildcards.platform),
         ),
     output:
         "results/single_sample/{platform}/called/{sample}/result_files/bisSNP.bed",
