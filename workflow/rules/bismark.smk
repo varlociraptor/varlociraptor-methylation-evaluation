@@ -58,6 +58,7 @@ rule bismark_align:
         fq_2="resources/{platform}/{sample}/{SRA}/{SRA}_2_trimmed.fastq",
 
         bismark_indexes_dir="resources/ref_tools/bismark/genome/{platform}/",
+        ct="resources/ref_tools/bismark/genome/{platform}/Bisulfite_Genome/CT_conversion",
     output:
         bam="resources/ref_tools/bismark/{platform}/bams/{sample}_pe_{SRA}_unsorted.bam",
         report="resources/ref_tools/bismark/{platform}/bams/{sample}_{SRA}_PE_report.txt",

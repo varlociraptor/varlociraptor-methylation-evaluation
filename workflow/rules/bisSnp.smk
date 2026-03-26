@@ -11,12 +11,13 @@ rule bissnp_download:
         """
         output_dir=$(dirname {output})
         mkdir -p "$output_dir"
-
         # clone only if directory is empty
         if [ -z "$(ls -A "$output_dir")" ]; then
             git clone https://github.com/dnaase/Bis-tools.git "$output_dir"
             wget -O "$output_dir/BisSNP-0.82.2.jar" https://sourceforge.net/projects/bissnp/files/BisSNP-0.82.2/BisSNP-0.82.2.jar/download
         fi
+        echo $output_dir
+        ls -la $output_dir
 
         """
 
@@ -32,11 +33,9 @@ rule bissnp_prepare:
             "resources/chromosome_{chrom}.fasta.fai",
             chrom=config["seq_platforms"].get(wildcards.platform),
         ),
-        # BisSNP is based on GATK 1.x and requires Bismark-style XR/XG tags to recognize
-        # bisulfite reads. bwa-meth BAMs use YC/YD tags instead, which BisSNP does not
-        # understand, resulting in 0 callable bases. We therefore use the Bismark-deduplicated
-        # BAM as input.
-        alignment="resources/{platform}/{sample}/alignment.bam",
+        # This maybe for simulated  data:
+            # alignment="resources/{platform}/{sample}/alignment.bam",
+        alignment="resources/{platform}/{sample}/alignment_focused_downsampled_dedup_renamed.bam",
     output:
         jar="resources/ref_tools/Bis-tools/{platform}/{sample}/BisSNP-0.82.2.jar",
         genome="resources/ref_tools/Bis-tools/{platform}/{sample}/genome.fasta",
@@ -51,6 +50,7 @@ rule bissnp_prepare:
         chromosome=lambda wildcards: chromosome_by_seq_platform.get(wildcards.platform),
     shell:
         """
+        mkdir -p $(dirname {output.jar})
         cp {input.jar} {output.jar} 2> {log}
         cp {input.genome} {output.genome} 2>> {log}
         # Regenerate the FASTA index to ensure it matches the copied genome
@@ -58,11 +58,11 @@ rule bissnp_prepare:
         samtools view -H {input.alignment} > /tmp/header.sam 2>> {log}
         # Add read group header if it doesn't exist
         if ! grep -q "^@RG" /tmp/header.sam; then
-            echo "@RG\tID:{wildcards.sample}\tSM:{wildcards.sample}" >> /tmp/header.sam
+            echo "@RG\tID:{wildcards.sample}\tSM:{wildcards.sample}" >> /tmp/header.sam 2>> {log}
         fi
         samtools reheader /tmp/header.sam {input.alignment} | samtools sort -o {output.alignment} - 2>> {log}
         samtools index {output.alignment} 2>> {log}
-        rm /tmp/header.sam
+        rm /tmp/header.sam 2>> {log}
         """
 
 
