@@ -19,9 +19,9 @@ rule bismark_copy_genome:
 
 rule bismark_copy_chromosome:
     input:
-        "resources/chromosome_{chrom}.fasta",
+        "resources/{chrom}.fasta",
     output:
-        "resources/ref_tools/bismark/genome/{platform}/chromosome_{chrom}.fasta",
+        "resources/ref_tools/bismark/genome/{platform}/{chrom}.fasta",
     conda:
         "../envs/bismark.yaml"
     log:
@@ -37,7 +37,7 @@ rule bismark_copy_chromosome:
 rule bismark_prepare_genome:
     input:
         lambda wildcards: expand(
-            "resources/ref_tools/bismark/genome/{{platform}}/chromosome_{chrom}.fasta",
+            "resources/ref_tools/bismark/genome/{{platform}}/{chrom}.fasta",
             chrom=config["seq_platforms"].get(wildcards.platform),
         ),
     output:

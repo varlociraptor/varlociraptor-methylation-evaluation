@@ -11,13 +11,12 @@ rule bissnp_download:
         """
         output_dir=$(dirname {output})
         mkdir -p "$output_dir"
+
         # clone only if directory is empty
         if [ -z "$(ls -A "$output_dir")" ]; then
             git clone https://github.com/dnaase/Bis-tools.git "$output_dir"
             wget -O "$output_dir/BisSNP-0.82.2.jar" https://sourceforge.net/projects/bissnp/files/BisSNP-0.82.2/BisSNP-0.82.2.jar/download
         fi
-        echo $output_dir
-        ls -la $output_dir
 
         """
 
@@ -25,17 +24,29 @@ rule bissnp_download:
 rule bissnp_prepare:
     input:
         jar="resources/ref_tools/Bis-tools/BisSNP-0.82.2.jar",
-        genome=lambda wildcards: expand(
-            "resources/chromosome_{chrom}.fasta",
-            chrom=config["seq_platforms"].get(wildcards.platform),
+        genome=lambda wildcards: (
+            expand(
+                "resources/{chrom}.fasta",
+                chrom=config["seq_platforms"].get(wildcards.platform),
+            )
+            if wildcards.sample.startswith("simulated_data")
+            else ["resources/genome.fasta"]
         ),
-        genome_index=lambda wildcards: expand(
-            "resources/chromosome_{chrom}.fasta.fai",
-            chrom=config["seq_platforms"].get(wildcards.platform),
+        genome_index=lambda wildcards: (
+            expand(
+                "resources/{chrom}.fasta.fai",
+                chrom=config["seq_platforms"].get(wildcards.platform),
+            )
+            if wildcards.sample.startswith("simulated_data")
+            else ["resources/genome.fasta.fai"]
         ),
         # This maybe for simulated  data:
             # alignment="resources/{platform}/{sample}/alignment.bam",
-        alignment="resources/{platform}/{sample}/alignment_focused_downsampled_dedup_renamed.bam",
+        alignment=lambda wildcards: (
+            "resources/{platform}/{sample}/alignment.bam"
+            if wildcards.sample.startswith("simulated_data")
+            else "resources/{platform}/{sample}/alignment_focused_downsampled_dedup_renamed.bam"
+        ),
     output:
         jar="resources/ref_tools/Bis-tools/{platform}/{sample}/BisSNP-0.82.2.jar",
         genome="resources/ref_tools/Bis-tools/{platform}/{sample}/genome.fasta",
@@ -50,7 +61,6 @@ rule bissnp_prepare:
         chromosome=lambda wildcards: chromosome_by_seq_platform.get(wildcards.platform),
     shell:
         """
-        mkdir -p $(dirname {output.jar})
         cp {input.jar} {output.jar} 2> {log}
         cp {input.genome} {output.genome} 2>> {log}
         # Regenerate the FASTA index to ensure it matches the copied genome
@@ -58,11 +68,11 @@ rule bissnp_prepare:
         samtools view -H {input.alignment} > /tmp/header.sam 2>> {log}
         # Add read group header if it doesn't exist
         if ! grep -q "^@RG" /tmp/header.sam; then
-            echo "@RG\tID:{wildcards.sample}\tSM:{wildcards.sample}" >> /tmp/header.sam 2>> {log}
+            echo "@RG\tID:{wildcards.sample}\tSM:{wildcards.sample}" >> /tmp/header.sam
         fi
         samtools reheader /tmp/header.sam {input.alignment} | samtools sort -o {output.alignment} - 2>> {log}
         samtools index {output.alignment} 2>> {log}
-        rm /tmp/header.sam 2>> {log}
+        rm /tmp/header.sam
         """
 
 

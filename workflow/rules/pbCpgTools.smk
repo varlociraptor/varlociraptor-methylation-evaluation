@@ -22,7 +22,7 @@ rule pb_CpG_compute_methylation:
         alignment="resources/{platform}/{sample}/alignment_focused_downsampled_dedup_renamed.bam",
         alignment_index="resources/{platform}/{sample}/alignment_focused_downsampled_dedup_renamed.bam.bai",
         chromosome=lambda wildcards: expand(
-            "resources/chromosome_{chromosome}.fasta",
+            "resources/{chromosome}.fasta",
             chromosome=chromosome_by_seq_platform.get(wildcards.platform),
         ),
     output:

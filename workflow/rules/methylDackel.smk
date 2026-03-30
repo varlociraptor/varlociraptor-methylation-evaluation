@@ -3,7 +3,7 @@ rule methylDackel_compute_meth:
     input:
         genome=lambda wildcards: (
             expand(
-                "resources/chromosome_{chrom}.fasta",
+                "resources/{chrom}.fasta",
                 chrom=config["seq_platforms"].get(wildcards.platform),
             )
             if wildcards.sample.startswith("simulated_data")
@@ -11,7 +11,7 @@ rule methylDackel_compute_meth:
         ),
         genome_index=lambda wildcards: (
             expand(
-                "resources/chromosome_{chrom}.fasta.fai",
+                "resources/{chrom}.fasta.fai",
                 chrom=config["seq_platforms"].get(wildcards.platform),
             )
             if wildcards.sample.startswith("simulated_data")

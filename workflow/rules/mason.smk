@@ -19,10 +19,10 @@ rule mason_download:
 
 rule mason_fake_methylation:
     input:
-        chrom="resources/chromosome_{chrom}.fasta",
-        index="resources/chromosome_{chrom}.fasta.fai",
+        chrom="resources/{chrom}.fasta",
+        index="resources/{chrom}.fasta.fai",
     output:
-        methylation="resources/Simulate/simulated_data/chromosome_{chrom}_meth.fa",
+        methylation="resources/Simulate/simulated_data/{chrom}_meth.fa",
     conda:
         "../envs/mason.yaml"
     log:
@@ -43,9 +43,9 @@ rule mason_fake_methylation:
 
 rule mason_fake_variants:
     input:
-        chrom="resources/chromosome_{chrom}.fasta",
+        chrom="resources/{chrom}.fasta",
     output:
-        "resources/Simulate/simulated_data/chromosome_{chrom}_variants.vcf",
+        "resources/Simulate/simulated_data/{chrom}_variants.vcf",
     conda:
         "../envs/mason.yaml"
     log:
@@ -60,15 +60,15 @@ rule mason_fake_variants:
 rule mason_fake_reads:
     input:
         genome=expand(
-            "resources/chromosome_{chrom}.fasta",
+            "resources/{chrom}.fasta",
             chrom=config["seq_platforms"].get("Simulate", []),
         ),
         variants=expand(
-            "resources/Simulate/simulated_data/chromosome_{chrom}_variants.vcf",
+            "resources/Simulate/simulated_data/{chrom}_variants.vcf",
             chrom=config["seq_platforms"].get("Simulate", []),
         ),
         methylation=expand(
-            "resources/Simulate/simulated_data/chromosome_{chrom}_meth.fa",
+            "resources/Simulate/simulated_data/{chrom}_meth.fa",
             chrom=config["seq_platforms"].get("Simulate", []),
         ),
     output:
@@ -96,11 +96,11 @@ rule mason_fake_reads:
 rule mason_align_reads:
     input:
         fasta=expand(
-            "resources/chromosome_{chrom}.fasta",
+            "resources/{chrom}.fasta",
             chrom=config["seq_platforms"].get("Simulate", []),
         ),
         fasta_index=expand(
-            "resources/chromosome_{chrom}.fasta.bwameth.c2t",
+            "resources/{chrom}.fasta.bwameth.c2t",
             chrom=config["seq_platforms"].get("Simulate", []),
         ),
         f1=expand(
@@ -300,10 +300,10 @@ rule mason_compute_truth:
     input:
         cov_forward="resources/Simulate/simulated_data/forward_cov.regions.bed",
         cov_reverse="resources/Simulate/simulated_data/reverse_cov.regions.bed",
-        methylation="resources/Simulate/simulated_data/chromosome_{chrom}_meth.fa",
+        methylation="resources/Simulate/simulated_data/{chrom}_meth.fa",
         candidates="resources/{chrom}/candidates.vcf",
     output:
-        "resources/Simulate/simulated_data/chromosome_{chrom}_truth.csv",
+        "resources/Simulate/simulated_data/{chrom}_truth.csv",
     conda:
         "../envs/python.yaml"
     log:
@@ -314,7 +314,7 @@ rule mason_compute_truth:
 
 rule mason_plot_truth_to_results:
     input:
-        truth="resources/Simulate/simulated_data/chromosome_{chrom}_truth.csv",
+        truth="resources/Simulate/simulated_data/{chrom}_truth.csv",
         results_rep="results/single_sample/Simulate/result_files/sample_df_simulated_data.parquet",
     output:
         report(
