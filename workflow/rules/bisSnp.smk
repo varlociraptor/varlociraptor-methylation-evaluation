@@ -25,13 +25,22 @@ rule bissnp_download:
 rule bissnp_prepare:
     input:
         jar="resources/ref_tools/Bis-tools/BisSNP-0.82.2.jar",
-        genome=lambda wildcards: expand(
-            "resources/chromosome_{chrom}.fasta",
-            chrom=config["seq_platforms"].get(wildcards.platform),
+        # As methyldackel it does not work on only one chromosome
+        genome=lambda wildcards: (
+            expand(
+                "resources/chromosome_{chrom}.fasta",
+                chrom=config["seq_platforms"].get(wildcards.platform),
+            )
+            if wildcards.sample.startswith("simulated_data")
+            else ["resources/genome.fasta"]
         ),
-        genome_index=lambda wildcards: expand(
-            "resources/chromosome_{chrom}.fasta.fai",
-            chrom=config["seq_platforms"].get(wildcards.platform),
+        genome_index=lambda wildcards: (
+            expand(
+                "resources/chromosome_{chrom}.fasta.fai",
+                chrom=config["seq_platforms"].get(wildcards.platform),
+            )
+            if wildcards.sample.startswith("simulated_data")
+            else ["resources/genome.fasta.fai"]
         ),
         # This maybe for simulated  data:
             # alignment="resources/{platform}/{sample}/alignment.bam",
