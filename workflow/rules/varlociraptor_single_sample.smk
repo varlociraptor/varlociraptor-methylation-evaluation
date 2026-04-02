@@ -1,11 +1,11 @@
 rule varlociraptor_preprocess:
     input:
         chromosome=lambda wildcards: expand(
-            "resources/chromosome_{chrom}.fasta",
+            "resources/{chrom}.fasta",
             chrom=chromosome_by_seq_platform.get(wildcards.seq_platform),
         ),
         genome_index=lambda wildcards: expand(
-            "resources/chromosome_{chrom}.fasta.fai",
+            "resources/{chrom}.fasta.fai",
             chrom=chromosome_by_seq_platform.get(wildcards.seq_platform),
         ),
         alignments="resources/{seq_platform}/{sample}/candidate_specific/alignment_{scatteritem}.bam",

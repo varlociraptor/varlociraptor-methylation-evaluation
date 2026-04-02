@@ -34,12 +34,15 @@ rule focus_genome_on_chromosome:
     input:
         "resources/genome.fasta",
     output:
-        "resources/chromosome_{chromosome}.fasta",
+        "resources/{chromosome}.fasta",
     log:
         "logs/download_data/focus_genome_on_chromosome/{chromosome}.log",
     conda:
         "../envs/samtools.yaml"
     threads: 6
+    wildcard_constraints:
+        chromosome="(?!.*genome$)[^/]+",
+
     shell:
         """
         if [[ {wildcards.chromosome} == genome ]]; then \
@@ -54,22 +57,24 @@ rule focus_genome_on_chromosome:
 
 rule chromosome_index:
     input:
-        "resources/chromosome_{chromosome}.fasta",
+        "resources/{chromosome}.fasta",
     output:
-        "resources/chromosome_{chromosome}.fasta.fai",
+        "resources/{chromosome}.fasta.fai",
     log:
         "logs/download_data/chromosome_index/{chromosome}.log",
     conda:
         "../envs/samtools.yaml"
+    wildcard_constraints:
+        chromosome="(?!.*genome$)[^/]+",
     shell:
         "samtools faidx {input} 2> {log}"
 
 
 rule rename_chromosome_in_fasta:
     input:
-        "resources/chromosome_{chromosome}.fasta",
+        "resources/{chromosome}.fasta",
     output:
-        "resources/chr_chromosome_{chromosome}.fasta",
+        "resources/chr_{chromosome}.fasta",
     log:
         "logs/download_data/rename_chromosome_in_fasta/{chromosome}.log",
     conda:

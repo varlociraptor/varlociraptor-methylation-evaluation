@@ -36,7 +36,7 @@ rule bsmapz_clone_and_build:
 rule bsmapz_compute_meth:
     input:
         genome=lambda wildcards: expand(
-            "resources/chromosome_{chrom}.fasta",
+            "resources/{chrom}.fasta",
             chrom=config["seq_platforms"].get(wildcards.platform),
         ),
         alignment="resources/{platform}/{sample}/alignment_focused_downsampled_dedup_renamed.bam",
@@ -136,11 +136,11 @@ rule bsmapz_extract_split_bam:
 rule bsmapz_extract:
     input:
         genome=lambda wildcards: expand(
-            "resources/chromosome_{chrom}.fasta",
+            "resources/{chrom}.fasta",
             chrom=config["seq_platforms"].get(wildcards.platform),
         ),
         genome_index=lambda wildcards: expand(
-            "resources/chromosome_{chrom}.fasta.fai",
+            "resources/{chrom}.fasta.fai",
             chrom=config["seq_platforms"].get(wildcards.platform),
         ),
         bsmap_bam="results/single_sample/{platform}/called/{sample}/result_files/out_{scatteritem}.bam",

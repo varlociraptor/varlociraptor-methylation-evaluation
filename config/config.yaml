@@ -13,6 +13,7 @@ seq_platforms:
     # PacBio: 21
     # Nanopore: 21
     Simulate: genome
+    multi_sample: []
 
 # Define reference methylation caller for comparison against varlociraptor results
 ref_tools:

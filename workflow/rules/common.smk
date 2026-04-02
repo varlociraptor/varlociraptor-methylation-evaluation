@@ -10,7 +10,7 @@ def compute_results() -> List[List[str]]:
 
     # Heatmaps per sequencing platform
     for platform in config["seq_platforms"].keys():
-        if platform != "Simulate":
+        if platform != "Simulate" and platform != "multi_sample":
             inputs.append(heatmap_replicates(platform))
             inputs.append(bias_replicates(platform))
             inputs.append(get_coverage_retained(platform))
@@ -32,9 +32,9 @@ def compute_results() -> List[List[str]]:
         inputs.append(
             f"results/single_sample/Simulate/plots/simulated_data_{chromosome}.html"
         )
-
+    print(inputs)
     # Multi-sample common heatmaps
-    if "PacBio" in config["seq_platforms"] and "Nanopore" in config["seq_platforms"]:
+    if "multi_sample" in config["seq_platforms"]:
         inputs.append(heatmap_replicates_common())
     print(inputs)
     return inputs

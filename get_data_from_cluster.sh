@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-SOURCE="ikim:/projects/koesterlab/benchmark-methylation/varlociraptor-methylation-evaluation"
+SOURCE="ikim:/projects/koesterlab/benchmark-methylation/varlociraptor-methylation-evaluation-old"
 DEST="s3:koesterlab/varlociraptor-methylation-evaluation"
 PREFIX="resources/Illumina_pe"
 
