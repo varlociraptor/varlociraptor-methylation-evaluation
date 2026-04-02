@@ -134,7 +134,7 @@ rule get_fastq_se:
 #           2> {log}
 #         """
 
-rule fastp_pe:
+rule trim_fastq_pe:
     input:
         sample=["resources/Illumina_pe/{sample}/{SRA}/{SRA}_1.fastq", "resources/Illumina_pe/{sample}/{SRA}/{SRA}_2.fastq"]
     output:
@@ -144,18 +144,19 @@ rule fastp_pe:
         # unpaired2="trimmed/pe/{sample}.u2.fastq",
         # or in a single file
 #        unpaired="trimmed/pe/{sample}.singletons.fastq",
-        merged="trimmed/pe/{sample}.merged.fastq",
-        failed="trimmed/pe/{sample}.failed.fastq",
-        html="report/pe/{sample}.html",
-        json="report/pe/{sample}.json"
+        merged="trimmed/pe/{sample}_{SRA}.merged.fastq",
+        failed="trimmed/pe/{sample}_{SRA}.failed.fastq",
+        html="report/pe/{sample}_{SRA}.html",
+        json="report/pe/{sample}_{SRA}.json"
     log:
-        "logs/fastp/pe/{sample}.log"
+        "logs/fastp/pe/{sample}_{SRA}.log"
     params:
         # adapters="--adapter_sequence ACGGCTAGCTA --adapter_sequence_r2 AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC",
-        extra="--disable_quality_filtering"
-    threads: 2
+        extra="--merge"
+    threads: 8
     wrapper:
         "v9.4.1/bio/fastp"
+
 
 
 rule trim_fastq_se:

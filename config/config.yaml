@@ -18,7 +18,7 @@ seq_platforms:
 ref_tools:
     # Chose from: bismark, bisSNP, methylDackel, bsMap
     Illumina_pe: [bismark, bsMap, methylDackel]
-    Simulate: [bismark, bisSNP, bsMap, methylDackel]
+    Simulate: [bisSNP, bsMap, methylDackel]
     # Illumina_pe: [bisSNP]
     # Simulate: [bisSNP]
     # Chose from: modkit, pb_CpG_tools

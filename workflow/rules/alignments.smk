@@ -6,50 +6,49 @@ rule bwameth_index:
         temp(
             multiext(
                 "resources/{genome}.fasta.bwameth",
-                ".c2t",
-                ".c2t.amb",
-                ".c2t.ann",
-                ".c2t.bwt.2bit.64",
-                ".c2t.pac",
-                ".c2t.0123",
-            )
+                    ".c2t",
+                    ".c2t.amb",
+                    ".c2t.ann",
+                    ".c2t.bwt",
+                    ".c2t.pac",
+                    ".c2t.sa",
+            ),
         ),
-    cache: False
-    threads: 6
+    cache: True
+    # conda:
+    #     "../envs/bwa-meth.yaml"
     log:
         "logs/bwameth/bwameth_index/{genome}.log",
+    # wrapper:
+    #     "v7.3.0/bio/bwameth/index"
     wrapper:
-        "v6.0.1/bio/bwameth/index"
+        "v7.3.0/bio/bwameth/index"
 
 
 rule align_reads_pe:
     input:
-        fasta_index=multiext(
+        ref="resources/genome.fasta",
+        idx=multiext(
             "resources/genome.fasta.bwameth",
             ".c2t",
             ".c2t.amb",
             ".c2t.ann",
-            ".c2t.bwt.2bit.64",
+            ".c2t.bwt",
             ".c2t.pac",
-            ".c2t.0123",
+            ".c2t.sa",
         ),
-        fasta="resources/genome.fasta",
-        reads1="resources/Illumina_pe/{sample}/{SRA}/{SRA}_1_trimmed.fastq",
-        reads2="resources/Illumina_pe/{sample}/{SRA}/{SRA}_2_trimmed.fastq",
+        fq=["resources/{platform}/{sample}/{SRA}/{SRA}_1_trimmed.fastq", "resources/{platform}/{sample}/{SRA}/{SRA}_2_trimmed.fastq"],
     output:
-        "resources/Illumina_pe/{sample}/{SRA}/alignment.bam",
-    conda:
-        "../envs/bwa-meth.yaml"
+        "resources/{platform}/{sample}/{SRA}/alignment.bam",
+    # conda:
+    #     "../envs/bwa-meth.yaml"
     log:
-        "logs/bwameth/align_reads_pe/{sample}_{SRA}.log",
-    threads: 16
-    resources:
-        mem_mb=512,
-    shell:
-        """
-        touch {input.fasta_index}
-        bwameth.py --reference {input.fasta} {input.reads1} {input.reads2} -t {threads}  | samtools view -h -b - > {output} 2> {log}
-        """
+        "logs/bwameth/align_reads_pe/{platform}_{sample}_{SRA}.log",
+    threads: 10
+    # resources:
+    wrapper:
+        "v9.4.1/bio/bwameth/memx"
+
 
 
 rule aligned_reads_sort:
