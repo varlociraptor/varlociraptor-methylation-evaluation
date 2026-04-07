@@ -97,9 +97,17 @@ rule aligned_reads_focus_on_chromosome:
             or wildcards.seq_platform == "Nanopore"
             else chromosome_by_seq_platform[wildcards.seq_platform]
         ),
+        whole_genome=lambda wildcards: wildcards.seq_platform == "genome",
     threads: 4
     shell:
-        "samtools view -h -@ {threads} -b -o {output.bam} {input} {params.chromosome} 2> {log}"
+        """
+        if [ {params.whole_genome} == True ]; then
+            samtools view -h -@ {threads} -b -o {output.bam} {input.bam} 2> {log}
+        else
+            samtools view -h -@ {threads} -b -o {output.bam} {input.bam} {params.chromosome} 2> {log}
+        fi
+        """
+
 
 
 rule aligned_reads_filter_on_mapq:

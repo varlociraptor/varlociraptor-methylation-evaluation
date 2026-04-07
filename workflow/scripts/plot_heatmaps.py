@@ -1,7 +1,8 @@
-import pandas as pd
-import altair as alt
 import sys
+
+import altair as alt
 import numpy as np
+import pandas as pd
 
 sys.stderr = open(snakemake.log[0], "w")
 pd.set_option("display.max_columns", None)
@@ -26,7 +27,8 @@ def plot_heatmap(
         alt.Chart(
             df,
             title=alt.Title(
-                meth_caller_name,
+                "PacBio and MethylSeq",
+                # meth_caller_name,
                 subtitle=f"N = {df['count'].sum()} | MAPE = {mape:.2f}% | MAE = {mae:.2f}%",
             ),
         )
@@ -70,6 +72,8 @@ meth_caller_to_name = {
     "modkit": "Modkit",
     "pb_CpG_tools": "pb-CpG-tools",
 }
+print(meth_callers)
+meth_callers = ["varlo_0.01"]
 for m in meth_callers:
     if m.startswith("varlo_"):
         alpha = m.split("_")[1]

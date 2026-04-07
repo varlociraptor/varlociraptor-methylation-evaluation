@@ -88,13 +88,14 @@ rule merge_replicates:
         "../scripts/merge_replicates.py"
 
 # Bin the methylation values for heatmaps and compute the MAPE for each tool and sample, which is used for the bias plot. This is done in one step to avoid redundant computations (binning is needed for both heatmap and bias plot).
-# We offer the option to have {sample} == "all_samples", which means that the resulting df and mapes will contain all samples of the respective platform. This is used for the combined heatmap and bias plot for all Illumina samples.
+# We offer the option to have {sample} == "all_samples", which means that the resulting df dfs will contain all samples of the respective platform. This is used for the combined heatmap and bias plot for all Illumina samples.
 rule prepare_plot_df:
     input:
         "results/{call_type}/{seq_platform}/result_files/replicates.parquet",
     output:
         df="results/{call_type}/{seq_platform}/result_files/{sample}_prepared.parquet",
-        mapes="results/{call_type}/{seq_platform}/result_files/{sample}_distances.parquet",
+        distances="results/{call_type}/{seq_platform}/result_files/{sample}_distances.parquet",
+        distance_plot="results/{call_type}/{seq_platform}/result_files/{sample}_distances.html",
     conda:
         "../envs/python.yaml"
     log:
@@ -152,7 +153,7 @@ rule plots_bars_illumina:
             "results/single_sample/Illumina_pe/result_files/{sample}_prepared.parquet",
             sample=config["samples"].get("Illumina_pe", []),
         ),
-        mapes=expand(
+        distances=expand(
             "results/single_sample/Illumina_pe/result_files/{sample}_distances.parquet",
             sample=config["samples"].get("Illumina_pe", []),
         ),
@@ -293,3 +294,17 @@ rule plot_coverage_retained:
         plot_type=lambda wildcards: wildcards.plot_type,
     script:
         "../scripts/plot_coverage_retained.py"
+
+rule concat_plots:
+    input:
+        plots=["results/multi_sample/pb_methylSeq/plots/REP_heatmap.json", "results/multi_sample/np_pb/plots/REP_heatmap.json", "results/multi_sample/np_methylSeq/plots/REP_heatmap.json"],
+    output:
+        "results/multi_sample/combined_heatmap.html",
+    log:
+        "logs/plot_results/concat_plots.log",
+    conda:
+        "../envs/python.yaml"
+    resources:
+        mem_mb=4000,
+    script:
+        "../scripts/concat_plots.py"
