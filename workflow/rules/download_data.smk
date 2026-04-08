@@ -44,7 +44,15 @@ rule focus_genome_on_chromosome:
         chromosome="(?!.*genome$)[^/]+",
 
     shell:
-        "samtools faidx {input} {wildcards.chromosome} > {output} 2> {log}"
+        """
+        if [[ {wildcards.chromosome} == genome ]]; then \
+        echo "Copying genome fasta to output"
+        cp {input} {output}
+        else
+            echo "Extracting chromosome {wildcards.chromosome} from genome fasta"
+            samtools faidx {input} {wildcards.chromosome} > {output}
+        fi 2> {log}
+        """
 
 
 rule chromosome_index:
@@ -102,34 +110,58 @@ rule get_fastq_se:
     wrapper:
         "v7.1.0/bio/sra-tools/fasterq-dump"
 
+# rule trim_fastq_pe:
+#     input:
+#         first="resources/Illumina_pe/{sample}/{SRA}/{SRA}_1.fastq",
+#         second="resources/Illumina_pe/{sample}/{SRA}/{SRA}_2.fastq",
+#     output:
+#         first="resources/Illumina_pe/{sample}/{SRA}/{SRA}_1_trimmed.fastq",
+#         second="resources/Illumina_pe/{sample}/{SRA}/{SRA}_2_trimmed.fastq",
+#     log:
+#         "logs/download_data/trim_fastq_pe/{sample}_{SRA}_{SRA}.log",
+#     conda:
+#         "../envs/fastp.yaml"
+#     # wildcard_constraints:
+#     #     sample="^(?!simulated_data).*",
+#         # sample="(?!simulated_data$).*"
+#     shell:
+#         """
+#         fastp \
+#           --in1 {input.first} \
+#           --in2 {input.second} \
+#           --out1 {output.first} \
+#           --out2 {output.second} \
+#           --length_required 2 \
+#           --disable_quality_filtering \
+#           -z 4 \
+#           --trim_poly_g \
+#           --overrepresentation_analysis \
+#           2> {log}
+#         """
+
 rule trim_fastq_pe:
     input:
-        first="resources/Illumina_pe/{sample}/{SRA}/{SRA}_1.fastq",
-        second="resources/Illumina_pe/{sample}/{SRA}/{SRA}_2.fastq",
+        sample=["resources/Illumina_pe/{sample}/{SRA}/{SRA}_1.fastq", "resources/Illumina_pe/{sample}/{SRA}/{SRA}_2.fastq"]
     output:
-        first="resources/Illumina_pe/{sample}/{SRA}/{SRA}_1_trimmed.fastq",
-        second="resources/Illumina_pe/{sample}/{SRA}/{SRA}_2_trimmed.fastq",
+        trimmed=["resources/Illumina_pe/{sample}/{SRA}/{SRA}_1_trimmed.fastq", "resources/Illumina_pe/{sample}/{SRA}/{SRA}_2_trimmed.fastq"],
+        # Unpaired reads separately
+        # unpaired1="trimmed/pe/{sample}.u1.fastq",
+        # unpaired2="trimmed/pe/{sample}.u2.fastq",
+        # or in a single file
+#        unpaired="trimmed/pe/{sample}.singletons.fastq",
+        merged="trimmed/pe/{sample}_{SRA}.merged.fastq",
+        failed="trimmed/pe/{sample}_{SRA}.failed.fastq",
+        html="report/pe/{sample}_{SRA}.html",
+        json="report/pe/{sample}_{SRA}.json"
     log:
-        "logs/download_data/trim_fastq_pe/{sample}_{SRA}_{SRA}.log",
-    conda:
-        "../envs/fastp.yaml"
-    # wildcard_constraints:
-    #     sample="^(?!simulated_data).*",
-        # sample="(?!simulated_data$).*"
-    shell:
-        """
-        fastp \
-          --in1 {input.first} \
-          --in2 {input.second} \
-          --out1 {output.first} \
-          --out2 {output.second} \
-          --length_required 2 \
-          --disable_quality_filtering \
-          -z 4 \
-          --trim_poly_g \
-          --overrepresentation_analysis \
-          2> {log}
-        """
+        "logs/fastp/pe/{sample}_{SRA}.log"
+    params:
+        # adapters="--adapter_sequence ACGGCTAGCTA --adapter_sequence_r2 AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC",
+        extra="--merge"
+    threads: 8
+    wrapper:
+        "v9.4.1/bio/fastp"
+
 
 
 rule trim_fastq_se:

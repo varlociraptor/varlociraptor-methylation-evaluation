@@ -1,24 +1,27 @@
-# Ich brauche genome.fasta, chromosome.fasta, 
+#!/usr/bin/env bash
+set -euo pipefail
 
-rclone copy   ikim:/projects/koesterlab/benchmark-methylation/varlociraptor-methylation-evaluation/resources/Illumina_pe   s3:koesterlab/varlociraptor-methylation-evaluation/resources/Illumina_pe   --include "*/*/alignment_focused.bam"   --progress   -vv
+SOURCE="ikim:/projects/koesterlab/benchmark-methylation/varlociraptor-methylation-evaluation-old"
+DEST="s3:koesterlab/varlociraptor-methylation-evaluation"
+PREFIX="resources/Illumina_pe"
 
-rclone copy   ikim:/projects/koesterlab/benchmark-methylation/varlociraptor-methylation-evaluation/resources/genome.fasta   s3:koesterlab/varlociraptor-methylation-evaluation/resources/genome.fasta   --progress   -vv
+FILES=(
+    # "TrueMethylBS_HG002_LAB01_REP01/SRR13051253/SRR13051253"
+    # "TrueMethylOX_HG002_LAB01_REP01/SRR13051232/SRR13051232"
+    # "SPLAT_HG002_LAB01_REP01/SRR13051056/SRR13051056"
+    # "SPLAT_HG002_LAB01_REP02/SRR13051050/SRR13051050"
+    # "SPLAT_HG002_LAB01_REP02/SRR13051051/SRR13051051"
+    "MethylSeq_HG002_LAB01_REP01/SRR13051104/SRR13051104"
+    "EMSeq_HG002_LAB01_REP01/SRR13051142/SRR13051142"
+)
 
-rclone copy   ikim:/projects/koesterlab/benchmark-methylation/varlociraptor-methylation-evaluation/resources/chromosome_21.fasta   s3:koesterlab/varlociraptor-methylation-evaluation/resources/chromosome_21.fasta   --progress   -vv
-
-rclone copy   ikim:/projects/koesterlab/benchmark-methylation/varlociraptor-methylation-evaluation/resources/ref_tools/bismark/bams   s3:koesterlab/varlociraptor-methylation-evaluation/resources/ref_tools/bismark/bams   --progress   -vv
-
-rclone ls s3://koesterlab/varlociraptor-methylation-evaluation/resources/ref_tools/bismark/bams/ | \
-awk '{print $2}' | \
-while read f; do
-    echo "Touching $f"
-    rclone touch "s3://koesterlab/varlociraptor-methylation-evaluation/resources/ref_tools/bismark/bams/$f"
-done
-
-BUCKET="s3://koesterlab/varlociraptor-methylation-evaluation/resources/Illumina_pe"
-
-# Liste alle alignment_focused.bam Dateien auf und touch sie
-rclone lsf -R "$BUCKET" | grep 'alignment_focused.bam$' | while read f; do
-    echo "Touching $f"
-    rclone touch "$BUCKET/$f"
+for file in "${FILES[@]}"; do
+    for i in 1 2; do
+        echo $SOURCE/$PREFIX/${file}_${i}_trimmed.fastq \
+            $DEST/$PREFIX/$(dirname "${file}")
+        rclone copy \
+            $SOURCE/$PREFIX/${file}_${i}_trimmed.fastq \
+            $DEST/$PREFIX/$(dirname "${file}") \
+            --progress --transfers 4
+    done
 done

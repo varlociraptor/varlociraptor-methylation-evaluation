@@ -27,12 +27,13 @@ def compute_results() -> List[List[str]]:
             f"results/single_sample/Illumina_pe/plots/bar_plot_single_samples.{config['plot_type']}"
         )
     if "Simulate" in config["seq_platforms"]:
+
         chromosome = config["seq_platforms"]["Simulate"]
         inputs.append(
             f"results/single_sample/Simulate/plots/simulated_data_{chromosome}.html"
         )
     # Multi-sample common heatmaps
-    if "multi_sample" in config:
+    if "multi_sample" in config["seq_platforms"]:
         inputs.append(heatmap_replicates_common())
     return inputs
 

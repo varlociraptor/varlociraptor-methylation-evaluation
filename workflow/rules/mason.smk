@@ -76,6 +76,7 @@ rule mason_fake_reads:
         f2="resources/Simulate/{sample}/{SRA}/{SRA}_2_trimmed.fastq",
     conda:
         "../envs/mason.yaml"
+    threads: 20
     log:
         "logs/mason/mason_fake_reads/{sample}_{SRA}.log",
     params:
@@ -89,62 +90,69 @@ rule mason_fake_reads:
                 --out-right {output.f2} \
                 --meth-fasta-in {input.methylation} \
                 --enable-bs-seq \
+                --num-threads {threads} \
                 --illumina-read-length 150  2> {log}
         """
 
 
-rule mason_align_reads:
-    input:
-        fasta=expand(
-            "resources/{chrom}.fasta",
-            chrom=config["seq_platforms"].get("Simulate", []),
-        ),
-        fasta_index=expand(
-            "resources/{chrom}.fasta.bwameth.c2t",
-            chrom=config["seq_platforms"].get("Simulate", []),
-        ),
-        f1=expand(
-            "resources/Simulate/{sample}/{SRA}/{SRA}_1_trimmed.fastq",
-            sample="simulated_data",
-            SRA=config["data"]["Simulate"]["simulated_data"],
-        ),
-        f2=expand(
-            "resources/Simulate/{sample}/{SRA}/{SRA}_2_trimmed.fastq",
-            sample="simulated_data",
-            SRA=config["data"]["Simulate"]["simulated_data"],
-        ),
-    output:
-        "resources/Simulate/simulated_data/alignment.sam",
-    conda:
-        "../envs/bwa-meth.yaml"
-    log:
-        "logs/mason/mason_align_reads.log",
-    threads: 8
-    shell:
-        """
-        set -o pipefail
-        bwameth.py index-mem2 {input.fasta} 2> {log}
-        bwameth.py --threads {threads} --reference {input.fasta} {input.f1} {input.f2} > {output} 2> {log}
-        """
+# rule mason_align_reads:
+#     input:
+#         fasta=expand(
+#             "resources/chromosome_{chrom}.fasta",
+#             chrom=config["seq_platforms"].get("Simulate", []),
+#         ),
+#         fasta_index=expand(
+#             "resources/chromosome_{chrom}.fasta.bwameth.c2t",
+#             chrom=config["seq_platforms"].get("Simulate", []),
+#         ),
+#         f1=expand(
+#             "resources/Simulate/{sample}/{SRA}/{SRA}_1_trimmed.fastq",
+#             sample="simulated_data",
+#             SRA=config["data"]["Simulate"]["simulated_data"],
+#         ),
+#         f2=expand(
+#             "resources/Simulate/{sample}/{SRA}/{SRA}_2_trimmed.fastq",
+#             sample="simulated_data",
+#             SRA=config["data"]["Simulate"]["simulated_data"],
+#         ),
+#     output:
+#         "resources/Simulate/simulated_data/alignment.sam",
+#     conda:
+#         "../envs/bwa-meth.yaml"
+#     log:
+#         "logs/mason/mason_align_reads.log",
+#     threads: 20
+#     shell:
+#         """
+#         set -o pipefail
+#         bwameth.py index-mem2 {input.fasta} 2> {log}
+#         bwameth.py --threads {threads} --reference {input.fasta} {input.f1} {input.f2} > {output} 2> {log}
+#         """
 
 
-rule mason_sam_to_bam:
-    input:
-        "resources/Simulate/simulated_data/alignment.sam",
-    output:
-        "resources/Simulate/simulated_data/alignment.bam",
-    conda:
-        "../envs/samtools.yaml"
-    log:
-        "logs/mason/mason_sam_to_bam/.log",
-    threads: 4
-    shell:
-        "samtools view -Sb {input} > {output} 2> {log}"
+# rule mason_sam_to_bam:
+#     input:
+#         "resources/Simulate/simulated_data/alignment.sam",
+#     output:
+#         "resources/Simulate/simulated_data/alignment.bam",
+#     conda:
+#         "../envs/samtools.yaml"
+#     log:
+#         "logs/mason/mason_sam_to_bam/.log",
+#     threads: 4
+#     shell:
+#         "samtools view -Sb {input} > {output} 2> {log}"
 
 
 rule mason_sort_reads:
     input:
-        "resources/Simulate/simulated_data/alignment.bam",
+        #             "resources/Simulate/{sample}/{SRA}/{SRA}_2_trimmed.fastq",
+        #         f1=expand(
+        #             "resources/Simulate/{sample}/{SRA}/{SRA}_1_trimmed.fastq",
+        #             sample="simulated_data",
+        #             SRA=config["data"]["Simulate"]["simulated_data"],
+        #         ),
+        expand("resources/Simulate/simulated_data/{SRA}/alignment.bam", SRA=config["data"]["Simulate"]["simulated_data"]),
     output:
         # Name it like that in order to skip filtering on qual, mark_duplicates, ...
         "resources/Simulate/simulated_data/alignment_focused_downsampled_dedup_renamed.bam",
@@ -161,7 +169,7 @@ rule mason_sort_reads:
 # That is why we need to compute the coverage on the forward and reverse strand independently.
 rule mason_alignment_forward:
     input:
-        "resources/Simulate/simulated_data/alignment.bam",
+        "resources/Simulate/simulated_data/alignment_focused_downsampled_dedup_renamed.bam",
     output:
         first="resources/Simulate/simulated_data/alignment_99.bam",
         second="resources/Simulate/simulated_data/alignment_147.bam",
@@ -180,7 +188,7 @@ rule mason_alignment_forward:
 
 rule mason_alignment_reverse:
     input:
-        "resources/Simulate/simulated_data/alignment.bam",
+        "resources/Simulate/simulated_data/alignment_focused_downsampled_dedup_renamed.bam",
     output:
         first="resources/Simulate/simulated_data/alignment_83.bam",
         second="resources/Simulate/simulated_data/alignment_163.bam",
