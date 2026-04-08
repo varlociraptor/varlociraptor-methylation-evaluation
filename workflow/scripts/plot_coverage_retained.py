@@ -6,9 +6,33 @@ import polars as pl
 
 sys.stderr = open(snakemake.log[0], "w")
 pl.Config.set_fmt_str_lengths(1000)
-pl.Config.set_tbl_rows(100)
+pl.Config.set_tbl_rows(10000)
 pl.Config.set_tbl_cols(100)
 alt.data_transformers.enable("vegafusion")
+
+
+def plot_meth_level_to_cov(df):
+    df = df.drop_nulls(subset=["varlo_1.0_methylation"])
+    df_grouped = (
+        df.group_by(
+            pl.col("varlo_1.0_methylation").round().alias("varlo_1_0_methylation")
+        )
+        .agg(pl.col("coverage").mean().round().alias("coverage_mean"))
+        .drop_nulls()
+    )
+    print(df_grouped)
+    df_grouped = df_grouped.to_pandas()
+    print(df_grouped.columns)  # Debug: Spaltennamen anzeigen
+    chart = (
+        alt.Chart(df_grouped)
+        .mark_line()
+        .encode(
+            x="varlo_1_0_methylation",
+            y="coverage_mean",
+        )
+    )
+    chart.save(snakemake.output["meth_level_to_cov"])
+
 
 # cast chromosome and position to string and int respectively
 coverage = pl.read_csv(
@@ -40,6 +64,10 @@ df = coverage.join(
 )
 df = df.drop_nulls(subset=["coverage"])
 
+
+print(df.filter(pl.col("varlo_1.0_methylation") == 0).filter(pl.col("coverage") >= 100))
+
+plot_meth_level_to_cov(df)
 
 # For each coverage in [0, 2, 5, 10, 20, 50] and varlo threshhold, compute the percentage of CpG sites that have at least that coverage and are retained in the final results (i.e. are present in the meth_data).
 coverage_thresholds = [0, 1, 2, 3, 4, 5, 7, 10, 15, 20, 50, 100]
@@ -87,4 +115,4 @@ def plot_chart(y_axis="percentage_retained"):
 chart_relative = plot_chart("percentage_retained")
 chart_absolute = plot_chart("absolute_retained")
 chart = alt.hconcat(chart_relative, chart_absolute)
-chart.save(snakemake.output[0])
+chart.save(snakemake.output["coverage_retained"])

@@ -27,8 +27,8 @@ def plot_heatmap(
         alt.Chart(
             df,
             title=alt.Title(
-                "PacBio and MethylSeq",
-                # meth_caller_name,
+                # "PacBio and MethylSeq",
+                meth_caller_name,
                 subtitle=f"N = {df['count'].sum()} | MAPE = {mape:.2f}% | MAE = {mae:.2f}%",
             ),
         )
@@ -72,8 +72,6 @@ meth_caller_to_name = {
     "modkit": "Modkit",
     "pb_CpG_tools": "pb-CpG-tools",
 }
-print(meth_callers)
-meth_callers = ["varlo_0.01"]
 for m in meth_callers:
     if m.startswith("varlo_"):
         alpha = m.split("_")[1]

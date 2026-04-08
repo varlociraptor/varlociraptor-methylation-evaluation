@@ -268,12 +268,13 @@ rule unzip_coverage:
 
 
 
-rule plot_coverage_retained:
+rule coverage_plots:
     input:
         coverage="results/{call_type}/{seq_platform}/coverages/{sample}.regions.bed",
         meth_data="results/{call_type}/{seq_platform}/result_files/sample_df_{sample}.parquet",
     output:
-        report(
+        meth_level_to_cov="results/{call_type}/{seq_platform}/plots/{sample}_meth_level_to_cov.{plot_type}",
+        coverage_retained=report(
             "results/{call_type}/{seq_platform}/plots/{sample}_coverage_retained.{plot_type}",
             category="{call_type}",
             subcategory=lambda wildcards: f"{wildcards.seq_platform}",
@@ -288,7 +289,7 @@ rule plot_coverage_retained:
     resources:
         mem_mb=4000,
     log:
-        "logs/plot_results/plot_coverage_retained/{call_type}_{seq_platform}_{sample}_{plot_type}.log",
+        "logs/plot_results/coverage_plots/{call_type}_{seq_platform}_{sample}_{plot_type}.log",
     params:
         sample=lambda wildcards: config["samples"].get(wildcards.seq_platform, []),
         plot_type=lambda wildcards: wildcards.plot_type,
