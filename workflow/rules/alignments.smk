@@ -27,9 +27,22 @@ rule bwameth_index:
 
 rule align_reads_pe:
     input:
-        ref="resources/genome.fasta",
-        idx=multiext(
-            "resources/genome.fasta.bwameth",
+        genome=lambda wildcards: (
+            expand(
+                "resources/{chrom}.fasta",
+                chrom=config["seq_platforms"].get(wildcards.platform),
+            )
+            if wildcards.sample.startswith("simulated_data")
+            else ["resources/genome.fasta"]
+        ),
+        genome_index=lambda wildcards: (
+            expand(
+                "resources/{chrom}.fasta.fai",
+                chrom=config["seq_platforms"].get(wildcards.platform),
+            )
+            if wildcards.sample.startswith("simulated_data")
+            else ["resources/genome.fasta.fai"]
+        ),
             ".c2t",
             ".c2t.amb",
             ".c2t.ann",
@@ -37,7 +50,8 @@ rule align_reads_pe:
             ".c2t.pac",
             ".c2t.sa",
         ),
-        fq=["resources/{platform}/{sample}/{SRA}/{SRA}_1_trimmed.fastq", "resources/{platform}/{sample}/{SRA}/{SRA}_2_trimmed.fastq"],
+        fq="resources/{platform}/{sample}/{SRA}/{SRA}_1_trimmed.fastq",
+        fq2="resources/{platform}/{sample}/{SRA}/{SRA}_2_trimmed.fastq",
     output:
         "resources/{platform}/{sample}/{SRA}/alignment.bam",
     # conda:
@@ -45,7 +59,6 @@ rule align_reads_pe:
     log:
         "logs/bwameth/align_reads_pe/{platform}_{sample}_{SRA}.log",
     threads: 10
-    # resources:
     wrapper:
         "v9.4.1/bio/bwameth/memx"
 
@@ -96,9 +109,17 @@ rule aligned_reads_focus_on_chromosome:
             or wildcards.seq_platform == "Nanopore"
             else chromosome_by_seq_platform[wildcards.seq_platform]
         ),
+        whole_genome=lambda wildcards: wildcards.seq_platform == "genome",
     threads: 4
     shell:
-        "samtools view -h -@ {threads} -b -o {output.bam} {input} {params.chromosome} 2> {log}"
+        """
+        if [ {params.whole_genome} == True ]; then
+            samtools view -h -@ {threads} -b -o {output.bam} {input.bam} 2> {log}
+        else
+            samtools view -h -@ {threads} -b -o {output.bam} {input.bam} {params.chromosome} 2> {log}
+        fi
+        """
+
 
 
 rule aligned_reads_filter_on_mapq:

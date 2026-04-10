@@ -1,7 +1,12 @@
-import pandas as pd
-import altair as alt
 import sys
+from calendar import c
+from graphlib import TopologicalSorter
+from math import dist
+from pickletools import dis
+
+import altair as alt
 import numpy as np
+import pandas as pd
 
 sys.stderr = open(snakemake.log[0], "w")
 pd.set_option("display.max_columns", None)
@@ -16,9 +21,75 @@ def bin_methylation(series: pd.Series, bin_size: int) -> pd.Series:
     return (np.round(series / bin_size) * bin_size).astype(int)
 
 
+def plot_distances(df):
+    distances = pd.DataFrame()
+
+    for caller in snakemake.params["meth_callers"]:
+        caller_df = df[
+            [f"{caller}_methylation_rep1", f"{caller}_methylation_rep2"]
+        ].dropna()
+        if caller_df.empty:
+            continue
+        caller_df["distance"] = (
+            np.round(
+                (
+                    (
+                        caller_df[f"{caller}_methylation_rep1"]
+                        - caller_df[f"{caller}_methylation_rep2"]
+                    )
+                    / 5
+                )
+            )
+            * 5
+        ).astype(int)
+        caller_df["caller"] = caller
+        caller_df = caller_df.groupby("distance").size().reset_index(name="count")
+        caller_df["absolute"] = caller_df["count"]
+        caller_df["relative"] = caller_df["count"] / caller_df["count"].sum()
+        caller_df["caller"] = caller
+        distances = pd.concat(
+            [distances, caller_df[["distance", "caller", "relative", "absolute"]]]
+        )
+
+    relative_plot = (
+        alt.Chart(
+            distances,
+            title=alt.Title(
+                "relative frequency of distances per caller",
+            ),
+        )
+        .mark_point(size=8, filled=True)
+        .encode(
+            x=alt.X("distance:Q", title="distance"),
+            xOffset="caller:N",
+            y=alt.Y("relative:Q", title="relative frequency"),
+            color="caller:N",
+            tooltip=["caller", "distance", "relative"],
+        )
+    )
+
+    absolute_plot = (
+        alt.Chart(
+            distances,
+            title=alt.Title(
+                "absolute frequency of distances per caller",
+            ),
+        )
+        .mark_point(size=8, filled=True)
+        .encode(
+            x=alt.X("distance:Q", title="distance"),
+            xOffset="caller:N",
+            y=alt.Y("absolute:Q", title="absolute frequency"),
+            color="caller:N",
+            tooltip=["caller", "distance", "absolute"],
+        )
+    )
+
+    alt.hconcat(relative_plot, absolute_plot).save(snakemake.output.distance_plot)
+
+
 def compute_replicate_counts(df, bin_size):
     meth_callers = snakemake.params["meth_callers"]
-
     caller_counts = []
     mape_records = []
     for caller in meth_callers:
@@ -72,9 +143,9 @@ def compute_replicate_counts(df, bin_size):
         caller_counts.append(counts)
 
     counts_df = pd.concat(caller_counts, ignore_index=True)
-    mapes_df = pd.DataFrame(mape_records)
+    distances_df = pd.DataFrame(mape_records)
 
-    return counts_df, mapes_df
+    return counts_df, distances_df
 
 
 samples = snakemake.params["sample"]
@@ -87,13 +158,15 @@ df = pd.read_parquet(snakemake.input[0], engine="pyarrow")
 df = df[df["replicate"].isin(samples)]
 
 
-replicate_dfs, mapes = compute_replicate_counts(df, bin_size)
+plot_distances(df)
+
+replicate_dfs, distances = compute_replicate_counts(df, bin_size)
 
 
 sample_name = snakemake.params["sample_name"].replace("_HG002_", "_")
-mapes["sample"] = sample_name
+distances["sample"] = sample_name
 replicate_dfs["sample"] = sample_name
 
 
 replicate_dfs.to_parquet(snakemake.output["df"], engine="pyarrow")
-mapes.to_parquet(snakemake.output["mapes"], engine="pyarrow")
+distances.to_parquet(snakemake.output["distances"], engine="pyarrow")

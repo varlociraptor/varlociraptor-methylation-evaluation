@@ -1,7 +1,8 @@
-import pandas as pd
-import altair as alt
 import sys
+
+import altair as alt
 import numpy as np
+import pandas as pd
 
 sys.stderr = open(snakemake.log[0], "w")
 pd.set_option("display.max_columns", None)
@@ -26,6 +27,7 @@ def plot_heatmap(
         alt.Chart(
             df,
             title=alt.Title(
+                # "PacBio and MethylSeq",
                 meth_caller_name,
                 subtitle=f"N = {df['count'].sum()} | MAPE = {mape:.2f}% | MAE = {mae:.2f}%",
             ),
