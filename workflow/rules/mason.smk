@@ -34,6 +34,8 @@ rule mason_fake_methylation:
         mkdir -p $(dirname {output.methylation})
         mason_methylation --in {input.chrom} \
             --methylation-levels \
+            --meth-cg-sigma 0.3 \
+            --meth-cg-mu 0.5 \
             --seed {params.seed} \
             --out {output.methylation}  2> {log}
         """

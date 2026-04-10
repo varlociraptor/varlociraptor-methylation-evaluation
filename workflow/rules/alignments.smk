@@ -27,7 +27,7 @@ rule bwameth_index:
 
 rule align_reads_pe:
     input:
-        genome=lambda wildcards: (
+        ref=lambda wildcards: (
             expand(
                 "resources/{chrom}.fasta",
                 chrom=config["seq_platforms"].get(wildcards.platform),
@@ -35,18 +35,16 @@ rule align_reads_pe:
             if wildcards.sample.startswith("simulated_data")
             else ["resources/genome.fasta"]
         ),
-        genome_index=lambda wildcards: (
-            expand(
-                multiext(
-                    "resources/{chrom}.fasta.bwameth",
-                    ".c2t",
-                    ".c2t.amb",
-                    ".c2t.ann",
-                    ".c2t.bwt",
-                    ".c2t.pac",
-                    ".c2t.sa",
-                ),
-                chrom=config["seq_platforms"].get(wildcards.platform),
+        idx=lambda wildcards: (
+            multiext(expand(
+
+                    "resources/{chrom}.fasta.bwameth", chrom=config["seq_platforms"].get(wildcards.platform))[0],
+            ".c2t",
+            ".c2t.amb",
+            ".c2t.ann",
+            ".c2t.bwt",
+            ".c2t.pac",
+            ".c2t.sa",
             )
             if wildcards.sample.startswith("simulated_data")
             else multiext(
