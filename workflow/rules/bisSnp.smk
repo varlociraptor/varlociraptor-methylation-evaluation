@@ -41,12 +41,7 @@ rule bissnp_prepare:
             else ["resources/genome.fasta.fai"]
         ),
         # This maybe for simulated  data:
-            # alignment="resources/{platform}/{sample}/alignment.bam",
-        alignment=lambda wildcards: (
-            "resources/{platform}/{sample}/alignment.bam"
-            if wildcards.sample.startswith("simulated_data")
-            else "resources/{platform}/{sample}/alignment_focused_downsampled_dedup_renamed.bam"
-        ),
+        alignment="resources/{platform}/{sample}/alignment_focused_downsampled_dedup_renamed.bam",
     output:
         jar="resources/ref_tools/Bis-tools/{platform}/{sample}/BisSNP-0.82.2.jar",
         genome="resources/ref_tools/Bis-tools/{platform}/{sample}/genome.fasta",
