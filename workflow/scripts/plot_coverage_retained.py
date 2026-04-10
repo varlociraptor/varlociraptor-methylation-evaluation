@@ -45,12 +45,16 @@ df = df.drop_nulls(subset=["coverage"])
 coverage_thresholds = [0, 1, 2, 3, 4, 5, 7, 10, 15, 20, 50, 100]
 results = []
 fdrs = [0.01, 0.1, 1.0]
+total_sites = (
+    df.select("chromosome", "position", "coverage", "varlo_1.0_methylation")
+    .drop_nulls()
+    .shape[0]
+)
 for fdr in fdrs:
     meth_col = f"varlo_{fdr}_methylation"
-    df_red = df.select("chromosome", "position", "coverage", pl.col(meth_col))
-
-    df_red = df_red.drop_nulls()
-    total_sites = df_red.shape[0]
+    df_red = df.select(
+        "chromosome", "position", "coverage", pl.col(meth_col)
+    ).drop_nulls()
 
     for cov in coverage_thresholds:
         retained_sites = df_red.filter((pl.col("coverage") >= cov))

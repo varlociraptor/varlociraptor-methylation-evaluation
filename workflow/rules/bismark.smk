@@ -51,6 +51,29 @@ rule bismark_prepare_genome:
         bismark_genome_preparation $(dirname {input}) --verbose  2> {log}
         """
 
+rule bismark_genome_preparation_fa:
+    input:
+        genome=lambda wildcards: (
+            expand(
+                "resources/{chrom}.fasta",
+                chrom=config["seq_platforms"].get(wildcards.platform),
+            )
+            if wildcards.sample.startswith("simulated_data")
+            else ["resources/genome.fasta"]
+        ),
+
+
+    output:
+        bismark_genome_dir=directory("resources/ref_tools/bismark/genome/{platform}/bismark/"),
+
+    log:
+        "logs/resources/{genome}/bismark_genome_preparation.log",
+    params:
+        extra="",  # optional params string
+    threads: 4  # bismark_genome_preparation requires least 2 threads and at least --cores 2 from workflow run
+    wrapper:
+        "v9.4.1/bio/bismark/bismark_genome_preparation"
+
 
 rule bismark_align:
     input:
@@ -58,7 +81,7 @@ rule bismark_align:
         fq_2="resources/{platform}/{sample}/{SRA}/{SRA}_2_trimmed.fastq",
 
         bismark_indexes_dir="resources/ref_tools/bismark/genome/{platform}/",
-        ct="resources/ref_tools/bismark/genome/{platform}/Bisulfite_Genome/CT_conversion",
+        # ct="resources/ref_tools/bismark/genome/{platform}/Bisulfite_Genome/CT_conversion",
     output:
         bam="resources/ref_tools/bismark/{platform}/bams/{sample}_pe_{SRA}_unsorted.bam",
         report="resources/ref_tools/bismark/{platform}/bams/{sample}_{SRA}_PE_report.txt",
