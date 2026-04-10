@@ -1,23 +1,6 @@
 # https://felixkrueger.github.io/Bismark/bismark/methylation_extraction/
 
-
 rule bismark_copy_genome:
-    input:
-        "resources/genome.fasta",
-    output:
-        "resources/ref_tools/bismark/genome/{platform}/genome.fasta",
-    log:
-        "logs/bismark/bismark_copy_genome/copy_{platform}.log",
-    conda:
-        "../envs/general.yaml"
-    shell:
-        """
-        mkdir -p $(dirname {output}) 2> {log}
-        cp {input} {output} 2> {log}
-        """
-
-
-rule bismark_copy_chromosome:
     input:
         "resources/{chrom}.fasta",
     output:
@@ -33,23 +16,7 @@ rule bismark_copy_chromosome:
         """
 
 
-# TODO: Gives missing output exception
-rule bismark_prepare_genome:
-    input:
-        lambda wildcards: expand(
-            "resources/ref_tools/bismark/genome/{{platform}}/{chrom}.fasta",
-            chrom=config["seq_platforms"].get(wildcards.platform),
-        ),
-    output:
-        directory("resources/ref_tools/bismark/genome/{platform}/Bisulfite_Genome"),
-    conda:
-        "../envs/bismark.yaml"
-    log:
-        "logs/bismark/prepare_genome/prepare_{platform}.log",
-    shell:
-        """
-        bismark_genome_preparation $(dirname {input}) --verbose  2> {log}
-        """
+
 
 rule bismark_genome_preparation_fa:
     input:
@@ -61,13 +28,11 @@ rule bismark_genome_preparation_fa:
             if wildcards.sample.startswith("simulated_data")
             else ["resources/genome.fasta"]
         ),
-
-
     output:
         bismark_genome_dir=directory("resources/ref_tools/bismark/genome/{platform}/bismark/"),
 
     log:
-        "logs/resources/{genome}/bismark_genome_preparation.log",
+        "logs/bismark_genome_preparation/{platform}.log",
     params:
         extra="",  # optional params string
     threads: 4  # bismark_genome_preparation requires least 2 threads and at least --cores 2 from workflow run

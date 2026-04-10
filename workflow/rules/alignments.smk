@@ -37,20 +37,29 @@ rule align_reads_pe:
         ),
         genome_index=lambda wildcards: (
             expand(
-                "resources/{chrom}.fasta.fai",
+                multiext(
+                    "resources/{chrom}.fasta.bwameth",
+                    ".c2t",
+                    ".c2t.amb",
+                    ".c2t.ann",
+                    ".c2t.bwt",
+                    ".c2t.pac",
+                    ".c2t.sa",
+                ),
                 chrom=config["seq_platforms"].get(wildcards.platform),
             )
             if wildcards.sample.startswith("simulated_data")
-            else ["resources/genome.fasta.fai"]
+            else multiext(
+                "resources/genome.fasta.bwameth",
+                ".c2t",
+                ".c2t.amb",
+                ".c2t.ann",
+                ".c2t.bwt",
+                ".c2t.pac",
+                ".c2t.sa",
+            )
         ),
-            ".c2t",
-            ".c2t.amb",
-            ".c2t.ann",
-            ".c2t.bwt",
-            ".c2t.pac",
-            ".c2t.sa",
-        ),
-        fq="resources/{platform}/{sample}/{SRA}/{SRA}_1_trimmed.fastq",
+        fq1="resources/{platform}/{sample}/{SRA}/{SRA}_1_trimmed.fastq",
         fq2="resources/{platform}/{sample}/{SRA}/{SRA}_2_trimmed.fastq",
     output:
         "resources/{platform}/{sample}/{SRA}/alignment.bam",
@@ -58,7 +67,7 @@ rule align_reads_pe:
     #     "../envs/bwa-meth.yaml"
     log:
         "logs/bwameth/align_reads_pe/{platform}_{sample}_{SRA}.log",
-    threads: 10
+    threads: 8
     wrapper:
         "v9.4.1/bio/bwameth/memx"
 
