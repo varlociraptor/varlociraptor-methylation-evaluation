@@ -19,7 +19,7 @@ rule varlociraptor_preprocess:
     log:
         "logs/varlociraptor_single/varlociraptor_preprocess/{seq_platform}_{sample}_{scatteritem}.log",
     benchmark:
-        repeat("benchmarks/{seq_platform}/varlociraptor/preprocessing/{sample}_{scatteritem}.bwa.benchmark.txt", 3)
+        repeat("benchmarks/{seq_platform}/varlociraptor/preprocessing/{sample}_{scatteritem}.bwa.benchmark.txt", config["benchmark_repeats"])
     conda:
         "../envs/varlociraptor.yaml"
     resources:
@@ -44,7 +44,7 @@ rule varlociraptor_call:
     log:
         "logs/varlociraptor_single/varlociraptor_call/{seq_platform}_{sample}_{scatteritem}.log",
     benchmark:
-        repeat("benchmarks/{seq_platform}/varlociraptor/calling/{sample}_{scatteritem}.bwa.benchmark.txt", 3)
+        repeat("benchmarks/{seq_platform}/varlociraptor/calling/{sample}_{scatteritem}.bwa.benchmark.txt", config["benchmark_repeats"])
     conda:
         "../envs/varlociraptor.yaml"
     wildcard_constraints:

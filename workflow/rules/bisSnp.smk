@@ -86,18 +86,18 @@ rule bissnp_extract:
     conda:
         "../envs/openjdk.yaml"
     params:
-        chromosome=lambda wildcards: chromosome_by_seq_platform.get(wildcards.platform),
+        loc_flag=lambda wildcards: "" if chromosome_by_seq_platform.get(wildcards.platform) == "genome" else f"-L {chromosome_by_seq_platform.get(wildcards.platform)}",
     log:
         "logs/bissnp/bissnp_extract/{platform}_{sample}.log",
     benchmark:
-        repeat("benchmarks/{platform}/bisSNP/bissnp_extract/{sample}.txt", 3)
+        repeat("benchmarks/{platform}/bisSNP/bissnp_extract/{sample}.txt", config["benchmark_repeats"])
     threads: 8
     resources:
         mem_mb=16000,
     shell:
-        "java -Xmx10G -jar {input.jar} -R {input.genome} -nt {threads} -T BisulfiteGenotyper -I {input.alignment} -vfn1 {output.cpg} -vfn2 {output.snp} -L {params.chromosome} 2> {log}"
-
-
+        """
+        java -Xmx10G -jar {input.jar} -R {input.genome} -nt {threads} -T BisulfiteGenotyper -I {input.alignment} -vfn1 {output.cpg} -vfn2 {output.snp} {params.loc_flag} 2> {log}
+        """
 
 # We do not use the official perl script in resources/ref_tools/Bis-tools/utils/vcf2bedGraph.pl because it does not work
 # We copied the script and removed line 79: next unless ($splitin[6] eq "PASS" || $splitin[6] eq "Infinity"); because it never triggers

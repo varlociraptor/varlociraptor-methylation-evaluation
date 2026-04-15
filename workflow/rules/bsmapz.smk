@@ -1,22 +1,31 @@
 # Clone BSMAPz and compile bsmapz locally
 # The official conda environment does not work properly (Illegal instruction     (core dumped))
-rule bsmapz_clone_and_build:
-    output:
-        binary="resources/ref_tools/BSMAPz/bsmapz",
-        meth_extractor="resources/ref_tools/BSMAPz/methratio.py",
-    log:
-        "logs/bsmapz/bsmapz_clone_and_build/download_bsmapz.log",
-    conda:
-        "../envs/general.yaml"
-    shell:
-        """
-        build_dir=$(mktemp -d)
-        git clone https://github.com/zyndagj/BSMAPz.git $build_dir/BSMAPz 2> {log}
-        make -C "$build_dir/BSMAPz" bsmapz 2> {log}
-        cp "$build_dir/BSMAPz/bsmapz"      {output.binary}
-        cp "$build_dir/BSMAPz/methratio.py" {output.meth_extractor}
-        rm -rf "$build_dir"
-        """
+# rule bsmapz_clone_and_build:
+#     output:
+#         binary="resources/ref_tools/BSMAPz/bsmapz",
+#         meth_extractor="resources/ref_tools/BSMAPz/methratio.py",
+#     log:
+#         "logs/bsmapz/bsmapz_clone_and_build/download_bsmapz.log",
+#     conda:
+#         "../envs/general.yaml"
+#     shell:
+#         """
+#         build_dir=$(mktemp -d)
+
+#         git clone https://github.com/zyndagj/BSMAPz.git $build_dir/BSMAPz 2> {log}
+
+#         export CFLAGS="-I$CONDA_PREFIX/include"
+#         export CXXFLAGS="-I$CONDA_PREFIX/include"
+#         export LDFLAGS="-L$CONDA_PREFIX/lib"
+
+#         make -C "$build_dir/BSMAPz" bsmapz >> {log} 2>&1
+
+#         cp "$build_dir/BSMAPz/bsmapz"      {output.binary}
+#         cp "$build_dir/BSMAPz/methratio.py" {output.meth_extractor}
+
+#         rm -rf "$build_dir"
+#         """
+
 
 
 # # Download the newer methylation extractor from BSMAPz
@@ -41,7 +50,7 @@ rule bsmapz_compute_meth:
         ),
         alignment="resources/{platform}/{sample}/alignment_focused_downsampled_dedup_renamed.bam",
         alignment_index="resources/{platform}/{sample}/alignment_focused_downsampled_dedup_renamed.bam.bai",
-        bsmapz_binary="resources/ref_tools/BSMAPz/bsmapz",
+        # bsmapz_binary="resources/ref_tools/BSMAPz/bsmapz",
     output:
         temp("results/single_sample/{platform}/called/{sample}/result_files/out.unsorted.bam"),
     log:
@@ -49,16 +58,15 @@ rule bsmapz_compute_meth:
     resources:
         mem_mb=16000,
     benchmark:
-        repeat("benchmarks/{platform}/bsmap/bsmap_compute/{sample}.bwa.benchmark.txt", 3)
+        repeat("benchmarks/{platform}/bsmap/bsmap_compute/{sample}.bwa.benchmark.txt", config["benchmark_repeats"])
     conda:
-        "../envs/samtools.yaml"
+        "../envs/bsmapz.yaml"
     threads: 8
     shell:
         """
         mkdir -p $(dirname {log})
         mkdir -p $(dirname {output})
-        chmod +x {input.bsmapz_binary}
-        {input.bsmapz_binary} -a {input.alignment} -d {input.genome} -o {output} -p {threads} -w 100 -v 0.07 -m 50 -x 300 > {log} 2>&1
+        bsmapz -a {input.alignment} -d {input.genome} -o {output} -p {threads} -w 100 -v 0.07 -m 50 -x 300 > {log} 2>&1
         """
 
 # Sort BSMAPz output BAM by coordinate (BSMAPz does not guarantee sorted output)
@@ -158,7 +166,7 @@ rule bsmapz_extract:
     conda:
         "../envs/bsmapz.yaml"
     benchmark:
-        repeat("benchmarks/{platform}/bsmap/bsmap_extract/{sample}_{scatteritem}.bwa.benchmark.txt", 3)
+        repeat("benchmarks/{platform}/bsmap/bsmap_extract/{sample}_{scatteritem}.bwa.benchmark.txt", config["benchmark_repeats"])
     shell:
         "python {input.meth_extractor} -c={params.chromosome} --ref={input.genome[0]} --out={output} {input.bsmap_bam} -g -x CG 2> {log}"
 

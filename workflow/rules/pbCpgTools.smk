@@ -35,7 +35,7 @@ rule pb_CpG_compute_methylation:
     conda:
         "../envs/pbcpgtools.yaml"
     benchmark:
-        repeat("benchmarks/{platform}/pb-CpG-tools/pb-CpG-tools/{sample}.bwa.benchmark.txt", 3)
+        repeat("benchmarks/{platform}/pb-CpG-tools/pb-CpG-tools/{sample}.bwa.benchmark.txt", config["benchmark_repeats"])
     shell:
         "aligned_bam_to_cpg_scores --bam {input.alignment} --output-prefix {params.prefix} --threads {threads} 2> {log}"
 
