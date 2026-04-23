@@ -58,7 +58,7 @@ rule bismark_align:
     log:
         "logs/bismark/bismark_align/{sample}_{SRA}_{platform}.log",
     benchmark:
-        repeat("benchmarks/{platform}/bismark/bismark_align_{SRA}/{sample}.bwa.benchmark.txt", config["benchmark_repeats"])
+        repeat("benchmarks/{platform}/bismark/bismark_align/{SRA}_{sample}.bwa.benchmark.txt", config["benchmark_repeats"])
     params:
         extra="",
     threads: 8
