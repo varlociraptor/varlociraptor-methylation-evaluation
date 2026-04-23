@@ -29,7 +29,7 @@ def plot_heatmap(
             title=alt.Title(
                 # "PacBio and MethylSeq",
                 meth_caller_name,
-                subtitle=f"N = {df['count'].sum()} | MAPE = {mape:.2f}% | MAE = {mae:.2f}%",
+                subtitle=f"N = {df['count'].sum()} | Dᵣ = {mape:.2f}% | Dₐ = {mae:.2f}%",
             ),
         )
         .mark_rect()

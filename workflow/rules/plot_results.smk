@@ -101,7 +101,7 @@ rule prepare_plot_df:
     log:
         "logs/plot_results/prepare_plot_df/{call_type}_{seq_platform}_{sample}.log",
     resources:
-        mem_mb=4000,
+        mem_mb=32000,
     params:
         meth_callers=lambda wildcards: config["ref_tools"].get(
             wildcards.seq_platform, []
@@ -199,7 +199,7 @@ rule plot_bias:
     conda:
         "../envs/python.yaml"
     resources:
-        mem_mb=4000,
+        mem_mb=32000,
     log:
         "logs/plot_results/plot_bias/{call_type}_{seq_platform}_{sample}_{plot_type}.log",
     params:

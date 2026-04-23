@@ -1,7 +1,7 @@
-import polars as pl
 import altair as alt
 import numpy as np
 import pandas as pd
+import polars as pl
 
 sys.stderr = open(snakemake.log[0], "w")
 pd.set_option("display.max_rows", 1000)
@@ -28,7 +28,7 @@ df = truth_df.join(
     + [pl.col(f"{caller}_methylation") for caller in meth_callers]
 )
 
-print(df.head(), file=sys.stderr),
+(print(df.head(), file=sys.stderr),)
 
 
 def compute_mape(df, meth_caller) -> float:
@@ -120,7 +120,7 @@ def plot_heatmap(meth_caller, df, distance_df):
             df,
             title=alt.Title(
                 f"{meth_caller}",
-                subtitle=f" N = {df['count'].sum():.0f} MAPE = {distance_df.filter(pl.col('meth_caller')== meth_caller)['mape'].item():.2f}%, MAE = {distance_df.filter(pl.col('meth_caller')== meth_caller)['mae'].item():.2f}%",
+                subtitle=f" N = {df['count'].sum():.0f} Dᵣ = {distance_df.filter(pl.col('meth_caller') == meth_caller)['mape'].item():.2f}%, Dₐ = {distance_df.filter(pl.col('meth_caller') == meth_caller)['mae'].item():.2f}%",
             ),
         )
         .mark_rect()
