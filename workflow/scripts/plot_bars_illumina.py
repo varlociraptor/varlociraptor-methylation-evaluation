@@ -1,7 +1,8 @@
-import pandas as pd
-import altair as alt
-import sys
 import pickle
+import sys
+
+import altair as alt
+import pandas as pd
 
 sys.stderr = open(snakemake.log[0], "w")
 pd.set_option("display.max_columns", None)
@@ -13,7 +14,7 @@ alt.data_transformers.enable("vegafusion")
 # Main execution
 # -----------------------------
 df = pd.read_parquet(snakemake.input["df"], engine="pyarrow")
-mapes = pd.read_parquet(snakemake.input["mapes"], engine="pyarrow")
+mapes = pd.read_parquet(snakemake.input["distances"], engine="pyarrow")
 bin_size = snakemake.params["bin_size"]
 meth_callers = df["meth_caller"].unique().tolist()
 samples = df["sample"].unique().tolist()
@@ -38,6 +39,7 @@ for s in samples:
 
         # Filter mapes für Sample und Meth Caller
         mapes_filtered = mapes[(mapes["sample"] == s) & (mapes["meth_caller"] == m)]
+        print(mapes_filtered)
         distance = mapes_filtered["mape"].values[0] if not mapes_filtered.empty else 0.0
 
         results.append(
@@ -56,9 +58,10 @@ colorblind_safe_palette = [
     "#05AA8F",
     "#004D40",
 ]
+print(df_summary)
 bars = (
     alt.Chart(df_summary)
-    .mark_bar()
+    .mark_point()
     .encode(
         x=alt.X(
             "sample:N",
@@ -99,7 +102,6 @@ elif plot_type == "pkl":
     with open(snakemake.output[0], "wb") as f:
         pickle.dump(illumina_histo, f)
 else:
-
     illumina_histo.save(
         snakemake.output[0],
         embed_options={"actions": False},

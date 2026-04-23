@@ -19,8 +19,6 @@ rule bwameth_index:
     #     "../envs/bwa-meth.yaml"
     log:
         "logs/bwameth/bwameth_index/{genome}.log",
-    # wrapper:
-    #     "v7.3.0/bio/bwameth/index"
     wrapper:
         "v7.3.0/bio/bwameth/index"
 

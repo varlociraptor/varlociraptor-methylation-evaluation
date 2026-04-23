@@ -59,7 +59,7 @@ df = coverage.join(
     "position",
     "coverage",
     "varlo_0.01_methylation",
-    "varlo_0.1_methylation",
+    # "varlo_0.1_methylation",
     "varlo_1.0_methylation",
 )
 df = df.drop_nulls(subset=["coverage"])
@@ -72,7 +72,7 @@ plot_meth_level_to_cov(df)
 # For each coverage in [0, 2, 5, 10, 20, 50] and varlo threshhold, compute the percentage of CpG sites that have at least that coverage and are retained in the final results (i.e. are present in the meth_data).
 coverage_thresholds = [0, 1, 2, 3, 4, 5, 7, 10, 15, 20, 50, 100]
 results = []
-fdrs = [0.01, 0.1, 1.0]
+fdrs = [0.01, 1.0]
 total_sites = (
     df.select("chromosome", "position", "coverage", "varlo_1.0_methylation")
     .drop_nulls()
