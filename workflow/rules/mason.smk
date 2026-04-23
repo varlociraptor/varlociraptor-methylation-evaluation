@@ -316,6 +316,8 @@ rule mason_compute_truth:
         "../envs/python.yaml"
     log:
         "logs/mason/mason_compute_truth/{chrom}.log",
+    resources:
+        mem_mb=32000
     script:
         "../scripts/mason_ascii_to_meth.py"
 

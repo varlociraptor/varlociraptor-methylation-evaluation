@@ -29,12 +29,16 @@ def parse_cov(file_path, strand, df):
             file_path,
             separator="\t",
             has_header=False,
-            new_columns=["chrom", "pos", "end", "coverage"],
+            schema={
+                "chrom": pl.Utf8,
+                "pos": pl.Int64,
+                "end": pl.Int64,
+                "coverage": pl.Float64,
+            },
         )
         .select(["chrom", "pos", "coverage"])
         .with_columns(pl.col("coverage").alias(f"coverage_{strand}"))
         .drop("coverage")
-        .with_columns(pl.col("chrom").cast(pl.Utf8))
     ).with_columns(
         pl.col("pos") + 1  # Convert to 1-based position
     )
@@ -149,7 +153,6 @@ output_file = snakemake.output[0]
 df = parse_vcf(candidates)
 df = parse_cov(cov_forward_file, "TOP", df)
 
-# print(cov_forward)
 df = parse_cov(cov_reverse_file, "BOT", df)
 print(df.head())
 df = meth_data = parse_fasta(meth_file, df)

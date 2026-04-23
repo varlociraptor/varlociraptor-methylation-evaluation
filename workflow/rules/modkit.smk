@@ -16,7 +16,7 @@ rule modkit_compute_methylation:
     resources:
         mem_mb=16000,
     benchmark:
-        repeat("benchmarks/{platform}/modkit/modkit/{sample}.bwa.benchmark.txt", 3)
+        repeat("benchmarks/{platform}/modkit/modkit/{sample}.bwa.benchmark.txt", config["benchmark_repeats"])
     threads: 8
     shell:
         "modkit pileup {input.alignment} {output} --cpg --ref {input.chromosome} --modified-bases 5mC --threads {threads} --combine-strands --log-filepath {log} 2> {log}"

@@ -10,7 +10,7 @@ rule compute_pandas_df:
     log:
         "logs/plot_results/compute_pandas_df/{call_type}_{seq_platform}_{sample}_{method}.log",
     resources:
-        mem_mb=4000,
+        mem_mb=8000,
     script:
         "../scripts/pandas_df_from_meth_output.py"
 
