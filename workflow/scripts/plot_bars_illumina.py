@@ -1,5 +1,6 @@
 import pickle
 import sys
+from hashlib import sha1
 
 import altair as alt
 import pandas as pd
@@ -40,14 +41,29 @@ for s in samples:
         # Filter mapes für Sample und Meth Caller
         mapes_filtered = mapes[(mapes["sample"] == s) & (mapes["meth_caller"] == m)]
         print(mapes_filtered)
-        distance = mapes_filtered["mape"].values[0] if not mapes_filtered.empty else 0.0
+        mape_distance = (
+            mapes_filtered["mape"].values[0] if not mapes_filtered.empty else 0.0
+        )
+        mae_distance = (
+            mapes_filtered["mae"].values[0] if not mapes_filtered.empty else 0.0
+        )
 
         results.append(
             {
                 "sample": s,
                 "meth_caller": meth_caller_to_name.get(m, m),
                 "number": str(number)[:3],
-                "distance": float(distance),
+                "distance": float(mape_distance),
+                "distance_type": "Dᵣ",
+            }
+        )
+        results.append(
+            {
+                "sample": s,
+                "meth_caller": meth_caller_to_name.get(m, m),
+                "number": str(number)[:3],
+                "distance": float(mae_distance),
+                "distance_type": "Dₐ",
             }
         )
 df_summary = pd.DataFrame(results)
@@ -59,26 +75,35 @@ colorblind_safe_palette = [
     "#004D40",
 ]
 print(df_summary)
-bars = (
-    alt.Chart(df_summary)
-    .mark_point()
-    .encode(
-        x=alt.X(
-            "sample:N",
-            axis=alt.Axis(labelAngle=-30),
-            title=None,
-        ),
-        xOffset=alt.XOffset("meth_caller:N", sort=meth_callers),
-        y=alt.Y("distance:Q", title="Discordance"),
-        color=alt.Color(
-            "meth_caller:N",
-            title="Methylation caller",
-            scale=alt.Scale(range=colorblind_safe_palette),
-            sort=meth_callers,
-        ),
-        tooltip=["sample:N", "meth_caller:N", "distance:Q", "number:Q"],
+base = alt.Chart(df_summary).encode(
+    x=alt.X("sample:N", axis=alt.Axis(labelAngle=-30), title=None),
+    xOffset=alt.XOffset("meth_caller:N", sort=meth_callers),
+    color=alt.Color(
+        "meth_caller:N",
+        title="Methylation caller",
+        scale=alt.Scale(range=colorblind_safe_palette),
+        sort=meth_callers,
+    ),
+    tooltip=["sample:N", "meth_caller:N", "distance:Q", "number:Q"],
+)
+
+# Dr (hinterer Balken)
+bars_dr = (
+    base.transform_filter(alt.datum.distance_type == "Dᵣ")
+    .mark_bar()
+    .encode(y=alt.Y("distance:Q", title="Discordance"))
+)
+
+# Da (vorderer Balken, schraffiert)
+bars_da = (
+    base.transform_filter(alt.datum.distance_type == "Dₐ")
+    .mark_bar(
+        opacity=0.7,
+        stroke="black",
+        strokeWidth=1,
+        strokeDash=[4, 2],  # "Schraffur"-Ersatz
     )
-    .interactive()
+    .encode(y="distance:Q")
 )
 
 labels = (
@@ -95,7 +120,7 @@ labels = (
     .interactive()
 )
 
-illumina_histo = bars + labels
+illumina_histo = (bars_dr + bars_da + labels).interactive()
 if plot_type == "parquet":
     df_summary.to_parquet(snakemake.output[0])
 elif plot_type == "pkl":
