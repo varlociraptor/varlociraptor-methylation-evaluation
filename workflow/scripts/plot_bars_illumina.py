@@ -90,7 +90,7 @@ base = alt.Chart(df_summary).encode(
 # Dr (hinterer Balken)
 bars_dr = (
     base.transform_filter(alt.datum.distance_type == "Dᵣ")
-    .mark_bar()
+    .mark_bar(opacity=0.7)
     .encode(y=alt.Y("distance:Q", title="Discordance"))
 )
 
@@ -98,7 +98,6 @@ bars_dr = (
 bars_da = (
     base.transform_filter(alt.datum.distance_type == "Dₐ")
     .mark_bar(
-        opacity=0.7,
         stroke="black",
         strokeWidth=1,
         strokeDash=[4, 2],  # "Schraffur"-Ersatz
@@ -108,6 +107,7 @@ bars_da = (
 
 labels = (
     alt.Chart(df_summary)
+    .transform_filter(alt.datum.distance_type == "Dᵣ")
     .mark_text(size=8, dy=-5, color="black")
     .transform_calculate(text_k="datum.number + 'k'")
     .encode(
