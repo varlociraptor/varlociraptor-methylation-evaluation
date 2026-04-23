@@ -10,7 +10,7 @@ rule compute_pandas_df:
     log:
         "logs/plot_results/compute_pandas_df/{call_type}_{seq_platform}_{sample}_{method}.log",
     resources:
-        mem_mb=8000,
+        mem_mb=34000,
     script:
         "../scripts/pandas_df_from_meth_output.py"
 
@@ -27,7 +27,7 @@ rule compute_varlo_df:
     params:
         alpha=lambda wildcards: wildcards.fdr,
     resources:
-        mem_mb=4000,
+        mem_mb=64000,
     script:
         "../scripts/pandas_df_from_meth_output.py"
 
@@ -56,7 +56,7 @@ rule common_tool_df:
     params:
         plot_type=config["plot_type"],
     resources:
-        mem_mb=4000,
+        mem_mb=256000,
     script:
         "../scripts/common_tool_df.py"
 

@@ -135,5 +135,7 @@ rule bissnp_merge_positions:
         "logs/bissnp/bissnp_merge_positions/{platform}_{sample}.log",
     conda:
         "../envs/pysam.yaml"
+    resources:
+        mem_mb=64000
     script:
         "../scripts/merge_forward_reverse_positions.py"
