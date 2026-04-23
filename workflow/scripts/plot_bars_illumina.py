@@ -15,7 +15,7 @@ alt.data_transformers.enable("vegafusion")
 # Main execution
 # -----------------------------
 df = pd.read_parquet(snakemake.input["df"], engine="pyarrow")
-mapes = pd.read_parquet(snakemake.input["distances"], engine="pyarrow")
+distances = pd.read_parquet(snakemake.input["distances"], engine="pyarrow")
 bin_size = snakemake.params["bin_size"]
 meth_callers = df["meth_caller"].unique().tolist()
 samples = df["sample"].unique().tolist()
@@ -38,14 +38,14 @@ for s in samples:
         df_filtered = df[(df["sample"] == s) & (df["meth_caller"] == m)]
         number = df_filtered["count"].sum() if not df_filtered.empty else 0
 
-        # Filter mapes für Sample und Meth Caller
-        mapes_filtered = mapes[(mapes["sample"] == s) & (mapes["meth_caller"] == m)]
-        print(mapes_filtered)
+        # Filter distances für Sample und Meth Caller
+        distances_filtered = distances[(distances["sample"] == s) & (distances["meth_caller"] == m)]
+        print(distances_filtered)
         mape_distance = (
-            mapes_filtered["mape"].values[0] if not mapes_filtered.empty else 0.0
+            distances_filtered["mape"].values[0] if not distances_filtered.empty else 0.0
         )
         mae_distance = (
-            mapes_filtered["mae"].values[0] if not mapes_filtered.empty else 0.0
+            distances_filtered["mae"].values[0] if not distances_filtered.empty else 0.0
         )
 
         results.append(
