@@ -104,17 +104,17 @@ rule bsmapz_index_out_bam:
 
 
 # Split out.bam by candidate region for parallel methylation extraction
-rule bsmapz_extract_split_bam:
+rule bsmapz_extract_scatter_bam:
     input:
         alignment="results/single_sample/{platform}/called/{sample}/result_files/out.bam",
         index="results/single_sample/{platform}/called/{sample}/result_files/out.bam.bai",
-        candidate=lambda wildcards: f"resources/{chromosome_by_seq_platform.get(wildcards.platform)}/candidates_{wildcards.scatteritem}.bcf",
+        candidate=lambda wildcards: f"resources/{chromosome_by_seq_platform.get(wildcards.platform)}/candidates_{wildcards.scatteritem}.bed",
     output:
         temp(
             "results/single_sample/{platform}/called/{sample}/result_files/out_{scatteritem}.bam"
         ),
     log:
-        "logs/bsmapz/bsmapz_extract_split_bam/{platform}_{sample}_{scatteritem}.log",
+        "logs/bsmapz/bsmapz_extract_scatter_bam/{platform}_{sample}_{scatteritem}.log",
     params:
         chromosome=lambda wildcards: chromosome_by_seq_platform.get(
             wildcards.platform, "21"
@@ -123,13 +123,7 @@ rule bsmapz_extract_split_bam:
         "../envs/samtools.yaml"
     shell:
         """
-        set +o pipefail
-
-        mkdir -p $(dirname {output})
-
-        start=$(bcftools query -f '%POS\n' {input.candidate} | head -n1)
-        end=$(bcftools query -f '%POS\n' {input.candidate} | tail -n1)
-        samtools view -h -b {input.alignment} "{params.chromosome}:$start-$end" > {output} 2> {log}
+        samtools view -b -L {input.candidate} {input.alignment} > {output} 2> {log}
 
         if [ $(samtools view -c {output}) -eq 0 ]; then
             samtools view -H {input.alignment} > {output}.temp.sam
@@ -160,15 +154,17 @@ rule bsmapz_extract:
     log:
         "logs/bsmapz/bsmapz_extract/{platform}_{sample}_{scatteritem}.log",
     params:
-        chromosome=lambda wildcards: chromosome_by_seq_platform.get(
-            wildcards.platform, "21"
-        ),
+        chromosome_flag=lambda wildcards: f"-c={chromosome_by_seq_platform.get(wildcards.platform)}"
+            if chromosome_by_seq_platform.get(wildcards.platform) != "genome"
+                else ""
     conda:
         "../envs/bsmapz.yaml"
+    resources:
+        mem_mb=64000
     benchmark:
         repeat("benchmarks/{platform}/bsmap/bsmap_extract/{sample}_{scatteritem}.bwa.benchmark.txt", config["benchmark_repeats"])
     shell:
-        "python {input.meth_extractor} -c={params.chromosome} --ref={input.genome[0]} --out={output} {input.bsmap_bam} -g -x CG 2> {log}"
+        "python {input.meth_extractor} {params.chromosome_flag} --ref={input.genome[0]} --out={output} {input.bsmap_bam} -g -x CG 2> {log}"
 
 
 # Gather scattered methylation ratio BEDs into one file
