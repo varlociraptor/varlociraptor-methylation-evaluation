@@ -102,13 +102,16 @@ for root, _, files in os.walk(benchmark_path):
             )
             df["replicate"] = replicate
             # Clean up sample/replicate name
+            # Compute avg of s and max_rss
+            df = df.groupby(
+                ["platform", "meth_caller", "task", "replicate"], as_index=False
+            ).mean()
             records.append(df)
         except Exception as e:
             print(
                 f"Warning: Failed to read benchmark file {full_path}: {e}",
                 file=sys.stderr,
             )
-
 if not records:
     raise ValueError(f"No benchmark files found in {benchmark_path}")
 

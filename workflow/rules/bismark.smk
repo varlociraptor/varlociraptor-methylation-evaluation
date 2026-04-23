@@ -25,7 +25,7 @@ rule bismark_genome_preparation_fa:
             if chromosome_by_seq_platform.get(wildcards.platform) == "J02459"
             else "resources/genome.fasta",
     output:
-        bismark_genome_dir=directory("resources/ref_tools/bismark/genome/{platform}/bismark/"),
+        bismark_genome_dir=directory("resources/ref_tools/bismark/genome/{platform}"),
 
     log:
         "logs/bismark_genome_preparation/{platform}.log",
@@ -45,20 +45,20 @@ rule bismark_align:
 
         bismark_indexes_dir="resources/ref_tools/bismark/genome/{platform}/",
         # We do not need that input but else bismark does not prepare the genome
-        genome_prep="resources/ref_tools/bismark/genome/{platform}/bismark/",
+        # genome_prep="resources/ref_tools/bismark/genome/{platform}/bismark/",
 
         # ct="resources/ref_tools/bismark/genome/{platform}/Bisulfite_Genome/CT_conversion",
     output:
         bam="resources/ref_tools/bismark/{platform}/bams/{sample}_pe_{SRA}_unsorted.bam",
         report="resources/ref_tools/bismark/{platform}/bams/{sample}_{SRA}_PE_report.txt",
-        fq_unmapped_1="results/ref_tools/bismark/{platform}/{sample}/{SRA}_unmapped_reads_1.fq.gz",  # optional: implicitly activates --unmapped
-        fq_unmapped_2="results/ref_tools/bismark/{platform}/{sample}/{SRA}_unmapped_reads_2.fq.gz",  # optional: implicitly activates --unmapped
-        fq_ambiguous_1="results/ref_tools/bismark/{platform}/{sample}/{SRA}_ambiguous_reads_1.fq.gz",  # optional: implicitly activates --ambiguous
-        fq_ambiguous_2="results/ref_tools/bismark/{platform}/{sample}/{SRA}_ambiguous_reads_2.fq.gz"
+        fq_unmapped_1="resources/ref_tools/bismark/{platform}/{sample}/{SRA}_unmapped_reads_1.fq.gz",  # optional: implicitly activates --unmapped
+        fq_unmapped_2="resources/ref_tools/bismark/{platform}/{sample}/{SRA}_unmapped_reads_2.fq.gz",  # optional: implicitly activates --unmapped
+        fq_ambiguous_1="resources/ref_tools/bismark/{platform}/{sample}/{SRA}_ambiguous_reads_1.fq.gz",  # optional: implicitly activates --ambiguous
+        fq_ambiguous_2="resources/ref_tools/bismark/{platform}/{sample}/{SRA}_ambiguous_reads_2.fq.gz"
     log:
         "logs/bismark/bismark_align/{sample}_{SRA}_{platform}.log",
     benchmark:
-        repeat("benchmarks/{platform}/bismark/bismark_align_{SRA}/{sample}.bwa.benchmark.txt", config["benchmark_repeats"])
+        repeat("benchmarks/{platform}/bismark/bismark_align/{SRA}_{sample}.bwa.benchmark.txt", config["benchmark_repeats"])
     params:
         extra="",
     threads: 8

@@ -8,6 +8,7 @@ resources/**
 !resources/chromosome_J02459.fasta
 results/**
 report.zip
+get_data_from_cluster.sh
 
 .test/benchmarks/**
 .test/logs/**
@@ -17,4 +18,3 @@ report.zip
 !.test/resources/scenarios/**
 !.test/resources/chromosome_J02459.fasta
 .test/.snakemake/**
-get_data_from_cluster.sh
