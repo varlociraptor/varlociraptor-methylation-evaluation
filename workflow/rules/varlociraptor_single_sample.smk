@@ -38,7 +38,7 @@ rule varlociraptor_preprocess:
 rule varlociraptor_call:
     input:
         preprocess_obs="results/preprocessed/{seq_platform}/{sample}/normal_{scatteritem}.bcf",
-        scenario="resources/scenarios/scenario.yaml",
+        scenario=workflow.source_path("../scenarios/scenario.yaml"),
     output:
         "results/single_sample/{seq_platform}/called/{sample}/calls_{scatteritem}.bcf",
     log:
