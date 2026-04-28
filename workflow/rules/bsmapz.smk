@@ -29,16 +29,16 @@ rule bsmapz_clone_and_build:
 
 
 # Download the newer methylation extractor from BSMAPz
-rule bsmap_download_methratio:
-    output:
-        "resources/ref_tools/BSMAPz/methratio.py",
-    log:
-        "logs/bsmapz/downlzoad_methratio.log",
-    shell:
-        """
-        mkdir -p $(dirname {output})
-        wget -O {output} https://raw.githubusercontent.com/zyndagj/BSMAPz/master/methratio.py > {log} 2>&1
-"""
+# rule bsmap_download_methratio:
+#     output:
+#         "resources/ref_tools/BSMAPz/methratio.py",
+#     log:
+#         "logs/bsmapz/downlzoad_methratio.log",
+#     shell:
+#         """
+#         mkdir -p $(dirname {output})
+#         wget -O {output} https://raw.githubusercontent.com/zyndagj/BSMAPz/master/methratio.py > {log} 2>&1
+# """
 
 
 # Run BSMAPz to compute methylation alignments

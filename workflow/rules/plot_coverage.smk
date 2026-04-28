@@ -35,23 +35,23 @@ rule compute_coverage:
     wrapper:
         "v5.5.2/bio/mosdepth"
 
-rule unzip_coverage:
-    input:
-        "results/{call_type}/{seq_platform}/coverages/{sample}.regions.bed{mapq}.gz",
-    output:
-        "results/{call_type}/{seq_platform}/coverages/{sample}.regions{mapq}.bed",
-    log:
-        "logs/mason/mason_unzip_coverage/{call_type}_{seq_platform}_{sample}_{mapq}.log",
-    conda:
-        "../envs/general.yaml"
-    shell:
-        "gunzip -c {input} > {output} 2> {log}"
+# rule unzip_coverage:
+#     input:
+#         "results/{call_type}/{seq_platform}/coverages/{sample}.regions.bed{mapq}.gz",
+#     output:
+#         "results/{call_type}/{seq_platform}/coverages/{sample}.regions{mapq}.bed",
+#     log:
+#         "logs/mason/mason_unzip_coverage/{call_type}_{seq_platform}_{sample}_{mapq}.log",
+#     conda:
+#         "../envs/general.yaml"
+#     shell:
+#         "gunzip -c {input} > {output} 2> {log}"
 
 
 
 rule coverage_plots:
     input:
-        coverage="results/{call_type}/{seq_platform}/coverages/{sample}.regions.bed",
+        coverage="results/{call_type}/{seq_platform}/coverages/{sample}.regions.bed.gz",
         meth_data="results/{call_type}/{seq_platform}/result_files/sample_df_{sample}.parquet",
     output:
         meth_level_to_cov="results/{call_type}/{seq_platform}/plots/{sample}_meth_level_to_cov.{plot_type}",
@@ -76,3 +76,23 @@ rule coverage_plots:
         plot_type=lambda wildcards: wildcards.plot_type,
     script:
         "../scripts/plot_coverage_retained.py"
+
+rule stratify_mae:
+    input:
+        coverage01="results/{call_type}/{seq_platform}/coverages/{sample}_REP01.regions.bed.gz",
+        coverage02="results/{call_type}/{seq_platform}/coverages/{sample}_REP02.regions.bed.gz",
+        # coverage_60="results/{call_type}/{seq_platform}/coverages/{sample}.regions.bed.mapq60.gz",
+        meth_data="results/{call_type}/{seq_platform}/result_files/replicates.parquet",
+    output:
+        mae="results/{call_type}/{seq_platform}/plots/{sample}_mae.{plot_type}",
+    conda:
+        "../envs/python.yaml"
+    resources:
+        mem_mb=4000,
+    log:
+        "logs/plot_results/stratify_mae/{call_type}_{seq_platform}_{sample}_{plot_type}.log",
+    params:
+        sample=lambda wildcards: wildcards.sample,
+        plot_type=lambda wildcards: wildcards.plot_type,
+    script:
+        "../scripts/plot_stratify_mae.py"
