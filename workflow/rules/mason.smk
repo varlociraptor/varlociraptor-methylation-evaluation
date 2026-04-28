@@ -19,16 +19,16 @@ rule mason_download:
 
 rule mason_fake_methylation:
     input:
-        chrom="resources/{chrom}.fasta",
+        chrom="resources/{chrom}.fasta.gz",
         index="resources/{chrom}.fasta.fai",
     output:
-        methylation="resources/Simulate/simulated_data/{chrom}_meth.fa",
+        methylation="resources/Simulate/simulated_data/{chrom}_meth.fa.gz",
     conda:
         "../envs/mason.yaml"
     log:
         "logs/mason/mason_fake_methylation/{chrom}.log",
     params:
-        seed=0,
+        seed=config["seed"],
     shell:
         """
         mkdir -p $(dirname {output.methylation})
@@ -43,40 +43,43 @@ rule mason_fake_methylation:
 
 rule mason_fake_variants:
     input:
-        chrom="resources/{chrom}.fasta",
+        chrom="resources/{chrom}.fasta.gz",
     output:
-        "resources/Simulate/simulated_data/{chrom}_variants.vcf",
+        "resources/Simulate/simulated_data/{chrom}_variants.vcf.gz",
     conda:
         "../envs/mason.yaml"
     log:
         "logs/mason/mason_fake_variants/{chrom}.log",
+    params:
+        seed=config["seed"],
     shell:
         """
         mason_variator --in-reference {input} \
-            --out-vcf {output}  2> {log}
+            --out-vcf {output} \
+            --seed {params.seed}  2> {log}
         """
 
 
 rule mason_fake_reads:
     input:
         genome=expand(
-            "resources/{chrom}.fasta",
+            "resources/{chrom}.fasta.gz",
             chrom=config["seq_platforms"].get("Simulate", []),
         ),
         variants=expand(
-            "resources/Simulate/simulated_data/{chrom}_variants.vcf",
+            "resources/Simulate/simulated_data/{chrom}_variants.vcf.gz",
             chrom=config["seq_platforms"].get("Simulate", []),
         ),
         methylation=expand(
-            "resources/Simulate/simulated_data/{chrom}_meth.fa",
+            "resources/Simulate/simulated_data/{chrom}_meth.fa.gz",
             chrom=config["seq_platforms"].get("Simulate", []),
         ),
     output:
-        f1="resources/Simulate/{sample}/{SRA}/{SRA}_1_trimmed.fastq",
-        f2="resources/Simulate/{sample}/{SRA}/{SRA}_2_trimmed.fastq",
+        f1="resources/Simulate/{sample}/{SRA}/{SRA}_1_trimmed.fastq.gz",
+        f2="resources/Simulate/{sample}/{SRA}/{SRA}_2_trimmed.fastq.gz",
     conda:
         "../envs/mason.yaml"
-    threads: 20
+    threads: 16
     log:
         "logs/mason/mason_fake_reads/{sample}_{SRA}.log",
     params:
@@ -93,56 +96,6 @@ rule mason_fake_reads:
                 --num-threads {threads} \
                 --illumina-read-length 150  2> {log}
         """
-
-
-# rule mason_align_reads:
-#     input:
-#         fasta=expand(
-#             "resources/chromosome_{chrom}.fasta",
-#             chrom=config["seq_platforms"].get("Simulate", []),
-#         ),
-#         fasta_index=expand(
-#             "resources/chromosome_{chrom}.fasta.bwameth.c2t",
-#             chrom=config["seq_platforms"].get("Simulate", []),
-#         ),
-#         f1=expand(
-#             "resources/Simulate/{sample}/{SRA}/{SRA}_1_trimmed.fastq",
-#             sample="simulated_data",
-#             SRA=config["data"]["Simulate"]["simulated_data"],
-#         ),
-#         f2=expand(
-#             "resources/Simulate/{sample}/{SRA}/{SRA}_2_trimmed.fastq",
-#             sample="simulated_data",
-#             SRA=config["data"]["Simulate"]["simulated_data"],
-#         ),
-#     output:
-#         "resources/Simulate/simulated_data/alignment.sam",
-#     conda:
-#         "../envs/bwa-meth.yaml"
-#     log:
-#         "logs/mason/mason_align_reads.log",
-#     threads: 20
-#     shell:
-#         """
-#         set -o pipefail
-#         bwameth.py index-mem2 {input.fasta} 2> {log}
-#         bwameth.py --threads {threads} --reference {input.fasta} {input.f1} {input.f2} > {output} 2> {log}
-#         """
-
-
-# rule mason_sam_to_bam:
-#     input:
-#         "resources/Simulate/simulated_data/alignment.sam",
-#     output:
-#         "resources/Simulate/simulated_data/alignment.bam",
-#     conda:
-#         "../envs/samtools.yaml"
-#     log:
-#         "logs/mason/mason_sam_to_bam/.log",
-#     threads: 4
-#     shell:
-#         "samtools view -Sb {input} > {output} 2> {log}"
-
 
 rule mason_sort_reads:
     input:
@@ -293,7 +246,7 @@ rule mason_candidates_vcf:
     input:
         "resources/{chrom}/candidates.bcf",
     output:
-        "resources/{chrom}/candidates.vcf",
+        "resources/{chrom}/candidates.vcf.gz",
     conda:
         "../envs/samtools.yaml"
     log:
@@ -309,7 +262,7 @@ rule mason_compute_truth:
         cov_forward="resources/Simulate/simulated_data/forward_cov.regions.bed",
         cov_reverse="resources/Simulate/simulated_data/reverse_cov.regions.bed",
         methylation="resources/Simulate/simulated_data/{chrom}_meth.fa",
-        candidates="resources/{chrom}/candidates.vcf",
+        candidates="resources/{chrom}/candidates.vcf.gz",
     output:
         "resources/Simulate/simulated_data/{chrom}_truth.csv",
     conda:

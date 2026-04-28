@@ -39,10 +39,14 @@ for s in samples:
         number = df_filtered["count"].sum() if not df_filtered.empty else 0
 
         # Filter distances für Sample und Meth Caller
-        distances_filtered = distances[(distances["sample"] == s) & (distances["meth_caller"] == m)]
+        distances_filtered = distances[
+            (distances["sample"] == s) & (distances["meth_caller"] == m)
+        ]
         print(distances_filtered)
         mape_distance = (
-            distances_filtered["mape"].values[0] if not distances_filtered.empty else 0.0
+            distances_filtered["mape"].values[0]
+            if not distances_filtered.empty
+            else 0.0
         )
         mae_distance = (
             distances_filtered["mae"].values[0] if not distances_filtered.empty else 0.0

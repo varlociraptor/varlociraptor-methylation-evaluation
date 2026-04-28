@@ -86,8 +86,8 @@ rule rename_chromosome_in_fasta:
 # We need to call the wildcard accession and not SRA because of the wrapper
 rule get_fastq_pe:
     output:
-        "resources/Illumina_pe/{sample}/{SRA}/{accession}_1.fastq",
-        "resources/Illumina_pe/{sample}/{SRA}/{accession}_2.fastq",
+        "resources/Illumina_pe/{sample}/{SRA}/{accession}_1.fastq.gz",
+        "resources/Illumina_pe/{sample}/{SRA}/{accession}_2.fastq.gz",
     log:
         "logs/download_data/get_fastq_pe/{sample}_{SRA}_{accession}.log",
     params:
@@ -101,7 +101,7 @@ rule get_fastq_pe:
 
 rule get_fastq_se:
     output:
-        "resources/Illumina_se/{sample}/{SRA}/{accession}.fastq",
+        "resources/Illumina_se/{sample}/{SRA}/{accession}.fastq.gz",
     log:
         "logs/download_data/get_fastq_se/{sample}_{SRA}_{accession}.log",
     params:
@@ -141,16 +141,16 @@ rule get_fastq_se:
 
 rule trim_fastq_pe:
     input:
-        sample=["resources/Illumina_pe/{sample}/{SRA}/{SRA}_1.fastq", "resources/Illumina_pe/{sample}/{SRA}/{SRA}_2.fastq"]
+        sample=["resources/Illumina_pe/{sample}/{SRA}/{SRA}_1.fastq.gz", "resources/Illumina_pe/{sample}/{SRA}/{SRA}_2.fastq.gz"]
     output:
-        trimmed=["resources/Illumina_pe/{sample}/{SRA}/{SRA}_1_trimmed.fastq", "resources/Illumina_pe/{sample}/{SRA}/{SRA}_2_trimmed.fastq"],
+        trimmed=["resources/Illumina_pe/{sample}/{SRA}/{SRA}_1_trimmed.fastq.gz", "resources/Illumina_pe/{sample}/{SRA}/{SRA}_2_trimmed.fastq.gz"],
         # Unpaired reads separately
         # unpaired1="trimmed/pe/{sample}.u1.fastq",
         # unpaired2="trimmed/pe/{sample}.u2.fastq",
         # or in a single file
 #        unpaired="trimmed/pe/{sample}.singletons.fastq",
-        merged="trimmed/pe/{sample}_{SRA}.merged.fastq",
-        failed="trimmed/pe/{sample}_{SRA}.failed.fastq",
+        merged="trimmed/pe/{sample}_{SRA}.merged.fastq.gz",
+        failed="trimmed/pe/{sample}_{SRA}.failed.fastq.gz",
         html="report/pe/{sample}_{SRA}.html",
         json="report/pe/{sample}_{SRA}.json"
     log:
@@ -166,9 +166,9 @@ rule trim_fastq_pe:
 
 rule trim_fastq_se:
     input:
-        first="resources/Illumina_se/{sample}/{SRA}/{accession}.fastq",
+        first="resources/Illumina_se/{sample}/{SRA}/{accession}.fastq.gz",
     output:
-        first="resources/Illumina_se/{sample}/{SRA}/{accession}_trimmed.fastq",
+        first="resources/Illumina_se/{sample}/{SRA}/{accession}_trimmed.fastq.gz",
     log:
         "logs/download_data/trim_fastq_se/{sample}_{SRA}_{accession}.log",
     conda:
