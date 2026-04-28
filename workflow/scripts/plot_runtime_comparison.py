@@ -8,6 +8,8 @@ import numpy as np
 import pandas as pd
 
 sys.stderr = open(snakemake.log[0], "w")
+pd.set_option("display.max_rows", None)
+pd.set_option("display.max_columns", None)
 
 
 def point_plot(df, x, y, color, shape, x_title, y_title, height=140):
@@ -61,9 +63,7 @@ def point_plot(df, x, y, color, shape, x_title, y_title, height=140):
                 ),
                 shape=alt.Shape(f"{shape}:N") if shape else alt.value("circle"),
                 tooltip=(
-                    [f"{x}:Q", f"{y}:Q", "tool_label:N", f"{shape}:N"]
-                    if shape
-                    else [f"{x}:Q", f"{y}:Q", "tool_label:N"]
+                    [f"{x}:Q", f"{y}:Q", "tool_label:N", f"{shape}:N", "replicate:N"]
                 ),
             )
             .mark_point(filled=False, size=30)
@@ -103,9 +103,11 @@ for root, _, files in os.walk(benchmark_path):
             df["replicate"] = replicate
             # Clean up sample/replicate name
             # Compute avg of s and max_rss
+            # Compute sum of s and max of max_rss
             df = df.groupby(
                 ["platform", "meth_caller", "task", "replicate"], as_index=False
-            ).mean()
+            ).agg(s=("s", "mean"), max_rss=("max_rss", "max"))
+
             records.append(df)
         except Exception as e:
             print(
@@ -118,27 +120,50 @@ if not records:
 df_all = pd.concat(records, ignore_index=True)
 df_all["platform"] = df_all["platform"].replace("Illumina_pe", "Illumina")
 
-df_all["task"] = np.where(
-    df_all["meth_caller"] != "varlociraptor",
-    "calling",
-    df_all["task"],
-)
+# df_all["task"] = np.where(
+#     df_all["meth_caller"] != "varlociraptor",
+#     "calling",
+#     df_all["task"],
+# )
+
+# Define task to task_group mapping
+task_group_mapping = {
+    "bismark_align": "preprocessing",
+    "deduplicate_bismark": "preprocessing",
+    "bismark_methylation_extractor": "calling",
+    "samtools_sort": "preprocessing",
+    "samtools_merge": "preprocessing",
+    "bissnp_compute": "calling",
+    "bsmap_compute": "calling",
+    "bsmap_extract": "calling",
+    "methylDackel_compute_meth": "calling",
+    "modkit": "calling",
+    "pb-CpG-tools": "calling",
+    "preprocessing": "preprocessing",
+    "calling": "calling",
+}
+
+
+# Assign task_group based on task name
+df_all["task_group"] = df_all["task"].map(task_group_mapping).fillna("unknown")
 # Compare different methylation calling callers
 df_compare_callers = (
-    df_all.groupby(["platform", "meth_caller", "replicate", "task"], as_index=False)
+    df_all.groupby(
+        ["platform", "meth_caller", "replicate", "task_group"], as_index=False
+    )
     .agg(s=("s", "sum"), max_rss=("max_rss", "max"))
     .query("platform != 'multi_sample'")
     .assign(
-        caller=lambda x: x["meth_caller"].replace(
-            {"calling": "Varlociraptor", "preprocessing": "Varlociraptor"}
-        ),
+        caller=lambda x: x["meth_caller"],
         minutes=lambda x: x["s"] / 60,
         max_rss_gb=lambda x: x["max_rss"] / 1024,
     )
-    .groupby(["platform", "caller", "replicate", "task"], as_index=False)
+    .groupby(["platform", "caller", "replicate", "task_group"], as_index=False)
     .agg({"minutes": "sum", "max_rss_gb": "max"})
     .assign(platform_caller=lambda x: x["platform"] + " - " + x["caller"])
 )
+print(df_compare_callers[df_compare_callers["caller"] == "bsmap"])
+
 
 # Create runtime and memory plots for all callers
 runtime_chart = point_plot(
@@ -146,7 +171,7 @@ runtime_chart = point_plot(
     x="minutes",
     y="max_rss_gb",
     color="caller",
-    shape="task",
+    shape="task_group",
     x_title="Runtime (min)",
     y_title="Max RSS (GB)",
     height=140,

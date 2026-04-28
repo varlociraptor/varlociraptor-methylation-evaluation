@@ -49,8 +49,6 @@ rule methylDackel_gather_meth:
         "logs/methylDackel/methylDackel_gather_meth/{platform}_{sample}.log",
     conda:
         "../envs/general.yaml"
-    benchmark:
-        repeat("benchmarks/{platform}/methylDackel/methylDackel_gather_meth/{platform}_{sample}.log", config["benchmark_repeats"])
     shell:
         """
         head -n1 $(echo {input} | tr ' ' '\n' | head -n1) > {output} 2> {log}
