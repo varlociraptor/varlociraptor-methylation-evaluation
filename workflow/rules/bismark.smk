@@ -40,8 +40,8 @@ rule bismark_genome_preparation_fa:
 
 rule bismark_align:
     input:
-        fq_1="resources/{platform}/{sample}/{SRA}/{SRA}_1_trimmed.fastq",
-        fq_2="resources/{platform}/{sample}/{SRA}/{SRA}_2_trimmed.fastq",
+        fq_1="resources/{platform}/{sample}/{SRA}/{SRA}_1_trimmed.fastq.gz",
+        fq_2="resources/{platform}/{sample}/{SRA}/{SRA}_2_trimmed.fastq.gz",
 
         bismark_indexes_dir="resources/ref_tools/bismark/genome/{platform}/",
         # We do not need that input but else bismark does not prepare the genome
@@ -60,7 +60,7 @@ rule bismark_align:
     benchmark:
         repeat("benchmarks/{platform}/bismark/bismark_align/{SRA}_{sample}.bwa.benchmark.txt", config["benchmark_repeats"])
     params:
-        extra="",
+        extra="--gzip",
     threads: 8
     resources:
         mem_mb=16000,

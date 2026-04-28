@@ -63,13 +63,13 @@ rule unzip_untreated_fastqs:
 
 rule trim_untreated_fastqs:
     input:
-        fq1="resources/Illumina_pe/untreated/dummy/dummy_1.fastq",
-        fq2="resources/Illumina_pe/untreated/dummy/dummy_2.fastq",
+        fq1="resources/Illumina_pe/untreated/dummy/dummy_1.fastq.gz",
+        fq2="resources/Illumina_pe/untreated/dummy/dummy_2.fastq.gz",
     output:
-        fq1="resources/Illumina_pe/untreated/dummy/dummy_1_trimmed.fastq",
-        fq2="resources/Illumina_pe/untreated/dummy/dummy_2_trimmed.fastq",
+        fq1="resources/Illumina_pe/untreated/dummy/dummy_1_trimmed.fastq.gz",
+        fq2="resources/Illumina_pe/untreated/dummy/dummy_2_trimmed.fastq.gz",
     log:
-        "logs/data/trim_untreated_fastqs.log",
+        "logs/ceta_benchmark/trim_untreated_fastqs.log",
     conda:
         "../envs/fastp.yaml"
     shell:
@@ -97,8 +97,8 @@ rule bwa_mem2_index:
 rule bwa_mem2:
     input:
         reads=[
-            "resources/Illumina_pe/untreated/dummy/dummy_1_trimmed.fastq",
-            "resources/Illumina_pe/untreated/dummy/dummy_2_trimmed.fastq",
+            "resources/Illumina_pe/untreated/dummy/dummy_1_trimmed.fastq.gz",
+            "resources/Illumina_pe/untreated/dummy/dummy_2_trimmed.fastq.gz",
         ],
         idx=multiext(
             "resources/genome", ".amb", ".ann", ".bwt.2bit.64", ".pac", ".0123"

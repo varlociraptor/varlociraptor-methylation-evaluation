@@ -81,8 +81,8 @@ rule bissnp_extract:
         alignment="resources/ref_tools/Bis-tools/{platform}/{sample}/alignment.bam",
         alignment_index="resources/ref_tools/Bis-tools/{platform}/{sample}/alignment.bam.bai",
     output:
-        cpg=temp("results/single_sample/{platform}/called/{sample}/result_files/cpg.raw.vcf"),
-        snp=temp("results/single_sample/{platform}/called/{sample}/result_files/snp.raw.vcf"),
+        cpg="results/single_sample/{platform}/called/{sample}/result_files/bissnp_cpg.raw.vcf",
+        snp="results/single_sample/{platform}/called/{sample}/result_files/bissnp_snp.raw.vcf",
     conda:
         "../envs/openjdk.yaml"
     params:
@@ -107,7 +107,7 @@ rule bissnp_extract:
 rule bissnp_create_bedgraph:
     input:
         perl_script=workflow.source_path("../scripts/bissnp_bedGraph.pl"),
-        cpg="results/single_sample/{platform}/called/{sample}/result_files/cpg.raw.vcf",
+        cpg="results/single_sample/{platform}/called/{sample}/result_files/bissnp_cpg.raw.vcf",
     output:
         "results/single_sample/{platform}/called/{sample}/result_files/cpg.raw.CG.bedgraph",
     log:

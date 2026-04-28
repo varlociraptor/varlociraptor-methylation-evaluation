@@ -1,44 +1,44 @@
 # Clone BSMAPz and compile bsmapz locally
 # The official conda environment does not work properly (Illegal instruction     (core dumped))
-# rule bsmapz_clone_and_build:
-#     output:
-#         binary="resources/ref_tools/BSMAPz/bsmapz",
-#         meth_extractor="resources/ref_tools/BSMAPz/methratio.py",
-#     log:
-#         "logs/bsmapz/bsmapz_clone_and_build/download_bsmapz.log",
-#     conda:
-#         "../envs/general.yaml"
-#     shell:
-#         """
-#         build_dir=$(mktemp -d)
+rule bsmapz_clone_and_build:
+    output:
+        binary="resources/ref_tools/BSMAPz/bsmapz",
+        meth_extractor="resources/ref_tools/BSMAPz/methratio.py",
+    log:
+        "logs/bsmapz/bsmapz_clone_and_build/download_bsmapz.log",
+    conda:
+        "../envs/general.yaml"
+    shell:
+        """
+        build_dir=$(mktemp -d)
 
-#         git clone https://github.com/zyndagj/BSMAPz.git $build_dir/BSMAPz 2> {log}
+        git clone https://github.com/zyndagj/BSMAPz.git $build_dir/BSMAPz 2> {log}
 
-#         export CFLAGS="-I$CONDA_PREFIX/include"
-#         export CXXFLAGS="-I$CONDA_PREFIX/include"
-#         export LDFLAGS="-L$CONDA_PREFIX/lib"
+        export CFLAGS="-I$CONDA_PREFIX/include"
+        export CXXFLAGS="-I$CONDA_PREFIX/include"
+        export LDFLAGS="-L$CONDA_PREFIX/lib"
 
-#         make -C "$build_dir/BSMAPz" bsmapz >> {log} 2>&1
+        make -C "$build_dir/BSMAPz" bsmapz >> {log} 2>&1
 
-#         cp "$build_dir/BSMAPz/bsmapz"      {output.binary}
-#         cp "$build_dir/BSMAPz/methratio.py" {output.meth_extractor}
+        cp "$build_dir/BSMAPz/bsmapz"      {output.binary}
+        cp "$build_dir/BSMAPz/methratio.py" {output.meth_extractor}
 
-#         rm -rf "$build_dir"
-#         """
+        rm -rf "$build_dir"
+        """
 
 
 
-# # Download the newer methylation extractor from BSMAPz
-# rule bsmap_download_methratio:
-#     output:
-#         "resources/ref_tools/BSMAPz/methratio.py",
-#     log:
-#         "logs/bsmapz/downlzoad_methratio.log",
-#     shell:
-#         """
-#         mkdir -p $(dirname {output})
-#         wget -O {output} https://raw.githubusercontent.com/zyndagj/BSMAPz/master/methratio.py > {log} 2>&1
-# """
+# Download the newer methylation extractor from BSMAPz
+rule bsmap_download_methratio:
+    output:
+        "resources/ref_tools/BSMAPz/methratio.py",
+    log:
+        "logs/bsmapz/downlzoad_methratio.log",
+    shell:
+        """
+        mkdir -p $(dirname {output})
+        wget -O {output} https://raw.githubusercontent.com/zyndagj/BSMAPz/master/methratio.py > {log} 2>&1
+"""
 
 
 # Run BSMAPz to compute methylation alignments
@@ -50,7 +50,7 @@ rule bsmapz_compute_meth:
         ),
         alignment="resources/{platform}/{sample}/alignment_focused_downsampled_dedup_renamed.bam",
         alignment_index="resources/{platform}/{sample}/alignment_focused_downsampled_dedup_renamed.bam.bai",
-        # bsmapz_binary="resources/ref_tools/BSMAPz/bsmapz",
+        bsmapz_binary="resources/ref_tools/BSMAPz/bsmapz",
     output:
         temp("results/single_sample/{platform}/called/{sample}/result_files/out.unsorted.bam"),
     log:
@@ -59,8 +59,8 @@ rule bsmapz_compute_meth:
         mem_mb=16000,
     benchmark:
         repeat("benchmarks/{platform}/bsmap/bsmap_compute/{sample}.bwa.benchmark.txt", config["benchmark_repeats"])
-    conda:
-        "../envs/bsmapz.yaml"
+    # conda:
+    #     "../envs/bsmapz.yaml"
     threads: 8
     shell:
         """

@@ -55,15 +55,15 @@ rule align_reads_pe:
                 ".c2t.sa",
             )
         ),
-        fq1="resources/{platform}/{sample}/{SRA}/{SRA}_1_trimmed.fastq",
-        fq2="resources/{platform}/{sample}/{SRA}/{SRA}_2_trimmed.fastq",
+        fq1="resources/{platform}/{sample}/{SRA}/{SRA}_1_trimmed.fastq.gz",
+        fq2="resources/{platform}/{sample}/{SRA}/{SRA}_2_trimmed.fastq.gz",
     output:
         "resources/{platform}/{sample}/{SRA}/alignment.bam",
     # conda:
     #     "../envs/bwa-meth.yaml"
     log:
         "logs/bwameth/align_reads_pe/{platform}_{sample}_{SRA}.log",
-    threads: 10
+    threads: 16
     resources:
         mem_mb=48000
     wrapper:
