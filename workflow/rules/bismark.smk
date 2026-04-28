@@ -58,7 +58,7 @@ rule bismark_align:
     log:
         "logs/bismark/bismark_align/{sample}_{SRA}_{platform}.log",
     benchmark:
-        repeat("benchmarks/{platform}/bismark/bismark_align/{SRA}_{sample}.bwa.benchmark.txt", config["benchmark_repeats"])
+        repeat("benchmarks/{platform}/bismark/preprocess/{SRA}_{sample}.bwa.benchmark.txt", config["benchmark_repeats"])
     params:
         extra="",
     threads: 8
@@ -78,8 +78,8 @@ rule samtools_merge:
         "logs/bismark/samtools_merge/{sample}_{platform}.log",
     params:
         extra="-n -f",
-    benchmark:
-        repeat("benchmarks/{platform}/bismark/samtools_merge/{sample}.bwa.benchmark.txt", config["benchmark_repeats"])
+    # benchmark:
+    #     repeat("benchmarks/{platform}/bismark/samtools_merge/{sample}.bwa.benchmark.txt", config["benchmark_repeats"])
     threads: 8
     wrapper:
         "v5.9.0/bio/samtools/merge"
@@ -97,8 +97,8 @@ rule samtools_sort:
     threads: 8
     resources:
         mem_mb=16000,
-    benchmark:
-        repeat("benchmarks/{platform}/bismark/samtools_sort/{sample}.bwa.benchmark.txt", config["benchmark_repeats"])
+    # benchmark:
+    #     repeat("benchmarks/{platform}/bismark/samtools_sort/{sample}.bwa.benchmark.txt", config["benchmark_repeats"])
     wrapper:
         "v5.9.0/bio/samtools/sort"
 

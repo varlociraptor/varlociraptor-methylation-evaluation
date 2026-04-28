@@ -66,7 +66,7 @@ rule bsmapz_compute_meth:
         """
         mkdir -p $(dirname {log})
         mkdir -p $(dirname {output})
-        bsmapz -a {input.alignment} -d {input.genome} -o {output} -p {threads} -w 100 -v 0.07 -m 50 -x 300 > {log} 2>&1
+        bsmapz -a {input.alignment} -d {input.genome} -o {output} -p {threads} > {log} 2>&1
         """
 
 # Sort BSMAPz output BAM by coordinate (BSMAPz does not guarantee sorted output)
