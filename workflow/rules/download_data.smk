@@ -54,6 +54,18 @@ rule focus_genome_on_chromosome:
         fi 2> {log}
         """
 
+rule unzip_genome:
+    input:
+        "resources/{genome}.fasta",
+    output:
+        "resources/{genome}.fasta",
+    log:
+        "logs/download_data/unzip_genome/{genome}.log",
+    conda:
+        "../envs/samtools.yaml"
+    shell:
+        "gunzip -c {input} > {output} 2> {log}"
+
 
 rule chromosome_index:
     input:

@@ -1,36 +1,38 @@
-rule filter_bam_mapq60:
-    input:
-        bam="resources/{seq_platform}/{sample}/alignment_focused_downsampled_dedup_renamed.bam",
-        bai="resources/{seq_platform}/{sample}/alignment_focused_downsampled_dedup_renamed.bam.bai",
-    output:
-        bam="resources/{seq_platform}/{sample}/alignment_focused_downsampled_dedup_renamed.mapq60.bam",
-        bai="resources/{seq_platform}/{sample}/alignment_focused_downsampled_dedup_renamed.mapq60.bam.bai",
-    threads: 4
-    log:
-        "logs/mapq60/{seq_platform}_{sample}.log"
-    shell:
-        """
-        samtools view -@ {threads} -b -q 60 {input.bam} > {output.bam} 2> {log}
-        samtools index -@ {threads} {output.bam}
-        """
+# rule filter_bam_mapq:
+#     input:
+#         bam="resources/{seq_platform}/{sample}/alignment_focused_downsampled_dedup_renamed.bam",
+#         bai="resources/{seq_platform}/{sample}/alignment_focused_downsampled_dedup_renamed.bam.bai",
+#     output:
+#         bam="resources/{seq_platform}/{sample}/alignment_focused_downsampled_dedup_renamed.mapq_{mapq}.bam",
+#         bai="resources/{seq_platform}/{sample}/alignment_focused_downsampled_dedup_renamed.mapq_{mapq}.bam.bai",
+#     threads: 4
+#     log:
+#         "logs/mapq60/{seq_platform}_{sample}_{mapq}.log"
+#     params:
+#         mapq=lambda wildcards: f" -q {wildcards.mapq}" if wildcards.mapq != "all" else ""
+#     shell:
+#         """
+#         samtools view -@ {threads} -b {params.mapq} {input.bam} > {output.bam} 2> {log}
+#         samtools index -@ {threads} {output.bam}
+#         """
 
 rule compute_coverage:
     input:
-        bam="resources/{seq_platform}/{sample}/alignment_focused_downsampled_dedup_renamed{mapq}.bam",
-        bai="resources/{seq_platform}/{sample}/alignment_focused_downsampled_dedup_renamed{mapq}.bam.bai",
+        bam="resources/{seq_platform}/{sample}/alignment_focused_downsampled_dedup_renamed.bam",
+        bai="resources/{seq_platform}/{sample}/alignment_focused_downsampled_dedup_renamed.bam.bai",
         bed=lambda wildcards: expand(
             "resources/{chrom}/candidates.bed",
             chrom=config["seq_platforms"].get(wildcards.seq_platform, []),
         ),
     output:
-        "results/{call_type}/{seq_platform}/coverages/{sample}.mosdepth.global.dist{mapq}.txt",
-        "results/{call_type}/{seq_platform}/coverages/{sample}.mosdepth.region.dist{mapq}.txt",
-        "results/{call_type}/{seq_platform}/coverages/{sample}.regions.bed{mapq}.gz",
-        summary="results/{call_type}/{seq_platform}/coverages/{sample}.mosdepth.summary{mapq}.txt",  # this named output is required for prefix parsing
+        "results/{call_type}/{seq_platform}/coverages/{sample}_{mapq}.mosdepth.global.dist.txt",
+        "results/{call_type}/{seq_platform}/coverages/{sample}_{mapq}.mosdepth.region.dist.txt",
+        "results/{call_type}/{seq_platform}/coverages/{sample}_{mapq}.regions.bed.gz",
+        summary="results/{call_type}/{seq_platform}/coverages/{sample}_{mapq}.mosdepth.summary.txt",  # this named output is required for prefix parsing
     log:
         "logs/mason/mason_coverage/{call_type}_{seq_platform}_{sample}_{mapq}.log",
     params:
-        extra="--no-per-base --use-median",  # optional
+        extra=lambda wildcards: "--no-per-base --use-median" + f" --mapq {wildcards.mapq}" if wildcards.mapq != "all" else "",  # optional
     threads: 4  # This value - 1 will be sent to `--threads`
     wrapper:
         "v5.5.2/bio/mosdepth"
@@ -79,8 +81,10 @@ rule coverage_plots:
 
 rule stratify_mae:
     input:
-        coverage01="results/{call_type}/{seq_platform}/coverages/{sample}_REP01.regions.bed.gz",
-        coverage02="results/{call_type}/{seq_platform}/coverages/{sample}_REP02.regions.bed.gz",
+        coverage_all_01="results/{call_type}/{seq_platform}/coverages/{sample}_REP01_all.regions.bed.gz",
+        coverage_all_02="results/{call_type}/{seq_platform}/coverages/{sample}_REP02_all.regions.bed.gz",
+        coverage_60_01="results/{call_type}/{seq_platform}/coverages/{sample}_REP01_60.regions.bed.gz",
+        coverage_60_02="results/{call_type}/{seq_platform}/coverages/{sample}_REP02_60.regions.bed.gz",
         # coverage_60="results/{call_type}/{seq_platform}/coverages/{sample}.regions.bed.mapq60.gz",
         meth_data="results/{call_type}/{seq_platform}/result_files/replicates.parquet",
     output:
@@ -94,5 +98,8 @@ rule stratify_mae:
     params:
         sample=lambda wildcards: wildcards.sample,
         plot_type=lambda wildcards: wildcards.plot_type,
+        meth_callers=lambda wildcards: config["ref_tools"].get(
+            wildcards.seq_platform, []
+        )
     script:
         "../scripts/plot_stratify_mae.py"

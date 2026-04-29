@@ -5,10 +5,19 @@ import numpy as np
 import pandas as pd
 import polars as pl
 
-sys.stderr = open(snakemake.log[0], "w")
+# sys.stderr = open(snakemake.log[0], "w")
 pd.set_option("display.max_columns", None)
 pd.set_option("display.max_rows", 1000)
+pl.Config.set_tbl_cols(200)
+# pl.Config.set_tbl_rows(200)
+
 alt.data_transformers.enable("vegafusion")
+
+# Am Anfang der Datei statt alt.data_transformers.enable("vegafusion")
+# Einfach weglassen oder:
+alt.data_transformers.disable_max_rows()
+
+# Dann beim Speichern HTML verwenden statt .save()
 
 
 def bin_methylation(series: pd.Series, bin_size: int) -> pd.Series:
@@ -88,86 +97,91 @@ def compute_replicate_counts(df, bin_size):
     meth_callers = snakemake.params["meth_callers"]
     caller_counts = []
     mape_records = []
+    charts = []
     for caller in meth_callers:
         rep1 = f"{caller}_methylation_rep1"
         rep2 = f"{caller}_methylation_rep2"
-        temp = df[[rep1, rep2]].dropna()
-        if temp.empty:
+        temp = df.select(
+            "position", rep1, rep2, "coverage_rep1", "coverage_rep2"
+        ).drop_nulls()
+        # Print rows with highest coverage
+        print(temp.sort("coverage_rep1", descending=True).head())
+        temp = temp.sample(n=20000, seed=42)
+        if temp.is_empty():
             continue
+        temp = temp.with_columns((pl.col(rep1) - pl.col(rep2)).abs().alias("mae"))
+        print(temp)
 
-        rep1_vals = temp[rep1].to_numpy()
-        rep2_vals = temp[rep2].to_numpy()
+        plot_data = temp.to_pandas()
 
-        denom = np.maximum(rep1_vals, rep2_vals)
-        mape = (
-            np.where(
-                (rep1_vals == 0) & (rep2_vals == 0),
-                0,
-                np.abs(rep1_vals - rep2_vals) / denom,
-            ).mean()
-            * 100
+        plot = (
+            alt.Chart(plot_data, title=f"Coverage vs MAE for {caller}")
+            .mark_point(size=5)
+            .encode(
+                x=alt.X("coverage_rep1:Q", title="Coverage Rep1"),
+                y=alt.Y("coverage_rep2:Q", title="Coverage Rep2"),
+                color=alt.Color(
+                    "mae:Q", scale=alt.Scale(scheme="viridis"), title="MAE"
+                ),
+                tooltip=["coverage_rep1", "coverage_rep2", "mae"],
+            )
         )
+        charts.append(plot)
+    charts = alt.hconcat(*charts)
+    charts.save(snakemake.output[0], scale_factor=2)
 
-        mae = np.abs(rep1_vals - rep2_vals).mean()
-        print(f"MAE for {caller}: {mae:.2f}", file=sys.stderr)
 
-        mape_records.append({"meth_caller": caller, "mape": mape, "mae": mae})
-
-        temp = temp.assign(
-            rep1_bin=bin_methylation(temp[rep1], bin_size),
-            rep2_bin=bin_methylation(temp[rep2], bin_size),
+def read_coverage(coverage_file: str, rep_name: str) -> pl.DataFrame:
+    """Read and process coverage file, renaming coverage column appropriately."""
+    return (
+        pl.read_csv(
+            coverage_file,
+            separator="\t",
+            has_header=False,
+            new_columns=["chromosome", "pos_start", "pos_end", "coverage"],
         )
-
-        counts = (
-            pd.crosstab(temp["rep1_bin"], temp["rep2_bin"])
-            .stack()
-            .reset_index(name="count")
+        .with_columns(
+            ((pl.col("pos_end") + pl.col("pos_start")) / 2)
+            .alias("position")
+            .cast(pl.Int64)
         )
-
-        counts["rel_count"] = counts["count"] / counts["count"].sum()
-
-        max_bin = counts[["rep1_bin", "rep2_bin"]].max(axis=1)
-        counts["dist"] = np.where(
-            max_bin == 0,
-            0,
-            np.abs(counts["rep1_bin"] - counts["rep2_bin"]) / max_bin * 100,
-        )
-
-        counts["dist_bin"] = (counts["dist"] / bin_size).round().astype(int) * bin_size
-        counts["meth_caller"] = caller
-
-        caller_counts.append(counts)
-
-    counts_df = pd.concat(caller_counts, ignore_index=True)
-    distances_df = pd.DataFrame(mape_records)
-
-    return counts_df, distances_df
+        .select(["chromosome", "position", "coverage"])
+        .rename({"coverage": f"coverage_{rep_name}"})
+    )
 
 
-samples = snakemake.params["sample"]
+# Main execution
+sample = snakemake.params["sample"]
 plot_type = snakemake.params.get("plot_type")
 
-
-df = pl.read_parquet(snakemake.input["meth_data"], engine="pyarrow")
-coverage = pl.read_csv(
-    snakemake.input["coverage"],
-    separator="\t",
-    has_header=False,
-    new_columns=["chromosome", "pos_start", "pos_end", "coverage"],
-)
-coverage60 = pl.read_csv(
-    snakemake.input["coverage"],
-    separator="\t",
-    has_header=False,
-    new_columns=["chromosome", "pos_start", "pos_end", "coverage"],
+# Read and prepare methylation data
+df = pl.read_parquet(snakemake.input["meth_data"])
+df = (
+    df.drop([col for col in df.columns if "format" in col])
+    .with_columns(pl.col("chromosome").cast(pl.Int64))
+    .filter(pl.col("replicate") == sample)
 )
 
-df = df[df["replicate"].isin(samples)]
+# Read and process coverage data
+coverage_rep1 = read_coverage(snakemake.input["coverage_all_01"], "rep1")
+coverage_rep2 = read_coverage(snakemake.input["coverage_all_02"], "rep2")
+
+# Join coverage data with methylation data
+df = df.join(coverage_rep1, on=["chromosome", "position"], how="left")
+df = df.join(coverage_rep2, on=["chromosome", "position"], how="left")
+
+# Filter by selected samples
+# df = df.filter(pl.col("replicate").is_in(samples))
+
 print(df)
-print(coverage)
-print(coverage60)
+print(coverage_rep1)
+print(coverage_rep2)
+# Add column position to covera
+# df = df[df["replicate"].is_in(samples)]
+# Merge coverage data with methylation data
 
-# replicate_dfs, distances = compute_replicate_counts(df, bin_size)
+
+compute_replicate_counts(df, 5)
 
 
 # sample_name = snakemake.params["sample_name"].replace("_HG002_", "_")

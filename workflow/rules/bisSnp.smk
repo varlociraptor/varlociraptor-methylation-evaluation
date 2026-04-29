@@ -116,18 +116,18 @@ rule bissnp_create_bedgraph:
         perl_script=workflow.source_path("../scripts/bissnp_bedGraph.pl"),
         cpg="results/single_sample/{platform}/called/{sample}/result_files/bissnp_cpg.raw.vcf",
     output:
-        "results/single_sample/{platform}/called/{sample}/result_files/cpg.raw.CG.bedgraph",
+        "results/single_sample/{platform}/called/{sample}/result_files/bissnp_cpg.raw.CG.bedgraph",
     log:
         "logs/bissnp/bissnp_create_bedgraph/{platform}_{sample}.log",
     conda:
         "../envs/openjdk.yaml"
     shell:
-        "perl {input.perl_script} {input.cpg} CG 2> {log}"
+        "perl {input.perl_script} {input.cpg} CG"
 
 
 rule bissnp_merge_positions:
     input:
-        bedgraph="results/single_sample/{platform}/called/{sample}/result_files/cpg.raw.CG.bedgraph",
+        bedgraph="results/single_sample/{platform}/called/{sample}/result_files/bissnp_cpg.raw.CG.bedgraph",
         candidates=lambda wildcards: expand(
             "resources/{chrom}/candidates.bcf",
             chrom=config["seq_platforms"].get(wildcards.platform),

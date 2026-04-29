@@ -19,10 +19,10 @@ rule mason_download:
 
 rule mason_fake_methylation:
     input:
-        chrom="resources/{chrom}.fasta.gz",
+        chrom="resources/{chrom}.fasta",
         index="resources/{chrom}.fasta.fai",
     output:
-        methylation="resources/Simulate/simulated_data/{chrom}_meth.fa.gz",
+        methylation="resources/Simulate/simulated_data/{chrom}_meth.fa",
     conda:
         "../envs/mason.yaml"
     log:
@@ -43,9 +43,9 @@ rule mason_fake_methylation:
 
 rule mason_fake_variants:
     input:
-        chrom="resources/{chrom}.fasta.gz",
+        chrom="resources/{chrom}.fasta",
     output:
-        "resources/Simulate/simulated_data/{chrom}_variants.vcf.gz",
+        "resources/Simulate/simulated_data/{chrom}_variants.vcf",
     conda:
         "../envs/mason.yaml"
     log:
@@ -63,15 +63,19 @@ rule mason_fake_variants:
 rule mason_fake_reads:
     input:
         genome=expand(
-            "resources/{chrom}.fasta.gz",
+            "resources/{chrom}.fasta",
+            chrom=config["seq_platforms"].get("Simulate", []),
+        ),
+        genome_index=expand(
+            "resources/{chrom}.fasta.fai",
             chrom=config["seq_platforms"].get("Simulate", []),
         ),
         variants=expand(
-            "resources/Simulate/simulated_data/{chrom}_variants.vcf.gz",
+            "resources/Simulate/simulated_data/{chrom}_variants.vcf",
             chrom=config["seq_platforms"].get("Simulate", []),
         ),
         methylation=expand(
-            "resources/Simulate/simulated_data/{chrom}_meth.fa.gz",
+            "resources/Simulate/simulated_data/{chrom}_meth.fa",
             chrom=config["seq_platforms"].get("Simulate", []),
         ),
     output:
@@ -262,7 +266,7 @@ rule mason_compute_truth:
         cov_forward="resources/Simulate/simulated_data/forward_cov.regions.bed",
         cov_reverse="resources/Simulate/simulated_data/reverse_cov.regions.bed",
         methylation="resources/Simulate/simulated_data/{chrom}_meth.fa",
-        candidates="resources/{chrom}/candidates.vcf.gz",
+        candidates="resources/{chrom}/candidates.vcf",
     output:
         "resources/Simulate/simulated_data/{chrom}_truth.csv",
     conda:
