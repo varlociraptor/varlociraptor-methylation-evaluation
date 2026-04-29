@@ -96,7 +96,14 @@ rule bissnp_extract:
         mem_mb=16000,
     shell:
         """
-        java -Xmx10G -jar {input.jar} -R {input.genome} -nt {threads} -T BisulfiteGenotyper -I {input.alignment} -vfn1 {output.cpg} -vfn2 {output.snp} {params.loc_flag} 2> {log}
+        stdbuf -oL -eL java -Xmx10G -jar {input.jar} \
+            -R {input.genome} \
+            -nt {threads} \
+            -T BisulfiteGenotyper \
+            -I {input.alignment} \
+            -vfn1 {output.cpg} \
+            -vfn2 {output.snp} \
+            {params.loc_flag} > {log} 2>&1
         """
 
 # We do not use the official perl script in resources/ref_tools/Bis-tools/utils/vcf2bedGraph.pl because it does not work
