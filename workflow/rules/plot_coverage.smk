@@ -81,25 +81,26 @@ rule coverage_plots:
 
 rule stratify_mae:
     input:
-        coverage_all_01="results/{call_type}/{seq_platform}/coverages/{sample}_REP01_all.regions.bed.gz",
-        coverage_all_02="results/{call_type}/{seq_platform}/coverages/{sample}_REP02_all.regions.bed.gz",
-        coverage_60_01="results/{call_type}/{seq_platform}/coverages/{sample}_REP01_60.regions.bed.gz",
-        coverage_60_02="results/{call_type}/{seq_platform}/coverages/{sample}_REP02_60.regions.bed.gz",
-        # coverage_60="results/{call_type}/{seq_platform}/coverages/{sample}.regions.bed.mapq60.gz",
+        coverage_01="results/{call_type}/{seq_platform}/coverages/{sample}_REP01_{mapq}.regions.bed.gz",
+        coverage_02="results/{call_type}/{seq_platform}/coverages/{sample}_REP02_{mapq}.regions.bed.gz",
         meth_data="results/{call_type}/{seq_platform}/result_files/replicates.parquet",
     output:
-        mae="results/{call_type}/{seq_platform}/plots/{sample}_mae.{plot_type}",
+        mae="results/{call_type}/{seq_platform}/plots/{sample}_dist_{mapq}.{plot_type}",
     conda:
         "../envs/python.yaml"
     resources:
         mem_mb=4000,
     log:
-        "logs/plot_results/stratify_mae/{call_type}_{seq_platform}_{sample}_{plot_type}.log",
+        "logs/plot_results/stratify_mae/{call_type}_{seq_platform}_{sample}_{mapq}_{plot_type}.log",
     params:
         sample=lambda wildcards: wildcards.sample,
         plot_type=lambda wildcards: wildcards.plot_type,
         meth_callers=lambda wildcards: config["ref_tools"].get(
             wildcards.seq_platform, []
         )
+        + [f"varlo_{fdr}" for fdr in config["fdr_alpha"]],
+        # How many datapoints to include in the plot (quantile). If 100 we have really high coverages and can't see shit
+        quantile=0.995,
+        bin_size=1,
     script:
         "../scripts/plot_stratify_mae.py"

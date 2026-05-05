@@ -128,16 +128,6 @@ def compute_replicate_counts(df, bin_size):
             .reset_index(name="count")
         )
 
-        counts["rel_count"] = counts["count"] / counts["count"].sum()
-
-        max_bin = counts[["rep1_bin", "rep2_bin"]].max(axis=1)
-        counts["dist"] = np.where(
-            max_bin == 0,
-            0,
-            np.abs(counts["rep1_bin"] - counts["rep2_bin"]) / max_bin * 100,
-        )
-
-        counts["dist_bin"] = (counts["dist"] / bin_size).round().astype(int) * bin_size
         counts["meth_caller"] = caller
 
         caller_counts.append(counts)

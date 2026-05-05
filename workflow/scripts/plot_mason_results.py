@@ -59,8 +59,6 @@ def compute_mae(df, meth_caller) -> float:
     )
 
     mae = df.select(pl.col("mae_row").mean()).item()
-    print(meth_caller, mae)
-    print(df.head(100))
     return float(mae)
 
 
