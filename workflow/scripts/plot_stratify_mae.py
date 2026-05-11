@@ -12,6 +12,8 @@ pd.set_option("display.max_rows", 1000)
 pl.Config.set_tbl_cols(200)
 pl.Config.set_tbl_rows(20)
 
+sys.stderr = open(snakemake.log[0], "w")
+
 alt.data_transformers.enable("vegafusion")
 alt.data_transformers.disable_max_rows()
 

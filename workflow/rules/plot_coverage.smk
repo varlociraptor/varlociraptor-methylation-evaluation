@@ -85,11 +85,18 @@ rule stratify_mae:
         coverage_02="results/{call_type}/{seq_platform}/coverages/{sample}_REP02_{mapq}.regions.bed.gz",
         meth_data="results/{call_type}/{seq_platform}/result_files/replicates.parquet",
     output:
-        mae="results/{call_type}/{seq_platform}/plots/{sample}_dist_{mapq}.{plot_type}",
+        mae=report("results/{call_type}/{seq_platform}/plots/{sample}_dist_{mapq}.{plot_type}",
+            category="{call_type}",
+            subcategory=lambda wildcards: f"{wildcards.seq_platform}",
+            labels= {
+                "file": "stratify_mae",
+                "sample": "{sample}",
+                "mapq": "{mapq}"
+            })
     conda:
         "../envs/python.yaml"
     resources:
-        mem_mb=4000,
+        mem_mb=16000,
     log:
         "logs/plot_results/stratify_mae/{call_type}_{seq_platform}_{sample}_{mapq}_{plot_type}.log",
     params:
@@ -100,7 +107,7 @@ rule stratify_mae:
         )
         + [f"varlo_{fdr}" for fdr in config["fdr_alpha"]],
         # How many datapoints to include in the plot (quantile). If 100 we have really high coverages and can't see shit
-        quantile=0.995,
+        quantile=1.0,
         bin_size=1,
     script:
         "../scripts/plot_stratify_mae.py"
