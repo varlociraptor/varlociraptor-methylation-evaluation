@@ -107,7 +107,7 @@ rule stratify_mae:
         )
         + [f"varlo_{fdr}" for fdr in config["fdr_alpha"]],
         # How many datapoints to include in the plot (quantile). If 100 we have really high coverages and can't see shit
-        quantile=1.0,
+        quantile=lambda wildcards: 0.995 if wildcards.seq_platform == "Illumina_pe" else 0.95,
         bin_size=1,
     script:
         "../scripts/plot_stratify_mae.py"

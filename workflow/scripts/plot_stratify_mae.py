@@ -18,7 +18,7 @@ alt.data_transformers.enable("vegafusion")
 alt.data_transformers.disable_max_rows()
 
 
-def bin_coverages(expr, bin_size):
+def bin_values(expr, bin_size):
     return ((expr / bin_size).round(0) * bin_size).cast(pl.Int64)
 
 
@@ -33,18 +33,20 @@ def plot_cov(df, caller, ticks_axis, feature):
         .mark_rect()
         .encode(
             x=alt.X(
-                "rep1_bin:O", axis=alt.Axis(values=ticks_axis), title="Replicate 1"
+                "rep1_cov_bin:O",
+                axis=alt.Axis(values=ticks_axis),
+                title="Coverage replicate 1",
             ),
             y=alt.Y(
-                "rep2_bin:O",
+                "rep2_cov_bin:O",
                 axis=alt.Axis(values=ticks_axis),
                 sort="descending",
-                title="Replicate 2",
+                title="Coverage replicate 2",
             ),
             color=alt.Color(
                 f"{feature}:Q",
             ),
-            tooltip=["rep1_bin", "rep2_bin", "mean_mae", "mean_mape", "count"],
+            tooltip=["rep1_cov_bin", "rep2_cov_bin", "mean_mae", "mean_mape", "count"],
         )
         .properties(width=200, height=200)
     )
@@ -52,17 +54,23 @@ def plot_cov(df, caller, ticks_axis, feature):
 
 
 def stratify_cov(df):
+    # Calculate cutoffs ONCE for the entire dataset, not per caller
+    rep1_cutoff = df.select(pl.col("rep1_cov_bin").quantile(quantile)).item()
+    rep2_cutoff = df.select(pl.col("rep2_cov_bin").quantile(quantile)).item()
+
+    # Now filter the entire df with these global cutoffs
+    df_filtered = df.filter(
+        (pl.col("rep1_cov_bin") <= rep1_cutoff)
+        & (pl.col("rep2_cov_bin") <= rep2_cutoff)
+    )
+
     mae_plots, mape_plots, count_plots = [], [], []
     for caller in meth_callers:
-        df_temp = df.filter(pl.col("tool") == caller).sort("rep1_bin", "rep2_bin")
-        rep1_cutoff = df_temp.select(pl.col("rep1_bin").quantile(quantile)).item()
-        rep2_cutoff = df_temp.select(pl.col("rep2_bin").quantile(quantile)).item()
+        # Now aggregate per caller on the filtered data
         df_temp = (
-            df_temp.filter(
-                (pl.col("rep1_bin") <= rep1_cutoff)
-                & (pl.col("rep2_bin") <= rep2_cutoff)
-            )
-            .group_by(["rep1_bin", "rep2_bin"])
+            df_filtered.filter(pl.col("tool") == caller)
+            .sort("rep1_cov_bin", "rep2_cov_bin")
+            .group_by(["rep1_cov_bin", "rep2_cov_bin"])
             .agg(
                 pl.col("mae").mean().alias("mean_mae"),
                 pl.col("mape").mean().alias("mean_mape"),
@@ -70,10 +78,12 @@ def stratify_cov(df):
             )
             .to_pandas()
         )
+        # Use the same ticks_axis for all callers
         ticks_axis = list(range(0, int(max(rep1_cutoff, rep2_cutoff)) + 5, 5))
         mae_plots.append(plot_cov(df_temp, caller, ticks_axis, "mean_mae"))
         mape_plots.append(plot_cov(df_temp, caller, ticks_axis, "mean_mape"))
         count_plots.append(plot_cov(df_temp, caller, ticks_axis, "count"))
+
     mae_plot = alt.hconcat(*mae_plots)
     mape_plot = alt.hconcat(*mape_plots)
     count_plot = alt.hconcat(*count_plots)
@@ -128,8 +138,8 @@ df_cov_all = df.join(coverage_rep1, on=["chromosome", "position"], how="left")
 df_cov_all = df_cov_all.join(coverage_rep2, on=["chromosome", "position"], how="left")
 df_cov_all = df_cov_all.with_columns(
     [
-        bin_coverages(pl.col("coverage_rep1"), bin_size).alias("rep1_bin"),
-        bin_coverages(pl.col("coverage_rep2"), bin_size).alias("rep2_bin"),
+        bin_values(pl.col("coverage_rep1"), bin_size).alias("rep1_cov_bin"),
+        bin_values(pl.col("coverage_rep2"), bin_size).alias("rep2_cov_bin"),
     ]
 )
 # Compute MAPE and MAE
@@ -176,26 +186,30 @@ df_cov_all = df_cov_all.with_columns(
 dfs = []
 
 for caller in meth_callers:
-    df_tmp = df_cov_all.select(
-        [
-            "chromosome",
-            "position",
-            pl.col(f"{caller}_methylation_rep1").alias("methylation_rep1"),
-            pl.col(f"{caller}_methylation_rep2").alias("methylation_rep2"),
-            pl.col(f"{caller}_mae").alias("mae"),
-            pl.col(f"{caller}_mape").alias("mape"),
-            pl.col("rep1_bin").alias("rep1_bin"),
-            pl.col("rep2_bin").alias("rep2_bin"),
-        ]
-    ).with_columns(
-        pl.lit(caller).alias("tool"),
-        bin_coverages(
-            pl.max_horizontal(
-                pl.col("methylation_rep1"),
-                pl.col("methylation_rep2"),
-            ),
-            5,
-        ).alias("meth_bin"),
+    df_tmp = (
+        df_cov_all.select(
+            [
+                "chromosome",
+                "position",
+                pl.col(f"{caller}_methylation_rep1").alias("methylation_rep1"),
+                pl.col(f"{caller}_methylation_rep2").alias("methylation_rep2"),
+                pl.col(f"{caller}_mae").alias("mae"),
+                pl.col(f"{caller}_mape").alias("mape"),
+                pl.col("rep1_cov_bin").alias("rep1_cov_bin"),
+                pl.col("rep2_cov_bin").alias("rep2_cov_bin"),
+            ]
+        )
+        .drop_nulls()
+        .with_columns(
+            pl.lit(caller).alias("tool"),
+            bin_values(
+                pl.max_horizontal(
+                    pl.col("methylation_rep1"),
+                    pl.col("methylation_rep2"),
+                ),
+                5,
+            ).alias("meth_bin"),
+        )
     )
     dfs.append(df_tmp)
 
@@ -211,7 +225,7 @@ mae_by_meth_bin = (
     alt.Chart(df_meth)
     .mark_line()
     .encode(
-        x="meth_bin",
+        x="max methylation binned",
         y="mae",
         color="tool",
     )
@@ -220,7 +234,7 @@ mape_by_meth_bin = (
     alt.Chart(df_meth)
     .mark_line()
     .encode(
-        x="meth_bin",
+        x="max methylation binned",
         y="mape",
         color="tool",
     )
@@ -230,7 +244,7 @@ count_by_meth_bin = (
     alt.Chart(df_meth)
     .mark_line()
     .encode(
-        x="meth_bin",
+        x="max methylation binned",
         y="count",
         color="tool",
     )
@@ -240,5 +254,9 @@ line_chart = alt.vconcat(mae_by_meth_bin, mape_by_meth_bin, count_by_meth_bin)
 
 
 strat_by_cov = stratify_cov(df_long)
-chart = alt.hconcat(strat_by_cov, line_chart)
+chart = alt.hconcat(strat_by_cov, line_chart).properties(
+    title="Stratified MAE by Coverage. "
+    "Metrics differ slightly from the heatmaps because only values "
+    "within the 99.5th coverage percentile are included."
+)
 chart.save(snakemake.output[0], scale_factor=2)
