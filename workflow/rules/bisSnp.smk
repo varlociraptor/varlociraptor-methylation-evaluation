@@ -48,26 +48,26 @@ rule bissnp_prepare:
         genome_index="resources/ref_tools/Bis-tools/{platform}/{sample}/genome.fasta.fai",
         alignment="resources/ref_tools/Bis-tools/{platform}/{sample}/alignment.bam",
         alignment_index="resources/ref_tools/Bis-tools/{platform}/{sample}/alignment.bam.bai",
+    params:
+        sample=lambda wildcards: wildcards.sample
     log:
         "logs/bissnp/bissnp_prepare/{platform}_{sample}.log",
     conda:
         "../envs/samtools.yaml"
-    params:
-        chromosome=lambda wildcards: chromosome_by_seq_platform.get(wildcards.platform),
     shell:
         """
         cp {input.jar} {output.jar} 2> {log}
         cp {input.genome} {output.genome} 2>> {log}
         # Regenerate the FASTA index to ensure it matches the copied genome
         samtools faidx {output.genome} 2>> {log}
-        samtools view -H {input.alignment} > /tmp/header.sam 2>> {log}
+        samtools view -H {input.alignment} > /tmp/{wildcards.sample}.sam 2>> {log}
         # Add read group header if it doesn't exist
-        if ! grep -q "^@RG" /tmp/header.sam; then
-            echo "@RG\tID:{wildcards.sample}\tSM:{wildcards.sample}" >> /tmp/header.sam
+        if ! grep -q "^@RG" /tmp/{wildcards.sample}.sam; then
+            echo "@RG\tID:{wildcards.sample}\tSM:{wildcards.sample}" >> /tmp/{wildcards.sample}.sam 2>> {log}
         fi
-        samtools reheader /tmp/header.sam {input.alignment} | samtools sort -o {output.alignment} - 2>> {log}
+        samtools reheader /tmp/{wildcards.sample}.sam {input.alignment} > {output.alignment} 2>> {log}
         samtools index {output.alignment} 2>> {log}
-        rm /tmp/header.sam
+        rm /tmp/{wildcards.sample}.sam 2>> {log}
         """
 
 
