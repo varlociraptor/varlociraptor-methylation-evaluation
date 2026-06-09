@@ -128,23 +128,6 @@ rule aligned_reads_focus_on_chromosome:
         """
 
 
-
-rule aligned_reads_filter_on_mapq:
-    input:
-        "resources/{seq_platform}/{sample}/{SRA}/alignment_focused.bam",
-    output:
-        "resources/{seq_platform}/{sample}/{SRA}/alignment_focused_filtered.bam",
-    log:
-        "logs/bwameth/aligned_reads_filter_on_mapq/{seq_platform}_{sample}_{SRA}.log",
-    conda:
-        "../envs/samtools.yaml"
-    params:
-        min_quality=config["min_mapping_quality"],
-    threads: 4
-    shell:
-        "samtools view -h -@ {threads} -q {params.min_quality} -b -o {output} {input} 2> {log}"
-
-
 rule aligned_reads_markduplicates:
     input:
         bams="resources/{seq_platform}/{sample}/{SRA}/alignment_focused.bam",
