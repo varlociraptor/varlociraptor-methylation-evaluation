@@ -53,21 +53,6 @@ rule varlociraptor_call:
         "varlociraptor call variants generic --scenario {input.scenario} --obs normal={input.preprocess_obs} > {output} 2> {log}"
 
 
-# TODO: Skip this step, right now it would be useless since I debug so much
-rule calls_to_vcf:
-    input:
-        "results/{call_type}/{seq_platform}/{sample}/calls_{scatteritem}.bcf",
-    output:
-        "results/{call_type}/{seq_platform}/{sample}/calls_{scatteritem}.vcf",
-    conda:
-        "../envs/samtools.yaml"
-    log:
-        "logs/varlociraptor_single/calls_to_vcf/{call_type}_{seq_platform}_{sample}_{scatteritem}.log",
-    threads: 4
-    shell:
-        # "touch {output} 2> {log}"
-        "bcftools view --threads {threads} {input} -o {output} 2> {log}"
-
 
 rule gather_calls:
     input:

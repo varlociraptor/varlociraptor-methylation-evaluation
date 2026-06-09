@@ -1,22 +1,31 @@
+# Genome information
+sample:
+  species: "homo_sapiens"
+  datatype: "dna"
+  build: "GRCh38"
+  release: "110"
+
 # Choose specific chromosome for evaluation
 seq_platforms:
-    Illumina_pe: J02459
+  Simulate: J02459
 
 # Define reference tools for comparison against varlociraptor results
 ref_tools:
-    # Chose from: bismark, bisSNP, bsMap, methylDackel
-    Illumina_pe: [bsMap, bismark, bisSNP, methylDackel]
+  # Chose from: bismark, bisSNP, bsMap, methylDackel
+  Simulate: [bsMap, bismark, bisSNP, methylDackel]
+
+data:
+  Simulate:
+    simulated_data: [dummy]
 
 samples:
-    Illumina_pe: [simulated_data]
-data:
-    Illumina_pe:
-        simulated_data_REP01: [sim_rep1]
-        simulated_data_REP02: [sim_rep2]
+  Illumina_pe: [dummy]
+
+benchmark_repeats: 3
 
 # Number of simulated reads
 num_simulated_reads: 10000
-
+seed: 0
 ###################################### METH CALLING ##################################################
 
 # Number of scatter gather items (used for parallelization of varlociraptor methylation calling)

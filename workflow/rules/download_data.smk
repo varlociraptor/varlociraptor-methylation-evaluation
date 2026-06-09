@@ -1,6 +1,21 @@
 ref_gene = config.get("sample", {})
 chromosomes = set(chromosome for chromosome in config["seq_platforms"].values())
 
+rule bcf_to_vcf:
+    input:
+        "{file}.bcf",
+    output:
+        "{file}.vcf",
+    conda:
+        "../envs/samtools.yaml"
+    log:
+        "logs/bcf_to_vcf/{file}.log",
+    threads: 4
+    shell:
+        # "touch {output} 2> {log}"
+        "bcftools view --threads {threads} {input} -o {output} 2> {log}"
+
+
 
 rule download_genome:
     output:
