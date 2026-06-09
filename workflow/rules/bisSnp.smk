@@ -52,8 +52,6 @@ rule bissnp_prepare:
         "logs/bissnp/bissnp_prepare/{platform}_{sample}.log",
     conda:
         "../envs/samtools.yaml"
-    params:
-        chromosome=lambda wildcards: chromosome_by_seq_platform.get(wildcards.platform),
     shell:
         """
         cp {input.jar} {output.jar} 2> {log}
@@ -65,7 +63,7 @@ rule bissnp_prepare:
         if ! grep -q "^@RG" /tmp/header.sam; then
             echo "@RG\tID:{wildcards.sample}\tSM:{wildcards.sample}" >> /tmp/header.sam
         fi
-        samtools reheader /tmp/header.sam {input.alignment} | samtools sort -o {output.alignment} - 2>> {log}
+        samtools reheader /tmp/header.sam {input.alignment} > {output.alignment} 2>> {log}
         samtools index {output.alignment} 2>> {log}
         rm /tmp/header.sam
         """
