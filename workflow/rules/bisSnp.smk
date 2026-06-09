@@ -90,7 +90,7 @@ rule bissnp_extract:
     log:
         "logs/bissnp/bissnp_extract/{platform}_{sample}.log",
     benchmark:
-        repeat("benchmarks/{platform}/bisSNP/bissnp_extract/{sample}.txt", config["benchmark_repeats"])
+        repeat("benchmarks/{platform}/bisSNP/bissnp_extract/{sample}.bwa.benchmark.txt", config["benchmark_repeats"])
     threads: 8
     resources:
         mem_mb=16000,
