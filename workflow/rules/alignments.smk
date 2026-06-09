@@ -147,7 +147,7 @@ rule aligned_reads_filter_on_mapq:
 
 rule aligned_reads_markduplicates:
     input:
-        bams="resources/{seq_platform}/{sample}/{SRA}/alignment_focused_filtered.bam",
+        bams="resources/{seq_platform}/{sample}/{SRA}/alignment_focused.bam",
     output:
         bam="resources/{seq_platform}/{sample}/{SRA}/alignment_focused_dedup.bam",
         metrics="resources/{seq_platform}/{sample}/{SRA}/alignment_focused_dedup.metrics.txt",

@@ -108,7 +108,6 @@ samples:
 * Performs methylation calling at multiple FDR thresholds.
 
 ```yaml
-min_mapping_quality: 10
 scatter_number: 20
 fdr_alpha: [0.01, 1.0]
 ```
