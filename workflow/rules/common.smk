@@ -112,8 +112,8 @@ def get_sample_sra_bismark(wildcards) -> List[str]:
 
 def get_coverage_retained(platform) -> List[str]:
     plot_type = config["plot_type"]
-
     return [
-        f"results/single_sample/{platform}/plots/{sample}_coverage_retained.{plot_type}"
-        for sample in config["data"][platform].keys()
+        f"results/single_sample/{platform}/plots/{sample}_dist_{mapq}.{plot_type}"
+        for sample in config["samples"][platform]
+        for mapq in ["all", "60"]
     ]

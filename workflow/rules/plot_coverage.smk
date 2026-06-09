@@ -1,27 +1,27 @@
-# rule filter_bam_mapq:
-#     input:
-#         bam="resources/{seq_platform}/{sample}/alignment_focused_downsampled_dedup_renamed.bam",
-#         bai="resources/{seq_platform}/{sample}/alignment_focused_downsampled_dedup_renamed.bam.bai",
-#     output:
-#         bam="resources/{seq_platform}/{sample}/alignment_focused_downsampled_dedup_renamed.mapq_{mapq}.bam",
-#         bai="resources/{seq_platform}/{sample}/alignment_focused_downsampled_dedup_renamed.mapq_{mapq}.bam.bai",
-#     threads: 4
-#     log:
-#         "logs/mapq60/{seq_platform}_{sample}_{mapq}.log"
-#     params:
-#         mapq=lambda wildcards: f" -q {wildcards.mapq}" if wildcards.mapq != "all" else ""
-#     shell:
-#         """
-#         samtools view -@ {threads} -b {params.mapq} {input.bam} > {output.bam} 2> {log}
-#         samtools index -@ {threads} {output.bam}
-#         """
+# Our candidate file spans CG positions, we are only interested on the coverage of C positions
+rule focus_candidates_on_c:
+    input:
+        "resources/{chrom}/candidates.bed",
+    output:
+        "resources/{chrom}/candidates_focus_c.bed",
+    log:
+        "logs/mason/focus_candidates_on_c/{chrom}.log",
+    conda:
+        "../envs/general.yaml"
+    shell:
+        r"""
+        awk 'BEGIN{{OFS="\t"}}{{
+            center=$2+1
+            print $1, center, center+1
+        }}' {input} > {output}
+        """
 
 rule compute_coverage:
     input:
         bam="resources/{seq_platform}/{sample}/alignment_focused_downsampled_dedup_renamed.bam",
         bai="resources/{seq_platform}/{sample}/alignment_focused_downsampled_dedup_renamed.bam.bai",
         bed=lambda wildcards: expand(
-            "resources/{chrom}/candidates.bed",
+            "resources/{chrom}/candidates_focus_c.bed",
             chrom=config["seq_platforms"].get(wildcards.seq_platform, []),
         ),
     output:
@@ -37,17 +37,6 @@ rule compute_coverage:
     wrapper:
         "v5.5.2/bio/mosdepth"
 
-# rule unzip_coverage:
-#     input:
-#         "results/{call_type}/{seq_platform}/coverages/{sample}.regions.bed{mapq}.gz",
-#     output:
-#         "results/{call_type}/{seq_platform}/coverages/{sample}.regions{mapq}.bed",
-#     log:
-#         "logs/mason/mason_unzip_coverage/{call_type}_{seq_platform}_{sample}_{mapq}.log",
-#     conda:
-#         "../envs/general.yaml"
-#     shell:
-#         "gunzip -c {input} > {output} 2> {log}"
 
 
 
@@ -85,11 +74,18 @@ rule stratify_mae:
         coverage_02="results/{call_type}/{seq_platform}/coverages/{sample}_REP02_{mapq}.regions.bed.gz",
         meth_data="results/{call_type}/{seq_platform}/result_files/replicates.parquet",
     output:
-        mae="results/{call_type}/{seq_platform}/plots/{sample}_dist_{mapq}.{plot_type}",
+        mae=report("results/{call_type}/{seq_platform}/plots/{sample}_dist_{mapq}.{plot_type}",
+            category="{call_type}",
+            subcategory=lambda wildcards: f"{wildcards.seq_platform}",
+            labels= {
+                "file": "stratify_mae",
+                "sample": "{sample}",
+                "mapq": "{mapq}"
+            })
     conda:
         "../envs/python.yaml"
     resources:
-        mem_mb=4000,
+        mem_mb=16000,
     log:
         "logs/plot_results/stratify_mae/{call_type}_{seq_platform}_{sample}_{mapq}_{plot_type}.log",
     params:
@@ -100,7 +96,7 @@ rule stratify_mae:
         )
         + [f"varlo_{fdr}" for fdr in config["fdr_alpha"]],
         # How many datapoints to include in the plot (quantile). If 100 we have really high coverages and can't see shit
-        quantile=0.995,
-        bin_size=1,
+        quantile=lambda wildcards: 0.995 if wildcards.seq_platform == "Illumina_pe" else 0.95,
+        bin_size=5,
     script:
         "../scripts/plot_stratify_mae.py"

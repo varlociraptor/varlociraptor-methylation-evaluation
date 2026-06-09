@@ -21,21 +21,24 @@ def point_plot(df, x, y, color, shape, x_title, y_title, height=140):
         "methylDackel": "MethylDackel",
         "modkit": "Modkit",
         "pb-CpG-tools": "pb-CpG-tools",
+        "bisSNP": "BisSNP",
     }
 
     tool_base_colors = {
-        "Bismark": "#D81B60",
+        "Bismark": "#9AC67A",
         "BSMAPz": "#1E88E5",
         "MethylDackel": "#FFC107",
-        "Varlociraptor": "#004D40",
+        "Varlociraptor": "#D81B60",
         "Modkit": "#B42CEA",
         "pb-CpG-tools": "#8D9279",
+        "BisSNP": "#9C6A53",
     }
 
     # Map nicer names
     df = df.copy()
     df["tool_label"] = df[color].map(meth_caller_to_name)
     charts = []
+    df = df[df["platform"] != "Simulate"]
     for platform in df["platform"].unique():
         subset = df[df["platform"] == platform]
         # tools that appear in this subplot
@@ -61,7 +64,9 @@ def point_plot(df, x, y, color, shape, x_title, y_title, height=140):
                     title="Caller",
                     scale=alt.Scale(domain=color_domain, range=color_range),
                 ),
-                shape=alt.Shape(f"{shape}:N") if shape else alt.value("circle"),
+                shape=alt.Shape(f"{shape}:N", title="Task")
+                if shape
+                else alt.value("circle"),
                 tooltip=(
                     [f"{x}:Q", f"{y}:Q", "tool_label:N", f"{shape}:N", "replicate:N"]
                 ),
@@ -73,7 +78,10 @@ def point_plot(df, x, y, color, shape, x_title, y_title, height=140):
 
         charts.append(base)
 
-    return alt.hconcat(*charts).resolve_scale(color="independent")
+    long_reads = alt.hconcat(charts[1], charts[2]).resolve_scale(
+        color="shared", y="shared"
+    )
+    return alt.hconcat(charts[0], long_reads).resolve_scale(color="independent")
 
 
 # Read benchmark files from Snakemake input directory
@@ -141,8 +149,8 @@ task_group_mapping = {
     "pb-CpG-tools": "calling",
     "preprocessing": "preprocessing",
     "calling": "calling",
+    "bissnp_extract": "calling",
 }
-
 
 # Assign task_group based on task name
 df_all["task_group"] = df_all["task"].map(task_group_mapping).fillna("unknown")
@@ -162,7 +170,6 @@ df_compare_callers = (
     .agg({"minutes": "sum", "max_rss_gb": "max"})
     .assign(platform_caller=lambda x: x["platform"] + " - " + x["caller"])
 )
-print(df_compare_callers[df_compare_callers["caller"] == "bsmap"])
 
 
 # Create runtime and memory plots for all callers

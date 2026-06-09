@@ -12,43 +12,59 @@ pd.set_option("display.max_columns", None)
 pd.set_option("display.max_rows", 10)
 
 
-def normalize_sample_name(replicate_name: str) -> str:
+def parse_sample_and_rep(replicate_name: str):
     """
-    Normalize replicate names to a sample identifier.
+    Extract sample name and replicate number.
+    Example:
+        EMSeq_HG002_LAB02_REP02 -> (EMSeq_HG002_LAB02, 2)
     """
-    name = re.sub(r"_REP\d+$", "", replicate_name)  # Illumina pattern
-    name = re.sub(r"REP\d+$", "REP", name)  # PacBio/ Nanopore / multi-sample pattern
-    name = re.sub(r"minimal\d+$", "minimal", name)  # minimal toy example
-    return name or replicate_name
+    m = re.match(r"(.+)_REP0*(\d+)$", replicate_name)
+    if m:
+        return m.group(1), int(m.group(2))
+    return replicate_name, None
 
 
 replicate_dfs = {}
 
-# ---- Merge replicates for each sample ---- #
 
 for sample_file in snakemake.input:
-    # Extract replicate name from file path
     replicate_name = Path(sample_file).stem.removeprefix("sample_df_")
     df = pd.read_parquet(sample_file, engine="pyarrow")
 
-    # Normalize sample name (combine replicates)
-    sample_name = normalize_sample_name(replicate_name)
-    if sample_name in replicate_dfs:
-        # Merge replicate 1 and replicate 2 data
-        replicate_dfs[sample_name] = pd.merge(
-            replicate_dfs[sample_name],
-            df,
-            on=["chromosome", "position"],
-            how="inner",
-            suffixes=("_rep1", "_rep2"),
-        )
-    else:
-        replicate_dfs[sample_name] = df
+    sample_name, rep = parse_sample_and_rep(replicate_name)
+
+    if sample_name not in replicate_dfs:
+        replicate_dfs[sample_name] = {}
+
+    replicate_dfs[sample_name][rep] = df
+
+
+merged_samples = {}
+
+# ---- Merge replicates (inner join on genomic positions) ---- #
+
+for sample_name, reps in replicate_dfs.items():
+    if 1 not in reps or 2 not in reps:
+        raise ValueError(f"Missing REP1 or REP2 for sample {sample_name}")
+
+    df1 = reps[1]
+    df2 = reps[2]
+
+    merged_samples[sample_name] = pd.merge(
+        df1,
+        df2,
+        on=["chromosome", "position"],
+        how="inner",
+        suffixes=("_rep1", "_rep2"),
+    )
+
+# ---- Combine all samples ---- #
 
 combined_df = pd.concat(
-    [df.assign(replicate=key) for key, df in replicate_dfs.items()],
+    [df.assign(sample=sample_name) for sample_name, df in merged_samples.items()],
     ignore_index=True,
 )
+
 combined_df.to_parquet(
     snakemake.output[0],
     engine="pyarrow",

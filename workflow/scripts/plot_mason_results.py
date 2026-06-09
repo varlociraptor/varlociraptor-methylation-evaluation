@@ -7,8 +7,10 @@ sys.stderr = open(snakemake.log[0], "w")
 pd.set_option("display.max_rows", 1000)
 pl.Config.set_tbl_cols(100)
 
-truth_df = pl.read_csv(snakemake.input.truth).with_columns(
-    pl.col("chrom").cast(pl.Utf8)
+
+truth_df = pl.read_csv(
+    snakemake.input.truth,
+    schema_overrides={"chrom": pl.Utf8},
 )
 replicate_df = pl.read_parquet(snakemake.input.results_rep)
 meth_callers = snakemake.params.meth_callers

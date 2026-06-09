@@ -62,7 +62,15 @@ def plot_heatmap(
 combined_counts_df = pd.read_parquet(snakemake.input["df"], engine="pyarrow")
 distances = pd.read_parquet(snakemake.input["distances"], engine="pyarrow")
 bin_size = snakemake.params["bin_size"]
+fdr_levels = snakemake.params.get("fdr_levels", [])
 meth_callers = combined_counts_df["meth_caller"].unique().tolist()
+# Filter meth_callers to not include varlo_a with a not in fdr_levels
+meth_callers = [
+    m
+    for m in meth_callers
+    if not (m.split("_")[0] == "varlo" and m.split("_")[1] not in fdr_levels)
+]
+
 plot_type = snakemake.params.get("plot_type")
 meth_caller_to_name = {
     "bismark": "Bismark",

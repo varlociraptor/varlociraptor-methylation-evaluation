@@ -55,8 +55,9 @@ rule common_tool_df:
         "logs/plot_results/common_tool_df/{call_type}_{seq_platform}_{sample}.log",
     params:
         plot_type=config["plot_type"],
+        filter_chrom = lambda wildcards: "21" if wildcards.seq_platform != "Simulate" else None
     resources:
-        mem_mb=256000,
+        mem_mb=60000,
     script:
         "../scripts/common_tool_df.py"
 
@@ -143,6 +144,7 @@ rule plot_heatmaps:
     params:
         bin_size=lambda wildcards: config["heatmap_bin_size"],
         plot_type=lambda wildcards: wildcards.plot_type,
+        fdr_levels=lambda wildcards: config["fdr_alpha"],
     script:
         "../scripts/plot_heatmaps.py"
 
