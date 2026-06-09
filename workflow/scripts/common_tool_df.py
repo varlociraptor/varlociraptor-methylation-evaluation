@@ -20,9 +20,8 @@ for tool_file in tool_files:
         engine="pyarrow",
         columns=["chromosome", "position", "tool_methylation", "format"],
     )
-
-    if filter_chrom is not None:
-        df = df[df["chromosome"] == filter_chrom]
+    # if filter_chrom is not None:
+    #     df = df[df["chromosome"] == filter_chrom]
     if tool_name == "varlo":
         # Rename Varlociraptor columns to match other tools
         fdr = os.path.basename(

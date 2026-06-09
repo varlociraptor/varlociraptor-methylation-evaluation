@@ -20,7 +20,7 @@ rule methylDackel_compute_meth:
         alignment="resources/{platform}/{sample}/candidate_specific/alignment_{scatteritem}.bam",
         alignment_index="resources/{platform}/{sample}/candidate_specific/alignment_{scatteritem}.bam.bai",
     output:
-        temp("results/single_sample/{platform}/called/{sample}/result_files/alignments_CpG_{scatteritem}.bedGraph"),
+        "results/single_sample/{platform}/called/{sample}/result_files/alignments_CpG_{scatteritem}.bedGraph",
     conda:
         "../envs/methylDackel.yaml"
     log:

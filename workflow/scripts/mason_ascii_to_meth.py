@@ -50,36 +50,62 @@ def parse_cov(file_path, strand, df):
 
 
 def parse_fasta(meth_file, df):
-    """Parses the ASCII FASTA file and extracts methylation levels."""
+    """Parses a FASTA file and extracts methylation levels"""
+    chrom_data = {}
+    current_chrom = None
+    current_strand = None
+
     with open(meth_file, "r") as f:
-        fasta = f.read().strip()
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            if line.startswith(">"):
+                header = line[1:]
+                current_chrom, current_strand = header.split("/")
+                if current_chrom not in chrom_data:
+                    chrom_data[current_chrom] = {"TOP": "", "BOT": ""}
+            else:
+                if current_chrom and current_strand:
+                    chrom_data[current_chrom][current_strand] += line
 
-    fasta_parts = re.split(r">|/TOP\n|/BOT\n", fasta)
-
-    methylation_data_top = fasta_parts[2].replace("\n", "")
-    methylation_data_bot = fasta_parts[4].replace("\n", "")
-
+    # Extract characters using the dictionary context directly
     df = df.with_columns(
-        pl.col("pos")
-        .map_elements(lambda p: methylation_data_top[p - 1])
+        pl.struct(["chrom", "pos"])
+        .map_elements(
+            lambda x: (
+                chrom_data[x["chrom"]]["TOP"][x["pos"] - 1]
+                if x["chrom"] in chrom_data
+                else None
+            ),
+            return_dtype=pl.Utf8,
+        )
         .alias("ascii_top")
     ).with_columns(
-        pl.col("pos").map_elements(lambda p: methylation_data_bot[p]).alias("ascii_bot")
+        pl.struct(["chrom", "pos"])
+        .map_elements(
+            lambda x: (
+                chrom_data[x["chrom"]]["BOT"][x["pos"]]
+                if x["chrom"] in chrom_data
+                else None
+            ),
+            return_dtype=pl.Utf8,
+        )
+        .alias("ascii_bot")
     )
+
     df = df.with_columns(
-        (
-            pl.col("ascii_bot").map_elements(
-                ascii_to_methylation, return_dtype=pl.Float64
-            )
-        ).alias("meth_bot")
-    ).with_columns(
-        (
-            pl.col("ascii_top").map_elements(
-                ascii_to_methylation, return_dtype=pl.Float64
-            )
-        ).alias("meth_top")
+        [
+            pl.col("ascii_top")
+            .map_elements(ascii_to_methylation, return_dtype=pl.Float64)
+            .alias("meth_top"),
+            pl.col("ascii_bot")
+            .map_elements(ascii_to_methylation, return_dtype=pl.Float64)
+            .alias("meth_bot"),
+        ]
     )
-    return df
+
+    return df.drop(["ascii_top", "ascii_bot"])
 
 
 def ascii_to_methylation(char):
@@ -152,10 +178,7 @@ cov_reverse_file = snakemake.input["cov_reverse"]
 output_file = snakemake.output[0]
 df = parse_vcf(candidates)
 df = parse_cov(cov_forward_file, "TOP", df)
-
 df = parse_cov(cov_reverse_file, "BOT", df)
-print(df.head())
 df = meth_data = parse_fasta(meth_file, df)
-print(meth_data.head())
 df = generate_bed(df)
 df.write_csv(output_file)

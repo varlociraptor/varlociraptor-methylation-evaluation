@@ -14,8 +14,7 @@ truth_df = pl.read_csv(
 )
 replicate_df = pl.read_parquet(snakemake.input.results_rep)
 meth_callers = snakemake.params.meth_callers
-print(truth_df.head(), file=sys.stderr)
-print(replicate_df.head(), file=sys.stderr)
+
 df = truth_df.join(
     replicate_df,
     left_on=["chrom", "pos"],
@@ -30,11 +29,8 @@ df = truth_df.join(
     + [pl.col(f"{caller}_methylation") for caller in meth_callers]
 )
 
-(print(df.head(), file=sys.stderr),)
-
 
 def compute_mape(df, meth_caller) -> float:
-    print(df.head(), file=sys.stderr)
     df = df.with_columns(
         pl.max_horizontal(
             pl.col(f"{meth_caller}_methylation"),
@@ -87,10 +83,12 @@ bin_size = snakemake.params["bin_size"]
 
 long_df = (
     long_df.with_columns(
-        ((pl.col("true_methylation") // bin_size) * bin_size).alias("true_bin")
+        ((pl.col("true_methylation") / bin_size).round(0) * bin_size).alias("true_bin")
     )
     .with_columns(
-        ((pl.col("caller_methylation") // bin_size) * bin_size).alias("caller_bin")
+        ((pl.col("caller_methylation") / bin_size).round(0) * bin_size).alias(
+            "caller_bin"
+        )
     )
     .group_by(["caller", "true_bin", "caller_bin"])
     .agg(pl.count().alias("count"))
