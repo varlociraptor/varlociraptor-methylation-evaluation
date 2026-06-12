@@ -1,9 +1,7 @@
-import re
 import sys
 
 import polars as pl
 
-# Redirect standard error to snakemake log file
 sys.stderr = open(snakemake.log[0], "w")
 pl.Config.set_tbl_cols(20)
 
@@ -49,77 +47,79 @@ def parse_cov(file_path, strand, df):
     )
 
 
+def ascii_to_methylation_expr(col: pl.Expr) -> pl.Expr:
+    """
+    Get the whole column of ascii values as input.
+    Computes true methylation level according to https://github.com/seqan/seqan/blob/main/apps/mason2/README.mason_methylation
+    """
+    ascii_val = col.map_elements(ord, return_dtype=pl.Int32)
+    # Skip '>' in order to have this character as indicator for chromosome
+    threshold = ord(">")  # 62
+    return (
+        pl.when(ascii_val < threshold)
+        .then((ascii_val - 33).cast(pl.Float64) / 80.0 * 100.0)
+        .otherwise((ascii_val - 34).cast(pl.Float64) / 80.0 * 100.0)
+    )
+
+
 def parse_fasta(meth_file, df):
     """Parses a FASTA file and extracts methylation levels"""
-    chrom_data = {}
+    needed_positions = set(zip(df["chrom"].to_list(), df["pos"].to_list()))
+    records_top = []
+    records_bot = []
     current_chrom = None
     current_strand = None
+    offset = 0
 
     with open(meth_file, "r") as f:
         for line in f:
-            line = line.strip()
+            line = line.rstrip("\n")
             if not line:
                 continue
             if line.startswith(">"):
-                header = line[1:]
-                current_chrom, current_strand = header.split("/")
-                if current_chrom not in chrom_data:
-                    chrom_data[current_chrom] = {"TOP": "", "BOT": ""}
-            else:
-                if current_chrom and current_strand:
-                    chrom_data[current_chrom][current_strand] += line
+                current_chrom, current_strand = line[1:].split("/")
+                offset = 0
+                continue
 
-    # Extract characters using the dictionary context directly
-    df = df.with_columns(
-        pl.struct(["chrom", "pos"])
-        .map_elements(
-            lambda x: (
-                chrom_data[x["chrom"]]["TOP"][x["pos"] - 1]
-                if x["chrom"] in chrom_data
-                else None
-            ),
-            return_dtype=pl.Utf8,
-        )
-        .alias("ascii_top")
-    ).with_columns(
-        pl.struct(["chrom", "pos"])
-        .map_elements(
-            lambda x: (
-                chrom_data[x["chrom"]]["BOT"][x["pos"]]
-                if x["chrom"] in chrom_data
-                else None
-            ),
-            return_dtype=pl.Utf8,
-        )
-        .alias("ascii_bot")
+            if current_strand == "TOP":
+                # Go through each character in the line and extract methylation levels
+                for i, ascii_char in enumerate(line):
+                    pos_1based = offset + i + 1
+                    if (current_chrom, pos_1based) in needed_positions:
+                        # Add to records if position is in candidates
+                        records_top.append((current_chrom, pos_1based, ascii_char))
+
+            elif current_strand == "BOT":
+                for i, ascii_char in enumerate(line):
+                    pos_0based = offset + i
+                    if (current_chrom, pos_0based) in needed_positions:
+                        records_bot.append((current_chrom, pos_0based, ascii_char))
+
+            offset += len(line)
+
+    lookup_top = pl.DataFrame(
+        records_top,
+        schema=["chrom", "pos", "ascii_top"],
+        schema_overrides={"pos": pl.Int64},
+    )
+    lookup_bot = pl.DataFrame(
+        records_bot,
+        schema=["chrom", "pos", "ascii_bot"],
+        schema_overrides={"pos": pl.Int64},
     )
 
+    df = df.join(lookup_top, on=["chrom", "pos"], how="inner")
+    df = df.join(lookup_bot, on=["chrom", "pos"], how="inner")
     df = df.with_columns(
         [
-            pl.col("ascii_top")
-            .map_elements(ascii_to_methylation, return_dtype=pl.Float64)
-            .alias("meth_top"),
-            pl.col("ascii_bot")
-            .map_elements(ascii_to_methylation, return_dtype=pl.Float64)
-            .alias("meth_bot"),
+            ascii_to_methylation_expr(pl.col("ascii_top")).alias("meth_top"),
+            ascii_to_methylation_expr(pl.col("ascii_bot")).alias("meth_bot"),
         ]
-    )
-
-    return df.drop(["ascii_top", "ascii_bot"])
-
-
-def ascii_to_methylation(char):
-    """Compute true methylation level according to https://github.com/seqan/seqan/blob/main/apps/mason2/README.mason_methylation"""
-    ascii_val = ord(char)
-    if ascii_val < ord(">"):
-        meth_level = ((ascii_val - ord("!")) / 80) * 100
-    else:
-        meth_level = ((ascii_val - ord("!") - 1) / 80) * 100
-    return meth_level
+    ).drop(["ascii_top", "ascii_bot"])
+    return df
 
 
 def generate_bed(df):
-
     df = df.with_columns(
         (pl.col("coverage_TOP") + pl.col("coverage_BOT")).alias("total_coverage")
     ).with_columns(
@@ -135,40 +135,6 @@ def generate_bed(df):
         .alias("methylation_level")
     )
     return df
-    # """Generates a BED file with the collected methylation information."""
-    # with open(output_file, "w") as out:
-    #     for chrom, pos in candidate_positions:
-    #         if chrom in meth_data and pos - 1 < len(meth_data[chrom]["BOT"]):
-    #             coverage_top = coverages[(chrom, pos)]["TOP"]
-    #             coverage_bot = coverages[(chrom, pos)]["BOT"]
-    #             coverage = coverage_top + coverage_bot
-    #             ascii_char_bot = meth_data[chrom]["BOT"][pos]
-    #             ascii_char_top = meth_data[chrom]["TOP"][pos - 1]  # 1-based to 0-based
-    #             meth_level = (
-    #                 0
-    #                 if coverage == 0
-    #                 else (
-    #                     ascii_to_methylation(ascii_char_bot) * coverage_bot
-    #                     + ascii_to_methylation(ascii_char_top) * coverage_top
-    #                 )
-    #                 / coverage
-    #             )
-    #             if pos < 20:
-    #                 print(
-    #                     chrom,
-    #                     pos,
-    #                     ascii_char_bot,
-    #                     ascii_char_top,
-    #                     ascii_to_methylation(ascii_char_bot),
-    #                     ascii_to_methylation(ascii_char_top),
-    #                     coverage_bot,
-    #                     coverage_top,
-    #                     meth_level,
-    #                 )
-
-    #             out.write(
-    #                 f"{chrom}\t{pos-1}\t{pos+1}\t{meth_level:.2f}\t{coverage}\t{ascii_char_bot}\t{ascii_char_top}\n"
-    #             )
 
 
 candidates = snakemake.input["candidates"]
@@ -176,9 +142,10 @@ meth_file = snakemake.input["methylation"]
 cov_forward_file = snakemake.input["cov_forward"]
 cov_reverse_file = snakemake.input["cov_reverse"]
 output_file = snakemake.output[0]
+
 df = parse_vcf(candidates)
 df = parse_cov(cov_forward_file, "TOP", df)
 df = parse_cov(cov_reverse_file, "BOT", df)
-df = meth_data = parse_fasta(meth_file, df)
+df = parse_fasta(meth_file, df)
 df = generate_bed(df)
 df.write_csv(output_file)
