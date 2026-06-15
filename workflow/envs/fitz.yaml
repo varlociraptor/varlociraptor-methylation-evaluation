@@ -1,0 +1,4 @@
+channels:
+  - conda-forge
+dependencies:
+  - pymupdf=1.26

@@ -9,6 +9,12 @@ pd.set_option("display.max_columns", None)
 pd.set_option("display.max_rows", 1000)
 alt.data_transformers.enable("vegafusion")
 
+titles = {
+    "np_methylSeq": "Nanopore and MethylSeq",
+    "pb_methylSeq": "PacBio and MethylSeq",
+    "np_pb": "Nanopore and PacBio",
+}
+
 
 def plot_heatmap(
     df: pd.DataFrame,
@@ -19,7 +25,6 @@ def plot_heatmap(
 ) -> alt.Chart:
     """Log-scaled heatmap for replicate methylation counts."""
     max_count = df["count"].max()
-
     ticks = list(np.logspace(0, np.log10(max_count), num=5).round().astype(int))
     mape = distances.loc[distances["meth_caller"] == meth_caller, "mape"].iloc[0]
     mae = distances.loc[distances["meth_caller"] == meth_caller, "mae"].iloc[0]
@@ -28,7 +33,7 @@ def plot_heatmap(
             df,
             title=alt.Title(
                 # "PacBio and MethylSeq",
-                meth_caller_name,
+                titles.get(snakemake.output[0].split("/")[2], meth_caller_name),
                 subtitle=f"N = {df['count'].sum()} | Dᵣ = {mape:.2f}% | Dₐ = {mae:.2f}%",
             ),
         )

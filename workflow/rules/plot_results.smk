@@ -198,6 +198,7 @@ rule plot_bias:
             },
             caption="../report/bias.rst",
         ),
+        bias_df="results/{call_type}/{seq_platform}/plots/{sample}_bias_df.parquet",
     conda:
         "../envs/python.yaml"
     resources:
@@ -235,16 +236,37 @@ rule plot_runtime_comparison:
         "../scripts/plot_runtime_comparison.py"
 
 
-rule concat_plots:
+rule concat_plots_multi_sample:
     input:
-        plots=["results/multi_sample/pb_methylSeq/plots/REP_heatmap.json", "results/multi_sample/np_pb/plots/REP_heatmap.json", "results/multi_sample/np_methylSeq/plots/REP_heatmap.json"],
+        plots=["results/multi_sample/pb_methylSeq/plots/dummy_heatmap.pdf", "results/multi_sample/np_pb/plots/dummy_heatmap.pdf", "results/multi_sample/np_methylSeq/plots/dummy_heatmap.pdf"],
     output:
-        "results/multi_sample/combined_heatmap.html",
+        "results/multi_sample/combined_heatmap.pdf",
     log:
-        "logs/plot_results/concat_plots.log",
+        "logs/plot_results/concat_plots_multi_sample.log",
     conda:
-        "../envs/python.yaml"
+        "../envs/fitz.yaml"
     resources:
         mem_mb=4000,
     script:
         "../scripts/concat_plots.py"
+
+
+rule concat_plots_bias:
+    input:
+
+        illumina="results/single_sample/Illumina/plots/all_samples_bias_df.parquet",
+        pacbio="results/single_sample/PacBio/plots/dummy_bias_df.parquet",
+        nanopore="results/single_sample/Nanopore/plots/dummy_bias_df.parquet",
+
+    output:
+        "results/single_sample/dummy.pdf",
+    log:
+        "logs/plot_results/concat_plots_bias.log",
+    conda:
+        "../envs/fitz.yaml"
+    params:
+        fdr=config["fdr_alpha"]
+    resources:
+        mem_mb=4000,
+    script:
+        "../scripts/concat_bias.py"

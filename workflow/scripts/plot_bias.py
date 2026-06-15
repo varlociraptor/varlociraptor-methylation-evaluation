@@ -113,20 +113,25 @@ def build_bias_dataframe(df: pd.DataFrame, fdr: str) -> pd.DataFrame:
 def bias_plots(df_long: pd.DataFrame, fdr: str, platform_label: str):
     """Create bias, AF, and DP plots from long-format data."""
     # Bias category plot
-
     bias_chart = (
         alt.Chart(df_long)
         .mark_bar()
         .encode(
-            x=alt.X("category:N", axis=alt.Axis(labelAngle=-45), title=None),
+            x=alt.X(
+                "category:N",
+                axis=alt.Axis(labelAngle=-45),
+                title=None,
+                domain=["Bias both reps", "Bias, AF = 0", "Bias, AF > 0"],
+            ),
             y="count():Q",
             color=alt.Color(
                 "bias_type_label:N",
-                scale=alt.Scale(
-                    domain=list(BIAS_LABELS.values()),
-                    range=["#D81B60", "#1E88E5"],
-                ),
+                # scale=alt.Scale(
+                domain=df_long["bias_type_label"].unique(),
+                range=["#D81B60", "#1E88E5"],
+                # ),
                 title="Bias Type",
+                # legend=None if platform_label != "Nanopore" else alt.Legend(),
             ),
             tooltip=["category", "count()", "bias_type_label"],
         )
@@ -192,21 +197,17 @@ def empty_plot(fdr):
     return chart
 
 
-# --------------------------------------------------------------------
-# MAIN
-# --------------------------------------------------------------------
-
 samples = snakemake.params["sample"]
 if isinstance(samples, str):
     samples = [samples]
 df = pd.read_parquet(snakemake.input[0], engine="pyarrow")
 print(df.head(6), samples, file=sys.stderr)
-df = df[df["sample"].isin(samples)]
+df = df[df["replicate"].isin(samples)]
 
 platform = snakemake.params["platform"]
 platform_label = "Illumina" if platform == "Illumina_pe" else platform
 all_charts = []
-
+df_long = pd.DataFrame()
 for fdr in snakemake.params["fdrs"]:
     cols = [
         "chromosome",
@@ -225,6 +226,6 @@ for fdr in snakemake.params["fdrs"]:
     else:
         chart = bias_plots(df_long, fdr, platform_label)
     all_charts.append(chart)
-
 final_chart = alt.vconcat(*all_charts)
 final_chart.save(snakemake.output[0])
+df_long.to_parquet(snakemake.output[1])
