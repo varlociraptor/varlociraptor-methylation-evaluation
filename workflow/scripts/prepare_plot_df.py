@@ -144,8 +144,8 @@ bin_size = snakemake.params["bin_size"]
 
 
 df = pd.read_parquet(snakemake.input[0], engine="pyarrow")
-
-df = df[df["replicate"].isin(samples)]
+print(df.head(6), samples, file=sys.stderr)
+df = df[df["sample"].isin(samples)]
 
 
 plot_distances(df)
@@ -157,6 +157,7 @@ sample_name = snakemake.params["sample_name"].replace("_HG002_", "_")
 distances["sample"] = sample_name
 replicate_dfs["sample"] = sample_name
 
-
+print(replicate_dfs.head(6), distances.head(6), file=sys.stderr)
+print("tools:", replicate_dfs["meth_caller"].unique(), file=sys.stderr)
 replicate_dfs.to_parquet(snakemake.output["df"], engine="pyarrow")
 distances.to_parquet(snakemake.output["distances"], engine="pyarrow")

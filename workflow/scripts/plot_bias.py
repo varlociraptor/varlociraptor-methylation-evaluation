@@ -1,7 +1,8 @@
-import pandas as pd
+import sys
+
 import altair as alt
 import numpy as np
-import sys
+import pandas as pd
 
 # Logging
 sys.stderr = open(snakemake.log[0], "w")
@@ -199,7 +200,8 @@ samples = snakemake.params["sample"]
 if isinstance(samples, str):
     samples = [samples]
 df = pd.read_parquet(snakemake.input[0], engine="pyarrow")
-df = df[df["replicate"].isin(samples)]
+print(df.head(6), samples, file=sys.stderr)
+df = df[df["sample"].isin(samples)]
 
 platform = snakemake.params["platform"]
 platform_label = "Illumina" if platform == "Illumina_pe" else platform

@@ -75,7 +75,9 @@ colorblind_safe_palette = [
     "#D81B60",
     "#1E88E5",
     "#FFC107",
+    "#f0700e",
     "#05AA8F",
+    "#126e5f",
     "#004D40",
 ]
 print(df_summary)

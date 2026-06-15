@@ -176,7 +176,7 @@ df = pl.read_parquet(snakemake.input["meth_data"])
 df = (
     df.drop([col for col in df.columns if "format" in col])
     .with_columns(pl.col("chromosome").cast(pl.Int64))
-    .filter(pl.col("replicate") == sample)
+    .filter(pl.col("sample") == sample)
 )
 
 # Read and process coverage data

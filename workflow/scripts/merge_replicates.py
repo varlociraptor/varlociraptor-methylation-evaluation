@@ -14,13 +14,19 @@ pd.set_option("display.max_rows", 10)
 
 def parse_sample_and_rep(replicate_name: str):
     """
-    Extract sample name and replicate number.
-    Example:
-        EMSeq_HG002_LAB02_REP02 -> (EMSeq_HG002_LAB02, 2)
+    Examples:
+        EMSeq_HG002_LAB02_REP02 -> ("EMSeq_HG002_LAB02", 2)
+        REP02                  -> ("dummy", 2)
     """
+    # For Illumina input
     m = re.match(r"(.+)_REP0*(\d+)$", replicate_name)
     if m:
         return m.group(1), int(m.group(2))
+    # For Nanopore and PacBio input
+    m = re.match(r"REP0*(\d+)$", replicate_name)
+    if m:
+        return "dummy", int(m.group(1))
+
     return replicate_name, None
 
 
@@ -30,9 +36,7 @@ replicate_dfs = {}
 for sample_file in snakemake.input:
     replicate_name = Path(sample_file).stem.removeprefix("sample_df_")
     df = pd.read_parquet(sample_file, engine="pyarrow")
-
     sample_name, rep = parse_sample_and_rep(replicate_name)
-
     if sample_name not in replicate_dfs:
         replicate_dfs[sample_name] = {}
 
@@ -44,6 +48,7 @@ merged_samples = {}
 # ---- Merge replicates (inner join on genomic positions) ---- #
 
 for sample_name, reps in replicate_dfs.items():
+    print("sample_name", sample_name)
     if 1 not in reps or 2 not in reps:
         raise ValueError(f"Missing REP1 or REP2 for sample {sample_name}")
 
@@ -64,6 +69,7 @@ combined_df = pd.concat(
     [df.assign(sample=sample_name) for sample_name, df in merged_samples.items()],
     ignore_index=True,
 )
+print(combined_df.head(6))
 
 combined_df.to_parquet(
     snakemake.output[0],
