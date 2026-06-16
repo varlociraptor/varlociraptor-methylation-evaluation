@@ -198,7 +198,7 @@ rule plot_bias:
             },
             caption="../report/bias.rst",
         ),
-        bias_df="results/{call_type}/{seq_platform}/plots/{sample}_bias_df.parquet",
+        bias_df="results/{call_type}/{seq_platform}/plots/{sample}_bias_df_{plot_type}.parquet",
     conda:
         "../envs/python.yaml"
     resources:
@@ -253,17 +253,15 @@ rule concat_plots_multi_sample:
 
 rule concat_plots_bias:
     input:
-
-        illumina="results/single_sample/Illumina/plots/all_samples_bias_df.parquet",
-        pacbio="results/single_sample/PacBio/plots/dummy_bias_df.parquet",
-        nanopore="results/single_sample/Nanopore/plots/dummy_bias_df.parquet",
-
+        illumina="results/single_sample/Illumina_pe/plots/all_samples_bias_df_pdf.parquet",
+        pacbio="results/single_sample/PacBio/plots/dummy_bias_df_pdf.parquet",
+        nanopore="results/single_sample/Nanopore/plots/dummy_bias_df_pdf.parquet",
     output:
-        "results/single_sample/dummy.pdf",
+        "results/single_sample/plots/bias.pdf",
     log:
         "logs/plot_results/concat_plots_bias.log",
     conda:
-        "../envs/fitz.yaml"
+        "../envs/python.yaml"
     params:
         fdr=config["fdr_alpha"]
     resources:

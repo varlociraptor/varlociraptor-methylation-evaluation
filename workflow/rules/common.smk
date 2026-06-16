@@ -30,7 +30,7 @@ def compute_results() -> List[List[str]]:
 
         chromosome = config["seq_platforms"]["Simulate"]
         inputs.append(
-            f"results/single_sample/Simulate/plots/simulated_data_{chromosome}.html"
+            f"results/single_sample/Simulate/plots/simulated_data_{chromosome}.{config['plot_type']}"
         )
     # Multi-sample common heatmaps
     if "multi_sample" in config["seq_platforms"]:

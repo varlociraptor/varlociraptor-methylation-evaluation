@@ -285,7 +285,7 @@ rule mason_plot_truth_to_results:
         results_rep="results/single_sample/Simulate/result_files/sample_df_simulated_data.parquet",
     output:
         report(
-            "results/single_sample/Simulate/plots/simulated_data_{chrom}.html",
+            "results/single_sample/Simulate/plots/simulated_data_{chrom}.{plot_type}",
             category="simulated_data",
             labels=lambda wildcards: {
                 "file": "heatmap",
@@ -296,7 +296,7 @@ rule mason_plot_truth_to_results:
     conda:
         "../envs/python.yaml"
     log:
-        "logs/mason/mason_plot_truth_to_results/{chrom}.log",
+        "logs/mason/mason_plot_truth_to_results/{chrom}_{plot_type}.log",
     params:
         meth_callers=lambda wildcards: config["ref_tools"].get("Simulate", [])
         + [f"varlo_{fdr}" for fdr in config["fdr_alpha"]],

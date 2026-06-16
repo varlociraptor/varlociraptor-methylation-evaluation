@@ -1,10 +1,5 @@
-from tokenize import COLONEQUAL
-
 import altair as alt
 import pandas as pd
-
-from workflow.scripts.plot_bars_illumina import df_filtered
-from workflow.scripts.prepare_plot_df import df
 
 
 def bias_plots(df_long: pd.DataFrame, fdr: str):
@@ -18,22 +13,24 @@ def bias_plots(df_long: pd.DataFrame, fdr: str):
                 "category:N",
                 axis=alt.Axis(labelAngle=-45),
                 title=None,
-                domain=["Bias both reps", "Bias, AF = 0", "Bias, AF > 0"],
+                scale=alt.Scale(
+                    domain=["Bias both reps", "Bias, AF = 0", "Bias, AF > 0"],
+                ),
             ),
             y="count():Q",
             color=alt.Color(
                 "bias_type_label:N",
-                # scale=alt.Scale(
-                domain=df_long["bias_type_label"].unique(),
-                range=["#D81B60", "#1E88E5"],
-                # ),
+                scale=alt.Scale(
+                    domain=df_long["bias_type_label"].unique(),
+                    range=["#D81B60", "#1E88E5"],
+                ),
                 title="Bias Type",
                 # legend=None if platform_label != "Nanopore" else alt.Legend(),
             ),
             tooltip=["category", "count()", "bias_type_label"],
-            column=alt.Column("platform_label:N", title="Platform"),
+            column=alt.Column("platform_label:N", title=None),
         )
-    ).properties(title="Bias Category")
+    )
 
     return bias_chart
 

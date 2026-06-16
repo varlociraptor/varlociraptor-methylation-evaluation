@@ -7,6 +7,13 @@ sys.stderr = open(snakemake.log[0], "w")
 pd.set_option("display.max_rows", 1000)
 pl.Config.set_tbl_cols(100)
 
+meth_caller_to_name = {
+    "bismark": "Bismark",
+    "bsMap": "BSMAPz",
+    "bisSNP": "BisSNP",
+    "methylDackel": "MethylDackel",
+}
+
 
 truth_df = pl.read_csv(
     snakemake.input.truth,
@@ -115,23 +122,27 @@ max_count = heatmap_data_full["count"].max()
 def plot_heatmap(meth_caller, df, distance_df):
     """Log-scaled heatmap for replicate methylation counts."""
     df = df[df["caller"] == f"{meth_caller}_methylation"]
+
+    if meth_caller.startswith("varlo_"):
+        alpha = meth_caller.split("_")[1]
+        meth_caller_name = f"Varlociraptor α = {alpha}"
+    else:
+        meth_caller_name = meth_caller_to_name.get(meth_caller, meth_caller)
     heatmap = (
         alt.Chart(
             df,
             title=alt.Title(
-                f"{meth_caller}",
+                meth_caller_name,
                 subtitle=f" N = {df['count'].sum():.0f} Dᵣ = {distance_df.filter(pl.col('meth_caller') == meth_caller)['mape'].item():.2f}%, Dₐ = {distance_df.filter(pl.col('meth_caller') == meth_caller)['mae'].item():.2f}%",
             ),
         )
         .mark_rect()
         .encode(
-            x=alt.X(
-                "true_bin:O", sort=list(range(0, 101, bin_size)), title="Truth bins"
-            ),
+            x=alt.X("true_bin:O", sort=list(range(0, 101, bin_size)), title="Truth"),
             y=alt.Y(
                 "caller_bin:O",
                 sort=list(range(100, -1, -bin_size)),
-                title=f"{meth_caller} bins",
+                title=f"{meth_caller_name}",
             ),
             color=alt.Color(
                 "count:Q",
@@ -139,6 +150,7 @@ def plot_heatmap(meth_caller, df, distance_df):
             ),
             tooltip=["true_bin:O", "caller_bin:O", "count:Q"],
         )
+        .properties(width=200, height=200)
     )
 
     return heatmap
@@ -148,12 +160,13 @@ heatmaps = []
 for meth_caller in meth_callers:
     heatmap = plot_heatmap(meth_caller, heatmap_data_full, distance_df)
     heatmaps.append(heatmap)
-heatmap = alt.hconcat(*heatmaps)
+heatmap = alt.concat(*heatmaps, columns=3)
 print(heatmap_data_full)
 
 heatmap_data_full["distance"] = (
     heatmap_data_full["caller_bin"] - heatmap_data_full["true_bin"]
 ).abs()
+
 
 distance_plot_df = heatmap_data_full.groupby(["caller", "distance"], as_index=False)[
     "count"
@@ -180,6 +193,6 @@ distance_plot = (
         ),
     )
 )
-plot = alt.vconcat(heatmap, distance_plot).resolve_scale(color="independent")
+# plot = alt.vconcat(heatmap, distance_plot).resolve_scale(color="independent")
 
-plot.save(snakemake.output[0])
+heatmap.save(snakemake.output[0])

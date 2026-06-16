@@ -121,15 +121,17 @@ def bias_plots(df_long: pd.DataFrame, fdr: str, platform_label: str):
                 "category:N",
                 axis=alt.Axis(labelAngle=-45),
                 title=None,
-                domain=["Bias both reps", "Bias, AF = 0", "Bias, AF > 0"],
+                scale=alt.Scale(
+                    domain=["Bias both reps", "Bias, AF = 0", "Bias, AF > 0"],
+                ),
             ),
             y="count():Q",
             color=alt.Color(
                 "bias_type_label:N",
-                # scale=alt.Scale(
-                domain=df_long["bias_type_label"].unique(),
-                range=["#D81B60", "#1E88E5"],
-                # ),
+                scale=alt.Scale(
+                    domain=df_long["bias_type_label"].unique(),
+                    range=["#D81B60", "#1E88E5"],
+                ),
                 title="Bias Type",
                 # legend=None if platform_label != "Nanopore" else alt.Legend(),
             ),
@@ -202,7 +204,7 @@ if isinstance(samples, str):
     samples = [samples]
 df = pd.read_parquet(snakemake.input[0], engine="pyarrow")
 print(df.head(6), samples, file=sys.stderr)
-df = df[df["replicate"].isin(samples)]
+df = df[df["sample"].isin(samples)]
 
 platform = snakemake.params["platform"]
 platform_label = "Illumina" if platform == "Illumina_pe" else platform
