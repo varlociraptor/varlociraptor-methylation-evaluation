@@ -268,3 +268,19 @@ rule concat_plots_bias:
         mem_mb=4000,
     script:
         "../scripts/concat_bias.py"
+
+rule concat_plots_coverage:
+    input:
+        illumina="results/single_sample/Illumina_pe/coverages/all_samples_coverage_plot_pdf_all.parquet",
+        pacbio="results/single_sample/PacBio/coverages/dummy_coverage_plot_pdf_all.parquet",
+        nanopore="results/single_sample/Nanopore/coverages/dummy_coverage_plot_pdf_all.parquet",
+    output:
+        "results/single_sample/plots/coverage.pdf",
+    log:
+        "logs/plot_results/concat_plots_coverage.log",
+    conda:
+        "../envs/python.yaml"
+    resources:
+        mem_mb=4000,
+    script:
+        "../scripts/concat_coverage.py"

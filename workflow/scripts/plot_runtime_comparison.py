@@ -24,7 +24,7 @@ def point_plot(df, x, y, color, shape, x_title, y_title, height=140):
         "bisSNP": "BisSNP",
     }
 
-    tool_base_colors = {
+    tool_colors = {
         "Bismark": "#9AC67A",
         "BSMAPz": "#1E88E5",
         "MethylDackel": "#FFC107",
@@ -36,15 +36,15 @@ def point_plot(df, x, y, color, shape, x_title, y_title, height=140):
 
     # Map nicer names
     df = df.copy()
-    df["tool_label"] = df[color].map(meth_caller_to_name)
+    df["tool_name"] = df[color].map(meth_caller_to_name)
     charts = []
     df = df[df["platform"] != "Simulate"]
     for platform in df["platform"].unique():
         subset = df[df["platform"] == platform]
         # tools that appear in this subplot
-        present_tools = subset["tool_label"].unique().tolist()
+        present_tools = subset["tool_name"].unique().tolist()
         color_domain = present_tools
-        color_range = [tool_base_colors[t] for t in present_tools]
+        color_range = [tool_colors[t] for t in present_tools]
         ticks = list(np.logspace(0, np.log10(subset[x].max()), num=5))
         base = (
             alt.Chart(subset)
@@ -60,7 +60,7 @@ def point_plot(df, x, y, color, shape, x_title, y_title, height=140):
                 ),
                 y=alt.Y(f"{y}:Q", title=y_title, scale=alt.Scale(type="log")),
                 color=alt.Color(
-                    "tool_label:N",
+                    "tool_name:N",
                     title="Caller",
                     scale=alt.Scale(domain=color_domain, range=color_range),
                 ),
@@ -68,7 +68,7 @@ def point_plot(df, x, y, color, shape, x_title, y_title, height=140):
                 if shape
                 else alt.value("circle"),
                 tooltip=(
-                    [f"{x}:Q", f"{y}:Q", "tool_label:N", f"{shape}:N", "replicate:N"]
+                    [f"{x}:Q", f"{y}:Q", "tool_name:N", f"{shape}:N", "replicate:N"]
                 ),
             )
             .mark_point(filled=False, size=30)

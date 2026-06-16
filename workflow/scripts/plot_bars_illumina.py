@@ -10,6 +10,30 @@ pd.set_option("display.max_columns", None)
 pd.set_option("display.max_rows", 1000)
 alt.data_transformers.enable("vegafusion")
 
+meth_caller_to_name = {
+    "varlo_0.1": "Varlociraptor α = 0.1",
+    "varlo_0.05": "Varlociraptor α = 0.05",
+    "varlo_0.01": "Varlociraptor α = 0.01",
+    "varlociraptor": "Varlociraptor",
+    "bismark": "Bismark",
+    "bsMap": "BSMAPz",
+    "methylDackel": "MethylDackel",
+    "modkit": "Modkit",
+    "pb_CpG_tools": "Pb-CpG-tools",
+    "bisSNP": "BisSNP",
+}
+
+tool_colors = {
+    "Bismark": "#D81B60",
+    "BSMAPz": "#1E88E5",
+    "BisSNP": "#FFC107",
+    "MethylDackel": "#f0700e",
+    "Modkit": "#B42CEA",
+    "Pb-CpG-tools": "#8D9279",
+    "Varlociraptor α = 0.1": "#004D40",
+    "Varlociraptor α = 0.05": "#126e5f",
+    "Varlociraptor α = 0.01": "#05AA8F",
+}
 
 # -----------------------------
 # Main execution
@@ -71,23 +95,22 @@ for s in samples:
             }
         )
 df_summary = pd.DataFrame(results)
-colorblind_safe_palette = [
-    "#D81B60",
-    "#1E88E5",
-    "#FFC107",
-    "#f0700e",
-    "#05AA8F",
-    "#126e5f",
-    "#004D40",
-]
+
 print(df_summary)
+
+df_summary["tool_name"] = df_summary["meth_caller"].replace(meth_caller_to_name)
+color_domain = sorted(df_summary["tool_name"].unique())
+color_range = [tool_colors[t] for t in color_domain]
 base = alt.Chart(df_summary).encode(
     x=alt.X("sample:N", axis=alt.Axis(labelAngle=-30), title=None),
     xOffset=alt.XOffset("meth_caller:N", sort=meth_callers),
     color=alt.Color(
         "meth_caller:N",
         title="Methylation caller",
-        scale=alt.Scale(range=colorblind_safe_palette),
+        scale=alt.Scale(
+            domain=color_domain,
+            range=color_range,
+        ),
         sort=meth_callers,
     ),
     tooltip=["sample:N", "meth_caller:N", "distance:Q", "number:Q"],

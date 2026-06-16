@@ -1,6 +1,3 @@
-from calendar import c
-from xxlimited import new
-
 import altair as alt
 import pandas as pd
 import polars as pl
@@ -11,13 +8,37 @@ pd.set_option("display.max_columns", None)
 pd.set_option("display.width", 200)
 pd.set_option("display.expand_frame_repr", False)
 pd.set_option("display.max_rows", None)
-pl.Config.set_tbl_cols(200)
-pl.Config.set_tbl_rows(200)
+pl.Config.set_tbl_cols(20)
+pl.Config.set_tbl_rows(20)
 
 sys.stderr = open(snakemake.log[0], "w")
 
 alt.data_transformers.enable("vegafusion")
-alt.data_transformers.disable_max_rows()
+
+meth_caller_to_name = {
+    "varlo_0.1": "Varlociraptor α = 0.1",
+    "varlo_0.05": "Varlociraptor α = 0.05",
+    "varlo_0.01": "Varlociraptor α = 0.01",
+    "varlociraptor": "Varlociraptor",
+    "bismark": "Bismark",
+    "bsMap": "BSMAPz",
+    "methylDackel": "MethylDackel",
+    "modkit": "Modkit",
+    "pb_CpG_tools": "Pb-CpG-tools",
+    "bisSNP": "BisSNP",
+}
+
+tool_colors = {
+    "Bismark": "#D81B60",
+    "BSMAPz": "#1E88E5",
+    "BisSNP": "#FFC107",
+    "MethylDackel": "#f0700e",
+    "Modkit": "#B42CEA",
+    "Pb-CpG-tools": "#8D9279",
+    "Varlociraptor α = 0.1": "#004D40",
+    "Varlociraptor α = 0.05": "#126e5f",
+    "Varlociraptor α = 0.01": "#05AA8F",
+}
 
 
 def bin_values(expr, bin_size):
@@ -166,287 +187,221 @@ def read_coverage(coverage_file: str, rep_name: str) -> pl.DataFrame:
 # Main execution
 sample = snakemake.params["sample"]
 plot_type = snakemake.params.get("plot_type")
-bin_size = snakemake.params.get("bin_size", 1)
+coverage_bin_size = snakemake.params.get("bin_size", 1)
 quantile = snakemake.params.get("quantile", 1.0)
 meth_callers = snakemake.params["meth_callers"]
 
 
 # Read and prepare methylation data
 df = pl.read_parquet(snakemake.input["meth_data"])
-df = (
-    df.drop([col for col in df.columns if "format" in col])
-    .with_columns(pl.col("chromosome").cast(pl.Int64))
-    .filter(pl.col("sample") == sample)
+df = df.drop([col for col in df.columns if "format" in col]).with_columns(
+    pl.col("chromosome").cast(pl.Int64)
 )
-
+if sample != "all_samples":
+    df = df.filter(pl.col("sample") == sample)
 # Read and process coverage data
 coverage_rep1 = read_coverage(snakemake.input["coverage_01"], "rep1")
 coverage_rep2 = read_coverage(snakemake.input["coverage_02"], "rep2")
-# print(df.filter((pl.col("chromosome") == 21) & (pl.col("position") == 46383973)))
-# print(coverage_rep1.head())
-# print(coverage_rep2.head())
-
-# Join coverage data with methylation data
-df_cov_all = df.join(coverage_rep1, on=["chromosome", "position"], how="left")
-
-df_cov_all = df_cov_all.join(coverage_rep2, on=["chromosome", "position"], how="left")
-df_cov_all = df_cov_all.with_columns(
-    [
-        bin_values(pl.col("coverage_rep1"), bin_size).alias("rep1_cov_bin"),
-        bin_values(pl.col("coverage_rep2"), bin_size).alias("rep2_cov_bin"),
-    ]
+print(coverage_rep1)
+df_cov_all = df.join(coverage_rep1, on=["chromosome", "position"], how="left").join(
+    coverage_rep2, on=["chromosome", "position"], how="left"
 )
-# Compute MAPE and MAE
-df_cov_all = df_cov_all.with_columns(
-    [
-        expr
-        for caller in meth_callers
-        for expr in (
-            (
-                pl.when(
-                    pl.max_horizontal(
-                        pl.col(f"{caller}_methylation_rep1"),
-                        pl.col(f"{caller}_methylation_rep2"),
-                    )
-                    != 0
-                )
-                .then(
-                    (
-                        (
-                            pl.col(f"{caller}_methylation_rep1")
-                            - pl.col(f"{caller}_methylation_rep2")
-                        ).abs()
-                        * 100
-                    )
-                    / pl.max_horizontal(
-                        pl.col(f"{caller}_methylation_rep1"),
-                        pl.col(f"{caller}_methylation_rep2"),
-                    )
-                )
-                .otherwise(0)
-                .alias(f"{caller}_mape")
-            ),
-            (
-                (
-                    pl.col(f"{caller}_methylation_rep1")
-                    - pl.col(f"{caller}_methylation_rep2")
-                )
-                .abs()
-                .alias(f"{caller}_mae")
-            ),
-        )
-    ]
-)
-dfs = []
 
-
-for caller in meth_callers:
-    df_tmp = (
-        df_cov_all.select(
-            [
+df_long = (
+    pl.concat(
+        [
+            df_cov_all.select(
                 "chromosome",
                 "position",
                 pl.col(f"{caller}_methylation_rep1").alias("methylation_rep1"),
                 pl.col(f"{caller}_methylation_rep2").alias("methylation_rep2"),
-                pl.col(f"{caller}_mae").alias("mae"),
-                pl.col(f"{caller}_mape").alias("mape"),
-                pl.col("rep1_cov_bin"),
-                pl.col("rep2_cov_bin"),
-                pl.col("coverage_rep1"),
-                pl.col("coverage_rep2"),
-            ]
-        )
-        .drop_nulls()
-        .with_columns(
-            pl.lit(caller).alias("tool"),
-            bin_values(
-                pl.min_horizontal(
-                    pl.col("methylation_rep1"),
-                    pl.col("methylation_rep2"),
-                ),
-                bin_size,
-            ).alias("meth_bin"),
-            pl.min_horizontal(pl.col("coverage_rep1"), pl.col("coverage_rep2")).alias(
-                "min_coverage"
+                "coverage_rep1",
+                "coverage_rep2",
+            ).with_columns(
+                pl.lit(caller).alias("tool"),
+            )
+            for caller in meth_callers
+        ]
+    )
+    .drop_nulls()
+    .with_columns(
+        bin_values(
+            pl.min_horizontal(
+                "methylation_rep1",
+                "methylation_rep2",
             ),
-        )
+            coverage_bin_size,
+        ).alias("meth_bin"),
+        pl.min_horizontal(
+            "coverage_rep1",
+            "coverage_rep2",
+        ).alias("min_coverage"),
     )
-    dfs.append(df_tmp)
-
-df_long = pl.concat(dfs)
-print(df_long.head(10))
-print(df_long.sort("min_coverage", descending=True).head(300))
-
-# Plot histogram of min_coverage for meth_bin = 0, binned to size of 5, with one bar per tool, the bars per bin are next to each other
-df_meth_bin_0 = df_long.filter(pl.col("meth_bin") == 0)
-# Bin the min_coverage values using the existing bin_values function
-df_meth_bin_0_binned = (
-    df_meth_bin_0.with_columns(
+)
+df_min_coverage = (
+    df_long.with_columns(
         bin_values(pl.col("min_coverage"), 5).alias("min_coverage_bin")
     )
     .group_by("tool", "min_coverage_bin")
     .agg(pl.len().alias("count"))
-    .sort("min_coverage_bin")
+    .with_columns((pl.col("count") / pl.sum("count").over(["tool"])).alias("fraction"))
 )
-
-histogram_meth_bin_0 = (
-    alt.Chart(df_meth_bin_0_binned)
-    .mark_bar()
-    .encode(
-        x=alt.X("min_coverage_bin:O", title="Min Coverage (binned by 5)"),
-        xOffset="tool:N",
-        y="count:Q",
-        color="tool",
-    )
+df_min_coverage = df_min_coverage.with_columns(
+    pl.col("tool").replace(meth_caller_to_name).alias("tool_name")
 )
-
-
-# Plot histogram of min_coverage for meth_bin = 5, binned to size of 5, with one bar per tool, the bars per bin are next to each other
-df_meth_bin_5 = df_long.filter(pl.col("meth_bin") == 5)
-# Bin the min_coverage values using the existing bin_values function
-df_meth_bin_5_binned = (
-    df_meth_bin_5.with_columns(
-        bin_values(pl.col("min_coverage"), 5).alias("min_coverage_bin")
-    )
-    .group_by("tool", "min_coverage_bin")
-    .agg(pl.len().alias("count"))
-    .sort("min_coverage_bin")
-)
-
-histogram_meth_bin_5 = (
-    alt.Chart(df_meth_bin_5_binned)
-    .mark_bar()
-    .encode(
-        x=alt.X("min_coverage_bin:O", title="Min Coverage (binned by 5)"),
-        xOffset="tool:N",
-        y="count:Q",
-        color="tool",
-    )
-)
-
-
-# Plot df_long as a line chart with color = tool, y-axis = mae and x-axis = meth_bin with altair
-df_meth = df_long.group_by("tool", "meth_bin").agg(
-    pl.col("mae").mean(),
-    pl.col("mape").mean(),
-    pl.len().alias("count"),
-    pl.col("min_coverage").mean().alias("mean_coverage"),
-    pl.col("min_coverage").median().alias("median_coverage"),
-    pl.col("min_coverage").quantile(0.01).alias("q01"),
-    pl.col("min_coverage").quantile(0.75).alias("q75"),
-    pl.col("min_coverage").min().alias("min_coverage"),
-)
-
-print(df_meth.sort("meth_bin", descending=True).head(100))
-#
-mae_by_meth_bin = (
-    alt.Chart(df_meth)
+color_domain = sorted(df_min_coverage["tool_name"].unique())
+color_range = [tool_colors[t] for t in color_domain]
+line_plot_min_cov_vs_count = (
+    alt.Chart(df_min_coverage)
     .mark_line()
     .encode(
-        x="meth_bin",
-        y="mae",
-        color="tool",
-    )
-)
-mape_by_meth_bin = (
-    alt.Chart(df_meth)
-    .mark_line()
-    .encode(
-        x="meth_bin",
-        y="mape",
-        color="tool",
-    )
-)
-
-count_by_meth_bin = (
-    alt.Chart(df_meth)
-    .mark_line()
-    .encode(
-        x="meth_bin",
-        y="count",
-        color="tool",
+        x=alt.X("min_coverage_bin:Q", title="Min Coverage"),
+        y=alt.Y("fraction:Q", title="Fraction"),
+        color=alt.Color(
+            "tool_name",
+            title="Caller",
+            scale=alt.Scale(
+                domain=color_domain,
+                range=color_range,
+            ),
+        ),
+        strokeWidth=alt.value(1),
     )
 )
 
-min_coverage_by_meth_bin1 = (
-    alt.Chart(df_meth)
-    .mark_line()
-    .encode(
-        x="meth_bin",
-        y="q01",
-        color="tool",
-    )
-)
-
-min_coverage_by_meth_bin2 = (
-    alt.Chart(df_meth)
-    .mark_line()
-    .encode(
-        x="meth_bin",
-        y="q75",
-        color="tool",
-    )
-)
-min_coverage_by_meth_bin3 = (
-    alt.Chart(df_meth)
-    .mark_line()
-    .encode(
-        x="meth_bin",
-        y="median_coverage",
-        color="tool",
-    )
-)
-min_coverage_by_meth_bin4 = (
-    alt.Chart(df_meth)
-    .mark_line()
-    .encode(
-        x="meth_bin",
-        y="min_coverage",
-        color="tool",
-    )
-)
-
-min_coverage_by_meth_bin5 = (
-    alt.Chart(df_meth)
-    .mark_line()
-    .encode(
-        x="meth_bin",
-        y="mean_coverage",
-        color="tool",
-    )
-)
-
-line_chart = alt.vconcat(
-    histogram_meth_bin_0,
-    histogram_meth_bin_5,
-    min_coverage_by_meth_bin1,
-    min_coverage_by_meth_bin2,
-    min_coverage_by_meth_bin3,
-    min_coverage_by_meth_bin4,
-    min_coverage_by_meth_bin5,
-)
-
-
-strat_by_cov = stratify_cov(df_long)
-
-# new_df = (
-#     df_long.filter((pl.col("tool") == "methylDackel") | (pl.col("tool") == "varlo_1.0"))
-#     .sort("rep1_cov_bin", "rep2_cov_bin")
-#     .group_by(["rep1_cov_bin", "rep2_cov_bin", "tool"])
-#     .agg(
-#         pl.col("mae").mean().alias("mean_mae"),
-#         pl.col("mape").mean().alias("mean_mape"),
-#         pl.col("methylation_rep1").mean().alias("mean_methylation_rep1"),
-#         pl.col("methylation_rep2").mean().alias("mean_methylation_rep2"),
-#         pl.len().alias("count"),
-#     )
-#     # .to_pandas()
+# # Plot df_long as a line chart with color = tool, y-axis = mae and x-axis = meth_bin with altair
+# df_meth = df_long.group_by("tool", "meth_bin").agg(
+#     # pl.col("mae").mean(),
+#     # pl.col("mape").mean(),
+#     pl.len().alias("count"),
+#     pl.col("min_coverage").mean().alias("mean_coverage"),
+#     pl.col("min_coverage").median().alias("median_coverage"),
+#     pl.col("min_coverage").quantile(0.01).alias("q01"),
+#     pl.col("min_coverage").quantile(0.75).alias("q75"),
+#     pl.col("min_coverage").min().alias("min_coverage"),
 # )
-# # print(new_df)
 
-chart = alt.hconcat(strat_by_cov, line_chart).properties(
-    title="Stratified MAE by Coverage. "
-    "Metrics differ slightly from the heatmaps because only values "
-    "within the 99.5th coverage percentile are included."
-)
-chart.save(snakemake.output[0], scale_factor=2)
+# print(df_meth)
+
+# # Plot histogram of min_coverage for meth_bin = 0, binned to size of 5, with one bar per tool, the bars per bin are next to each other
+# df_meth_bin_0 = df_long.filter(pl.col("meth_bin") == 0)
+
+
+# # Plot histogram of min_coverage for meth_bin = 5, binned to size of 5, with one bar per tool, the bars per bin are next to each other
+# # df_meth_bin_5 = df_long.filter(pl.col("meth_bin") == 5)
+# # Bin the min_coverage values using the existing bin_values function
+# df_meth_bin = (
+#     df_long.with_columns(
+#         bin_values(pl.col("min_coverage"), 5).alias("min_coverage_bin")
+#     )
+#     .group_by("tool", "min_coverage_bin", "meth_bin")
+#     .agg(pl.len().alias("count"))
+#     .with_columns(
+#         (pl.col("count") / pl.sum("count").over(["tool", "meth_bin"])).alias("fraction")
+#     )
+#     .sort("meth_bin")
+# )
+# df_meth_bin = df_meth_bin.filter(pl.col("meth_bin").is_in([0, 5, 100]))
+# df_meth_bin = df_meth_bin.filter(pl.col("min_coverage_bin") < 100)
+
+# histogram_meth_bin = (
+#     alt.Chart(df_meth_bin)
+#     .mark_line()
+#     .encode(
+#         x=alt.X("min_coverage_bin:O", title="Min Coverage (binned by 5)"),
+#         xOffset="tool:N",
+#         y="fraction:Q",
+#         color="tool",
+#         row="meth_bin:O",
+#     )
+# )
+
+
+# min_coverage_by_meth_bin1 = (
+#     alt.Chart(df_meth)
+#     .mark_line()
+#     .encode(
+#         x="meth_bin",
+#         y="q01",
+#         color=alt.Color(
+#             "tool:N",
+#             title="Methylation caller",
+#             scale=alt.Scale(range=colorblind_safe_palette.values()),
+#             sort=meth_callers,
+#         ),
+#     )
+# )
+
+# min_coverage_by_meth_bin2 = (
+#     alt.Chart(df_meth)
+#     .mark_line()
+#     .encode(
+#         x="meth_bin",
+#         y="q75",
+#         color=alt.Color(
+#             "tool:N",
+#             title="Methylation caller",
+#             scale=alt.Scale(range=colorblind_safe_palette.values()),
+#             sort=meth_callers,
+#         ),
+#     )
+# )
+# min_coverage_by_meth_bin3 = (
+#     alt.Chart(df_meth)
+#     .mark_line()
+#     .encode(
+#         x="meth_bin",
+#         y="median_coverage",
+#         color=alt.Color(
+#             "tool:N",
+#             title="Methylation caller",
+#             scale=alt.Scale(range=colorblind_safe_palette.values()),
+#             sort=meth_callers,
+#         ),
+#     )
+# )
+# min_coverage_by_meth_bin4 = (
+#     alt.Chart(df_meth)
+#     .mark_line()
+#     .encode(
+#         x="meth_bin",
+#         y="min_coverage",
+#         color=alt.Color(
+#             "tool:N",
+#             title="Methylation caller",
+#             scale=alt.Scale(range=colorblind_safe_palette.values()),
+#             sort=meth_callers,
+#         ),
+#     )
+# )
+
+# min_coverage_by_meth_bin5 = (
+#     alt.Chart(df_meth)
+#     .mark_line()
+#     .encode(
+#         x="meth_bin",
+#         y="mean_coverage",
+#         color=alt.Color(
+#             "tool:N",
+#             title="Methylation caller",
+#             scale=alt.Scale(range=colorblind_safe_palette.values()),
+#             sort=meth_callers,
+#         ),
+#     )
+# )
+
+# line_chart = alt.concat(
+#     # histogram_meth_bin_0,
+#     line_plot_min_cov_vs_count,
+#     histogram_meth_bin,
+#     # min_coverage_by_meth_bin1,
+#     # min_coverage_by_meth_bin2,
+#     # min_coverage_by_meth_bin3,
+#     # min_coverage_by_meth_bin4,
+#     min_coverage_by_meth_bin5,
+#     columns=2,
+# )
+
+
+line_plot_min_cov_vs_count.save(snakemake.output[0], scale_factor=2)
+df_min_coverage.write_parquet(snakemake.output[1])

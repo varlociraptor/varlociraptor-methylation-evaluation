@@ -33,10 +33,24 @@ rule compute_coverage:
         "logs/mason/mason_coverage/{call_type}_{seq_platform}_{sample}_{mapq}.log",
     params:
         extra=lambda wildcards: "--no-per-base --use-median" + f" --mapq {wildcards.mapq}" if wildcards.mapq != "all" else "",  # optional
+    wildcard_constraints:
+        sample="(?!all_samples).*",
     threads: 4  # This value - 1 will be sent to `--threads`
     wrapper:
         "v5.5.2/bio/mosdepth"
 
+rule common_coverage_Illumina:
+    input:
+        lambda wildcards: expand("results/single_sample/Illumina_pe/coverages/{sample}_{{REP}}_{{mapq}}.regions.bed.gz", sample=config["samples"]["Illumina_pe"])
+    output:
+        "results/single_sample/Illumina_pe/coverages/all_samples_{REP}_{mapq}.regions.bed.gz",
+    threads: 1
+    conda:
+        "../envs/python.yaml"
+    log:
+        "logs/common_coverage_Illumina/all_samples_{REP}_{mapq}.log",
+    script:
+        "../scripts/merge_coverage.py"
 
 
 
@@ -81,7 +95,9 @@ rule stratify_mae:
                 "file": "stratify_mae",
                 "sample": "{sample}",
                 "mapq": "{mapq}"
-            })
+            }),
+
+        parquet="results/{call_type}/{seq_platform}/coverages/{sample}_coverage_plot_{plot_type}_{mapq}.parquet",
     conda:
         "../envs/python.yaml"
     resources:
