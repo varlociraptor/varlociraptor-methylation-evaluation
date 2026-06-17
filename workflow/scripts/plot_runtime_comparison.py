@@ -15,27 +15,33 @@ pd.set_option("display.max_columns", None)
 def point_plot(df, x, y, color, shape, x_title, y_title, height=140):
 
     meth_caller_to_name = {
+        "varlo_0.1": "Varlociraptor α = 0.1",
+        "varlo_0.05": "Varlociraptor α = 0.05",
+        "varlo_0.01": "Varlociraptor α = 0.01",
         "varlociraptor": "Varlociraptor",
         "bismark": "Bismark",
         "bsmap": "BSMAPz",
         "methylDackel": "MethylDackel",
         "modkit": "Modkit",
-        "pb-CpG-tools": "pb-CpG-tools",
+        "pb-CpG-tools": "Pb-CpG-tools",
         "bisSNP": "BisSNP",
     }
 
     tool_colors = {
-        "Bismark": "#9AC67A",
+        "Bismark": "#D81B60",
         "BSMAPz": "#1E88E5",
-        "MethylDackel": "#FFC107",
-        "Varlociraptor": "#D81B60",
+        "BisSNP": "#FFC107",
+        "MethylDackel": "#f0700e",
         "Modkit": "#B42CEA",
-        "pb-CpG-tools": "#8D9279",
-        "BisSNP": "#9C6A53",
+        "Pb-CpG-tools": "#8D9279",
+        "Varlociraptor α = 0.1": "#004D40",
+        "Varlociraptor α = 0.05": "#126e5f",
+        "Varlociraptor α = 0.01": "#05AA8F",
+        "Varlociraptor": "#05AA8F",
     }
-
     # Map nicer names
     df = df.copy()
+    print(df[color].unique(), file=sys.stderr)
     df["tool_name"] = df[color].map(meth_caller_to_name)
     charts = []
     df = df[df["platform"] != "Simulate"]
@@ -44,6 +50,7 @@ def point_plot(df, x, y, color, shape, x_title, y_title, height=140):
         # tools that appear in this subplot
         present_tools = subset["tool_name"].unique().tolist()
         color_domain = present_tools
+        print(present_tools, file=sys.stderr)
         color_range = [tool_colors[t] for t in present_tools]
         ticks = list(np.logspace(0, np.log10(subset[x].max()), num=5))
         base = (
@@ -153,8 +160,9 @@ task_group_mapping = {
 }
 
 # Assign task_group based on task name
-df_all["task_group"] = df_all["task"].map(task_group_mapping).fillna("unknown")
+df_all["task_group"] = df_all["task"].map(task_group_mapping).fillna("preprocessing")
 # Compare different methylation calling callers
+print(df_all, file=sys.stderr)
 df_compare_callers = (
     df_all.groupby(
         ["platform", "meth_caller", "replicate", "task_group"], as_index=False

@@ -38,12 +38,7 @@ df = truth_df.join(
 
 
 def compute_mape(df, meth_caller) -> float:
-    df = df.with_columns(
-        pl.max_horizontal(
-            pl.col(f"{meth_caller}_methylation"),
-            pl.col("true_methylation"),
-        ).alias("denom")
-    ).with_columns(
+    df = df.with_columns(pl.col("true_methylation").alias("denom")).with_columns(
         pl.when(pl.col("denom") == 0)
         .then(0.0)
         .otherwise(
@@ -160,7 +155,7 @@ heatmaps = []
 for meth_caller in meth_callers:
     heatmap = plot_heatmap(meth_caller, heatmap_data_full, distance_df)
     heatmaps.append(heatmap)
-heatmap = alt.concat(*heatmaps, columns=3)
+heatmap = alt.concat(*heatmaps)
 print(heatmap_data_full)
 
 heatmap_data_full["distance"] = (
