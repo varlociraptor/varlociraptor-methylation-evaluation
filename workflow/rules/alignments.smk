@@ -15,8 +15,6 @@ rule bwameth_index:
             ),
         ),
     cache: True
-    # conda:
-    #     "../envs/bwa-meth.yaml"
     log:
         "logs/bwameth/bwameth_index/{genome}.log",
     wrapper:
@@ -59,8 +57,6 @@ rule align_reads_pe:
         fq2="resources/{platform}/{sample}/{SRA}/{SRA}_2_trimmed.fastq.gz",
     output:
         "resources/{platform}/{sample}/{SRA}/alignment.bam",
-    # conda:
-    #     "../envs/bwa-meth.yaml"
     log:
         "logs/bwameth/align_reads_pe/{platform}_{sample}_{SRA}.log",
     threads: 16
