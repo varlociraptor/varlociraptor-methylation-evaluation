@@ -74,6 +74,11 @@ for s in samples:
         mae_distance = (
             distances_filtered["mae"].values[0] if not distances_filtered.empty else 0.0
         )
+        binary_concordance = (
+            distances_filtered["binary_concordance"].values[0]
+            if not distances_filtered.empty
+            else 0.0
+        )
 
         results.append(
             {
@@ -82,6 +87,15 @@ for s in samples:
                 "number": str(number)[:3],
                 "distance": float(mape_distance),
                 "distance_type": "Dᵣ",
+            }
+        )
+        results.append(
+            {
+                "sample": s,
+                "meth_caller": meth_caller_to_name.get(m, m),
+                "number": str(number)[:3],
+                "distance": float(binary_concordance),
+                "distance_type": "Bc",
             }
         )
         results.append(

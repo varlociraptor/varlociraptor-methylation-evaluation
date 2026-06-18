@@ -91,7 +91,7 @@ def plot_distances(df):
 def compute_replicate_counts(df, bin_size):
     meth_callers = snakemake.params["meth_callers"]
     caller_counts = []
-    mape_records = []
+    distances = []
     for caller in meth_callers:
         rep1 = f"{caller}_methylation_rep1"
         rep2 = f"{caller}_methylation_rep2"
@@ -112,9 +112,18 @@ def compute_replicate_counts(df, bin_size):
             * 100
         )
 
+        binary_concordance = np.mean((rep1_vals > 0) == (rep2_vals > 0))
+
         mae = np.abs(rep1_vals - rep2_vals).mean()
 
-        mape_records.append({"meth_caller": caller, "mape": mape, "mae": mae})
+        distances.append(
+            {
+                "meth_caller": caller,
+                "mape": mape,
+                "mae": mae,
+                "binary_concordance": binary_concordance,
+            }
+        )
 
         temp = temp.assign(
             rep1_bin=bin_methylation(temp[rep1], bin_size),
@@ -132,7 +141,7 @@ def compute_replicate_counts(df, bin_size):
         caller_counts.append(counts)
 
     counts_df = pd.concat(caller_counts, ignore_index=True)
-    distances_df = pd.DataFrame(mape_records)
+    distances_df = pd.DataFrame(distances)
 
     return counts_df, distances_df
 
