@@ -48,7 +48,6 @@ merged_samples = {}
 # ---- Merge replicates (inner join on genomic positions) ---- #
 
 for sample_name, reps in replicate_dfs.items():
-    print("sample_name", sample_name)
     if 1 not in reps or 2 not in reps:
         raise ValueError(f"Missing REP1 or REP2 for sample {sample_name}")
 
@@ -69,7 +68,6 @@ combined_df = pd.concat(
     [df.assign(sample=sample_name) for sample_name, df in merged_samples.items()],
     ignore_index=True,
 )
-print(combined_df.head(6))
 
 combined_df.to_parquet(
     snakemake.output[0],

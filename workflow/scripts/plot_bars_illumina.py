@@ -66,7 +66,6 @@ for s in samples:
         distances_filtered = distances[
             (distances["sample"] == s) & (distances["meth_caller"] == m)
         ]
-        print(distances_filtered)
         mape_distance = (
             distances_filtered["mape"].values[0]
             if not distances_filtered.empty
@@ -95,9 +94,6 @@ for s in samples:
             }
         )
 df_summary = pd.DataFrame(results)
-
-print(df_summary)
-
 df_summary["tool_name"] = df_summary["meth_caller"].replace(meth_caller_to_name)
 color_domain = sorted(df_summary["tool_name"].unique())
 color_range = [tool_colors[t] for t in color_domain]

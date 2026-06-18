@@ -70,7 +70,6 @@ df = df.filter(pl.col("min_coverage_bin") <= 80)
 #     .drop("q95")
 # )
 color_domain = sorted(df["tool_name"].unique())
-print(color_domain)
 color_range = [tool_colors[t] for t in color_domain]
 line_plot_min_cov_vs_count = (
     alt.Chart(df)

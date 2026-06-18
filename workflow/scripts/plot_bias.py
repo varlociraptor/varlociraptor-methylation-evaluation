@@ -203,7 +203,6 @@ samples = snakemake.params["sample"]
 if isinstance(samples, str):
     samples = [samples]
 df = pd.read_parquet(snakemake.input[0], engine="pyarrow")
-print(df.head(6), samples, file=sys.stderr)
 df = df[df["sample"].isin(samples)]
 
 platform = snakemake.params["platform"]

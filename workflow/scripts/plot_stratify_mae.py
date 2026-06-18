@@ -202,7 +202,6 @@ if sample != "all_samples":
 # Read and process coverage data
 coverage_rep1 = read_coverage(snakemake.input["coverage_01"], "rep1")
 coverage_rep2 = read_coverage(snakemake.input["coverage_02"], "rep2")
-print(coverage_rep1)
 df_cov_all = df.join(coverage_rep1, on=["chromosome", "position"], how="left").join(
     coverage_rep2, on=["chromosome", "position"], how="left"
 )
@@ -281,7 +280,6 @@ line_plot_min_cov_vs_count = (
 #     pl.col("min_coverage").min().alias("min_coverage"),
 # )
 
-# print(df_meth)
 
 # # Plot histogram of min_coverage for meth_bin = 0, binned to size of 5, with one bar per tool, the bars per bin are next to each other
 # df_meth_bin_0 = df_long.filter(pl.col("meth_bin") == 0)

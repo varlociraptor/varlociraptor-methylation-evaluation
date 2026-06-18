@@ -41,7 +41,6 @@ def point_plot(df, x, y, color, shape, x_title, y_title, height=140):
     }
     # Map nicer names
     df = df.copy()
-    print(df[color].unique(), file=sys.stderr)
     df["tool_name"] = df[color].map(meth_caller_to_name)
     charts = []
     df = df[df["platform"] != "Simulate"]
@@ -50,7 +49,6 @@ def point_plot(df, x, y, color, shape, x_title, y_title, height=140):
         # tools that appear in this subplot
         present_tools = subset["tool_name"].unique().tolist()
         color_domain = present_tools
-        print(present_tools, file=sys.stderr)
         color_range = [tool_colors[t] for t in present_tools]
         ticks = list(np.logspace(0, np.log10(subset[x].max()), num=5))
         base = (
@@ -162,7 +160,6 @@ task_group_mapping = {
 # Assign task_group based on task name
 df_all["task_group"] = df_all["task"].map(task_group_mapping).fillna("preprocessing")
 # Compare different methylation calling callers
-print(df_all, file=sys.stderr)
 df_compare_callers = (
     df_all.groupby(
         ["platform", "meth_caller", "replicate", "task_group"], as_index=False

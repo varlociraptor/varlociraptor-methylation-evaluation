@@ -22,6 +22,5 @@ merged = (
     .agg(pl.col("coverage").mean().alias("coverage"))
     .sort(["chrom", "start"])
 )
-print(merged)
 
 merged.write_csv(snakemake.output[0], separator="\t", include_header=False)

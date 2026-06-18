@@ -113,7 +113,6 @@ def compute_replicate_counts(df, bin_size):
         )
 
         mae = np.abs(rep1_vals - rep2_vals).mean()
-        print(f"MAE for {caller}: {mae:.2f}", file=sys.stderr)
 
         mape_records.append({"meth_caller": caller, "mape": mape, "mae": mae})
 
@@ -144,7 +143,6 @@ bin_size = snakemake.params["bin_size"]
 
 
 df = pd.read_parquet(snakemake.input[0], engine="pyarrow")
-print(df.head(6), samples, file=sys.stderr)
 df = df[df["sample"].isin(samples)]
 
 
@@ -157,7 +155,5 @@ sample_name = snakemake.params["sample_name"].replace("_HG002_", "_")
 distances["sample"] = sample_name
 replicate_dfs["sample"] = sample_name
 
-print(replicate_dfs.head(6), distances.head(6), file=sys.stderr)
-print("tools:", replicate_dfs["meth_caller"].unique(), file=sys.stderr)
 replicate_dfs.to_parquet(snakemake.output["df"], engine="pyarrow")
 distances.to_parquet(snakemake.output["distances"], engine="pyarrow")

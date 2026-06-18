@@ -69,8 +69,6 @@ distances = pd.read_parquet(snakemake.input["distances"], engine="pyarrow")
 bin_size = snakemake.params["bin_size"]
 fdr_levels = snakemake.params.get("fdr_levels", [])
 meth_callers = combined_counts_df["meth_caller"].unique().tolist()
-print("Meth callers:", meth_callers)
-print("FDR levels:", fdr_levels)
 
 # Filter meth_callers to not include varlo_a with a not in fdr_levels
 meth_callers = [
@@ -78,7 +76,6 @@ meth_callers = [
     for m in meth_callers
     if not (m.split("_")[0] == "varlo" and float(m.split("_")[1]) not in fdr_levels)
 ]
-print("Meth callers:", meth_callers)
 
 plot_type = snakemake.params.get("plot_type")
 meth_caller_to_name = {
@@ -93,8 +90,6 @@ for m in meth_callers:
     if m.startswith("varlo_"):
         alpha = m.split("_")[1]
         meth_caller_to_name[m] = f"Varlociraptor α = {alpha}"
-    print("Meth caller:", m, meth_caller_to_name.get(m, m))
-    print(combined_counts_df[combined_counts_df["meth_caller"] == m].head())
 heatmaps = [
     plot_heatmap(
         combined_counts_df[combined_counts_df["meth_caller"] == m],

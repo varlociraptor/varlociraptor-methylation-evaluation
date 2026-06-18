@@ -156,7 +156,6 @@ for meth_caller in meth_callers:
     heatmap = plot_heatmap(meth_caller, heatmap_data_full, distance_df)
     heatmaps.append(heatmap)
 heatmap = alt.concat(*heatmaps)
-print(heatmap_data_full)
 
 heatmap_data_full["distance"] = (
     heatmap_data_full["caller_bin"] - heatmap_data_full["true_bin"]
@@ -166,7 +165,6 @@ heatmap_data_full["distance"] = (
 distance_plot_df = heatmap_data_full.groupby(["caller", "distance"], as_index=False)[
     "count"
 ].sum()
-print(distance_plot_df)
 distance_plot = (
     alt.Chart(distance_plot_df)
     .mark_line()

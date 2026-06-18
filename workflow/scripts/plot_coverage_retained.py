@@ -20,9 +20,7 @@ def plot_meth_level_to_cov(df):
         .agg(pl.col("coverage").mean().round().alias("coverage_mean"))
         .drop_nulls()
     )
-    print(df_grouped)
     df_grouped = df_grouped.to_pandas()
-    print(df_grouped.columns)  # Debug: Spaltennamen anzeigen
     chart = (
         alt.Chart(df_grouped)
         .mark_line()
@@ -64,8 +62,6 @@ df = coverage.join(
 )
 df = df.drop_nulls(subset=["coverage"])
 
-
-print(df.filter(pl.col("varlo_1.0_methylation") == 0).filter(pl.col("coverage") >= 100))
 
 plot_meth_level_to_cov(df)
 
