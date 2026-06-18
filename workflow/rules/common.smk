@@ -32,6 +32,9 @@ def compute_results() -> List[List[str]]:
         inputs.append(
             f"results/single_sample/Simulate/plots/simulated_data_{chromosome}.{config['plot_type']}"
         )
+        inputs.append(
+            f"results/single_sample/Simulate/plots/precall_{chromosome}.{config['plot_type']}"
+        )
     # Multi-sample common heatmaps
     if "multi_sample" in config["seq_platforms"]:
         inputs.append(heatmap_replicates_common())

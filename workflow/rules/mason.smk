@@ -303,3 +303,21 @@ rule mason_plot_truth_to_results:
         bin_size=lambda wildcards: config["heatmap_bin_size"],
     script:
         "../scripts/plot_mason_results.py"
+
+
+rule compute_precision_recall:
+    input:
+        truth="resources/Simulate/simulated_data/{chrom}_truth.csv",
+        results_rep="results/single_sample/Simulate/result_files/sample_df_simulated_data.parquet",
+        # tool="results/{platform}/{protocol}/result_files/{method}.parquet",
+    output:
+        precall="results/single_sample/Simulate/plots/precall_{chrom}.{plot_type}",
+    log:
+        "logs/mason/compute_precision_recall/{{chrom}_{plot_type}.log",
+    conda:
+        "../envs/python.yaml",
+    params:
+        meth_callers=lambda wildcards: config["ref_tools"].get("Simulate", [])
+        + [f"varlo_{fdr}" for fdr in config["fdr_alpha"]],
+    script:
+        "../scripts/compute_precision_recall.py"
