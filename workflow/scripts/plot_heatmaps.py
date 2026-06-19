@@ -35,9 +35,8 @@ def plot_heatmap(
         alt.Chart(
             df,
             title=alt.Title(
-                # "PacBio and MethylSeq",
-                titles.get(snakemake.output[0].split("/")[2], meth_caller_name),
-                subtitle=f"N = {df['count'].sum()} | Dᵣ = {mape:.2f}% | Dₐ = {mae:.2f}%, Bc = {binary_concordance:.2f}",
+                meth_caller_name,
+                subtitle=f" N = {df['count'].sum():.0f} Dᵣ = {distance_df.filter(pl.col('meth_caller') == meth_caller)['mape'].item():.2f}%, Dₐ = {distance_df.filter(pl.col('meth_caller') == meth_caller)['mae'].item():.2f}%, Bc = {distance_df.filter(pl.col('meth_caller') == meth_caller)['binary_concordance'].item():.2f}",
             ),
         )
         .mark_rect()
