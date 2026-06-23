@@ -313,7 +313,7 @@ rule compute_precision_recall:
     output:
         precall="results/single_sample/Simulate/plots/precall_{chrom}.{plot_type}",
     log:
-        "logs/mason/compute_precision_recall/{{chrom}_{plot_type}.log",
+        "logs/mason/compute_precision_recall/{chrom}_{plot_type}.log",
     conda:
         "../envs/python.yaml",
     params:

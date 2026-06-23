@@ -55,7 +55,7 @@ rule common_tool_df:
         "logs/plot_results/common_tool_df/{call_type}_{seq_platform}_{sample}.log",
     params:
         plot_type=config["plot_type"],
-        filter_chrom = lambda wildcards: config.get("chrom_filter", None) if wildcards.seq_platform != "Simulate" else None
+        filter_chrom = lambda wildcards: config.get("chrom_filter", None) if wildcards.seq_platform == "Simulate" else None
     resources:
         mem_mb=60000,
     script:
