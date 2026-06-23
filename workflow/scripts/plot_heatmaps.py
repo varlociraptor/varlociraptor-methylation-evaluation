@@ -28,8 +28,8 @@ def plot_heatmap(
     ticks = list(np.logspace(0, np.log10(max_count), num=5).round().astype(int))
     mape = distances.loc[distances["meth_caller"] == meth_caller, "mape"].iloc[0]
     mae = distances.loc[distances["meth_caller"] == meth_caller, "mae"].iloc[0]
-    binary_concordance = distances.loc[
-        distances["meth_caller"] == meth_caller, "binary_concordance"
+    binary_discordance = distances.loc[
+        distances["meth_caller"] == meth_caller, "binary_discordance"
     ].iloc[0]
     number_points = df["count"].sum() // 1000
 
