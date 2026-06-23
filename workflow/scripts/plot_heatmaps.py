@@ -28,8 +28,8 @@ def plot_heatmap(
     ticks = list(np.logspace(0, np.log10(max_count), num=5).round().astype(int))
     mape = distances.loc[distances["meth_caller"] == meth_caller, "mape"].iloc[0]
     mae = distances.loc[distances["meth_caller"] == meth_caller, "mae"].iloc[0]
-    binary_concordance = distances.loc[
-        distances["meth_caller"] == meth_caller, "binary_concordance"
+    binary_discordance = distances.loc[
+        distances["meth_caller"] == meth_caller, "binary_discordance"
     ].iloc[0]
     heatmap = (
         alt.Chart(
@@ -37,7 +37,7 @@ def plot_heatmap(
             title=alt.TitleParams(
                 text=titles.get(snakemake.output[0].split("/")[2], meth_caller_name),
                 subtitle=[
-                    f"N = {df['count'].sum()} | Dᵣ = {mape:.2f}% | Dₐ = {mae:.2f}%, Bc = {binary_concordance:.2f}",
+                    f"N = {df['count'].sum()} | Dᵣ = {mape:.2f}% | Dₐ = {mae:.2f}%, Bd = {binary_discordance:.2f}",
                 ],
                 subtitleFontSize=9,
             ),

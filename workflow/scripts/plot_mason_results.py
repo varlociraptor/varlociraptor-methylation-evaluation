@@ -51,20 +51,20 @@ def compute_mape(df, meth_caller) -> float:
     return float(mape)
 
 
-def compute_binary_concordance(df, meth_caller) -> float:
+def compute_binary_discordance(df, meth_caller) -> float:
     df = df.with_columns(
         pl.when(
             (pl.col(f"{meth_caller}_methylation") > 0)
-            & (pl.col("true_methylation") > 0)
-            | (pl.col(f"{meth_caller}_methylation") == 0)
             & (pl.col("true_methylation") == 0)
+            | (pl.col(f"{meth_caller}_methylation") == 0)
+            & (pl.col("true_methylation") > 0)
         )
         .then(1)
         .otherwise(0)
-        .alias("binary_concordance_row")
+        .alias("binary_discordance_row")
     )
-    binary_concordance = df.select(pl.col("binary_concordance_row").mean()).item()
-    return float(binary_concordance)
+    binary_discordance = df.select(pl.col("binary_discordance_row").mean()).item()
+    return float(binary_discordance)
 
 
 def compute_mae(df, meth_caller) -> float:
@@ -86,7 +86,7 @@ for caller in meth_callers:
             "meth_caller": caller,
             "mape": compute_mape(df, caller),
             "mae": compute_mae(df, caller),
-            "binary_concordance": compute_binary_concordance(df, caller),
+            "binary_discordance": compute_binary_discordance(df, caller),
         }
     )
 
@@ -145,7 +145,7 @@ def plot_heatmap(meth_caller, df, distance_df):
             df,
             title=alt.TitleParams(
                 text=meth_caller_name,
-                subtitle=f"N = {df['count'].sum():.0f} Dᵣ = {distance_df.filter(pl.col('meth_caller') == meth_caller)['mape'].item():.2f}%, Dₐ = {distance_df.filter(pl.col('meth_caller') == meth_caller)['mae'].item():.2f}%, Bc = {distance_df.filter(pl.col('meth_caller') == meth_caller)['binary_concordance'].item():.2f}",
+                subtitle=f"N = {df['count'].sum():.0f} Dᵣ = {distance_df.filter(pl.col('meth_caller') == meth_caller)['mape'].item():.2f}%, Dₐ = {distance_df.filter(pl.col('meth_caller') == meth_caller)['mae'].item():.2f}%, Bd = {distance_df.filter(pl.col('meth_caller') == meth_caller)['binary_discordance'].item():.2f}",
                 subtitleFontSize=9,
             ),
         )
