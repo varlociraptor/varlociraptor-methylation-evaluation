@@ -31,13 +31,15 @@ def plot_heatmap(
     binary_concordance = distances.loc[
         distances["meth_caller"] == meth_caller, "binary_concordance"
     ].iloc[0]
+    number_points = df["count"].sum() // 1000
+
     heatmap = (
         alt.Chart(
             df,
             title=alt.TitleParams(
-                text=titles.get(snakemake.output[0].split("/")[2], meth_caller_name),
+                text=titles.get(snakemake.output[0].split("/")[-3], meth_caller_name),
                 subtitle=[
-                    f"N = {df['count'].sum()} | Dᵣ = {mape:.2f}% | Dₐ = {mae:.2f}%, Bc = {binary_concordance:.2f}",
+                    f"N = {number_points}k | Dᵣ = {mape:.2f}% | Dₐ = {mae:.2f}% | Bd = {binary_concordance:.2f}",
                 ],
                 subtitleFontSize=9,
             ),
@@ -105,7 +107,7 @@ heatmaps = [
     )
     for m in meth_callers
 ]
-heatmap_plots = alt.hconcat(*heatmaps).resolve_scale(
+heatmap_plots = alt.concat(*heatmaps, columns=4).resolve_scale(
     x="independent", y="independent", color="independent"
 )
 

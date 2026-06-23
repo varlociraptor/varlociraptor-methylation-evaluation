@@ -144,6 +144,7 @@ bars_da = (
     .encode(y="distance:Q")
 )
 
+
 labels = (
     alt.Chart(df_summary)
     .transform_filter(alt.datum.distance_type == "Dᵣ")
@@ -159,14 +160,31 @@ labels = (
     .interactive()
 )
 
+bd_plot = (
+    base.transform_filter(alt.datum.distance_type == "Bd")
+    .mark_bar(opacity=1)
+    .encode(
+        y=alt.Y(
+            "distance:Q",
+            scale=alt.Scale(
+                domain=[0.8, 1],
+            ),
+            title="Binary Discordance",
+        )
+    )
+)
+
 illumina_histo = (bars_dr + bars_da + labels).interactive()
+bd_histo = bd_plot.interactive()
+chart = alt.vconcat(illumina_histo, bd_histo).interactive()
+
 if plot_type == "parquet":
     df_summary.to_parquet(snakemake.output[0])
 elif plot_type == "pkl":
     with open(snakemake.output[0], "wb") as f:
         pickle.dump(illumina_histo, f)
 else:
-    illumina_histo.save(
+    chart.save(
         snakemake.output[0],
         embed_options={"actions": False},
         inline=False,
