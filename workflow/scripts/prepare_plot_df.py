@@ -112,7 +112,7 @@ def compute_replicate_counts(df, bin_size):
             * 100
         )
 
-        binary_concordance = np.mean((rep1_vals > 0) == (rep2_vals > 0)) * 100
+        binary_discordance = np.mean((rep1_vals > 0) != (rep2_vals > 0)) * 100
 
         mae = np.abs(rep1_vals - rep2_vals).mean()
 
@@ -121,7 +121,7 @@ def compute_replicate_counts(df, bin_size):
                 "meth_caller": caller,
                 "mape": mape,
                 "mae": mae,
-                "binary_concordance": binary_concordance,
+                "binary_discordance": binary_discordance,
             }
         )
 
