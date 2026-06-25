@@ -109,7 +109,7 @@ for s in samples:
         )
 df_summary = pd.DataFrame(results)
 df_summary["tool_name"] = df_summary["meth_caller"].replace(meth_caller_to_name)
-color_domain = sorted(df_summary["tool_name"].unique())
+color_domain = [meth_caller_to_name.get(m, m) for m in meth_callers]
 color_range = [tool_colors[t] for t in color_domain]
 base = alt.Chart(df_summary).encode(
     x=alt.X("sample:N", axis=alt.Axis(labelAngle=-30), title=None),
@@ -166,9 +166,6 @@ bd_plot = (
     .encode(
         y=alt.Y(
             "distance:Q",
-            scale=alt.Scale(
-                domain=[0.8, 1],
-            ),
             title="Binary Discordance",
         )
     )

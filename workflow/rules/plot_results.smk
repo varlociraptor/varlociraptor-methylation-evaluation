@@ -149,7 +149,7 @@ rule plot_heatmaps:
         "../scripts/plot_heatmaps.py"
 
 
-rule plots_bars_illumina:
+rule plot_bars_illumina:
     input:
         df=expand(
             "results/single_sample/Illumina_pe/result_files/{sample}_prepared.parquet",
