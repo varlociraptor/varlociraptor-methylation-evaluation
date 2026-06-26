@@ -284,3 +284,17 @@ rule concat_plots_coverage:
         mem_mb=4000,
     script:
         "../scripts/concat_coverage.py"
+
+
+rule debug_pb_cpg_tools:
+    input:
+        "results/{call_type}/{seq_platform}/result_files/replicates.parquet",
+    output:
+        "results/{call_type}/{seq_platform}/plots/maes.pdf",
+
+    log:
+        "logs/plot_results/debug_pb_cpg_tools/{call_type}_{seq_platform}.log",
+    conda:
+        "../envs/python.yaml"
+    script:
+        "../scripts/debug_pb_cpg_tools.py"

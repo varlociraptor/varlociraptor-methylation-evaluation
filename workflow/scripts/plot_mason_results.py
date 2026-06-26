@@ -47,7 +47,7 @@ def compute_mape(df, meth_caller) -> float:
         )
         .alias("mape_row")
     )
-    mape = df.select(pl.col("mape_row").mean() * 100).item()
+    mape = df.select(pl.col("mape_row").mean()).item()
     return float(mape)
 
 

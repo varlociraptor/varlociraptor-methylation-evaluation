@@ -40,18 +40,6 @@ rule pb_CpG_compute_methylation:
         "aligned_bam_to_cpg_scores --bam {input.alignment} --output-prefix {params.prefix} --threads {threads} 2> {log}"
 
 
-rule unpack_pb_CpG_output:
-    input:
-        "results/single_sample/{platform}/called/{sample}/result_files/alignments_CpG.combined.bed.gz",
-    output:
-        "results/single_sample/{platform}/called/{sample}/result_files/alignments_CpG.combined.bed",
-    log:
-        "logs/pb_CpG_tools/pb_CpG_unpack_output/{platform}_{sample}.log",
-    conda:
-        "../envs/general.yaml"
-    shell:
-        "gunzip -c {input} > {output} 2> {log}"
-
 
 rule pb_CpG_rename_output:
     input:

@@ -103,16 +103,13 @@ def compute_replicate_counts(df, bin_size):
         rep2_vals = temp[rep2].to_numpy()
 
         denom = np.maximum(rep1_vals, rep2_vals)
-        mape = (
-            np.where(
-                (rep1_vals == 0) & (rep2_vals == 0),
-                0,
-                np.abs(rep1_vals - rep2_vals) / denom,
-            ).mean()
-            * 100
-        )
+        mape = np.where(
+            (rep1_vals == 0) & (rep2_vals == 0),
+            0,
+            np.abs(rep1_vals - rep2_vals) / denom,
+        ).mean()
 
-        binary_discordance = np.mean((rep1_vals > 0) != (rep2_vals > 0)) * 100
+        binary_discordance = np.mean((rep1_vals > 0) != (rep2_vals > 0))
 
         mae = np.abs(rep1_vals - rep2_vals).mean()
 

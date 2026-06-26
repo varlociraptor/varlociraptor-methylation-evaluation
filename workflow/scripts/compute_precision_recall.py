@@ -1,6 +1,50 @@
 import altair as alt
 import polars as pl
 
+# pl.Config.set_tbl_rows(100)
+pl.Config.set_tbl_cols(100)
+
+
+def parse_cov(file_path, df):
+    """Parses the coverage file and extracts coverage information."""
+    cov_df = (
+        pl.read_csv(
+            file_path,
+            separator="\t",
+            has_header=False,
+            schema={
+                "chrom": pl.Utf8,
+                "pos": pl.Int64,
+                "end": pl.Int64,
+                "coverage": pl.Float64,
+            },
+        ).select(["chrom", "pos", "coverage"])
+    ).with_columns(
+        pl.col("pos") + 1  # Convert to 1-based position
+    )
+    return df.join(
+        cov_df,
+        on=["chrom", "pos"],
+        how="left",
+    )
+
+
+def plot_cov_dist(df_caller, caller, plot_type):
+    print(caller, plot_type, df_caller)
+    chart = (
+        alt.Chart(df_caller)
+        .mark_bar()
+        .encode(
+            x=alt.X("coverage", bin=alt.Bin(step=5)),
+            y=alt.Y("count()", stack=False),
+        )
+        .properties(title=f"{caller}: {plot_type}")
+    )
+    return chart
+
+
+pl.Config.set_tbl_rows(100)
+
 meth_caller_to_name = {
     "varlo_0.1": "Varlociraptor α = 0.1",
     "varlo_1.0": "Varlociraptor α = 1.0",
@@ -29,7 +73,8 @@ tool_colors = {
 }
 
 
-def compute_precision_recall(df, meth_callers):
+def compute_precision_recall(df, meth_callers, bin_size=5):
+
     df = df.with_columns(
         pl.when(pl.col("true_methylation") > 0)
         .then(1)
@@ -38,7 +83,7 @@ def compute_precision_recall(df, meth_callers):
     )
 
     results = []
-
+    cov_charts = []
     for caller in meth_callers:
         df_caller = df.filter(pl.col(f"{caller}_methylation").is_not_null())
         df_caller = df_caller.with_columns(
@@ -47,7 +92,6 @@ def compute_precision_recall(df, meth_callers):
             .otherwise(0)
             .alias(f"{caller}_binary")
         )
-
         TP = (
             (df_caller[f"{caller}_binary"] == 1) & (df_caller["truth_binary"] == 1)
         ).sum()
@@ -66,7 +110,37 @@ def compute_precision_recall(df, meth_callers):
         recall = TP / (TP + FN) if (TP + FN) > 0 else 0.0
         positive_rate = TP / P if P > 0 else 0.0
         negative_rate = TN / N if N > 0 else 0.0
-
+        chart_tn_cv = plot_cov_dist(
+            df_caller.filter(
+                (pl.col(f"{caller}_binary") == 0) & (pl.col("truth_binary") == 0)
+            ),
+            caller,
+            "True Negatives",
+        )
+        chart_tp_cv = plot_cov_dist(
+            df_caller.filter(
+                (pl.col(f"{caller}_binary") == 1) & (pl.col("truth_binary") == 1)
+            ),
+            caller,
+            "True Positives",
+        )
+        chart_fn_cv = plot_cov_dist(
+            df_caller.filter(
+                (pl.col(f"{caller}_binary") == 0) & (pl.col("truth_binary") == 1)
+            ),
+            caller,
+            "False Negatives",
+        )
+        chart_fp_cv = plot_cov_dist(
+            df_caller.filter(
+                (pl.col(f"{caller}_binary") == 1) & (pl.col("truth_binary") == 0)
+            ),
+            caller,
+            "False Positives",
+        )
+        cov_charts.append(
+            alt.concat(chart_tn_cv, chart_tp_cv, chart_fn_cv, chart_fp_cv)
+        )
         print(
             f"caller: {caller}:",
             "\n\tTP: ",
@@ -90,7 +164,7 @@ def compute_precision_recall(df, meth_callers):
             }
         )
 
-    return pl.DataFrame(results)
+    return pl.DataFrame(results), alt.vconcat(*cov_charts)
 
 
 alt.data_transformers.enable("vegafusion")
@@ -112,9 +186,11 @@ df = truth_df.join(
     ]
     + [pl.col(f"{caller}_methylation") for caller in meth_callers]
 )
+df = parse_cov(snakemake.input[2], df)
 
+print(df.head())
 
-metrics_df = compute_precision_recall(df, meth_callers)
+metrics_df, cov_charts = compute_precision_recall(df, meth_callers)
 metrics_df = metrics_df.with_columns(
     pl.col("caller").replace(meth_caller_to_name).alias("tool_name")
 )
@@ -142,3 +218,4 @@ chart = (
 )
 
 chart.save(snakemake.output[0])
+cov_charts.save(snakemake.output[1])

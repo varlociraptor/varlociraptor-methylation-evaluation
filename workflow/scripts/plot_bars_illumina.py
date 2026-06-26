@@ -55,14 +55,15 @@ for m in meth_callers:
     if m.startswith("varlo_"):
         alpha = m.split("_")[1]
         meth_caller_to_name[m] = f"Varlociraptor α = {alpha}"
+
 results = []
 for s in samples:
     for m in meth_callers:
-        # Filter df für Sample und Meth Caller
+        # Filter df for sample and meth caller
         df_filtered = df[(df["sample"] == s) & (df["meth_caller"] == m)]
         number = df_filtered["count"].sum() if not df_filtered.empty else 0
 
-        # Filter distances für Sample und Meth Caller
+        # Filter distances for sample and meth caller
         distances_filtered = distances[
             (distances["sample"] == s) & (distances["meth_caller"] == m)
         ]
@@ -107,10 +108,12 @@ for s in samples:
                 "distance_type": "Dₐ",
             }
         )
+
 df_summary = pd.DataFrame(results)
 df_summary["tool_name"] = df_summary["meth_caller"].replace(meth_caller_to_name)
 color_domain = [meth_caller_to_name.get(m, m) for m in meth_callers]
 color_range = [tool_colors[t] for t in color_domain]
+
 base = alt.Chart(df_summary).encode(
     x=alt.X("sample:N", axis=alt.Axis(labelAngle=-30), title=None),
     xOffset=alt.XOffset("meth_caller:N", sort=meth_callers),
@@ -121,43 +124,57 @@ base = alt.Chart(df_summary).encode(
             domain=color_domain,
             range=color_range,
         ),
+        legend=alt.Legend(symbolStrokeWidth=0),
         sort=meth_callers,
     ),
     tooltip=["sample:N", "meth_caller:N", "distance:Q", "number:Q"],
 )
 
-# Dr (hinterer Balken)
+# Dᵣ (MAPE) on the right y-axis
 bars_dr = (
     base.transform_filter(alt.datum.distance_type == "Dᵣ")
     .mark_bar(opacity=0.7)
-    .encode(y=alt.Y("distance:Q", title="Discordance"))
+    .encode(
+        y=alt.Y(
+            "distance:Q",
+            title="Dᵣ",
+            axis=alt.Axis(orient="right", titleColor="black", labelColor="black"),
+        )
+    )
 )
 
-# Da (vorderer Balken, schraffiert)
+# Dₐ (MAE) on the left y-axis, hatched outline to distinguish from Dᵣ
 bars_da = (
     base.transform_filter(alt.datum.distance_type == "Dₐ")
     .mark_bar(
         stroke="black",
         strokeWidth=1,
-        strokeDash=[4, 2],  # "Schraffur"-Ersatz
+        strokeDash=[4, 2],  # hatch-style outline
     )
-    .encode(y="distance:Q")
+    .encode(
+        y=alt.Y(
+            "distance:Q",
+            title="Dₐ",
+            axis=alt.Axis(orient="left", titleColor="black", labelColor="black"),
+            scale=alt.Scale(domain=[0, 30]),
+        )
+    )
 )
 
-
+# Label stays attached to the Dᵣ bar for now (kept as before; could later
+# be made dynamic to follow whichever bar (Dᵣ/Dₐ) is taller).
 labels = (
     alt.Chart(df_summary)
     .transform_filter(alt.datum.distance_type == "Dᵣ")
-    .mark_text(size=8, dy=-5, color="black")
     .transform_calculate(text_k="datum.number + 'k'")
+    .mark_text(size=8, dy=-5, color="black")
     .encode(
         text="text_k:N",
         x="sample:N",
         xOffset=alt.XOffset("meth_caller:N", sort=meth_callers),
-        y="distance:Q",
+        y=alt.Y("distance:Q", axis=alt.Axis(orient="right"), title=None),
         tooltip=["sample:N", "meth_caller:N", "distance:Q", "number:Q"],
     )
-    .interactive()
 )
 
 bd_plot = (
@@ -171,7 +188,11 @@ bd_plot = (
     )
 )
 
-illumina_histo = (bars_dr + bars_da + labels).interactive()
+# resolve_scale(y="independent") makes Dᵣ and Dₐ use separate scales,
+# so each keeps the orient (left/right) and domain set on its own y-encoding.
+illumina_histo = (
+    alt.layer(bars_da, bars_dr, labels).resolve_scale(y="independent").interactive()
+)
 bd_histo = bd_plot.interactive()
 chart = alt.vconcat(illumina_histo, bd_histo).interactive()
 

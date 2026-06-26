@@ -211,7 +211,7 @@ rule candidates_to_bed:
         """
 
 
-rule mason_coverage:
+rule mason_coverage_orientation:
     input:
         bam="resources/Simulate/simulated_data/alignment_sorted_{orientation}.bam",
         bai="resources/Simulate/simulated_data/alignment_sorted_{orientation}.bam.bai",
@@ -225,7 +225,7 @@ rule mason_coverage:
         "resources/Simulate/simulated_data/{orientation}_cov.regions.bed.gz",
         summary="resources/Simulate/simulated_data/{orientation}_cov.mosdepth.summary.txt",  # this named output is required for prefix parsing
     log:
-        "logs/mason/mason_coverage/{orientation}.log",
+        "logs/mason/mason_coverage_orientation/{orientation}.log",
     params:
         extra="--no-per-base --use-median",  # optional
     threads: 4  # This value - 1 will be sent to `--threads`
@@ -233,17 +233,26 @@ rule mason_coverage:
         "v5.5.2/bio/mosdepth"
 
 
-rule mason_unzip_coverage:
+rule mason_coverage_complete:
     input:
-        "resources/Simulate/simulated_data/{orientation}_cov.regions.bed.gz",
+        bam="resources/Simulate/simulated_data/chr21.bam",
+        bai="resources/Simulate/simulated_data/chr21.bam.bai",
+        bed=expand(
+            "resources/{chrom}/candidates.bed",
+            chrom=config.get("chrom_filter", config["seq_platforms"].get("Simulate")),
+        ),
     output:
-        "resources/Simulate/simulated_data/{orientation}_cov.regions.bed",
+        "resources/Simulate/simulated_data/complete_cov.mosdepth.global.dist.txt",
+        "resources/Simulate/simulated_data/complete_cov.mosdepth.region.dist.txt",
+        "resources/Simulate/simulated_data/complete_cov.regions.bed.gz",
+        summary="resources/Simulate/simulated_data/complete_cov.mosdepth.summary.txt",  # this named output is required for prefix parsing
     log:
-        "logs/mason/mason_unzip_coverage/{orientation}.log",
-    conda:
-        "../envs/general.yaml"
-    shell:
-        "gunzip -c {input} > {output} 2> {log}"
+        "logs/mason/mason_coverage_complete.log",
+    params:
+        extra="--no-per-base --use-median",  # optional
+    threads: 4  # This value - 1 will be sent to `--threads`
+    wrapper:
+        "v5.5.2/bio/mosdepth"
 
 
 rule mason_candidates_vcf:
@@ -305,13 +314,20 @@ rule mason_plot_truth_to_results:
         "../scripts/plot_mason_results.py"
 
 
+
+
+
+
+
 rule compute_precision_recall:
     input:
         truth="resources/Simulate/simulated_data/{chrom}_truth.csv",
         results_rep="results/single_sample/Simulate/result_files/sample_df_simulated_data.parquet",
+        coverage="resources/Simulate/simulated_data/complete_cov.regions.bed",
         # tool="results/{platform}/{protocol}/result_files/{method}.parquet",
     output:
         precall="results/single_sample/Simulate/plots/precall_{chrom}.{plot_type}",
+        cov_dist="results/single_sample/Simulate/plots/{chrom}_cov_dist.{plot_type}",
     log:
         "logs/mason/compute_precision_recall/{chrom}_{plot_type}.log",
     conda:
