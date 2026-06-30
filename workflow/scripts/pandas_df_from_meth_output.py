@@ -33,6 +33,7 @@ def read_tool_file(filepath: str, file_name: str) -> pd.DataFrame:
         Columns: chromosome, position, tool_methylation
     """
     records = []
+    bias_records = []
 
     with open(filepath, "r") as f:
         for line in f:
@@ -113,7 +114,14 @@ def read_tool_file(filepath: str, file_name: str) -> pd.DataFrame:
                         file=sys.stderr,
                     )
                     continue
-                records.append([chrom, position, meth_rate, parts[9]])
+                if max(prob_present, prob_absent, prob_artifact) == prob_artifact:
+                    print(
+                        f"Artifact site skipped: {chrom}:{position}",
+                        file=sys.stderr,
+                    )
+                    bias_records.append([chrom, position, meth_rate, parts[9]])
+                    continue
+                records.append([chrom, position, meth_rate])
 
             # -----------------------------
             # MethylDackel / Bismark formats
@@ -123,7 +131,7 @@ def read_tool_file(filepath: str, file_name: str) -> pd.DataFrame:
                 start, end = int(parts[1]), int(parts[2])
                 meth_rate = float(parts[3])
                 position = (start + end) // 2
-                records.append([chrom, position, meth_rate, pd.NA])
+                records.append([chrom, position, meth_rate])
             # -----------------------------
             # BisSNP / Bismark formats
             # -----------------------------
@@ -131,7 +139,7 @@ def read_tool_file(filepath: str, file_name: str) -> pd.DataFrame:
                 chrom = parts[0]
                 position = int(parts[1])
                 meth_rate = float(parts[2])
-                records.append([chrom, position, meth_rate, pd.NA])
+                records.append([chrom, position, meth_rate])
 
             # -----------------------------
             # bsMap format
@@ -142,7 +150,7 @@ def read_tool_file(filepath: str, file_name: str) -> pd.DataFrame:
                 chrom = parts[0]
                 position = int(parts[1])
                 meth_rate = float(parts[4]) * 100
-                records.append([chrom, position, meth_rate, pd.NA])
+                records.append([chrom, position, meth_rate])
 
             # -----------------------------
             # modkit format
@@ -154,7 +162,7 @@ def read_tool_file(filepath: str, file_name: str) -> pd.DataFrame:
                 meth_rate = float(parts[10])
 
                 if modified_base == "m":
-                    records.append([chrom, position, meth_rate, pd.NA])
+                    records.append([chrom, position, meth_rate])
 
             # -----------------------------
             # pb_CpG_tools format
@@ -163,10 +171,14 @@ def read_tool_file(filepath: str, file_name: str) -> pd.DataFrame:
                 chrom = parts[0]
                 position = int(parts[2])
                 meth_rate = float(parts[3])
-                records.append([chrom, position, meth_rate, pd.NA])
+                records.append([chrom, position, meth_rate])
 
-    return pd.DataFrame(
-        records, columns=["chromosome", "position", "tool_methylation", "format"]
+    return (
+        pd.DataFrame(records, columns=["chromosome", "position", "tool_methylation"]),
+        pd.DataFrame(
+            bias_records,
+            columns=["chromosome", "position", "tool_methylation", "format"],
+        ),
     )
 
 
@@ -176,6 +188,8 @@ def read_tool_file(filepath: str, file_name: str) -> pd.DataFrame:
 tool_file = snakemake.input["tool"]
 file_name = os.path.splitext(os.path.basename(tool_file))[0]
 
-df = read_tool_file(tool_file, file_name)
+df, bias_df = read_tool_file(tool_file, file_name)
 # Save standardized output
 df.to_parquet(snakemake.output[0], engine="pyarrow", compression="snappy")
+if file_name == "varlociraptor":
+    bias_df.to_parquet(snakemake.output[1], engine="pyarrow", compression="snappy")
