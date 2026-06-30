@@ -138,7 +138,12 @@ bars_dr = (
         y=alt.Y(
             "distance:Q",
             title="Dᵣ",
-            axis=alt.Axis(orient="right", titleColor="black", labelColor="black"),
+            axis=alt.Axis(
+                orient="right",
+                titleColor="black",
+                labelColor="black",
+                title="Relative Distance",
+            ),
         )
     )
 )
@@ -155,7 +160,12 @@ bars_da = (
         y=alt.Y(
             "distance:Q",
             title="Dₐ",
-            axis=alt.Axis(orient="left", titleColor="black", labelColor="black"),
+            axis=alt.Axis(
+                orient="left",
+                titleColor="black",
+                labelColor="black",
+                title="Absolute Distance",
+            ),
             scale=alt.Scale(domain=[0, 30]),
         )
     )
