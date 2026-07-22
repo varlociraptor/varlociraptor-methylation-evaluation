@@ -39,7 +39,7 @@ def plot_heatmap(
             title=alt.TitleParams(
                 text=titles.get(snakemake.output[0].split("/")[-3], meth_caller_name),
                 subtitle=[
-                    f"N = {number_points}k | Dᵣ = {mape:.2f}% | Dₐ = {mae:.2f}% | Bd = {binary_discordance:.2f}",
+                    f"N = {number_points}k | Dᵣ = {mape:.2f} | Dₐ = {mae:.2f} | Bd = {binary_discordance:.2f}",
                 ],
                 subtitleFontSize=9,
             ),
@@ -108,7 +108,7 @@ heatmaps = [
     for m in meth_callers
 ]
 heatmap_plots = alt.concat(*heatmaps, columns=4).resolve_scale(
-    x="independent", y="independent", color="independent"
+    x="independent", y="independent", color="shared"
 )
 
 
