@@ -110,18 +110,20 @@ rule aligned_reads_focus_on_chromosome:
             f"chr{chromosome_by_seq_platform[wildcards.seq_platform]}"
             if wildcards.seq_platform == "PacBio"
             or wildcards.seq_platform == "Nanopore"
+            else "21"
+            if chromosome_by_seq_platform[wildcards.seq_platform] == "genome"
             else chromosome_by_seq_platform[wildcards.seq_platform]
         ),
-        whole_genome=lambda wildcards: wildcards.seq_platform == "genome",
+        # whole_genome=lambda wildcards: wildcards.seq_platform == "genome",
     threads: 4
     shell:
+        # if [ {params.whole_genome} == True ]; then
+        #     samtools view -h -@ {threads} -b -o {output.bam} {input.bam} 2> {log}
+        # else
         """
-        if [ {params.whole_genome} == True ]; then
-            samtools view -h -@ {threads} -b -o {output.bam} {input.bam} 2> {log}
-        else
-            samtools view -h -@ {threads} -b -o {output.bam} {input.bam} {params.chromosome} 2> {log}
-        fi
+        samtools view -h -@ {threads} -b -o {output.bam} {input.bam} {params.chromosome} 2> {log}
         """
+        # fi
 
 
 rule aligned_reads_markduplicates:
@@ -189,8 +191,8 @@ rule aligned_reads_rename_chromosomes:
         "resources/{seq_platform}/{sample}/alignment_focused_downsampled_dedup_renamed.bam",
     log:
         "logs/bwameth/aligned_reads_rename_chromosomes/{seq_platform}_{sample}.log",
-    wildcard_constraints:
-        sample="(?!simulated_data).*",
+    # wildcard_constraints:
+        # sample="(?!simulated_data).*",
     conda:
         "../envs/pysam.yaml"
     script:

@@ -101,27 +101,6 @@ rule mason_fake_reads:
                 --illumina-read-length 150  2> {log}
         """
 
-rule mason_sort_reads:
-    input:
-        #             "resources/Simulate/{sample}/{SRA}/{SRA}_2_trimmed.fastq",
-        #         f1=expand(
-        #             "resources/Simulate/{sample}/{SRA}/{SRA}_1_trimmed.fastq",
-        #             sample="simulated_data",
-        #             SRA=config["data"]["Simulate"]["simulated_data"],
-        #         ),
-        expand("resources/Simulate/simulated_data/{SRA}/alignment.bam", SRA=config["data"]["Simulate"]["simulated_data"]),
-    output:
-        # Name it like that in order to skip filtering on qual, mark_duplicates, ...
-        "resources/Simulate/simulated_data/alignment_focused_downsampled_dedup_renamed.bam",
-    conda:
-        "../envs/samtools.yaml"
-    log:
-        "logs/mason/mason_sort_reads/.log",
-    threads: 4
-    shell:
-        "samtools sort -@ {threads}  {input} -o {output} 2> {log}"
-
-
 # Mason has a different meth ratio for forward and reverse strands.
 # That is why we need to compute the coverage on the forward and reverse strand independently.
 rule mason_alignment_forward:
@@ -323,7 +302,9 @@ rule compute_precision_recall:
     input:
         truth="resources/Simulate/simulated_data/{chrom}_truth.csv",
         results_rep="results/single_sample/Simulate/result_files/sample_df_simulated_data.parquet",
-        coverage="resources/Simulate/simulated_data/complete_cov.regions.bed",
+
+        no_bias="results/single_sample/Simulate/called/simulated_data_no_bias/result_files/varlo_0.01.parquet",
+        # coverage="resources/Simulate/simulated_data/complete_cov.regions.bed",
         # tool="results/{platform}/{protocol}/result_files/{method}.parquet",
     output:
         precall="results/single_sample/Simulate/plots/precall_{chrom}.{plot_type}",
