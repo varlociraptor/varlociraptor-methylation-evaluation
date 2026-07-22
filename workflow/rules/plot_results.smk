@@ -185,7 +185,13 @@ rule plot_bars_illumina:
 
 rule plot_bias:
     input:
-        table="results/{call_type}/{seq_platform}/result_files/replicates.parquet",
+        table=lambda wildcards: expand("results/{{call_type}}/{{seq_platform}}/called/{sample}/result_files/varlo_{fdr}_bias.parquet",
+            sample=config["data"].get(
+                wildcards.seq_platform, config["data"].get(wildcards.call_type, [])
+            ),
+            fdr=config["fdr_alpha"],
+        ),
+        # table="results/{call_type}/{seq_platform}/result_files/replicates.parquet",
     output:
         report(
             "results/{call_type}/{seq_platform}/plots/{sample}_bias.{plot_type}",
@@ -293,6 +299,21 @@ rule debug_pb_cpg_tools:
 
     log:
         "logs/plot_results/debug_pb_cpg_tools/{call_type}_{seq_platform}.log",
+    conda:
+        "../envs/python.yaml"
+    script:
+        "../scripts/debug_pb_cpg_tools.py"
+
+
+rule debug_pb_cpg_tools:
+    input:
+        pacbio="results/single_sample/PacBio/result_files/replicates.parquet",
+        nanopore="results/single_sample/Nanopore/result_files/replicates.parquet",
+        illumina="results/single_sample/Illumina_pe/result_files/replicates.parquet",
+    output:
+        "results/single_sample/plots/debug_pb_cpg_tools.{plot_type}",
+    log:
+        "logs/plot_results/debug_pb_cpg_tools_{plot_type}.log",
     conda:
         "../envs/python.yaml"
     script:
