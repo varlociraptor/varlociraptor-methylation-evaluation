@@ -157,7 +157,7 @@ rule bsmapz_extract:
     params:
         chromosome_flag=lambda wildcards: f"-c={chromosome_by_seq_platform.get(wildcards.platform)}"
             if chromosome_by_seq_platform.get(wildcards.platform) != "genome"
-                else ""
+                else f"-c=21"
     conda:
         "../envs/bsmapz.yaml"
     resources:

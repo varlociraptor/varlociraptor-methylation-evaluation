@@ -20,7 +20,6 @@ rule compute_varlo_df:
         tool="results/{call_type}/{seq_platform}/called/{sample}/result_files/varlo.bed",
     output:
         "results/{call_type}/{seq_platform}/called/{sample}/result_files/varlo_{fdr}.parquet",
-        "results/{call_type}/{seq_platform}/called/{sample}/result_files/varlo_{fdr}_bias.parquet",
     conda:
         "../envs/python.yaml"
     log:
@@ -66,7 +65,9 @@ rule common_tool_df:
 rule merge_replicates:
     input:
         lambda wildcards: expand(
-            "results/{{call_type}}/{{seq_platform}}/result_files/sample_df_{sample}.parquet",
+            "results/{call_type}/{seq_platform}/result_files/sample_df_{sample}.parquet",
+            call_type=wildcards.call_type,
+            seq_platform=wildcards.seq_platform,
             sample=config["data"].get(
                 wildcards.seq_platform, config["data"].get(wildcards.call_type, [])
             ),

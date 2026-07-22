@@ -12,7 +12,7 @@ rule varlociraptor_preprocess:
         alignment_index="resources/{seq_platform}/{sample}/candidate_specific/alignment_{scatteritem}.bam.bai",
         candidates=lambda wildcards: expand(
             "resources/{chrom}/candidates_{{scatteritem}}.bcf",
-            chrom=chromosome_by_seq_platform.get(wildcards.seq_platform),
+            chrom=21 if chromosome_by_seq_platform.get(wildcards.seq_platform) == "genome" else chromosome_by_seq_platform.get(wildcards.seq_platform),
         ),
     output:
         "results/preprocessed/{seq_platform}/{sample}/normal_{scatteritem}.bcf",
@@ -49,10 +49,26 @@ rule varlociraptor_call:
         "../envs/varlociraptor.yaml"
     wildcard_constraints:
         seq_platform="(?!multi_sample).*",
+        sample="(?!simulated_data_no_bias).*",
     shell:
         "varlociraptor call variants generic --scenario {input.scenario} --obs normal={input.preprocess_obs} > {output} 2> {log}"
 
-
+# rule varlociraptor_call_no_bias:
+#     input:
+#         preprocess_obs="results/preprocessed/Simulate/simulated_data/normal_{scatteritem}.bcf",
+#         scenario=workflow.source_path("../scenarios/scenario.yaml"),
+#     output:
+#         "results/single_sample/Simulate/called/simulated_data_no_bias/calls_{scatteritem}.bcf",
+#     log:
+#         "logs/varlociraptor_single/varlociraptor_call_no_bias/{scatteritem}.log",
+#     benchmark:
+#         repeat("benchmarks/Simulate/varlociraptor/calling/simulated_data_{scatteritem}.bwa.benchmark.txt", config["benchmark_repeats"])
+#     conda:
+#         "../envs/varlociraptor.yaml"
+#     wildcard_constraints:
+#         seq_platform="(?!multi_sample).*",
+#     shell:
+#         "varlociraptor call variants --omit-alt-locus-bias --omit-homopolymer-artifact-detection --omit-read-orientation-bias --omit-read-position-bias --omit-softclip-bias --omit-strand-bias generic --scenario {input.scenario} --obs normal={input.preprocess_obs}> {output} 2> {log}"
 
 rule gather_calls:
     input:

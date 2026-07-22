@@ -86,7 +86,7 @@ rule bissnp_extract:
     conda:
         "../envs/openjdk.yaml"
     params:
-        loc_flag=lambda wildcards: "" if chromosome_by_seq_platform.get(wildcards.platform) == "genome" else f"-L {chromosome_by_seq_platform.get(wildcards.platform)}",
+        loc_flag=lambda wildcards: f"-L 21" if chromosome_by_seq_platform.get(wildcards.platform) == "genome" else f"-L {chromosome_by_seq_platform.get(wildcards.platform)}",
     log:
         "logs/bissnp/bissnp_extract/{platform}_{sample}.log",
     benchmark:
