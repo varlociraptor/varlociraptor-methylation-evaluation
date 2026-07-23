@@ -52,23 +52,9 @@ df_nanopore = pl.read_parquet(snakemake.input["nanopore"]).with_columns(
     platform=pl.lit("Nanopore")
 )
 df = pl.concat([df_illumina, df_pacbio, df_nanopore])
+
 df = df.filter(pl.col("min_coverage_bin") <= 80)
-# platform_to_q95 = (
-#     df.sort(["platform", "min_coverage_bin"])
-#     .with_columns(
-#         pl.col("count").cum_sum().over("platform").alias("cum_count"),
-#         pl.col("count").sum().over("platform").alias("total_count"),
-#     )
-#     .with_columns((pl.col("cum_count") / pl.col("total_count")).alias("cum_fraction"))
-#     .filter(pl.col("cum_fraction") >= 0.95)
-#     .group_by("platform")
-#     .agg(pl.col("min_coverage_bin").min().alias("q95"))
-# )
-# df = (
-#     df.join(platform_to_q95, on="platform")
-#     .filter(pl.col("min_coverage_bin") <= pl.col("q95"))
-#     .drop("q95")
-# )
+
 color_domain = sorted(df["tool_name"].unique())
 color_range = [tool_colors[t] for t in color_domain]
 line_plot_min_cov_vs_count = (
@@ -76,7 +62,7 @@ line_plot_min_cov_vs_count = (
     .mark_line()
     .encode(
         x=alt.X("min_coverage_bin:Q", title="Min Coverage"),
-        y=alt.Y("fraction:Q", title="Fraction"),
+        y=alt.Y("cumulative_fraction:Q", title="Cumulative Fraction"),
         color=alt.Color(
             "tool_name",
             title="Caller",

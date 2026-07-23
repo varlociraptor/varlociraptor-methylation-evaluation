@@ -1,7 +1,7 @@
 import altair as alt
 import polars as pl
 
-# pl.Config.set_tbl_rows(100)
+pl.Config.set_tbl_rows(1000)
 pl.Config.set_tbl_cols(100)
 
 
@@ -30,7 +30,6 @@ def parse_cov(file_path, df):
 
 
 def plot_cov_dist(df_caller, caller, plot_type):
-    print(caller, plot_type, df_caller)
     chart = (
         alt.Chart(df_caller)
         .mark_bar()
@@ -43,7 +42,6 @@ def plot_cov_dist(df_caller, caller, plot_type):
     return chart
 
 
-pl.Config.set_tbl_rows(100)
 
 meth_caller_to_name = {
     "varlo_0.1": "Varlociraptor α = 0.1",
@@ -57,6 +55,7 @@ meth_caller_to_name = {
     "modkit": "Modkit",
     "pb_CpG_tools": "Pb-CpG-tools",
     "bisSNP": "BisSNP",
+    "no_bias": "No bias",
 }
 
 tool_colors = {
@@ -70,6 +69,7 @@ tool_colors = {
     "Varlociraptor α = 0.1": "#004D40",
     "Varlociraptor α = 0.05": "#126e5f",
     "Varlociraptor α = 0.01": "#05AA8F",
+    "No bias": "#888888",
 }
 
 
@@ -84,6 +84,7 @@ def compute_precision_recall(df, meth_callers, bin_size=5):
 
     results = []
     cov_charts = []
+    print(df.filter((pl.col("no_bias_methylation") == 0) & (pl.col("methylDackel_methylation") > 0)))
     for caller in meth_callers:
         df_caller = df.filter(pl.col(f"{caller}_methylation").is_not_null())
         df_caller = df_caller.with_columns(
@@ -106,10 +107,12 @@ def compute_precision_recall(df, meth_callers, bin_size=5):
         ).sum()
         P = df_caller[f"{caller}_binary"].sum()
         N = df_caller.height - P
+
         precision = TP / (TP + FP) if (TP + FP) > 0 else 0.0
         recall = TP / (TP + FN) if (TP + FN) > 0 else 0.0
         positive_rate = TP / P if P > 0 else 0.0
         negative_rate = TN / N if N > 0 else 0.0
+
         chart_tn_cv = plot_cov_dist(
             df_caller.filter(
                 (pl.col(f"{caller}_binary") == 0) & (pl.col("truth_binary") == 0)
@@ -168,13 +171,28 @@ def compute_precision_recall(df, meth_callers, bin_size=5):
 
 
 alt.data_transformers.enable("vegafusion")
-meth_callers = snakemake.params.meth_callers
+meth_callers = snakemake.params.meth_callers + ["no_bias"]
 truth_df = pl.read_csv(snakemake.input[0], schema_overrides={"chrom": pl.Utf8})
 tools_df = pl.read_parquet(snakemake.input[1]).with_columns(
     pl.col("chromosome").cast(pl.Utf8)
 )
+no_bias_df = pl.read_parquet(snakemake.input["no_bias"]).with_columns(
+    pl.col("chromosome").cast(pl.Utf8)
+)
+print("Tools", tools_df.filter(pl.col("position").is_in([5030346])).head(20))
+print("No bias", no_bias_df.filter(pl.col("position").is_in([5030346])).head(20))
+
+df = tools_df.join(
+    no_bias_df,
+    on=["chromosome", "position"],
+    how="inner",
+).rename(
+    {"tool_methylation": "no_bias_methylation"}
+)
+print("DF", df.head(20))
+
 df = truth_df.join(
-    tools_df,
+    df,
     left_on=["chrom", "pos"],
     right_on=["chromosome", "position"],
     how="inner",
@@ -186,9 +204,10 @@ df = truth_df.join(
     ]
     + [pl.col(f"{caller}_methylation") for caller in meth_callers]
 )
+print("Combined", df.head(20))
+
 df = parse_cov(snakemake.input[2], df)
 
-print(df.head())
 
 metrics_df, cov_charts = compute_precision_recall(df, meth_callers)
 metrics_df = metrics_df.with_columns(
