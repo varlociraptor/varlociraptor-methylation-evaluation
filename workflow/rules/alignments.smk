@@ -229,7 +229,7 @@ rule scatter_aligned_reads:
     input:
         alignment="resources/{seq_platform}/{sample}/alignment_focused_downsampled_dedup_renamed.bam",
         index="resources/{seq_platform}/{sample}/alignment_focused_downsampled_dedup_renamed.bam.bai",
-        candidate=lambda wildcards: f"resources/{chromosome_by_seq_platform.get(wildcards.seq_platform)}/candidates_{wildcards.scatteritem}.bed",
+        candidate=lambda wildcards: f"resources/{chromosome_by_seq_platform.get(wildcards.seq_platform) if wildcards.seq_platform != 'Simulate' else '21'}/candidates_{wildcards.scatteritem}.bed",
     output:
         "resources/{seq_platform}/{sample}/candidate_specific/alignment_{scatteritem}.bam",
     log:

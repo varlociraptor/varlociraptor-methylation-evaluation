@@ -248,6 +248,20 @@ rule mason_candidates_vcf:
         bcftools view -o {output} {input} 2> {log}
         """
 
+rule unzip:
+    input:
+        "resources/Simulate/simulated_data/{orientation}.regions.bed.gz",
+    output:
+        "resources/Simulate/simulated_data/{orientation}.regions.bed",
+    conda:
+        "../envs/samtools.yaml"
+    log:
+        "logs/mason/unzip/{orientation}.log",
+    shell:
+        """
+        gunzip -c {input} > {output}
+        """
+
 
 rule mason_compute_truth:
     input:

@@ -46,7 +46,7 @@ rule bsmapz_compute_meth:
     input:
         genome=lambda wildcards: expand(
             "resources/{chrom}.fasta",
-            chrom=config["seq_platforms"].get(wildcards.platform),
+            chrom=config["seq_platforms"].get(wildcards.platform) if wildcards.platform != 'Simulate' else '21',
         ),
         alignment="resources/{platform}/{sample}/alignment_focused_downsampled_dedup_renamed.bam",
         alignment_index="resources/{platform}/{sample}/alignment_focused_downsampled_dedup_renamed.bam.bai",
@@ -109,7 +109,7 @@ rule bsmapz_extract_scatter_bam:
     input:
         alignment="results/single_sample/{platform}/called/{sample}/result_files/out.bam",
         index="results/single_sample/{platform}/called/{sample}/result_files/out.bam.bai",
-        candidate=lambda wildcards: f"resources/{chromosome_by_seq_platform.get(wildcards.platform)}/candidates_{wildcards.scatteritem}.bed",
+        candidate=lambda wildcards: f"resources/{chromosome_by_seq_platform.get(wildcards.platform) if chromosome_by_seq_platform.get(wildcards.platform) != "genome" else 21}/candidates_{wildcards.scatteritem}.bed",
     output:
         temp(
             "results/single_sample/{platform}/called/{sample}/result_files/out_{scatteritem}.bam"
