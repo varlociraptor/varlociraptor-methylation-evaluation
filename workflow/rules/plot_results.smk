@@ -139,6 +139,9 @@ rule plot_heatmaps:
         "../envs/python.yaml"
     resources:
         mem_mb=4000,
+    wildcard_constraints:
+        # sample should not be 'simulated_data'
+        sample="^(?!simulated_data$).*"
     log:
         "logs/plot_results/plot_heatmaps/{call_type}_{seq_platform}_{sample}_{plot_type}.log",
     params:
@@ -292,19 +295,6 @@ rule concat_plots_coverage:
         "../scripts/concat_coverage.py"
 
 
-rule debug_pb_cpg_tools:
-    input:
-        "results/{call_type}/{seq_platform}/result_files/replicates.parquet",
-    output:
-        "results/{call_type}/{seq_platform}/plots/maes.pdf",
-
-    log:
-        "logs/plot_results/debug_pb_cpg_tools/{call_type}_{seq_platform}.log",
-    conda:
-        "../envs/python.yaml"
-    script:
-        "../scripts/debug_pb_cpg_tools.py"
-
 
 rule debug_pb_cpg_tools:
     input:
@@ -312,7 +302,14 @@ rule debug_pb_cpg_tools:
         nanopore="results/single_sample/Nanopore/result_files/replicates.parquet",
         illumina="results/single_sample/Illumina_pe/result_files/replicates.parquet",
     output:
-        "results/single_sample/plots/debug_pb_cpg_tools.{plot_type}",
+        report("results/single_sample/plots/debug_pb_cpg_tools.{plot_type}",
+            category="single_sample",
+            subcategory="debug_pb_cpg_tools",
+            labels={
+                "file": "debug_pb_cpg_tools",
+            },
+            caption="../report/debug_pb_cpg_tools.rst",
+        ),
     log:
         "logs/plot_results/debug_pb_cpg_tools_{plot_type}.log",
     conda:
