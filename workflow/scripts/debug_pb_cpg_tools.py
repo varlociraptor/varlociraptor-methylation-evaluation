@@ -186,7 +186,7 @@ def plot_histo(combined, title):
                 range=["#D81B60", "#1E88E5"],
             ),title="Varlo prediction"),
         )
-        .properties(height=400, title=title)
+        .properties(height=400, width=800, title=title)
     )
     # chart = alt.vconcat(strip, histo).resolve_scale(color="independent")
     return histo
@@ -291,5 +291,13 @@ scatter_unmeth = plot_scatter(scatter_data_unmeth, "Unmethylated", 5)
 scatter_meth = plot_scatter(scatter_data_meth, "Fully Methylated", 95)
 scatter = alt.vconcat(scatter_unmeth, scatter_meth).resolve_scale(color="shared", shape="shared")
 
-chart = alt.hconcat(scatter, histo).resolve_scale(color="independent", shape="independent")
+
+chart = (
+    alt.hconcat(scatter, histo)
+    .resolve_scale(color="independent", shape="independent")
+    .configure_axis(labelFontSize=18, titleFontSize=20)
+    .configure_legend(labelFontSize=18, titleFontSize=20)
+    .configure_title(fontSize=22, subtitleFontSize=18)
+    .configure_header(labelFontSize=18, titleFontSize=20)
+)
 chart.save(snakemake.output[0])

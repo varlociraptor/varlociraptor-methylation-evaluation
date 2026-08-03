@@ -177,7 +177,7 @@ labels = (
     alt.Chart(df_summary)
     .transform_filter(alt.datum.distance_type == "Dᵣ")
     .transform_calculate(text_k="datum.number + 'k'")
-    .mark_text(size=8, dy=-5, color="black")
+    .mark_text(size=6,dy=-5, color="black")
     .encode(
         text="text_k:N",
         x="sample:N",
@@ -202,13 +202,13 @@ bd_plot = (
 # so each keeps the orient (left/right) and domain set on its own y-encoding.
 illumina_histo = (
     alt.layer(bars_da, bars_dr, labels)
-    .properties(width=500, height=220)
+    .properties(width=700, height=220)
     .resolve_scale(y="independent")
 )
 
 bd_histo = (
     bd_plot
-    .properties(width=500, height=180)
+    .properties(width=700, height=220)
 )
 
 chart = alt.vconcat(

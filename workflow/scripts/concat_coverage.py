@@ -1,4 +1,4 @@
-from turtle import color
+from turtle import color, width
 
 import altair as alt
 import pandas as pd
@@ -62,7 +62,7 @@ line_plot_min_cov_vs_count = (
     .mark_line()
     .encode(
         x=alt.X("min_coverage_bin:Q", title="Min Coverage"),
-        y=alt.Y("cumulative_fraction:Q", title="Cumulative Fraction"),
+        y=alt.Y("cumulative_fraction:Q", title="Fraction of called CpG loci (N)"),
         color=alt.Color(
             "tool_name",
             title="Caller",
@@ -74,6 +74,6 @@ line_plot_min_cov_vs_count = (
         strokeWidth=alt.value(1),
         column=alt.Column("platform", title=None),
     )
-)
+).properties(width=200, height=200).configure_header(labelFontSize=14, labelFontWeight="bold",)
 
 line_plot_min_cov_vs_count.save(snakemake.output[0], scale_factor=2)
