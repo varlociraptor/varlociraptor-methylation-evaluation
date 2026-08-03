@@ -46,7 +46,7 @@ rule bsmapz_compute_meth:
     input:
         genome=lambda wildcards: expand(
             "resources/{chrom}.fasta",
-            chrom=config["seq_platforms"].get(wildcards.platform) if wildcards.platform != 'Simulate' else '21',
+            chrom=config["seq_platforms"].get(wildcards.platform) if config["seq_platforms"].get(wildcards.platform) != 'genome' else '21',
         ),
         alignment="resources/{platform}/{sample}/alignment_focused_downsampled_dedup_renamed.bam",
         alignment_index="resources/{platform}/{sample}/alignment_focused_downsampled_dedup_renamed.bam.bai",
