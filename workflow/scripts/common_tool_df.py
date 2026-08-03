@@ -40,6 +40,15 @@ for tool_file in tool_files:
     df = df.set_index(["chromosome", "position"])
     dfs.append(df)
 
+# TODO: Find a better solution.
+# Since we split alignment files for Varlo, BSMPAz,and Methyldackel for mor efficient computation we compute multiple meth rates for positions at the beginning and end of the alignment file.
+# A weighted average would be better but for now we just drop duplicate positions
+all_dup_positions = set()
+for df in dfs:
+    all_dup_positions.update(df.index[df.index.duplicated(keep=False)])
+print(f"Found {len(all_dup_positions)} duplicate positions", file=sys.stderr)
+dfs = [df[~df.index.isin(all_dup_positions)] for df in dfs]
+
 df_merged = pd.concat(dfs, axis=1, join="outer").reset_index()
 df_merged.to_parquet(
     snakemake.output["sample_df"], engine="pyarrow", compression="snappy"

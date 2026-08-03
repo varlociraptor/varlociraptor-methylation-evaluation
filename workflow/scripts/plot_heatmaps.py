@@ -6,7 +6,7 @@ import pandas as pd
 
 sys.stderr = open(snakemake.log[0], "w")
 pd.set_option("display.max_columns", None)
-pd.set_option("display.max_rows", 1000)
+pd.set_option("display.max_rows", 10)
 alt.data_transformers.enable("vegafusion")
 
 titles = {
@@ -22,9 +22,9 @@ def plot_heatmap(
     bin_size: int,
     distances: dict,
     meth_caller_name: str,
+    max_count: int,
 ) -> alt.Chart:
     """Log-scaled heatmap for replicate methylation counts."""
-    max_count = df["count"].max()
     ticks = list(np.logspace(0, np.log10(max_count), num=5).round().astype(int))
     mape = distances.loc[distances["meth_caller"] == meth_caller, "mape"].iloc[0]
     mae = distances.loc[distances["meth_caller"] == meth_caller, "mae"].iloc[0]
@@ -97,6 +97,9 @@ for m in meth_callers:
     if m.startswith("varlo_"):
         alpha = m.split("_")[1]
         meth_caller_to_name[m] = f"Varlociraptor α = {alpha}"
+max_count = combined_counts_df.loc[
+    combined_counts_df["meth_caller"].isin(meth_callers), "count"
+].max()
 heatmaps = [
     plot_heatmap(
         combined_counts_df[combined_counts_df["meth_caller"] == m],
@@ -104,12 +107,13 @@ heatmaps = [
         bin_size,
         distances,
         meth_caller_to_name.get(m, m),
+        max_count
     )
     for m in meth_callers
 ]
 heatmap_plots = alt.concat(*heatmaps, columns=4).resolve_scale(
     x="independent", y="independent", color="shared"
-)
+).properties()
 
 
 heatmap_plots.save(snakemake.output[0], embed_options={"actions": False}, inline=False)
