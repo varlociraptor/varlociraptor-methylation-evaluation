@@ -196,7 +196,7 @@ rule mason_coverage_orientation:
         bai="resources/Simulate/simulated_data/alignment_sorted_{orientation}.bam.bai",
         bed=expand(
             "resources/{chrom}/candidates.bed",
-            chrom=config["seq_platforms"].get("Simulate"),
+            chrom=config["seq_platforms"].get("Simulate") if config["seq_platforms"].get("Simulate") != "genome" else "21",
         ),
     output:
         "resources/Simulate/simulated_data/{orientation}_cov.mosdepth.global.dist.txt",
@@ -212,26 +212,26 @@ rule mason_coverage_orientation:
         "v5.5.2/bio/mosdepth"
 
 
-rule mason_coverage_complete:
-    input:
-        bam="resources/Simulate/simulated_data/chr21.bam",
-        bai="resources/Simulate/simulated_data/chr21.bam.bai",
-        bed=expand(
-            "resources/{chrom}/candidates.bed",
-            chrom=config.get("chrom_filter", config["seq_platforms"].get("Simulate")),
-        ),
-    output:
-        "resources/Simulate/simulated_data/complete_cov.mosdepth.global.dist.txt",
-        "resources/Simulate/simulated_data/complete_cov.mosdepth.region.dist.txt",
-        "resources/Simulate/simulated_data/complete_cov.regions.bed.gz",
-        summary="resources/Simulate/simulated_data/complete_cov.mosdepth.summary.txt",  # this named output is required for prefix parsing
-    log:
-        "logs/mason/mason_coverage_complete.log",
-    params:
-        extra="--no-per-base --use-median",  # optional
-    threads: 4  # This value - 1 will be sent to `--threads`
-    wrapper:
-        "v5.5.2/bio/mosdepth"
+# rule mason_coverage_complete:
+#     input:
+#         bam="resources/Simulate/simulated_data/chr21.bam",
+#         bai="resources/Simulate/simulated_data/chr21.bam.bai",
+#         bed=expand(
+#             "resources/{chrom}/candidates.bed",
+#             chrom=config.get("chrom_filter", config["seq_platforms"].get("Simulate")),
+#         ),
+#     output:
+#         "resources/Simulate/simulated_data/complete_cov.mosdepth.global.dist.txt",
+#         "resources/Simulate/simulated_data/complete_cov.mosdepth.region.dist.txt",
+#         "resources/Simulate/simulated_data/complete_cov.regions.bed.gz",
+#         summary="resources/Simulate/simulated_data/complete_cov.mosdepth.summary.txt",  # this named output is required for prefix parsing
+#     log:
+#         "logs/mason/mason_coverage_complete.log",
+#     params:
+#         extra="--no-per-base --use-median",  # optional
+#     threads: 4  # This value - 1 will be sent to `--threads`
+#     wrapper:
+#         "v5.5.2/bio/mosdepth"
 
 
 rule mason_candidates_vcf:
@@ -267,7 +267,7 @@ rule mason_compute_truth:
     input:
         cov_forward="resources/Simulate/simulated_data/forward_cov.regions.bed",
         cov_reverse="resources/Simulate/simulated_data/reverse_cov.regions.bed",
-        methylation="resources/Simulate/simulated_data/{chrom}_meth.fa",
+        methylation="resources/Simulate/simulated_data/genome_meth.fa",
         candidates="resources/{chrom}/candidates.vcf",
     output:
         "resources/Simulate/simulated_data/{chrom}_truth.csv",
