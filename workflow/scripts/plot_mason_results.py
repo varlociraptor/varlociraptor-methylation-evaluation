@@ -145,7 +145,7 @@ def plot_heatmap(meth_caller, df, distance_df):
             df,
             title=alt.TitleParams(
                 text=meth_caller_name,
-                subtitle=f"N = {df['count'].sum():.0f} Dᵣ = {distance_df.filter(pl.col('meth_caller') == meth_caller)['mape'].item():.2f}, Dₐ = {distance_df.filter(pl.col('meth_caller') == meth_caller)['mae'].item():.2f}, Bd = {distance_df.filter(pl.col('meth_caller') == meth_caller)['binary_discordance'].item():.2f}",
+                subtitle=f"N = {df['count'].sum():.0f} Dᵣ = {distance_df.filter(pl.col('meth_caller') == meth_caller)['mape'].item():.2f}, Dₐ = {distance_df.filter(pl.col('meth_caller') == meth_caller)['mae'].item():.2f}",
                 subtitleFontSize=9,
             ),
         )

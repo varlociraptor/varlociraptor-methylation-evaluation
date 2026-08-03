@@ -142,7 +142,7 @@ bars_dr = (
                 orient="right",
                 titleColor="black",
                 labelColor="black",
-                title="Relative Distance",
+                title="Relative Discordance",
             ),
         )
     )
@@ -164,7 +164,7 @@ bars_da = (
                 orient="left",
                 titleColor="black",
                 labelColor="black",
-                title="Absolute Distance",
+                title="Absolute Discordance",
             ),
             scale=alt.Scale(domain=[0, 30]),
         )
@@ -201,10 +201,21 @@ bd_plot = (
 # resolve_scale(y="independent") makes Dᵣ and Dₐ use separate scales,
 # so each keeps the orient (left/right) and domain set on its own y-encoding.
 illumina_histo = (
-    alt.layer(bars_da, bars_dr, labels).resolve_scale(y="independent").interactive()
+    alt.layer(bars_da, bars_dr, labels)
+    .properties(width=500, height=220)
+    .resolve_scale(y="independent")
 )
-bd_histo = bd_plot.interactive()
-chart = alt.vconcat(illumina_histo, bd_histo).interactive()
+
+bd_histo = (
+    bd_plot
+    .properties(width=500, height=180)
+)
+
+chart = alt.vconcat(
+    illumina_histo,
+    bd_histo,
+    spacing=10,
+)
 
 if plot_type == "parquet":
     df_summary.to_parquet(snakemake.output[0])

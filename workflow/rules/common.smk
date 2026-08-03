@@ -13,7 +13,6 @@ def compute_results() -> List[List[str]]:
         if platform != "Simulate" and platform != "multi_sample":
             inputs.append(heatmap_replicates(platform))
             inputs.append(bias_replicates(platform))
-            inputs.append(get_coverage_retained(platform))
 
     # Single-sample heatmaps across all FDR thresholds
     if "Illumina_pe" in config["seq_platforms"]:
@@ -28,12 +27,9 @@ def compute_results() -> List[List[str]]:
         )
     if "Simulate" in config["seq_platforms"]:
 
-        chromosome = config["seq_platforms"]["Simulate"]
+        chromosome = config["seq_platforms"]["Simulate"] if config["seq_platforms"]["Simulate"] != "genome" else "21"
         inputs.append(
             f"results/single_sample/Simulate/plots/simulated_data_{chromosome}.{config['plot_type']}"
-        )
-        inputs.append(
-            f"results/single_sample/Simulate/plots/precall_{chromosome}.{config['plot_type']}"
         )
     # Multi-sample common heatmaps
     if "multi_sample" in config["seq_platforms"]:
@@ -114,13 +110,4 @@ def get_sample_sra_bismark(wildcards) -> List[str]:
     return [
         f"resources/ref_tools/bismark/{wildcards.platform}/bams/{wildcards.sample}_pe_{sra}_unsorted.bam"
         for sra in accession_numbers
-    ]
-
-
-def get_coverage_retained(platform) -> List[str]:
-    plot_type = config["plot_type"]
-    return [
-        f"results/single_sample/{platform}/plots/{sample}_dist_{mapq}.{plot_type}"
-        for sample in config["samples"][platform]
-        for mapq in ["all", "60"]
     ]

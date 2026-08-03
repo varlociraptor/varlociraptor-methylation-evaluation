@@ -65,9 +65,7 @@ rule common_tool_df:
 rule merge_replicates:
     input:
         lambda wildcards: expand(
-            "results/{call_type}/{seq_platform}/result_files/sample_df_{sample}.parquet",
-            call_type=wildcards.call_type,
-            seq_platform=wildcards.seq_platform,
+            "results/{{call_type}}/{{seq_platform}}/result_files/sample_df_{sample}.parquet",
             sample=config["data"].get(
                 wildcards.seq_platform, config["data"].get(wildcards.call_type, [])
             ),
@@ -139,9 +137,9 @@ rule plot_heatmaps:
         "../envs/python.yaml"
     resources:
         mem_mb=4000,
-    wildcard_constraints:
-        # sample should not be 'simulated_data'
-        sample="^(?!simulated_data$).*"
+    # wildcard_constraints:
+    #     # sample should not be 'simulated_data'
+    #     sample="^(?!simulated_data$).*"
     log:
         "logs/plot_results/plot_heatmaps/{call_type}_{seq_platform}_{sample}_{plot_type}.log",
     params:
