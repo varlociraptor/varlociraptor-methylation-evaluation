@@ -288,9 +288,10 @@ rule mason_plot_truth_to_results:
     output:
         report(
             "results/single_sample/Simulate/plots/simulated_data_{chrom}.{plot_type}",
-            category="simulated_data",
+            category="single_sample",
+            subcategory="Simulated",
             labels=lambda wildcards: {
-                "file": "heatmap",
+                "file_type": "heatmap",
                 "sample": f"simulated_data",
             },
             caption="../report/heatmap.rst",

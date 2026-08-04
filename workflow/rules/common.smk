@@ -111,3 +111,12 @@ def get_sample_sra_bismark(wildcards) -> List[str]:
         f"resources/ref_tools/bismark/{wildcards.platform}/bams/{wildcards.sample}_pe_{sra}_unsorted.bam"
         for sra in accession_numbers
     ]
+
+seq_platform_to_name = {
+    "np_methylSeq": "Nanopore & MethylSeq",
+    "pb_methylSeq": "PacBio & MethylSeq",
+    "np_pb": "Nanopore & PacBio",
+    "Illumina_pe": "Illumina",
+    "Nanopore": "Nanopore",
+    "PacBio": "PacBio",
+}

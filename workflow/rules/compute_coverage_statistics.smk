@@ -61,13 +61,13 @@ rule compute_coverage_retention:
     output:
         mae=report("results/{call_type}/{seq_platform}/plots/{sample}_dist_{mapq}.{plot_type}",
             category="{call_type}",
-            subcategory=lambda wildcards: f"{wildcards.seq_platform}",
+            subcategory=lambda wildcards: seq_platform_to_name[wildcards.seq_platform],
             labels= {
-                "file": "stratify_mae",
+                "file_type": "coverage_retention",
                 "sample": "{sample}",
-                "mapq": "{mapq}"
-            }),
-
+            },
+            caption="../report/coverage_retained.rst",
+        ),
         parquet="results/{call_type}/{seq_platform}/coverages/{sample}_coverage_plot_{plot_type}_{mapq}.parquet",
     conda:
         "../envs/python.yaml"

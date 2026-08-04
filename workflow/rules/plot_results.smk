@@ -118,6 +118,8 @@ rule prepare_plot_df:
         "../scripts/prepare_plot_df.py"
 
 
+
+
 rule plot_heatmaps:
     input:
         df="results/{call_type}/{seq_platform}/result_files/{sample}_prepared.parquet",
@@ -126,9 +128,9 @@ rule plot_heatmaps:
         heatmap=report(
             "results/{call_type}/{seq_platform}/plots/{sample}_heatmap.{plot_type}",
             category="{call_type}",
-            subcategory=lambda wildcards: f"{wildcards.seq_platform}",
+            subcategory=lambda wildcards: seq_platform_to_name[wildcards.seq_platform],
             labels={
-                "file": "heatmap",
+                "file_type": "heatmap",
                 "sample": "{sample}",
             },
             caption="../report/heatmap.rst",
@@ -164,9 +166,9 @@ rule plot_bars_illumina:
         report(
             "results/single_sample/Illumina_pe/plots/bar_plot_single_samples.{plot_type}",
             category="single_sample",
-            subcategory="Illumina_pe",
+            subcategory="Illumina",
             labels={
-                "file": "bar_plot_single_samples",
+                "file_type": "bar_plot",
                 "sample": "all samples",
             },
             caption="../report/bar_plot_illumina.rst",
@@ -198,9 +200,9 @@ rule plot_bias:
         report(
             "results/{call_type}/{seq_platform}/plots/{sample}_bias.{plot_type}",
             category="{call_type}",
-            subcategory=lambda wildcards: f"{wildcards.seq_platform}",
+            subcategory=lambda wildcards: seq_platform_to_name[wildcards.seq_platform],
             labels={
-                "file": "bias",
+                "file_type": "bias",
                 "sample": "{sample}",
             },
             caption="../report/bias.rst",
@@ -302,9 +304,10 @@ rule debug_pb_cpg_tools:
     output:
         report("results/single_sample/plots/debug_pb_cpg_tools.{plot_type}",
             category="single_sample",
-            subcategory="debug_pb_cpg_tools",
+            subcategory="PacBio",
             labels={
-                "file": "debug_pb_cpg_tools",
+                "file_type": "debug_pb_cpg_tools",
+                "sample": "dummy",
             },
             caption="../report/debug_pb_cpg_tools.rst",
         ),
