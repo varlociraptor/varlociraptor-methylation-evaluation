@@ -139,19 +139,28 @@ def compute_min_coverage_distribution(df_long: pl.DataFrame) -> pl.DataFrame:
 def plot_min_coverage_vs_fraction(
     df_min_coverage: pl.DataFrame
 ) -> alt.Chart:
-    domain = sorted(df_min_coverage["tool_name"].unique())
-    color_range = [TOOL_COLORS[tool] for tool in domain]
+    color_domain = sorted(df_min_coverage["tool_name"].unique())
+    color_range = [TOOL_COLORS[tool] for tool in color_domain]
+    df_min_coverage = df_min_coverage.filter(pl.col("min_coverage_bin") <= 80)
 
     return (
         alt.Chart(df_min_coverage)
         .mark_line()
         .encode(
             x=alt.X("min_coverage_bin:Q", title="Min Coverage"),
-            y=alt.Y("fraction:Q", title="Fraction"),
-            color=alt.Color("tool_name", title="Caller", scale=alt.Scale(domain=domain, range=color_range)),
+            y=alt.Y("cumulative_fraction:Q", title="Fraction of called CpG loci (N)"),
+            color=alt.Color(
+                "tool_name",
+                title="Caller",
+                scale=alt.Scale(
+                    domain=color_domain,
+                    range=color_range,
+                ),
+            ),
             strokeWidth=alt.value(1),
         )
-    )
+    ).properties(width=200, height=200).configure_header(labelFontSize=14, labelFontWeight="bold")
+
 
 
 
