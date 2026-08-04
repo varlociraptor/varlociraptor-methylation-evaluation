@@ -17,5 +17,5 @@ get_data_from_cluster.sh
 .test/resources/**
 !.test/resources/scenarios
 !.test/resources/scenarios/**
-!.test/resources/chromosome_J02459.fasta
+!.test/resources/J02459.fasta
 .test/.snakemake/**

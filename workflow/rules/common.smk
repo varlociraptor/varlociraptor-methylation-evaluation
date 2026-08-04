@@ -38,12 +38,12 @@ def compute_results() -> List[List[str]]:
     # Multi-sample common heatmaps
     if "multi_sample" in config["seq_platforms"]:
         inputs.append(heatmap_replicates_common())
-    inputs.append(
-        [
-            f"results/single_sample/plots/debug_pb_cpg_tools.{config['plot_type']}",
-            "results/single_sample/plots/coverage.pdf",
-        ]
-    )
+    if "PacBio" in config["seq_platforms"]:
+        inputs.append(
+            [
+                f"results/single_sample/plots/debug_pb_cpg_tools.{config['plot_type']}",
+            ]
+        )
 
     return inputs
 

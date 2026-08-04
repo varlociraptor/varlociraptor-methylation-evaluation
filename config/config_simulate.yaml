@@ -19,7 +19,7 @@ data:
     simulated_data: [dummy]
 
 samples:
-  Illumina_pe: [dummy]
+  Simulate: [dummy]
 
 benchmark_repeats: 3
 
