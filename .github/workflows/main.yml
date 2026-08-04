@@ -11,14 +11,15 @@ jobs:
   Formatting:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - name: Formatting
-        uses: github/super-linter@v4
-        env:
-          VALIDATE_ALL_CODEBASE: false
-          DEFAULT_BRANCH: main
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          VALIDATE_SNAKEMAKE_SNAKEFMT: true
+    - uses: actions/checkout@v4
+
+    - uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+
+    - run: pip install snakefmt==1.0.0
+
+    - run: snakefmt --check workflow
 
   Linting:
     runs-on: ubuntu-latest
