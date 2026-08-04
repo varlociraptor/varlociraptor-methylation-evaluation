@@ -253,7 +253,11 @@ rule mason_compute_truth:
         cov_reverse="resources/Simulate/simulated_data/reverse_cov.regions.bed",
         methylation=(
             "resources/Simulate/simulated_data/"
-            + ("genome" if config["seq_platforms"]["Simulate"] != "J02459" else "J02459")
+            + (
+                "genome"
+                if config["seq_platforms"]["Simulate"] != "J02459"
+                else "J02459"
+            )
             + "_meth.fa"
         ),
         candidates="resources/{chrom}/candidates.vcf",
