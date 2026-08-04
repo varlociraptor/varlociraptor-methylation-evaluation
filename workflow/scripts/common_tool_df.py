@@ -1,22 +1,28 @@
-import sys
+import gc
 import os
-from functools import reduce
+import sys
+
 import pandas as pd
-import altair as alt
-import numpy as np
 
 # Redirect stderr to Snakemake log
 sys.stderr = open(snakemake.log[0], "w")
 
-tool_dfs = []
-
 # Combine standard tool files and Varlociraptor output
 tool_files = snakemake.input["tools"] + snakemake.input["varlo"]
+filter_chrom = snakemake.params["filter_chrom"]
+dfs = []
 
 for tool_file in tool_files:
     tool_name = os.path.splitext(os.path.basename(tool_file))[0]
 
-    df = pd.read_parquet(tool_file, engine="pyarrow")
+    df = pd.read_parquet(
+        tool_file,
+        engine="pyarrow",
+        columns=["chromosome", "position", "tool_methylation", "format"],
+    )
+
+    if filter_chrom is not None:
+        df = df[df["chromosome"] == filter_chrom]
     if tool_name == "varlo":
         # Rename Varlociraptor columns to match other tools
         fdr = os.path.basename(
@@ -24,24 +30,26 @@ for tool_file in tool_files:
         )
         tool_name = f"varlo_{fdr}"
 
-    # Keep only relevant columns and rename methylation column
-    df = df[["chromosome", "position", "tool_methylation", "format"]].rename(
+    df = df.rename(
         columns={
             "tool_methylation": f"{tool_name}_methylation",
             "format": f"{tool_name}_format",
         }
     )
+    # Set chromosome and position as index before appending
+    df = df.set_index(["chromosome", "position"])
+    dfs.append(df)
 
-    tool_dfs.append(df)
+# TODO: Find a better solution.
+# Since we split alignment files for Varlo, BSMPAz,and Methyldackel for mor efficient computation we compute multiple meth rates for positions at the beginning and end of the alignment file.
+# A weighted average would be better but for now we just drop duplicate positions
+all_dup_positions = set()
+for df in dfs:
+    all_dup_positions.update(df.index[df.index.duplicated(keep=False)])
+print(f"Found {len(all_dup_positions)} duplicate positions", file=sys.stderr)
+dfs = [df[~df.index.isin(all_dup_positions)] for df in dfs]
 
-# Merge all tool data on chromosome and position
-df_merged = reduce(
-    lambda left, right: pd.merge(
-        left, right, on=["chromosome", "position"], how="outer"
-    ),
-    tool_dfs,
-)
-
+df_merged = pd.concat(dfs, axis=1, join="outer").reset_index()
 df_merged.to_parquet(
     snakemake.output["sample_df"], engine="pyarrow", compression="snappy"
 )

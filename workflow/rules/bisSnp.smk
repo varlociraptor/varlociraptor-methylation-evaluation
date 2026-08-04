@@ -3,18 +3,21 @@
 rule bissnp_download:
     output:
         "resources/ref_tools/Bis-tools/BisSNP-0.82.2.jar",
-    conda:
-        "../envs/shell_cmds.yaml"
     log:
         "logs/bissnp/bissnp_download/download.log",
+    conda:
+        "../envs/shell_cmds.yaml"
     shell:
         """
-        touch {log}
-        mkdir -p resources/ref_tools
-        cd resources/ref_tools
-        git clone https://github.com/dnaase/Bis-tools.git
-        cd Bis-tools
-        wget -O BisSNP-0.82.2.jar https://sourceforge.net/projects/bissnp/files/BisSNP-0.82.2/BisSNP-0.82.2.jar/download
+        output_dir=$(dirname {output})
+        mkdir -p "$output_dir"
+
+        # clone only if directory is empty
+        if [ -z "$(ls -A "$output_dir")" ]; then
+            git clone https://github.com/dnaase/Bis-tools.git "$output_dir"
+            wget -O "$output_dir/BisSNP-0.82.2.jar" https://sourceforge.net/projects/bissnp/files/BisSNP-0.82.2/BisSNP-0.82.2.jar/download
+        fi
+
         """
 
 
@@ -22,151 +25,92 @@ rule bissnp_download:
 rule bissnp_prepare:
     input:
         jar="resources/ref_tools/Bis-tools/BisSNP-0.82.2.jar",
-        genome=expand(
-            "resources/chromosome_{chrom}.fasta",
-            chrom=config["seq_platforms"].get("Illumina_pe"),
+        genome=lambda wildcards: (
+            expand(
+                "resources/{chrom}.fasta",
+                chrom=config["seq_platforms"].get(wildcards.platform),
+            )
+            if wildcards.sample.startswith("simulated_data")
+            else ["resources/genome.fasta"]
         ),
-        genome_index=expand(
-            "resources/chromosome_{chrom}.fasta.fai",
-            chrom=config["seq_platforms"].get("Illumina_pe"),
+        genome_index=lambda wildcards: (
+            expand(
+                "resources/{chrom}.fasta.fai",
+                chrom=config["seq_platforms"].get(wildcards.platform),
+            )
+            if wildcards.sample.startswith("simulated_data")
+            else ["resources/genome.fasta.fai"]
         ),
-        alignment="resources/Illumina_pe/{sample}/alignment_focused_downsampled_dedup_renamed.bam",
-        alignment_index="resources/Illumina_pe/{sample}/alignment_focused_downsampled_dedup_renamed.bam.bai",
+        # This maybe for simulated  data:
+        alignment="resources/{platform}/{sample}/alignment_focused_downsampled_dedup_renamed.bam",
     output:
-        jar="resources/ref_tools/Bis-tools/{sample}/BisSNP-0.82.2.jar",
-        genome="resources/ref_tools/Bis-tools/{sample}/genome.fasta",
-        genome_index="resources/ref_tools/Bis-tools/{sample}/genome.fasta.fai",
-        alignment="resources/ref_tools/Bis-tools/{sample}/alignment.bam",
-        alignment_index="resources/ref_tools/Bis-tools/{sample}/alignment.bam.bai",
+        jar="resources/ref_tools/Bis-tools/{platform}/{sample}/BisSNP-0.82.2.jar",
+        genome="resources/ref_tools/Bis-tools/{platform}/{sample}/genome.fasta",
+        genome_index="resources/ref_tools/Bis-tools/{platform}/{sample}/genome.fasta.fai",
+        alignment="resources/ref_tools/Bis-tools/{platform}/{sample}/alignment.bam",
+        alignment_index="resources/ref_tools/Bis-tools/{platform}/{sample}/alignment.bam.bai",
     log:
-        "logs/bissnp/bissnp_prepare/{sample}.log",
+        "logs/bissnp/bissnp_prepare/{platform}_{sample}.log",
     conda:
-        "../envs/general.yaml"
+        "../envs/samtools.yaml"
+    params:
+        sample=lambda wildcards: wildcards.sample,
     shell:
         """
         cp {input.jar} {output.jar} 2> {log}
-        cp {input.genome} {output.genome} 2> {log}
-        cp {input.genome_index} {output.genome_index} 2> {log}
-        cp {input.alignment} {output.alignment} 2> {log}
-        cp {input.alignment_index} {output.alignment_index} 2> {log}
+        cp {input.genome} {output.genome} 2>> {log}
+        # Regenerate the FASTA index to ensure it matches the copied genome
+        samtools faidx {output.genome} 2>> {log}
+        samtools view -H {input.alignment} > /tmp/{wildcards.sample}.sam 2>> {log}
+        # Add read group header if it doesn't exist
+        if ! grep -q "^@RG" /tmp/{wildcards.sample}.sam; then
+            echo "@RG\tID:{wildcards.sample}\tSM:{wildcards.sample}" >> /tmp/{wildcards.sample}.sam 2>> {log}
+        fi
+        samtools reheader /tmp/{wildcards.sample}.sam {input.alignment} > {output.alignment} 2>> {log}
+        samtools index {output.alignment} 2>> {log}
+        rm /tmp/{wildcards.sample}.sam 2>> {log}
         """
-
-
-# We tried to split the alignment file in smaller parts to process faster but it did not work properly
-# rule split_bisSNP_alignments:
-#     input:
-#         alignment="resources/ref_tools/Bis-tools/{sample}/alignment.bam",
-#         alignment_index="resources/ref_tools/Bis-tools/{sample}/alignment.bam.bai",
-#     output:
-#         bams=expand(
-#             "resources/ref_tools/Bis-tools/{{sample}}/alignment_{i}-of-{n}.bam",
-#             i=range(1, config["scatter_number"] + 1),
-#             n=config["scatter_number"],
-#         ),
-#         header="resources/ref_tools/Bis-tools/{sample}/header.sam",
-#     log:
-#         "logs/bissnp/split_bisSNP_alignments/{sample}.log",
-#     conda:
-#         "../envs/samtools.yaml"
-#     params:
-#         n=lambda wildcards: config["scatter_number"],
-#     shell:
-#         r"""
-#         total=$(samtools view -c {input.alignment})
-#         per_part=$(( (total + {params.n} - 1) / {params.n} ))
-
-#         echo "Total reads: $total" > {log}
-#         echo "Splitting into {params.n} parts (~$per_part reads each)" >> {log}
-
-#         if [ {params.n} -eq 1 ]; then
-#             echo "Only one part requested — copying input BAM directly." >> {log}
-#             cp {input.alignment} {output[0]}
-#             samtools index {output[0]}
-#             echo "Done." >> {log}
-#             exit 0
-#         fi
-
-#         samtools view -H {input.alignment} > header.sam
-#         samtools view {input.alignment} | \
-#             awk -v per_part=$per_part -v prefix="resources/ref_tools/Bis-tools/{wildcards.sample}/alignment_" -v n={params.n} \
-#             'BEGIN {{file_index=1; line_count=0}}
-#              {{line_count++; print >> (prefix file_index "-of-" n ".sam");
-#               if (line_count >= per_part) {{close(prefix file_index "-of-" n ".sam"); file_index++; line_count=0}}}}
-#              END {{for (i=file_index; i<=n; i++) close(prefix i "-of-" n ".sam")}}'
-
-#         for i in $(seq 1 {params.n}); do
-#             cat header.sam resources/ref_tools/Bis-tools/{wildcards.sample}/alignment_${{i}}-of-{params.n}.sam | \
-#                 samtools view -b -o resources/ref_tools/Bis-tools/{wildcards.sample}/alignment_${{i}}-of-{params.n}.bam -
-#             rm resources/ref_tools/Bis-tools/{wildcards.sample}/alignment_${{i}}-of-{params.n}.sam
-#             samtools index resources/ref_tools/Bis-tools/{wildcards.sample}/alignment_${{i}}-of-{params.n}.bam
-#         done
-
-#         rm header.sam
-#         echo "Splitting into {params.n} BAMs completed." >> {log}
-#         """
-
-
-# rule index_bisSNP_alignments:
-#     input:
-#         "resources/ref_tools/Bis-tools/{sample}/alignment.bam",
-#     output:
-#         "resources/ref_tools/Bis-tools/{sample}/alignment.bam.bai",
-#     log:
-#         "logs/bissnp/index_bisSNP_alignments/{sample}.log",
-#     conda:
-#         "../envs/samtools.yaml"
-#     shell:
-#         """
-#         samtools index {input} 2> {log}
-#         """
 
 
 rule bissnp_extract:
     input:
-        jar="resources/ref_tools/Bis-tools/{sample}/BisSNP-0.82.2.jar",
-        genome="resources/ref_tools/Bis-tools/{sample}/genome.fasta",
-        genome_index="resources/ref_tools/Bis-tools/{sample}/genome.fasta.fai",
-        alignment="resources/ref_tools/Bis-tools/{sample}/alignment.bam",
-        alignment_index="resources/ref_tools/Bis-tools/{sample}/alignment.bam.bai",
+        jar="resources/ref_tools/Bis-tools/{platform}/{sample}/BisSNP-0.82.2.jar",
+        genome="resources/ref_tools/Bis-tools/{platform}/{sample}/genome.fasta",
+        # genome_dict="resources/ref_tools/Bis-tools/{platform}/{sample}/genome.dict",
+        genome_index="resources/ref_tools/Bis-tools/{platform}/{sample}/genome.fasta.fai",
+        alignment="resources/ref_tools/Bis-tools/{platform}/{sample}/alignment.bam",
+        alignment_index="resources/ref_tools/Bis-tools/{platform}/{sample}/alignment.bam.bai",
     output:
-        cpg="results/single_sample/Illumina_pe/called/{sample}/result_files/cpg.raw.vcf",
-        snp="results/single_sample/Illumina_pe/called/{sample}/result_files/snp.raw.vcf",
+        cpg="results/single_sample/{platform}/called/{sample}/result_files/bissnp_cpg.raw.vcf",
+        snp="results/single_sample/{platform}/called/{sample}/result_files/bissnp_snp.raw.vcf",
+    log:
+        "logs/bissnp/bissnp_extract/{platform}_{sample}.log",
+    benchmark:
+        repeat(
+            "benchmarks/{platform}/bisSNP/bissnp_extract/{sample}.bwa.benchmark.txt",
+            config["benchmark_repeats"],
+        )
     conda:
         "../envs/openjdk.yaml"
-    params:
-        prefix=lambda wildcards, input, output: os.path.splitext(output[0])[0].replace(
-            ".combined", ""
-        ),
-        chromosome=chromosome_by_seq_platform.get("Illumina_pe"),
-    log:
-        "logs/bissnp/bissnp_extract/{sample}.log",
-    benchmark:
-        "benchmarks/Illumina_pe/bisSNP/bissnp_extract/{sample}.txt"
+    threads: 8
     resources:
-        mem_mb=64000,
-    shell:
-        "java -Xmx10G -jar {input.jar} -R {input.genome} -T BisulfiteGenotyper -I {input.alignment} -vfn1 {output.cpg} -vfn2 {output.snp} -L {params.chromosome} 2> {log}"
-
-
-rule gather_bisSnp:
-    input:
-        cpg=gather.split_candidates(
-            "results/single_sample/Illumina_pe/called/{{sample}}/result_files/cpg.raw.vcf",
+        mem_mb=16000,
+    params:
+        loc_flag=lambda wildcards: (
+            f"-L 21"
+            if chromosome_by_seq_platform.get(wildcards.platform) == "genome"
+            else f"-L {chromosome_by_seq_platform.get(wildcards.platform)}"
         ),
-        snp=gather.split_candidates(
-            "results/single_sample/Illumina_pe/called/{{sample}}/result_files/snp.raw.vcf",
-        ),
-    output:
-        cpg="results/single_sample/Illumina_pe/called/{sample}/result_files/cpg.raw.vcf",
-        snp="results/single_sample/Illumina_pe/called/{sample}/result_files/snp.raw.vcf",
-    log:
-        "logs/bissnp/gather_bissnp/{sample}.log",
-    conda:
-        "../envs/general.yaml"
     shell:
         """
-        cat {input.cpg} > {output.cpg} 2> {log}
-        cat {input.snp} > {output.snp} 2> {log}
+        stdbuf -oL -eL java -Xmx10G -jar {input.jar} \
+            -R {input.genome} \
+            -nt {threads} \
+            -T BisulfiteGenotyper \
+            -I {input.alignment} \
+            -vfn1 {output.cpg} \
+            -vfn2 {output.snp} \
+            {params.loc_flag} > {log} 2>&1
         """
 
 
@@ -177,34 +121,36 @@ rule gather_bisSnp:
 #   - line 104: my $out_line = "$chr\t$start\t$end\t$methy\t$ct_reads";
 rule bissnp_create_bedgraph:
     input:
-        perl_script="workflow/scripts/bissnp_bedGraph.pl",
-        cpg="results/single_sample/Illumina_pe/called/{sample}/result_files/cpg.raw.vcf",
+        perl_script=workflow.source_path("../scripts/bissnp_bedGraph.pl"),
+        cpg="results/single_sample/{platform}/called/{sample}/result_files/bissnp_cpg.raw.vcf",
     output:
-        "results/single_sample/Illumina_pe/called/{sample}/result_files/cpg.raw.CG.bedgraph",
+        "results/single_sample/{platform}/called/{sample}/result_files/bissnp_cpg.raw.CG.bedgraph",
     log:
-        "logs/bissnp/bissnp_create_bedgraph/{sample}.log",
+        "logs/bissnp/bissnp_create_bedgraph/{platform}_{sample}.log",
     conda:
         "../envs/openjdk.yaml"
     shell:
-        "perl {input.perl_script} {input.cpg} CG 2> {log}"
+        "perl {input.perl_script} {input.cpg} CG"
 
 
 rule bissnp_merge_positions:
     input:
-        bedgraph="results/single_sample/Illumina_pe/called/{sample}/result_files/cpg.raw.CG.bedgraph",
-        candidates=expand(
+        bedgraph="results/single_sample/{platform}/called/{sample}/result_files/bissnp_cpg.raw.CG.bedgraph",
+        candidates=lambda wildcards: expand(
             "resources/{chrom}/candidates.bcf",
-            chrom=config["seq_platforms"].get("Illumina_pe"),
+            chrom=config["seq_platforms"].get(wildcards.platform),
         ),
-        candidates_index=expand(
+        candidates_index=lambda wildcards: expand(
             "resources/{chrom}/candidates.bcf.csi",
-            chrom=config["seq_platforms"].get("Illumina_pe"),
+            chrom=config["seq_platforms"].get(wildcards.platform),
         ),
     output:
-        "results/single_sample/Illumina_pe/called/{sample}/result_files/bisSNP.bed",
+        "results/single_sample/{platform}/called/{sample}/result_files/bisSNP.bed",
     log:
-        "logs/bissnp/bissnp_merge_positions/{sample}.log",
+        "logs/bissnp/bissnp_merge_positions/{platform}_{sample}.log",
     conda:
         "../envs/pysam.yaml"
+    resources:
+        mem_mb=64000,
     script:
         "../scripts/merge_forward_reverse_positions.py"

@@ -1,6 +1,8 @@
 import pandas as pd
 import pysam
 
+sys.stderr = open(snakemake.log[0], "w")
+
 # Read bedgraph
 bedgraph = pd.read_csv(
     snakemake.input["bedgraph"],
@@ -58,7 +60,6 @@ for idx, row in bedgraph.iterrows():
 
 # Create DataFrame
 df = pd.DataFrame(results)
-
 # Merge by chrom + pos
 df_merged = df.groupby(["chrom", "pos"], as_index=False).agg(
     {"meth_counts": "sum", "unmeth_counts": "sum"}

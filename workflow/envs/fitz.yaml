@@ -1,4 +1,4 @@
 channels:
   - conda-forge
 dependencies:
-  - biopython =1.81
+  - pymupdf=1.26

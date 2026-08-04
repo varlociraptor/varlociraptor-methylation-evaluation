@@ -3,29 +3,13 @@
 
 rule bismark_copy_genome:
     input:
-        "resources/genome.fasta",
+        "resources/{chrom}.fasta",
     output:
-        "resources/ref_tools/bismark/genome.fasta",
+        "resources/ref_tools/bismark/genome/{platform}/{chrom}.fasta",
     log:
-        "logs/bismark/bismark_copy_genome/copy.log",
-    conda:
-        "../envs/general.yaml"
-    shell:
-        """
-        mkdir -p $(dirname {output}) 2> {log}
-        cp {input} {output} 2> {log}
-        """
-
-
-rule bismark_copy_chromosome:
-    input:
-        "resources/chromosome_{chrom}.fasta",
-    output:
-        "resources/ref_tools/bismark/chromosome_{chrom}.fasta",
+        "logs/bismark/bismark_copy_chromosome/{chrom}_{platform}.log",
     conda:
         "../envs/bismark.yaml"
-    log:
-        "logs/bismark/bismark_copy_chromosome/{chrom}.log",
     shell:
         """
         mkdir -p $(dirname {output}) 2> {log}
@@ -33,49 +17,55 @@ rule bismark_copy_chromosome:
         """
 
 
-# TODO: Gives missing output exception
-rule bismark_prepare_genome:
+rule bismark_genome_preparation_fa:
     input:
-        expand(
-            "resources/ref_tools/bismark/chromosome_{chrom}.fasta",
-            chrom=config["seq_platforms"].get("Illumina_pe"),
+        genome=lambda wildcards: (
+            "resources/J02459.fasta"
+            if chromosome_by_seq_platform.get(wildcards.platform) == "J02459"
+            else "resources/genome.fasta"
         ),
     output:
-        directory("resources/ref_tools/bismark/Bisulfite_Genome"),
-    conda:
-        "../envs/bismark.yaml"
+        bismark_genome_dir=directory("resources/ref_tools/bismark/genome/{platform}"),
     log:
-        "logs/bismark/prepare_genome/prepare.log",
-    shell:
-        """
-        bismark_genome_preparation $(dirname {input}) --verbose  2> {log}
-        """
+        "logs/bismark_genome_preparation/{platform}.log",
+    threads: 4  # bismark_genome_preparation requires least 2 threads and at least --cores 2 from workflow run
+    resources:
+        mem_mb=16000,
+    params:
+        extra="",  # optional params string
+    wrapper:
+        "v9.4.1/bio/bismark/bismark_genome_preparation"
 
 
 rule bismark_align:
     input:
-        fq_1="resources/Illumina_pe/{sample}/{SRA}/{SRA}_1.fastq",
-        fq_2="resources/Illumina_pe/{sample}/{SRA}/{SRA}_2.fastq",
-        genome=expand(
-            "resources/ref_tools/bismark/chromosome_{chrom}.fasta",
-            chrom=config["seq_platforms"].get("Illumina_pe"),
-        ),
-        bismark_indexes_dir="resources/ref_tools/bismark/Bisulfite_Genome",
+        fq_1="resources/{platform}/{sample}/{SRA}/{SRA}_1_trimmed.fastq.gz",
+        fq_2="resources/{platform}/{sample}/{SRA}/{SRA}_2_trimmed.fastq.gz",
+        bismark_indexes_dir="resources/ref_tools/bismark/genome/{platform}/",
+        # We do not need that input but else bismark does not prepare the genome
+        # genome_prep="resources/ref_tools/bismark/genome/{platform}/bismark/",
+        # ct="resources/ref_tools/bismark/genome/{platform}/Bisulfite_Genome/CT_conversion",
     output:
-        bam="resources/ref_tools/bismark/bams/{sample}_pe_{SRA}_unsorted.bam",
-        report="resources/ref_tools/bismark/bams/{sample}_{SRA}_PE_report.txt",
-        nucleotide_stats="resources/ref_tools/bismark/bams/{sample}_{SRA}_pe.nucleotide_stats.txt",
+        bam="resources/ref_tools/bismark/{platform}/bams/{sample}_pe_{SRA}_unsorted.bam",
+        report="resources/ref_tools/bismark/{platform}/bams/{sample}_{SRA}_PE_report.txt",
+        fq_unmapped_1="resources/ref_tools/bismark/{platform}/{sample}/{SRA}_unmapped_reads_1.fq.gz",  # optional: implicitly activates --unmapped
+        fq_unmapped_2="resources/ref_tools/bismark/{platform}/{sample}/{SRA}_unmapped_reads_2.fq.gz",  # optional: implicitly activates --unmapped
+        fq_ambiguous_1="resources/ref_tools/bismark/{platform}/{sample}/{SRA}_ambiguous_reads_1.fq.gz",  # optional: implicitly activates --ambiguous
+        fq_ambiguous_2="resources/ref_tools/bismark/{platform}/{sample}/{SRA}_ambiguous_reads_2.fq.gz",
     log:
-        "logs/bismark/bismark_align/{sample}_{SRA}.log",
+        "logs/bismark/bismark_align/{sample}_{SRA}_{platform}.log",
     benchmark:
-        "benchmarks/Illumina_pe/bismark/bismark_align/{sample}_{SRA}.bwa.benchmark.txt"
-    params:
-        extra="--nucleotide_coverage",
-    threads: 16
+        repeat(
+            "benchmarks/{platform}/bismark/bismark_align/{SRA}_{sample}.bwa.benchmark.txt",
+            config["benchmark_repeats"],
+        )
+    threads: 8
     resources:
-        mem_mb=48000,
+        mem_mb=16000,
+    params:
+        extra="--gzip",
     wrapper:
-        "v5.9.0/bio/bismark/bismark"
+        "v9.3.0/bio/bismark/bismark"
 
 
 # merge bam files from different lanes
@@ -83,100 +73,84 @@ rule samtools_merge:
     input:
         get_sample_sra_bismark,
     output:
-        "resources/ref_tools/bismark/bams/{sample}_pe.bam",
+        "resources/ref_tools/bismark/{platform}/bams/{sample}_pe.bam",
     log:
-        "logs/bismark/samtools_merge/{sample}.log",
-    params:
-        extra="-n",  # optional additional parameters as string
+        "logs/bismark/samtools_merge/{sample}_{platform}.log",
+    benchmark:
+        repeat(
+            "benchmarks/{platform}/bismark/samtools_merge/{sample}.bwa.benchmark.txt",
+            config["benchmark_repeats"],
+        )
     threads: 8
+    params:
+        extra="-n -f",
     wrapper:
         "v5.9.0/bio/samtools/merge"
 
 
 rule samtools_sort:
     input:
-        "resources/ref_tools/bismark/bams/{sample}_pe.bam",
+        "resources/ref_tools/bismark/{platform}/bams/{sample}_pe.bam",
     output:
-        "resources/ref_tools/bismark/bams/{sample}_pe_sorted.bam",
+        "resources/ref_tools/bismark/{platform}/bams/{sample}_pe_sorted.bam",
     log:
-        "logs/bismark/samtools_sort/{sample}.log",
-    params:
-        extra="-m 4G -n",
+        "logs/bismark/samtools_sort/{sample}_{platform}.log",
+    benchmark:
+        repeat(
+            "benchmarks/{platform}/bismark/samtools_sort/{sample}.bwa.benchmark.txt",
+            config["benchmark_repeats"],
+        )
     threads: 8
     resources:
-        mem_mb=32000,
+        mem_mb=16000,
+    params:
+        extra="-m 4G -n",
     wrapper:
         "v5.9.0/bio/samtools/sort"
 
 
 rule deduplicate_bismark:
     input:
-        "resources/ref_tools/bismark/bams/{sample}_pe_sorted.bam",
+        "resources/ref_tools/bismark/{platform}/bams/{sample}_pe_sorted.bam",
     output:
-        bam="resources/ref_tools/bismark/dedup/{sample}.deduplicated.bam",
-        report="resources/ref_tools/bismark/dedup/{sample}.deduplication_report.txt",
+        bam="resources/ref_tools/bismark/{platform}/dedup/{sample}.deduplicated.bam",
+        report="resources/ref_tools/bismark/{platform}/dedup/{sample}.deduplication_report.txt",
     log:
-        "logs/bismark/deduplicate_bismark/{sample}.log",
-    params:
-        extra="",  # optional params string
+        "logs/bismark/deduplicate_bismark/{sample}_{platform}.log",
     benchmark:
-        "benchmarks/Illumina_pe/bismark/deduplicate_bismark/{sample}.bwa.benchmark.txt"
+        repeat(
+            "benchmarks/{platform}/bismark/deduplicate_bismark/{sample}.bwa.benchmark.txt",
+            config["benchmark_repeats"],
+        )
     resources:
         mem_mb=16000,
+    params:
+        extra="",  # optional params string
     wrapper:
-        "v5.9.0/bio/bismark/deduplicate_bismark"
-
-
-# rule bismark_methylation_extractor:
-#     input:
-#         bam="resources/ref_tools/bismark/dedup/{sample}.deduplicated.bam",
-#     output:
-#         cov_zero_based="resources/ref_tools/bismark/meth/{sample}.deduplicated.bedGraph.gz.bismark.zero.cov",
-#         mbias_r1="resources/ref_tools/bismark/qc/meth/{sample}.deduplicated.M-bias_R1.png",
-#         # Only for PE BAMS:
-#         mbias_r2="resources/ref_tools/bismark/qc/meth/{sample}.deduplicated.M-bias_R2.png",
-#         mbias_report="resources/ref_tools/bismark/report/meth/{sample}.deduplicated.M-bias.txt",
-#         splitting_report="resources/ref_tools/bismark/report/meth/{sample}.deduplicated_splitting_report.txt",
-#         # 1-based start, 1-based end ('inclusive') methylation info: % and counts
-#         methylome_CpG_cov="resources/ref_tools/bismark/meth/cov/{sample}.deduplicated.bismark.cov.gz",
-#         # BedGraph with methylation percentage: 0-based start, end exclusive
-#         methylome_CpG_mlevel_bedGraph="resources/ref_tools/bismark/meth/bedgraph/{sample}.deduplicated.bedGraph.gz",
-#         # Primary output files: methylation status at each read cytosine position: (extremely large)
-#         read_base_meth_state_cpg="resources/ref_tools/bismark/meth/CpG_context_{sample}.deduplicated.txt.gz",
-#         # * You could merge CHG, CHH using: --merge_non_CpG
-#         read_base_meth_state_chg="resources/ref_tools/bismark/meth/CHG_context_{sample}.deduplicated.txt.gz",
-#         read_base_meth_state_chh="resources/ref_tools/bismark/meth/CHH_context_{sample}.deduplicated.txt.gz",
-#         # cytosine_report="resources/ref_tools/bismark/report/meth/{sample}.deduplicated.cytosine_report.txt",
-#     log:
-#         "logs/bismark/bismark_methylation_extractor/{sample}.log",
-#     params:
-#         output_dir="resources/ref_tools/bismark/meth",  # optional output dir
-#         extra="--gzip --comprehensive --bedGraph --zero_based",  # optional params string
-#     benchmark:
-#         "benchmarks/Illumina_pe/bismark/bismark_methylation_extractor/{sample}.bwa.benchmark.txt"
-#     resources:
-#         mem_mb=16000,
-#     wrapper:
-#         "v5.9.0/bio/bismark/bismark_methylation_extractor"
+        "v9.3.0/bio/bismark/deduplicate_bismark"
 
 
 rule bismark_extract:
     input:
-        bam="resources/ref_tools/bismark/dedup/{sample}.deduplicated.bam",
+        bam="resources/ref_tools/bismark/{platform}/dedup/{sample}.deduplicated.bam",
     output:
-        cov_zero_based="resources/ref_tools/bismark/meth/{sample}.deduplicated.bedGraph.gz.bismark.zero.cov",
+        cov_zero_based="resources/ref_tools/bismark/{platform}/meth/{sample}.deduplicated.bedGraph.gz.bismark.zero.cov",
+    log:
+        "logs/bismark_extract/{sample}_{platform}.log",
+    benchmark:
+        repeat(
+            "benchmarks/{platform}/bismark/bismark_methylation_extractor/{sample}.bwa.benchmark.txt",
+            config["benchmark_repeats"],
+        )
     conda:
         "../envs/bismark.yaml"
-    log:
-        "logs/bismark/{sample}/extract_results.log",
-    benchmark:
-        "benchmarks/Illumina_pe/bismark/bismark_methylation_extractor/{sample}.bwa.benchmark.txt"
+    threads: 8
     resources:
         mem_mb=16000,
     shell:
         """
         mkdir -p $(dirname {output}) 2> {log}
-        bismark_methylation_extractor {input} -o $(dirname {output}) --comprehensive --gzip --comprehensive --bedGraph --zero_based 2> {log}
+        bismark_methylation_extractor {input} -o $(dirname {output}) --parallel {threads} --comprehensive --gzip --comprehensive --bedGraph --zero_based 2> {log}
         """
 
 
@@ -184,19 +158,19 @@ rule bismark_extract:
 # does not create the desired bedGraph file with merged positions for forward and reverse read. We merge them manually by comparing to our candidates.
 rule bismark_merge_positions:
     input:
-        bedgraph="resources/ref_tools/bismark/meth/{sample}.deduplicated.bedGraph.gz.bismark.zero.cov",
-        candidates=expand(
+        bedgraph="resources/ref_tools/bismark/{platform}/meth/{sample}.deduplicated.bedGraph.gz.bismark.zero.cov",
+        candidates=lambda wildcards: expand(
             "resources/{chrom}/candidates.bcf",
-            chrom=config["seq_platforms"].get("Illumina_pe"),
+            chrom=config["seq_platforms"].get(wildcards.platform),
         ),
-        candidates_index=expand(
+        candidates_index=lambda wildcards: expand(
             "resources/{chrom}/candidates.bcf.csi",
-            chrom=config["seq_platforms"].get("Illumina_pe"),
+            chrom=config["seq_platforms"].get(wildcards.platform),
         ),
     output:
-        "results/single_sample/Illumina_pe/called/{sample}/result_files/bismark.bed",
+        "results/single_sample/{platform}/called/{sample}/result_files/bismark.bed",
     log:
-        "logs/bismark/bismark_merge_positions/{sample}.log",
+        "logs/bismark/bismark_merge_positions/{platform}_{sample}_{platform}.log",
     conda:
         "../envs/pysam.yaml"
     script:

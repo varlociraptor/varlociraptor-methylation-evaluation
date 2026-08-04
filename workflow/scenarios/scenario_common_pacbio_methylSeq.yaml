@@ -1,8 +1,8 @@
 samples:
-  trueOX:
+  methylSeq:
     universe: "[0.0, 1.0]"
   pacbio:
     universe: "[0.0, 1.0]"
 
 events:
-  present: "trueOX:]0.0,1.0] & trueOX == pacbio"
+  present: "methylSeq:]0.0,1.0] & methylSeq == pacbio"

@@ -1,6 +1,7 @@
 channels:
+  - conda-forge
   - bioconda
 dependencies:
 # Does not work with only major versions, because we get a bowtie error then 
-  - bismark =0.24.2
+  - bismark =0.25
   - bowtie2 =2.5.3

@@ -1,7 +1,7 @@
 # Use Varlociraptor to find methylation candidates in the reference genome
 rule find_candidates:
     input:
-        "resources/chromosome_{chromosome}.fasta",
+        "resources/{chromosome}.fasta",
     output:
         "resources/{chromosome}/candidates.bcf",
     log:
