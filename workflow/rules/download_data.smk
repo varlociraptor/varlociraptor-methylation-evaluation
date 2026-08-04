@@ -1,33 +1,33 @@
 ref_gene = config.get("sample", {})
 chromosomes = set(chromosome for chromosome in config["seq_platforms"].values())
 
+
 rule bcf_to_vcf:
     input:
         "{file}.bcf",
     output:
         "{file}.vcf",
-    conda:
-        "../envs/samtools.yaml"
     log:
         "logs/bcf_to_vcf/{file}.log",
+    conda:
+        "../envs/samtools.yaml"
     threads: 4
     shell:
         # "touch {output} 2> {log}"
         "bcftools view --threads {threads} {input} -o {output} 2> {log}"
 
 
-
 rule download_genome:
     output:
         "resources/genome.fasta",
+    log:
+        "logs/download_data/download_genome/download.log",
+    cache: "omit-software"
     params:
         species=ref_gene.get("species"),
         datatype=ref_gene.get("datatype"),
         build=ref_gene.get("build"),
         release=ref_gene.get("release"),
-    log:
-        "logs/download_data/download_genome/download.log",
-    cache: "omit-software"
     wrapper:
         "v2.3.2/bio/reference/ensembl-sequence"
 
@@ -52,12 +52,11 @@ rule focus_genome_on_chromosome:
         "resources/{chromosome}.fasta",
     log:
         "logs/download_data/focus_genome_on_chromosome/{chromosome}.log",
+    wildcard_constraints:
+        chromosome="(?!.*genome$)[^/]+",
     conda:
         "../envs/samtools.yaml"
     threads: 6
-    wildcard_constraints:
-        chromosome="(?!.*genome$)[^/]+",
-
     shell:
         """
         if [[ {wildcards.chromosome} == genome ]]; then \
@@ -68,6 +67,7 @@ rule focus_genome_on_chromosome:
             samtools faidx {input} {wildcards.chromosome} > {output}
         fi 2> {log}
         """
+
 
 rule unzip_genome:
     input:
@@ -89,10 +89,10 @@ rule chromosome_index:
         "resources/{chromosome}.fasta.fai",
     log:
         "logs/download_data/chromosome_index/{chromosome}.log",
-    conda:
-        "../envs/samtools.yaml"
     wildcard_constraints:
         chromosome="(?!.*genome$)[^/]+",
+    conda:
+        "../envs/samtools.yaml"
     shell:
         "samtools faidx {input} 2> {log}"
 
@@ -117,9 +117,9 @@ rule get_fastq_pe:
         "resources/Illumina_pe/{sample}/{SRA}/{accession}_2.fastq.gz",
     log:
         "logs/download_data/get_fastq_pe/{sample}_{SRA}_{accession}.log",
+    threads: 6
     params:
         extra="--skip-technical",
-    threads: 6
     # wildcard_constraints:
     #     sample="^(?!simulated_data).*",
     wrapper:
@@ -131,35 +131,36 @@ rule get_fastq_se:
         "resources/Illumina_se/{sample}/{SRA}/{accession}.fastq.gz",
     log:
         "logs/download_data/get_fastq_se/{sample}_{SRA}_{accession}.log",
+    threads: 6
     params:
         extra="--skip-technical",
-    threads: 6
     wrapper:
         "v7.1.0/bio/sra-tools/fasterq-dump"
 
+
 rule trim_fastq_pe:
     input:
-        sample=["resources/Illumina_pe/{sample}/{SRA}/{SRA}_1.fastq.gz", "resources/Illumina_pe/{sample}/{SRA}/{SRA}_2.fastq.gz"]
+        sample=[
+            "resources/Illumina_pe/{sample}/{SRA}/{SRA}_1.fastq.gz",
+            "resources/Illumina_pe/{sample}/{SRA}/{SRA}_2.fastq.gz",
+        ],
     output:
-        trimmed=["resources/Illumina_pe/{sample}/{SRA}/{SRA}_1_trimmed.fastq.gz", "resources/Illumina_pe/{sample}/{SRA}/{SRA}_2_trimmed.fastq.gz"],
-        # Unpaired reads separately
-        # unpaired1="trimmed/pe/{sample}.u1.fastq",
-        # unpaired2="trimmed/pe/{sample}.u2.fastq",
-        # or in a single file
-#        unpaired="trimmed/pe/{sample}.singletons.fastq",
+        trimmed=[
+            "resources/Illumina_pe/{sample}/{SRA}/{SRA}_1_trimmed.fastq.gz",
+            "resources/Illumina_pe/{sample}/{SRA}/{SRA}_2_trimmed.fastq.gz",
+        ],
         merged="trimmed/pe/{sample}_{SRA}.merged.fastq.gz",
         failed="trimmed/pe/{sample}_{SRA}.failed.fastq.gz",
         html="report/pe/{sample}_{SRA}.html",
-        json="report/pe/{sample}_{SRA}.json"
+        json="report/pe/{sample}_{SRA}.json",
     log:
-        "logs/fastp/pe/{sample}_{SRA}.log"
+        "logs/fastp/pe/{sample}_{SRA}.log",
+    threads: 8
     params:
         # adapters="--adapter_sequence ACGGCTAGCTA --adapter_sequence_r2 AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC",
-        extra="--merge"
-    threads: 8
+        extra="--merge",
     wrapper:
         "v9.4.1/bio/fastp"
-
 
 
 rule trim_fastq_se:
@@ -178,15 +179,15 @@ rule trim_fastq_se:
 rule get_pacbio_data:
     output:
         alignment="resources/PacBio/{sample}/{SRA}/alignment.bam",
+    log:
+        "logs/download_data/get_pacbio_data/{sample}_{SRA}.log",
+    conda:
+        "../envs/samtools.yaml"
+    resources:
+        mem_mb=4096,
     params:
         url=lambda wildcards: config.get(str(wildcards.SRA)),
         chromosome=f"chr{config['seq_platforms'].get('PacBio')}",
-    log:
-        "logs/download_data/get_pacbio_data/{sample}_{SRA}.log",
-    resources:
-        mem_mb=4096,
-    conda:
-        "../envs/samtools.yaml"
     shell:
         "samtools view -b {params.url} {params.chromosome} > {output.alignment} 2> {log}"
 
@@ -208,15 +209,15 @@ rule get_nanopore_index:
 rule get_nanopore_data:
     output:
         alignment="resources/Nanopore/{sample}/{SRA}/alignment.bam",
+    log:
+        "logs/download_data/get_nanopore_data/{sample}_{SRA}.log",
+    conda:
+        "../envs/samtools.yaml"
+    resources:
+        mem_mb=4096,
     params:
         url=lambda wc: config.get(str(wc.SRA)),
         chromosome=lambda wc: f"chr{config['seq_platforms']['Nanopore']}",
-    log:
-        "logs/download_data/get_nanopore_data/{sample}_{SRA}.log",
-    resources:
-        mem_mb=4096,
-    conda:
-        "../envs/samtools.yaml"
     shell:
         """
         mkdir -p $(dirname {output.alignment}) \

@@ -38,6 +38,7 @@ include: "rules/varlociraptor_single_sample.smk"
 include: "rules/bismark.smk"
 include: "rules/compute_coverage_statistics.smk"
 
+
 rule all:
     input:
         compute_results(),

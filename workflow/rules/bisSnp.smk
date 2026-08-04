@@ -3,10 +3,10 @@
 rule bissnp_download:
     output:
         "resources/ref_tools/Bis-tools/BisSNP-0.82.2.jar",
-    conda:
-        "../envs/shell_cmds.yaml"
     log:
         "logs/bissnp/bissnp_download/download.log",
+    conda:
+        "../envs/shell_cmds.yaml"
     shell:
         """
         output_dir=$(dirname {output})
@@ -19,6 +19,7 @@ rule bissnp_download:
         fi
 
         """
+
 
 # All files need to be in the same dir
 rule bissnp_prepare:
@@ -48,12 +49,12 @@ rule bissnp_prepare:
         genome_index="resources/ref_tools/Bis-tools/{platform}/{sample}/genome.fasta.fai",
         alignment="resources/ref_tools/Bis-tools/{platform}/{sample}/alignment.bam",
         alignment_index="resources/ref_tools/Bis-tools/{platform}/{sample}/alignment.bam.bai",
-    params:
-        sample=lambda wildcards: wildcards.sample
     log:
         "logs/bissnp/bissnp_prepare/{platform}_{sample}.log",
     conda:
         "../envs/samtools.yaml"
+    params:
+        sample=lambda wildcards: wildcards.sample,
     shell:
         """
         cp {input.jar} {output.jar} 2> {log}
@@ -71,7 +72,6 @@ rule bissnp_prepare:
         """
 
 
-
 rule bissnp_extract:
     input:
         jar="resources/ref_tools/Bis-tools/{platform}/{sample}/BisSNP-0.82.2.jar",
@@ -83,17 +83,24 @@ rule bissnp_extract:
     output:
         cpg="results/single_sample/{platform}/called/{sample}/result_files/bissnp_cpg.raw.vcf",
         snp="results/single_sample/{platform}/called/{sample}/result_files/bissnp_snp.raw.vcf",
-    conda:
-        "../envs/openjdk.yaml"
-    params:
-        loc_flag=lambda wildcards: f"-L 21" if chromosome_by_seq_platform.get(wildcards.platform) == "genome" else f"-L {chromosome_by_seq_platform.get(wildcards.platform)}",
     log:
         "logs/bissnp/bissnp_extract/{platform}_{sample}.log",
     benchmark:
-        repeat("benchmarks/{platform}/bisSNP/bissnp_extract/{sample}.bwa.benchmark.txt", config["benchmark_repeats"])
+        repeat(
+            "benchmarks/{platform}/bisSNP/bissnp_extract/{sample}.bwa.benchmark.txt",
+            config["benchmark_repeats"],
+        )
+    conda:
+        "../envs/openjdk.yaml"
     threads: 8
     resources:
         mem_mb=16000,
+    params:
+        loc_flag=lambda wildcards: (
+            f"-L 21"
+            if chromosome_by_seq_platform.get(wildcards.platform) == "genome"
+            else f"-L {chromosome_by_seq_platform.get(wildcards.platform)}"
+        ),
     shell:
         """
         stdbuf -oL -eL java -Xmx10G -jar {input.jar} \
@@ -105,6 +112,7 @@ rule bissnp_extract:
             -vfn2 {output.snp} \
             {params.loc_flag} > {log} 2>&1
         """
+
 
 # We do not use the official perl script in resources/ref_tools/Bis-tools/utils/vcf2bedGraph.pl because it does not work
 # We copied the script and removed line 79: next unless ($splitin[6] eq "PASS" || $splitin[6] eq "Infinity"); because it never triggers
@@ -143,6 +151,6 @@ rule bissnp_merge_positions:
     conda:
         "../envs/pysam.yaml"
     resources:
-        mem_mb=64000
+        mem_mb=64000,
     script:
         "../scripts/merge_forward_reverse_positions.py"

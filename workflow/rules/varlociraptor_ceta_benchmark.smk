@@ -25,10 +25,10 @@ rule download_varlociraptor:
 rule download_untreated_fastq1:
     output:
         "resources/Illumina_pe/untreated/dummy/dummy_1.fastq.gz",
-    params:
-        "https://s3-us-west-2.amazonaws.com/human-pangenomics/NHGRI_UCSC_panel/HG002/hpp_HG002_NA24385_son_v1/ILMN/downsampled/HG002_HiSeq30x_subsampled_R1.fastq.gz",
     log:
         "logs/ceta_benchmark/download_untreated_fastq1.log",
+    params:
+        "https://s3-us-west-2.amazonaws.com/human-pangenomics/NHGRI_UCSC_panel/HG002/hpp_HG002_NA24385_son_v1/ILMN/downsampled/HG002_HiSeq30x_subsampled_R1.fastq.gz",
     shell:
         """
         mkdir -p $(dirname {output})
@@ -107,11 +107,11 @@ rule bwa_mem2:
         "resources/Illumina_pe/untreated/dummy/alignment.bam",
     log:
         "logs/bwa_mem.log",
+    threads: 16
     params:
         sorting="none",  # Can be 'none', 'samtools' or 'picard'.
         sort_order="queryname",  # Can be 'queryname' or 'coordinate'.
         sort_extra="",  # Extra args for samtools/picard.
-    threads: 16
     wrapper:
         "v8.1.1/bio/bwa-mem2/mem"
 
@@ -119,10 +119,10 @@ rule bwa_mem2:
 rule download_variant_truth:
     output:
         "resources/ceta/candidates_variants.vcf.gz",
-    params:
-        url="https://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/release/AshkenazimTrio/HG002_NA24385_son/latest/GRCh38/HG002_GRCh38_1_22_v4.2.1_benchmark.vcf.gz",
     log:
         "logs/variants/download_variant_truth.log",
+    params:
+        url="https://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/release/AshkenazimTrio/HG002_NA24385_son/latest/GRCh38/HG002_GRCh38_1_22_v4.2.1_benchmark.vcf.gz",
     shell:
         "wget -q -O {output} {params.url} 2> {log}"
 
@@ -161,9 +161,9 @@ rule rename_variant_chromosome:
         "resources/ceta/variants_focus_chromosome.bcf",
     output:
         "resources/ceta/candidates_variants_renamed.bcf",
-    threads: 4
     log:
         "logs/variants/rename_variant_chromosome.log",
+    threads: 4
     shell:
         """
         bcftools annotate --rename-chrs <(echo -e "chr21\t21") -o {output} -O b {input} 2> {log}
@@ -290,14 +290,14 @@ rule event_probs_df:
         cg_candidates="resources/21/candidates.bcf",
     output:
         "results/ceta_benchmark/Illumina_pe/called/{sample}/result_files/events_{fdr}.parquet",
-    conda:
-        "../envs/python.yaml"
     log:
         "logs/plot_results/event_probs_df/{sample}_{fdr}.log",
-    params:
-        alpha=lambda wildcards: wildcards.fdr,
+    conda:
+        "../envs/python.yaml"
     resources:
         mem_mb=4000,
+    params:
+        alpha=lambda wildcards: wildcards.fdr,
     script:
         "../scripts/event_probs_df.py"
 
@@ -318,10 +318,10 @@ rule plot_ceta_probs:
         "results/ceta_benchmark/Illumina_pe/called/untreated_with_prior/result_files/events_{fdr}.parquet",
     output:
         "results/ceta_benchmark/Illumina_pe/called/result_files/combined_{fdr}.html",
-    conda:
-        "../envs/python.yaml"
     log:
         "logs/plots/plot_ceta_probs_{fdr}.log",
+    conda:
+        "../envs/python.yaml"
     resources:
         mem_mb=4000,
     script:

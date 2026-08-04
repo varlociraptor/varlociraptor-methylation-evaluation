@@ -6,17 +6,17 @@ rule bwameth_index:
         temp(
             multiext(
                 "resources/{genome}.fasta.bwameth",
-                    ".c2t",
-                    ".c2t.amb",
-                    ".c2t.ann",
-                    ".c2t.bwt",
-                    ".c2t.pac",
-                    ".c2t.sa",
+                ".c2t",
+                ".c2t.amb",
+                ".c2t.ann",
+                ".c2t.bwt",
+                ".c2t.pac",
+                ".c2t.sa",
             ),
         ),
-    cache: True
     log:
         "logs/bwameth/bwameth_index/{genome}.log",
+    cache: True
     wrapper:
         "v7.3.0/bio/bwameth/index"
 
@@ -32,15 +32,17 @@ rule align_reads_pe:
             else ["resources/genome.fasta"]
         ),
         idx=lambda wildcards: (
-            multiext(expand(
-
-                    "resources/{chrom}.fasta.bwameth", chrom=config["seq_platforms"].get(wildcards.platform))[0],
-            ".c2t",
-            ".c2t.amb",
-            ".c2t.ann",
-            ".c2t.bwt",
-            ".c2t.pac",
-            ".c2t.sa",
+            multiext(
+                expand(
+                    "resources/{chrom}.fasta.bwameth",
+                    chrom=config["seq_platforms"].get(wildcards.platform),
+                )[0],
+                ".c2t",
+                ".c2t.amb",
+                ".c2t.ann",
+                ".c2t.bwt",
+                ".c2t.pac",
+                ".c2t.sa",
             )
             if wildcards.sample.startswith("simulated_data")
             else multiext(
@@ -61,10 +63,9 @@ rule align_reads_pe:
         "logs/bwameth/align_reads_pe/{platform}_{sample}_{SRA}.log",
     threads: 16
     resources:
-        mem_mb=48000
+        mem_mb=48000,
     wrapper:
         "v9.4.1/bio/bwameth/memx"
-
 
 
 rule aligned_reads_sort:
@@ -105,16 +106,18 @@ rule aligned_reads_focus_on_chromosome:
         "logs/bwameth/aligned_reads_focus_on_chromosome/{seq_platform}_{sample}_{SRA}.log",
     conda:
         "../envs/samtools.yaml"
+    threads: 4
     params:
         chromosome=lambda wildcards: (
             f"chr{chromosome_by_seq_platform[wildcards.seq_platform]}"
             if wildcards.seq_platform == "PacBio"
             or wildcards.seq_platform == "Nanopore"
-            else "21"
-            if chromosome_by_seq_platform[wildcards.seq_platform] == "genome"
-            else chromosome_by_seq_platform[wildcards.seq_platform]
+            else (
+                "21"
+                if chromosome_by_seq_platform[wildcards.seq_platform] == "genome"
+                else chromosome_by_seq_platform[wildcards.seq_platform]
+            )
         ),
-    threads: 4
     shell:
         """
         samtools view -h -@ {threads} -b -o {output.bam} {input.bam} {params.chromosome} 2> {log}
@@ -129,10 +132,10 @@ rule aligned_reads_markduplicates:
         metrics="resources/{seq_platform}/{sample}/{SRA}/alignment_focused_dedup.metrics.txt",
     log:
         "logs/bwameth/aligned_reads_markduplicates/{seq_platform}_{sample}_{SRA}.log",
-    params:
-        extra="--REMOVE_DUPLICATES true",
     resources:
         mem_mb=1024,
+    params:
+        extra="--REMOVE_DUPLICATES true",
     wrapper:
         "v2.6.0/bio/picard/markduplicates"
 
@@ -144,10 +147,10 @@ rule aligned_reads_merge_sras:
         "resources/{seq_platform, [^/]+}/{sample,[^/]+}/alignment_focused_dedup.bam",
     log:
         "logs/bwameth/aligned_reads_merge_sras/{seq_platform}_{sample}.log",
-    conda:
-        "../envs/samtools.yaml"
     wildcard_constraints:
         seq_platform="(?!multi_sample).*",
+    conda:
+        "../envs/samtools.yaml"
     shell:
         "samtools merge {output} {input} 2> {log}"
 
@@ -187,7 +190,7 @@ rule aligned_reads_rename_chromosomes:
     log:
         "logs/bwameth/aligned_reads_rename_chromosomes/{seq_platform}_{sample}.log",
     # wildcard_constraints:
-        # sample="(?!simulated_data).*",
+    # sample="(?!simulated_data).*",
     conda:
         "../envs/pysam.yaml"
     script:
@@ -207,7 +210,6 @@ rule aligned_reads_renamed_index:
         "samtools index -@ {threads} {input} 2> {log}"
 
 
-
 rule scatter_candidates_to_bed:
     input:
         "resources/{platform}/candidates_{scatteritem}.bcf",
@@ -220,11 +222,12 @@ rule scatter_candidates_to_bed:
     script:
         "../scripts/candidates_to_bed.py"
 
+
 rule scatter_aligned_reads:
     input:
         alignment="resources/{seq_platform}/{sample}/alignment_focused_downsampled_dedup_renamed.bam",
         index="resources/{seq_platform}/{sample}/alignment_focused_downsampled_dedup_renamed.bam.bai",
-        candidate=lambda wildcards: f"resources/{chromosome_by_seq_platform.get(wildcards.seq_platform) if chromosome_by_seq_platform.get(wildcards.seq_platform) != 'genome' else '21'}/candidates_{wildcards.scatteritem}.bed",
+        candidate=lambda wildcards: f"resources/{chromosome_by_seq_platform.get(wildcards.seq_platform) if chromosome_by_seq_platform.get(wildcards.seq_platform)!= 'genome' else '21'}/candidates_{wildcards.scatteritem}.bed",
     output:
         "resources/{seq_platform}/{sample}/candidate_specific/alignment_{scatteritem}.bam",
     log:

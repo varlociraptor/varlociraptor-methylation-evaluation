@@ -1,5 +1,6 @@
 # Fake data to simulate reads with Mason2
 
+
 rule mason_download:
     output:
         mason_dir=directory("resources/tools/seqan/apps/mason2"),
@@ -22,10 +23,10 @@ rule mason_fake_methylation:
         index="resources/{chrom}.fasta.fai",
     output:
         methylation="resources/Simulate/simulated_data/{chrom}_meth.fa",
-    conda:
-        "../envs/mason.yaml"
     log:
         "logs/mason/mason_fake_methylation/{chrom}.log",
+    conda:
+        "../envs/mason.yaml"
     params:
         seed=config["seed"],
     shell:
@@ -45,10 +46,10 @@ rule mason_fake_variants:
         chrom="resources/{chrom}.fasta",
     output:
         "resources/Simulate/simulated_data/{chrom}_variants.vcf",
-    conda:
-        "../envs/mason.yaml"
     log:
         "logs/mason/mason_fake_variants/{chrom}.log",
+    conda:
+        "../envs/mason.yaml"
     params:
         seed=config["seed"],
     shell:
@@ -80,11 +81,11 @@ rule mason_fake_reads:
     output:
         f1="resources/Simulate/{sample}/{SRA}/{SRA}_1_trimmed.fastq.gz",
         f2="resources/Simulate/{sample}/{SRA}/{SRA}_2_trimmed.fastq.gz",
+    log:
+        "logs/mason/mason_fake_reads/{sample}_{SRA}.log",
     conda:
         "../envs/mason.yaml"
     threads: 16
-    log:
-        "logs/mason/mason_fake_reads/{sample}_{SRA}.log",
     params:
         num_fragments=config.get("num_simulated_reads"),
     shell:
@@ -100,6 +101,7 @@ rule mason_fake_reads:
                 --illumina-read-length 150  2> {log}
         """
 
+
 # Mason has a different meth ratio for forward and reverse strands.
 # That is why we need to compute the coverage on the forward and reverse strand independently.
 rule mason_alignment_forward:
@@ -109,10 +111,10 @@ rule mason_alignment_forward:
         first="resources/Simulate/simulated_data/alignment_99.bam",
         second="resources/Simulate/simulated_data/alignment_147.bam",
         forward="resources/Simulate/simulated_data/alignment_forward.bam",
-    conda:
-        "../envs/samtools.yaml"
     log:
         "logs/mason/mason_alignment_forward/.log",
+    conda:
+        "../envs/samtools.yaml"
     shell:
         """
         samtools view -b -f 64 -F 16 {input} > {output.first} 2> {log}
@@ -128,10 +130,10 @@ rule mason_alignment_reverse:
         first="resources/Simulate/simulated_data/alignment_83.bam",
         second="resources/Simulate/simulated_data/alignment_163.bam",
         rev="resources/Simulate/simulated_data/alignment_reverse.bam",
-    conda:
-        "../envs/samtools.yaml"
     log:
         "logs/mason/mason_alignment_reverse/.log",
+    conda:
+        "../envs/samtools.yaml"
     shell:
         """
         samtools view -b -f 16 -f 64 {input} > {output.first} 2> {log}
@@ -145,11 +147,11 @@ rule mason_sort_oriented_reads:
         "resources/Simulate/simulated_data/alignment_{orientation}.bam",
     output:
         "resources/Simulate/simulated_data/alignment_sorted_{orientation}.bam",
+    log:
+        "logs/mason/mason_sort_oriented_reads/{orientation}.log",
     conda:
         "../envs/samtools.yaml"
     threads: 4
-    log:
-        "logs/mason/mason_sort_oriented_reads/{orientation}.log",
     shell:
         "samtools sort -@ {threads}  {input} -o {output} 2> {log}"
 
@@ -159,10 +161,10 @@ rule mason_index_oriented_alignment:
         "resources/Simulate/simulated_data/alignment_sorted_{orientation}.bam",
     output:
         "resources/Simulate/simulated_data/alignment_sorted_{orientation}.bam.bai",
-    conda:
-        "../envs/samtools.yaml"
     log:
         "logs/mason/mason_index_oriented_alignment/{orientation}.log",
+    conda:
+        "../envs/samtools.yaml"
     shell:
         "samtools index {input} 2> {log}"
 
@@ -178,10 +180,10 @@ rule candidates_to_bed:
         "resources/{chrom}/candidates.bcf",
     output:
         "resources/{chrom}/candidates.bed",
-    conda:
-        "../envs/samtools.yaml"
     log:
         "logs/mason/candidates_to_bed/{chrom}.log",
+    conda:
+        "../envs/samtools.yaml"
     shell:
         """
         bcftools query -f '%CHROM\t%POS\t%REF\n' {input} 2> {log} | \
@@ -195,7 +197,11 @@ rule mason_coverage_orientation:
         bai="resources/Simulate/simulated_data/alignment_sorted_{orientation}.bam.bai",
         bed=expand(
             "resources/{chrom}/candidates.bed",
-            chrom=config["seq_platforms"].get("Simulate") if config["seq_platforms"].get("Simulate") != "genome" else "21",
+            chrom=(
+                config["seq_platforms"].get("Simulate")
+                if config["seq_platforms"].get("Simulate") != "genome"
+                else "21"
+            ),
         ),
     output:
         "resources/Simulate/simulated_data/{orientation}_cov.mosdepth.global.dist.txt",
@@ -204,35 +210,37 @@ rule mason_coverage_orientation:
         summary="resources/Simulate/simulated_data/{orientation}_cov.mosdepth.summary.txt",  # this named output is required for prefix parsing
     log:
         "logs/mason/mason_coverage_orientation/{orientation}.log",
+    threads: 4  # This value - 1 will be sent to `--threads`
     params:
         extra="--no-per-base --use-median",  # optional
-    threads: 4  # This value - 1 will be sent to `--threads`
     wrapper:
         "v5.5.2/bio/mosdepth"
+
 
 rule mason_candidates_vcf:
     input:
         "resources/{chrom}/candidates.bcf",
     output:
         "resources/{chrom}/candidates.vcf.gz",
-    conda:
-        "../envs/samtools.yaml"
     log:
         "logs/mason/mason_candidates_vcf/{chrom}.log",
+    conda:
+        "../envs/samtools.yaml"
     shell:
         """
         bcftools view -o {output} {input} 2> {log}
         """
+
 
 rule unzip:
     input:
         "resources/Simulate/simulated_data/{orientation}.regions.bed.gz",
     output:
         "resources/Simulate/simulated_data/{orientation}.regions.bed",
-    conda:
-        "../envs/samtools.yaml"
     log:
         "logs/mason/unzip/{orientation}.log",
+    conda:
+        "../envs/samtools.yaml"
     shell:
         """
         gunzip -c {input} > {output}
@@ -247,12 +255,12 @@ rule mason_compute_truth:
         candidates="resources/{chrom}/candidates.vcf",
     output:
         "resources/Simulate/simulated_data/{chrom}_truth.csv",
-    conda:
-        "../envs/python.yaml"
     log:
         "logs/mason/mason_compute_truth/{chrom}.log",
+    conda:
+        "../envs/python.yaml"
     resources:
-        mem_mb=32000
+        mem_mb=32000,
     script:
         "../scripts/mason_ascii_to_meth.py"
 
@@ -272,10 +280,10 @@ rule mason_plot_truth_to_results:
             },
             caption="../report/heatmap.rst",
         ),
-    conda:
-        "../envs/python.yaml"
     log:
         "logs/mason/mason_plot_truth_to_results/{chrom}_{plot_type}.log",
+    conda:
+        "../envs/python.yaml"
     params:
         meth_callers=lambda wildcards: config["ref_tools"].get("Simulate", [])
         + [f"varlo_{fdr}" for fdr in config["fdr_alpha"]],
@@ -283,11 +291,11 @@ rule mason_plot_truth_to_results:
     script:
         "../scripts/plot_mason_results.py"
 
+
 rule compute_precision_recall:
     input:
         truth="resources/Simulate/simulated_data/{chrom}_truth.csv",
         results_rep="results/single_sample/Simulate/result_files/sample_df_simulated_data.parquet",
-
         no_bias="results/single_sample/Simulate/called/simulated_data_no_bias/result_files/varlo_0.01.parquet",
         # coverage="resources/Simulate/simulated_data/complete_cov.regions.bed",
         # tool="results/{platform}/{protocol}/result_files/{method}.parquet",
@@ -297,7 +305,7 @@ rule compute_precision_recall:
     log:
         "logs/mason/compute_precision_recall/{chrom}_{plot_type}.log",
     conda:
-        "../envs/python.yaml",
+        "../envs/python.yaml"
     params:
         meth_callers=lambda wildcards: config["ref_tools"].get("Simulate", [])
         + [f"varlo_{fdr}" for fdr in config["fdr_alpha"]],

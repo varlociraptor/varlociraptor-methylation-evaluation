@@ -3,12 +3,12 @@ rule compute_pandas_df:
         tool="results/{call_type}/{seq_platform}/called/{sample}/result_files/{method}.bed",
     output:
         "results/{call_type}/{seq_platform}/called/{sample}/result_files/{method}.parquet",
-    conda:
-        "../envs/python.yaml"
-    wildcard_constraints:
-        method="(?!varlo|sample_df).*",
     log:
         "logs/plot_results/compute_pandas_df/{call_type}_{seq_platform}_{sample}_{method}.log",
+    wildcard_constraints:
+        method="(?!varlo|sample_df).*",
+    conda:
+        "../envs/python.yaml"
     resources:
         mem_mb=34000,
     script:
@@ -20,14 +20,14 @@ rule compute_varlo_df:
         tool="results/{call_type}/{seq_platform}/called/{sample}/result_files/varlo.bed",
     output:
         "results/{call_type}/{seq_platform}/called/{sample}/result_files/varlo_{fdr}.parquet",
-    conda:
-        "../envs/python.yaml"
     log:
         "logs/plot_results/compute_varlo_df/{call_type}_{seq_platform}_{fdr}_{sample}.log",
-    params:
-        alpha=lambda wildcards: wildcards.fdr,
+    conda:
+        "../envs/python.yaml"
     resources:
         mem_mb=64000,
+    params:
+        alpha=lambda wildcards: wildcards.fdr,
     script:
         "../scripts/pandas_df_from_meth_output.py"
 
@@ -37,9 +37,7 @@ rule common_tool_df:
     input:
         tools=lambda wildcards: expand(
             "results/{{call_type}}/{{seq_platform}}/called/{{sample}}/result_files/{method}.parquet",
-            method=config["ref_tools"].get(
-                wildcards.seq_platform, []
-            ),
+            method=config["ref_tools"].get(wildcards.seq_platform, []),
         ),
         varlo=expand(
             "results/{{call_type}}/{{seq_platform}}/called/{{sample}}/result_files/varlo_{fdr}.parquet",
@@ -47,15 +45,19 @@ rule common_tool_df:
         ),
     output:
         sample_df="results/{call_type}/{seq_platform}/result_files/sample_df_{sample}.parquet",
-    conda:
-        "../envs/python.yaml"
     log:
         "logs/plot_results/common_tool_df/{call_type}_{seq_platform}_{sample}.log",
-    params:
-        plot_type=config["plot_type"],
-        filter_chrom = lambda wildcards: config.get("chrom_filter", None) if wildcards.seq_platform == "Simulate" else None
+    conda:
+        "../envs/python.yaml"
     resources:
         mem_mb=60000,
+    params:
+        plot_type=config["plot_type"],
+        filter_chrom=lambda wildcards: (
+            config.get("chrom_filter", None)
+            if wildcards.seq_platform == "Simulate"
+            else None
+        ),
     script:
         "../scripts/common_tool_df.py"
 
@@ -70,10 +72,10 @@ rule merge_replicates:
         ),
     output:
         "results/{call_type}/{seq_platform}/result_files/replicates.parquet",
-    conda:
-        "../envs/python.yaml"
     log:
         "logs/plot_results/merge_replicates/{call_type}_{seq_platform}.log",
+    conda:
+        "../envs/python.yaml"
     resources:
         mem_mb=4000,
     params:
@@ -84,6 +86,7 @@ rule merge_replicates:
     script:
         "../scripts/merge_replicates.py"
 
+
 # Bin the methylation values for heatmaps and compute the discordance measurements for each tool and sample, which is used for the bias plot. This is done in one step to avoid redundant computations (binning is needed for both heatmap and bias plot).
 # We offer the option to have {sample} == "all_samples", which means that the resulting df dfs will contain all samples of the respective platform. This is used for the combined heatmap and bias plot for all Illumina samples.
 rule prepare_plot_df:
@@ -93,10 +96,10 @@ rule prepare_plot_df:
         df="results/{call_type}/{seq_platform}/result_files/{sample}_prepared.parquet",
         distances="results/{call_type}/{seq_platform}/result_files/{sample}_distances.parquet",
         distance_plot="results/{call_type}/{seq_platform}/result_files/{sample}_distances.html",
-    conda:
-        "../envs/python.yaml"
     log:
         "logs/plot_results/prepare_plot_df/{call_type}_{seq_platform}_{sample}.log",
+    conda:
+        "../envs/python.yaml"
     resources:
         mem_mb=32000,
     params:
@@ -116,8 +119,6 @@ rule prepare_plot_df:
         "../scripts/prepare_plot_df.py"
 
 
-
-
 rule plot_heatmaps:
     input:
         df="results/{call_type}/{seq_platform}/result_files/{sample}_prepared.parquet",
@@ -133,15 +134,15 @@ rule plot_heatmaps:
             },
             caption="../report/heatmap.rst",
         ),
-    conda:
-        "../envs/python.yaml"
-    resources:
-        mem_mb=4000,
     # wildcard_constraints:
     #     # sample should not be 'simulated_data'
     #     sample="^(?!simulated_data$).*"
     log:
         "logs/plot_results/plot_heatmaps/{call_type}_{seq_platform}_{sample}_{plot_type}.log",
+    conda:
+        "../envs/python.yaml"
+    resources:
+        mem_mb=4000,
     params:
         bin_size=lambda wildcards: config["heatmap_bin_size"],
         plot_type=lambda wildcards: wildcards.plot_type,
@@ -171,12 +172,12 @@ rule plot_bars_illumina:
             },
             caption="../report/bar_plot_illumina.rst",
         ),
+    log:
+        "logs/plot_results/plots_bars_illumina/single_sample_Illumina_pe_{plot_type}.log",
     conda:
         "../envs/python.yaml"
     resources:
         mem_mb=4000,
-    log:
-        "logs/plot_results/plots_bars_illumina/single_sample_Illumina_pe_{plot_type}.log",
     params:
         sample=config["samples"].get("Illumina_pe", []),
         bin_size=lambda wildcards: config["heatmap_bin_size"],
@@ -200,12 +201,12 @@ rule plot_bias:
             caption="../report/bias.rst",
         ),
         bias_df="results/{call_type}/{seq_platform}/plots/{sample}_bias_df_{plot_type}.parquet",
+    log:
+        "logs/plot_results/plot_bias/{call_type}_{seq_platform}_{sample}_{plot_type}.log",
     conda:
         "../envs/python.yaml"
     resources:
         mem_mb=32000,
-    log:
-        "logs/plot_results/plot_bias/{call_type}_{seq_platform}_{sample}_{plot_type}.log",
     params:
         meth_callers=lambda wildcards: config["ref_tools"].get(
             wildcards.seq_platform, []
@@ -229,17 +230,21 @@ rule plot_runtime_comparison:
         benchmarks="benchmarks",
     output:
         tools="results/single_sample/plots/runtime_memory.{plot_type}",
-    conda:
-        "../envs/python.yaml"
     log:
         "logs/plot_results/plot_runtime_comparison/{plot_type}.log",
+    conda:
+        "../envs/python.yaml"
     script:
         "../scripts/plot_runtime_comparison.py"
 
 
 rule concat_plots_multi_sample:
     input:
-        plots=["results/multi_sample/pb_methylSeq/plots/dummy_heatmap.pdf", "results/multi_sample/np_pb/plots/dummy_heatmap.pdf", "results/multi_sample/np_methylSeq/plots/dummy_heatmap.pdf"],
+        plots=[
+            "results/multi_sample/pb_methylSeq/plots/dummy_heatmap.pdf",
+            "results/multi_sample/np_pb/plots/dummy_heatmap.pdf",
+            "results/multi_sample/np_methylSeq/plots/dummy_heatmap.pdf",
+        ],
     output:
         "results/multi_sample/combined_heatmap.pdf",
     log:
@@ -263,12 +268,13 @@ rule concat_plots_bias:
         "logs/plot_results/concat_plots_bias.log",
     conda:
         "../envs/python.yaml"
-    params:
-        fdr=config["fdr_alpha"]
     resources:
         mem_mb=4000,
+    params:
+        fdr=config["fdr_alpha"],
     script:
         "../scripts/concat_bias.py"
+
 
 rule concat_plots_coverage:
     input:
@@ -287,14 +293,14 @@ rule concat_plots_coverage:
         "../scripts/concat_coverage.py"
 
 
-
 rule debug_pb_cpg_tools:
     input:
         pacbio="results/single_sample/PacBio/result_files/replicates.parquet",
         nanopore="results/single_sample/Nanopore/result_files/replicates.parquet",
         illumina="results/single_sample/Illumina_pe/result_files/replicates.parquet",
     output:
-        report("results/single_sample/plots/debug_pb_cpg_tools.{plot_type}",
+        report(
+            "results/single_sample/plots/debug_pb_cpg_tools.{plot_type}",
             category="single_sample",
             subcategory="PacBio",
             labels={

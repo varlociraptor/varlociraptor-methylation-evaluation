@@ -21,12 +21,15 @@ rule methylDackel_compute_meth:
         alignment_index="resources/{platform}/{sample}/candidate_specific/alignment_{scatteritem}.bam.bai",
     output:
         "results/single_sample/{platform}/called/{sample}/result_files/alignments_CpG_{scatteritem}.bedGraph",
-    conda:
-        "../envs/methylDackel.yaml"
     log:
         "logs/methylDackel/methylDackel_compute_meth/{platform}_{sample}_{scatteritem}.log",
     benchmark:
-        repeat("benchmarks/{platform}/methylDackel/methylDackel_compute_meth/{sample}_{scatteritem}.bwa.benchmark.txt", config["benchmark_repeats"])
+        repeat(
+            "benchmarks/{platform}/methylDackel/methylDackel_compute_meth/{sample}_{scatteritem}.bwa.benchmark.txt",
+            config["benchmark_repeats"],
+        )
+    conda:
+        "../envs/methylDackel.yaml"
     shell:
         """
         mkdir -p $(dirname {log})

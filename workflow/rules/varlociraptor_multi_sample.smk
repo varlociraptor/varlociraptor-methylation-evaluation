@@ -2,13 +2,18 @@ rule call_methylation_together_np_pb:
     input:
         pacbio="results/preprocessed/PacBio/{replicate}/normal_{scatteritem}.bcf",
         nanopore="results/preprocessed/Nanopore/{replicate}/normal_{scatteritem}.bcf",
-        scenario=workflow.source_path("../scenarios/scenario_common_nanopore_pacbio.yaml"),
+        scenario=workflow.source_path(
+            "../scenarios/scenario_common_nanopore_pacbio.yaml"
+        ),
     output:
         "results/multi_sample/np_pb/called/{replicate}/calls_{scatteritem}.bcf",
     log:
         "logs/varlociraptor_multi/call_methylation_together_np_pb/{replicate}_{scatteritem}.log",
     benchmark:
-        repeat("benchmarks/multi_sample/np_bp/np_pb/{replicate}_{scatteritem}.bwa.benchmark.txt", config["benchmark_repeats"])
+        repeat(
+            "benchmarks/multi_sample/np_bp/np_pb/{replicate}_{scatteritem}.bwa.benchmark.txt",
+            config["benchmark_repeats"],
+        )
     conda:
         "../envs/varlociraptor.yaml"
     shell:
@@ -20,13 +25,18 @@ rule call_methylation_together_np_methylSeq:
         # trueOX="results/preprocessed/Illumina_pe/TrueMethylOX_HG002_LAB01_{replicate}/normal_{scatteritem}.bcf",
         methylSeq="results/preprocessed/Illumina_pe/MethylSeq_HG002_LAB01_{replicate}/normal_{scatteritem}.bcf",
         nanopore="results/preprocessed/Nanopore/{replicate}/normal_{scatteritem}.bcf",
-        scenario=workflow.source_path("../scenarios/scenario_common_nanopore_methylSeq.yaml"),
+        scenario=workflow.source_path(
+            "../scenarios/scenario_common_nanopore_methylSeq.yaml"
+        ),
     output:
         "results/multi_sample/np_methylSeq/called/{replicate}/calls_{scatteritem}.bcf",
     log:
         "logs/varlociraptor_multi/call_methylation_together_np_methylSeq/{replicate}_{scatteritem}.log",
     benchmark:
-        repeat("benchmarks/multi_sample/np_methylSeq/np_methylSeq/{replicate}_{scatteritem}.bwa.benchmark.txt", config["benchmark_repeats"])
+        repeat(
+            "benchmarks/multi_sample/np_methylSeq/np_methylSeq/{replicate}_{scatteritem}.bwa.benchmark.txt",
+            config["benchmark_repeats"],
+        )
     conda:
         "../envs/varlociraptor.yaml"
     shell:
@@ -38,13 +48,18 @@ rule call_methylation_together_pb_methylSeq:
         # trueOx="results/preprocessed/Illumina_pe/TrueMethylOX_HG002_LAB01_{replicate}/normal_{scatteritem}.bcf",
         methylSeq="results/preprocessed/Illumina_pe/MethylSeq_HG002_LAB01_{replicate}/normal_{scatteritem}.bcf",
         pacbio="results/preprocessed/PacBio/{replicate}/normal_{scatteritem}.bcf",
-        scenario=workflow.source_path("../scenarios/scenario_common_pacbio_methylSeq.yaml"),
+        scenario=workflow.source_path(
+            "../scenarios/scenario_common_pacbio_methylSeq.yaml"
+        ),
     output:
         "results/multi_sample/pb_methylSeq/called/{replicate}/calls_{scatteritem}.bcf",
     log:
         "logs/varlociraptor_multi/call_methylation_together_pb_methylSeq/{replicate}_{scatteritem}.log",
     benchmark:
-        repeat("benchmarks/multi_sample/pb_methylSeq/pb_methylSeq/{replicate}_{scatteritem}.bwa.benchmark.txt", config["benchmark_repeats"])
+        repeat(
+            "benchmarks/multi_sample/pb_methylSeq/pb_methylSeq/{replicate}_{scatteritem}.bwa.benchmark.txt",
+            config["benchmark_repeats"],
+        )
     conda:
         "../envs/varlociraptor.yaml"
     shell:

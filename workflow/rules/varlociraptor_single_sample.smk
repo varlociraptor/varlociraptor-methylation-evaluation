@@ -12,14 +12,21 @@ rule varlociraptor_preprocess:
         alignment_index="resources/{seq_platform}/{sample}/candidate_specific/alignment_{scatteritem}.bam.bai",
         candidates=lambda wildcards: expand(
             "resources/{chrom}/candidates_{{scatteritem}}.bcf",
-            chrom=21 if chromosome_by_seq_platform.get(wildcards.seq_platform) == "genome" else chromosome_by_seq_platform.get(wildcards.seq_platform),
+            chrom=(
+                21
+                if chromosome_by_seq_platform.get(wildcards.seq_platform) == "genome"
+                else chromosome_by_seq_platform.get(wildcards.seq_platform)
+            ),
         ),
     output:
         "results/preprocessed/{seq_platform}/{sample}/normal_{scatteritem}.bcf",
     log:
         "logs/varlociraptor_single/varlociraptor_preprocess/{seq_platform}_{sample}_{scatteritem}.log",
     benchmark:
-        repeat("benchmarks/{seq_platform}/varlociraptor/preprocessing/{sample}_{scatteritem}.bwa.benchmark.txt", config["benchmark_repeats"])
+        repeat(
+            "benchmarks/{seq_platform}/varlociraptor/preprocessing/{sample}_{scatteritem}.bwa.benchmark.txt",
+            config["benchmark_repeats"],
+        )
     conda:
         "../envs/varlociraptor.yaml"
     resources:
@@ -44,14 +51,18 @@ rule varlociraptor_call:
     log:
         "logs/varlociraptor_single/varlociraptor_call/{seq_platform}_{sample}_{scatteritem}.log",
     benchmark:
-        repeat("benchmarks/{seq_platform}/varlociraptor/calling/{sample}_{scatteritem}.bwa.benchmark.txt", config["benchmark_repeats"])
-    conda:
-        "../envs/varlociraptor.yaml"
+        repeat(
+            "benchmarks/{seq_platform}/varlociraptor/calling/{sample}_{scatteritem}.bwa.benchmark.txt",
+            config["benchmark_repeats"],
+        )
     wildcard_constraints:
         seq_platform="(?!multi_sample).*",
         sample="(?!simulated_data_no_bias).*",
+    conda:
+        "../envs/varlociraptor.yaml"
     shell:
         "varlociraptor call variants generic --scenario {input.scenario} --obs normal={input.preprocess_obs} > {output} 2> {log}"
+
 
 rule gather_calls:
     input:

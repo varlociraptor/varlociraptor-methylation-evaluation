@@ -1,14 +1,15 @@
 # https://felixkrueger.github.io/Bismark/bismark/methylation_extraction/
 
+
 rule bismark_copy_genome:
     input:
         "resources/{chrom}.fasta",
     output:
         "resources/ref_tools/bismark/genome/{platform}/{chrom}.fasta",
-    conda:
-        "../envs/bismark.yaml"
     log:
         "logs/bismark/bismark_copy_chromosome/{chrom}_{platform}.log",
+    conda:
+        "../envs/bismark.yaml"
     shell:
         """
         mkdir -p $(dirname {output}) 2> {log}
@@ -16,24 +17,22 @@ rule bismark_copy_genome:
         """
 
 
-
-
 rule bismark_genome_preparation_fa:
     input:
-        genome=lambda wildcards:
+        genome=lambda wildcards: (
             "resources/J02459.fasta"
             if chromosome_by_seq_platform.get(wildcards.platform) == "J02459"
-            else "resources/genome.fasta",
+            else "resources/genome.fasta"
+        ),
     output:
         bismark_genome_dir=directory("resources/ref_tools/bismark/genome/{platform}"),
-
     log:
         "logs/bismark_genome_preparation/{platform}.log",
+    threads: 4  # bismark_genome_preparation requires least 2 threads and at least --cores 2 from workflow run
     resources:
         mem_mb=16000,
     params:
         extra="",  # optional params string
-    threads: 4  # bismark_genome_preparation requires least 2 threads and at least --cores 2 from workflow run
     wrapper:
         "v9.4.1/bio/bismark/bismark_genome_preparation"
 
@@ -42,11 +41,9 @@ rule bismark_align:
     input:
         fq_1="resources/{platform}/{sample}/{SRA}/{SRA}_1_trimmed.fastq.gz",
         fq_2="resources/{platform}/{sample}/{SRA}/{SRA}_2_trimmed.fastq.gz",
-
         bismark_indexes_dir="resources/ref_tools/bismark/genome/{platform}/",
         # We do not need that input but else bismark does not prepare the genome
         # genome_prep="resources/ref_tools/bismark/genome/{platform}/bismark/",
-
         # ct="resources/ref_tools/bismark/genome/{platform}/Bisulfite_Genome/CT_conversion",
     output:
         bam="resources/ref_tools/bismark/{platform}/bams/{sample}_pe_{SRA}_unsorted.bam",
@@ -54,16 +51,19 @@ rule bismark_align:
         fq_unmapped_1="resources/ref_tools/bismark/{platform}/{sample}/{SRA}_unmapped_reads_1.fq.gz",  # optional: implicitly activates --unmapped
         fq_unmapped_2="resources/ref_tools/bismark/{platform}/{sample}/{SRA}_unmapped_reads_2.fq.gz",  # optional: implicitly activates --unmapped
         fq_ambiguous_1="resources/ref_tools/bismark/{platform}/{sample}/{SRA}_ambiguous_reads_1.fq.gz",  # optional: implicitly activates --ambiguous
-        fq_ambiguous_2="resources/ref_tools/bismark/{platform}/{sample}/{SRA}_ambiguous_reads_2.fq.gz"
+        fq_ambiguous_2="resources/ref_tools/bismark/{platform}/{sample}/{SRA}_ambiguous_reads_2.fq.gz",
     log:
         "logs/bismark/bismark_align/{sample}_{SRA}_{platform}.log",
     benchmark:
-        repeat("benchmarks/{platform}/bismark/bismark_align/{SRA}_{sample}.bwa.benchmark.txt", config["benchmark_repeats"])
-    params:
-        extra="--gzip",
+        repeat(
+            "benchmarks/{platform}/bismark/bismark_align/{SRA}_{sample}.bwa.benchmark.txt",
+            config["benchmark_repeats"],
+        )
     threads: 8
     resources:
         mem_mb=16000,
+    params:
+        extra="--gzip",
     wrapper:
         "v9.3.0/bio/bismark/bismark"
 
@@ -76,11 +76,14 @@ rule samtools_merge:
         "resources/ref_tools/bismark/{platform}/bams/{sample}_pe.bam",
     log:
         "logs/bismark/samtools_merge/{sample}_{platform}.log",
+    benchmark:
+        repeat(
+            "benchmarks/{platform}/bismark/samtools_merge/{sample}.bwa.benchmark.txt",
+            config["benchmark_repeats"],
+        )
+    threads: 8
     params:
         extra="-n -f",
-    benchmark:
-        repeat("benchmarks/{platform}/bismark/samtools_merge/{sample}.bwa.benchmark.txt", config["benchmark_repeats"])
-    threads: 8
     wrapper:
         "v5.9.0/bio/samtools/merge"
 
@@ -92,13 +95,16 @@ rule samtools_sort:
         "resources/ref_tools/bismark/{platform}/bams/{sample}_pe_sorted.bam",
     log:
         "logs/bismark/samtools_sort/{sample}_{platform}.log",
-    params:
-        extra="-m 4G -n",
+    benchmark:
+        repeat(
+            "benchmarks/{platform}/bismark/samtools_sort/{sample}.bwa.benchmark.txt",
+            config["benchmark_repeats"],
+        )
     threads: 8
     resources:
         mem_mb=16000,
-    benchmark:
-        repeat("benchmarks/{platform}/bismark/samtools_sort/{sample}.bwa.benchmark.txt", config["benchmark_repeats"])
+    params:
+        extra="-m 4G -n",
     wrapper:
         "v5.9.0/bio/samtools/sort"
 
@@ -111,12 +117,15 @@ rule deduplicate_bismark:
         report="resources/ref_tools/bismark/{platform}/dedup/{sample}.deduplication_report.txt",
     log:
         "logs/bismark/deduplicate_bismark/{sample}_{platform}.log",
-    params:
-        extra="",  # optional params string
     benchmark:
-        repeat("benchmarks/{platform}/bismark/deduplicate_bismark/{sample}.bwa.benchmark.txt", config["benchmark_repeats"])
+        repeat(
+            "benchmarks/{platform}/bismark/deduplicate_bismark/{sample}.bwa.benchmark.txt",
+            config["benchmark_repeats"],
+        )
     resources:
         mem_mb=16000,
+    params:
+        extra="",  # optional params string
     wrapper:
         "v9.3.0/bio/bismark/deduplicate_bismark"
 
@@ -126,15 +135,18 @@ rule bismark_extract:
         bam="resources/ref_tools/bismark/{platform}/dedup/{sample}.deduplicated.bam",
     output:
         cov_zero_based="resources/ref_tools/bismark/{platform}/meth/{sample}.deduplicated.bedGraph.gz.bismark.zero.cov",
-    conda:
-        "../envs/bismark.yaml"
     log:
         "logs/bismark_extract/{sample}_{platform}.log",
     benchmark:
-        repeat("benchmarks/{platform}/bismark/bismark_methylation_extractor/{sample}.bwa.benchmark.txt", config["benchmark_repeats"])
+        repeat(
+            "benchmarks/{platform}/bismark/bismark_methylation_extractor/{sample}.bwa.benchmark.txt",
+            config["benchmark_repeats"],
+        )
+    conda:
+        "../envs/bismark.yaml"
+    threads: 8
     resources:
         mem_mb=16000,
-    threads: 8
     shell:
         """
         mkdir -p $(dirname {output}) 2> {log}

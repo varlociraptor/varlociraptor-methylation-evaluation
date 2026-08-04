@@ -27,7 +27,6 @@ rule bsmapz_clone_and_build:
         """
 
 
-
 # Download the newer methylation extractor from BSMAPz
 # rule bsmap_download_methratio:
 #     output:
@@ -46,22 +45,31 @@ rule bsmapz_compute_meth:
     input:
         genome=lambda wildcards: expand(
             "resources/{chrom}.fasta",
-            chrom=config["seq_platforms"].get(wildcards.platform) if config["seq_platforms"].get(wildcards.platform) != 'genome' else '21',
+            chrom=(
+                config["seq_platforms"].get(wildcards.platform)
+                if config["seq_platforms"].get(wildcards.platform) != "genome"
+                else "21"
+            ),
         ),
         alignment="resources/{platform}/{sample}/alignment_focused_downsampled_dedup_renamed.bam",
         alignment_index="resources/{platform}/{sample}/alignment_focused_downsampled_dedup_renamed.bam.bai",
         bsmapz_binary="resources/ref_tools/BSMAPz/bsmapz",
     output:
-        temp("results/single_sample/{platform}/called/{sample}/result_files/out.unsorted.bam"),
+        temp(
+            "results/single_sample/{platform}/called/{sample}/result_files/out.unsorted.bam"
+        ),
     log:
         "logs/bsmapz/bsmapz_compute/{platform}_{sample}.log",
-    resources:
-        mem_mb=16000,
     benchmark:
-        repeat("benchmarks/{platform}/bsmap/bsmap_compute/{sample}.bwa.benchmark.txt", config["benchmark_repeats"])
+        repeat(
+            "benchmarks/{platform}/bsmap/bsmap_compute/{sample}.bwa.benchmark.txt",
+            config["benchmark_repeats"],
+        )
     conda:
         "../envs/general.yaml"
     threads: 8
+    resources:
+        mem_mb=16000,
     shell:
         """
         chmod +x {input.bsmapz_binary}
@@ -69,6 +77,7 @@ rule bsmapz_compute_meth:
         mkdir -p $(dirname {output})
         {input.bsmapz_binary} -a {input.alignment} -d {input.genome} -o {output} -p {threads} > {log} 2>&1
         """
+
 
 # Sort BSMAPz output BAM by coordinate (BSMAPz does not guarantee sorted output)
 rule bsmapz_sort_out_bam:
@@ -78,14 +87,13 @@ rule bsmapz_sort_out_bam:
         temp("results/single_sample/{platform}/called/{sample}/result_files/out.bam"),
     log:
         "logs/bsmapz/bsmapz_sort_out_bam/{platform}_{sample}.log",
-    resources:
-        mem_mb=8000,
     conda:
         "../envs/samtools.yaml"
     threads: 4
+    resources:
+        mem_mb=8000,
     shell:
         "samtools sort -@ {threads} -o {output} {input} 2> {log}"
-
 
 
 # Index out.bam for region-based splitting
@@ -109,19 +117,19 @@ rule bsmapz_extract_scatter_bam:
     input:
         alignment="results/single_sample/{platform}/called/{sample}/result_files/out.bam",
         index="results/single_sample/{platform}/called/{sample}/result_files/out.bam.bai",
-        candidate=lambda wildcards: f"resources/{chromosome_by_seq_platform.get(wildcards.platform) if chromosome_by_seq_platform.get(wildcards.platform) != "genome" else 21}/candidates_{wildcards.scatteritem}.bed",
+        candidate=lambda wildcards: f"resources/{chromosome_by_seq_platform.get(wildcards.platform) if chromosome_by_seq_platform.get(wildcards.platform)!= "genome" else 21}/candidates_{wildcards.scatteritem}.bed",
     output:
         temp(
             "results/single_sample/{platform}/called/{sample}/result_files/out_{scatteritem}.bam"
         ),
     log:
         "logs/bsmapz/bsmapz_extract_scatter_bam/{platform}_{sample}_{scatteritem}.log",
+    conda:
+        "../envs/samtools.yaml"
     params:
         chromosome=lambda wildcards: chromosome_by_seq_platform.get(
             wildcards.platform, "21"
         ),
-    conda:
-        "../envs/samtools.yaml"
     shell:
         """
         samtools view -b -L {input.candidate} {input.alignment} > {output} 2> {log}
@@ -154,16 +162,21 @@ rule bsmapz_extract:
         ),
     log:
         "logs/bsmapz/bsmapz_extract/{platform}_{sample}_{scatteritem}.log",
-    params:
-        chromosome_flag=lambda wildcards: f"-c={chromosome_by_seq_platform.get(wildcards.platform)}"
-            if chromosome_by_seq_platform.get(wildcards.platform) != "genome"
-                else f"-c=21"
+    benchmark:
+        repeat(
+            "benchmarks/{platform}/bsmap/bsmap_extract/{sample}_{scatteritem}.bwa.benchmark.txt",
+            config["benchmark_repeats"],
+        )
     conda:
         "../envs/bsmapz.yaml"
     resources:
-        mem_mb=64000
-    benchmark:
-        repeat("benchmarks/{platform}/bsmap/bsmap_extract/{sample}_{scatteritem}.bwa.benchmark.txt", config["benchmark_repeats"])
+        mem_mb=64000,
+    params:
+        chromosome_flag=lambda wildcards: (
+            f"-c={chromosome_by_seq_platform.get(wildcards.platform)}"
+            if chromosome_by_seq_platform.get(wildcards.platform) != "genome"
+            else f"-c=21"
+        ),
     shell:
         "python {input.meth_extractor} {params.chromosome_flag} --ref={input.genome[0]} --out={output} {input.bsmap_bam} -g -x CG 2> {log}"
 

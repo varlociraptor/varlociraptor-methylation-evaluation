@@ -27,15 +27,22 @@ def compute_results() -> List[List[str]]:
         )
     if "Simulate" in config["seq_platforms"]:
 
-        chromosome = config["seq_platforms"]["Simulate"] if config["seq_platforms"]["Simulate"] != "genome" else "21"
+        chromosome = (
+            config["seq_platforms"]["Simulate"]
+            if config["seq_platforms"]["Simulate"] != "genome"
+            else "21"
+        )
         inputs.append(
             f"results/single_sample/Simulate/plots/simulated_data_{chromosome}.{config['plot_type']}"
         )
     # Multi-sample common heatmaps
     if "multi_sample" in config["seq_platforms"]:
         inputs.append(heatmap_replicates_common())
-    inputs.append([
-        f"results/single_sample/plots/debug_pb_cpg_tools.{config['plot_type']}", "results/single_sample/plots/coverage.pdf"]
+    inputs.append(
+        [
+            f"results/single_sample/plots/debug_pb_cpg_tools.{config['plot_type']}",
+            "results/single_sample/plots/coverage.pdf",
+        ]
     )
 
     return inputs
@@ -111,6 +118,7 @@ def get_sample_sra_bismark(wildcards) -> List[str]:
         f"resources/ref_tools/bismark/{wildcards.platform}/bams/{wildcards.sample}_pe_{sra}_unsorted.bam"
         for sra in accession_numbers
     ]
+
 
 seq_platform_to_name = {
     "np_methylSeq": "Nanopore & MethylSeq",
