@@ -32,7 +32,7 @@ rule compute_coverage:
     log:
         "logs/mason/mason_coverage/{call_type}_{seq_platform}_{sample}_{mapq}.log",
     params:
-        extra=lambda wildcards: "--no-per-base --use-median" + f" --mapq {wildcards.mapq}" if wildcards.mapq != "all" else "",  # optional
+        extra=lambda wildcards: f"--no-per-base --use-median --mapq {wildcards.mapq}" if wildcards.mapq != "all" else "",  # optional
     wildcard_constraints:
         sample="(?!all_samples).*",
     threads: 4  # This value - 1 will be sent to `--threads`

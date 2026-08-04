@@ -59,8 +59,8 @@ rule bsmapz_compute_meth:
         mem_mb=16000,
     benchmark:
         repeat("benchmarks/{platform}/bsmap/bsmap_compute/{sample}.bwa.benchmark.txt", config["benchmark_repeats"])
-    # conda:
-    #     "../envs/bsmapz.yaml"
+    conda:
+        "../envs/general.yaml"
     threads: 8
     shell:
         """
