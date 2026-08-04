@@ -2,7 +2,7 @@
 
 
 # Choose specific chromosome for evaluation
-seq_platforms: 
+seq_platforms:
   Illumina_pe: J02459
 
 
@@ -13,7 +13,7 @@ ref_tools:
 
 
 
-samples: 
+samples:
   Illumina_pe: [simulated_data]
 data:
   Illumina_pe:
@@ -23,7 +23,8 @@ data:
 
 # Number of simulated reads
 num_simulated_reads: 10000
-
+# Define mason seed
+seed: 0
 
 ###################################### METH CALLING ##################################################
 
@@ -33,7 +34,8 @@ min_mapping_quality: 10
 scatter_number: 1
 # Define FDR alpha levels for varlociraptor methylation filtering
 fdr_alpha: [0.01]
-
+# Define number of benchmark repeats
+benchmark_repeats: 1
 ###################################### PLOTS ##################################################
 
 heatmap_bin_size: 5
