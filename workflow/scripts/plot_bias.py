@@ -1,14 +1,13 @@
 import sys
 
 import altair as alt
-import numpy as np
-import pandas as pd
+import polars as pl
 
 # Logging
 sys.stderr = open(snakemake.log[0], "w")
 
-pd.set_option("display.max_columns", None)
-pd.set_option("display.max_rows", 1000)
+pl.Config.set_tbl_rows(100)
+pl.Config.set_tbl_cols(200)
 alt.data_transformers.enable("vegafusion")
 
 
@@ -21,7 +20,7 @@ BIAS_LABELS = {
     "SB": "Strand Bias",
     "ROB": "Read Orientation Bias",
     "RPB": "Read Position Bias",
-    "SCB": "Soft‑clipped Bias",
+    "SCB": "Soft-clipped Bias",
     "HE": "Haplotype Error",
     "ALB": "Alt Locus Bias",
 }
@@ -32,87 +31,77 @@ REPLICATE_LABELS = {
 }
 
 
-def split_varlo_format(df: pd.DataFrame, rep: str, fdr: str) -> pd.DataFrame:
-    """Extract colon-separated Varlociraptor FORMAT fields."""
+def split_varlo_format(df: pl.DataFrame, rep: str, fdr: str) -> pl.DataFrame:
+    """Split the colon-separated Varlociraptor FORMAT field into named columns."""
     col = f"varlo_{fdr}_format_{rep}"
-    fields = df[col].str.split(":", expand=True)
-    fields.columns = [f"{c}_{rep}" for c in VARLO_COLS[: fields.shape[1]]]
-    return fields[[f"{c}_{rep}" for c in KEEP_COLS if f"{c}_{rep}" in fields]]
+    n_fields = len(VARLO_COLS)
+
+    fields = df.select(pl.col(col).str.splitn(":", n_fields).alias("f")).unnest("f")
+    fields.columns = [f"{name}_{rep}" for name in VARLO_COLS[: fields.width]]
+
+    keep = [f"{name}_{rep}" for name in KEEP_COLS if f"{name}_{rep}" in fields.columns]
+    return fields.select(keep)
 
 
-def classify_bias(df):
-    """Vectorized bias category assignment."""
-    r1, r2 = df["rep1_has_bias"], df["rep2_has_bias"]
-    af1, af2 = df["AF_rep1"], df["AF_rep2"]
+def classify_bias_expr() -> pl.Expr:
+    """Assign each variant to a bias category based on both replicates."""
+    r1, r2 = pl.col("rep1_has_bias"), pl.col("rep2_has_bias")
+    af1, af2 = pl.col("AF_rep1"), pl.col("AF_rep2")
 
-    return np.select(
-        [
-            r1 & r2,
-            (r1 & (af2 == 0)) | (r2 & (af1 == 0)),
-            (r1 & (af2 > 0)) | (r2 & (af1 > 0)),
-        ],
-        ["Bias both reps", "Bias, AF = 0", "Bias, AF > 0"],
-        default="No bias",
+    return (
+        pl.when(r1 & r2)
+        .then(pl.lit("Bias both reps"))
+        .when((r1 & (af2 == 0)) | (r2 & (af1 == 0)))
+        .then(pl.lit("Bias, AF = 0"))
+        .when((r1 & (af2 > 0)) | (r2 & (af1 > 0)))
+        .then(pl.lit("Bias, AF > 0"))
+        .otherwise(pl.lit("No bias"))
     )
 
 
-def build_bias_dataframe(df: pd.DataFrame, fdr: str) -> pd.DataFrame:
-    """Build long-format bias-analysis dataframe from Varlociraptor data."""
+def build_bias_dataframe(df: pl.DataFrame, fdr: str) -> pl.DataFrame:
+    """Build a long-format bias-analysis dataframe from Varlociraptor data."""
     df_r1 = split_varlo_format(df, "rep1", fdr)
     df_r2 = split_varlo_format(df, "rep2", fdr)
+    base = pl.concat([df.select(["chromosome", "position", "sample"]), df_r1, df_r2], how="horizontal")
+    print(base)
+    bias_fields = [
+        f"{bias}_{rep}" for bias in BIAS_COLS for rep in ("rep1", "rep2") if f"{bias}_{rep}" in base.columns
+    ]
+    if not bias_fields:
+        return pl.DataFrame(schema={"chromosome": pl.Utf8, "position": pl.Int64})
 
-    base = pd.concat(
-        [df[["chromosome", "position"]].reset_index(drop=True), df_r1, df_r2],
-        axis=1,
+    base = base.filter(pl.all_horizontal([pl.col(c).is_not_null() for c in bias_fields]))
+    base = base.filter(pl.any_horizontal([pl.col(c) != "." for c in bias_fields]))
+    if base.is_empty():
+        return pl.DataFrame()
+
+    base = base.with_columns(
+        pl.col("AF_rep1", "AF_rep2").cast(pl.Float64),
+        pl.col("DP_rep1", "DP_rep2").cast(pl.Int64),
     )
-
-    all_bias_fields = [f"{b}_{r}" for b in BIAS_COLS for r in ("rep1", "rep2")]
-    bias_fields = [c for c in all_bias_fields if c in base.columns]
-
-    if bias_fields:
-        base = base[base[bias_fields].notna().all(axis=1)]
-        base = base[(base[bias_fields] != ".").any(axis=1)]
-    else:
-        # No bias columns present – nothing to plot
-        return pd.DataFrame(columns=["chromosome", "position"])
-
-    base[["AF_rep1", "AF_rep2"]] = base[["AF_rep1", "AF_rep2"]].astype(float)
-    base[["DP_rep1", "DP_rep2"]] = base[["DP_rep1", "DP_rep2"]].astype(int)
-
-    base["rep1_has_bias"] = base[[f"{b}_rep1" for b in BIAS_COLS]].ne(".").any(axis=1)
-    base["rep2_has_bias"] = base[[f"{b}_rep2" for b in BIAS_COLS]].ne(".").any(axis=1)
-
-    base["category"] = classify_bias(base)
-    if base.empty:
-        return pd.DataFrame()
-    long = base.melt(
-        id_vars=[
-            "chromosome",
-            "position",
-            "AF_rep1",
-            "AF_rep2",
-            "DP_rep1",
-            "DP_rep2",
-            "category",
-        ],
-        value_vars=bias_fields,
-        var_name="bias_var",
-        value_name="bias_value",
+    base = base.with_columns(
+        pl.any_horizontal([pl.col(f"{bias}_rep1") != "." for bias in BIAS_COLS]).alias("rep1_has_bias"),
+        pl.any_horizontal([pl.col(f"{bias}_rep2") != "." for bias in BIAS_COLS]).alias("rep2_has_bias"),
     )
+    base = base.with_columns(classify_bias_expr().alias("category"))
+    print(base)
+    id_vars = ["chromosome", "position", "sample", "AF_rep1", "AF_rep2", "DP_rep1", "DP_rep2", "category"]
+    long = base.unpivot(index=id_vars, on=bias_fields, variable_name="bias_var", value_name="bias_value")
+    print(long)
+    long = long.filter(pl.col("bias_value") != ".")
 
-    long = long[long["bias_value"] != "."]
-    long[["bias_type", "replicate"]] = long["bias_var"].str.rsplit(
-        pat="_", n=1, expand=True
+    long = long.with_columns(
+        pl.col("bias_var").str.replace(r"_rep[12]$", "").alias("bias_type"),
+        pl.col("bias_var").str.extract(r"_(rep[12])$", 1).alias("replicate"),
     )
-
-    long["bias_type_label"] = long["bias_type"].map(BIAS_LABELS)
-
+    long = long.with_columns(pl.col("bias_type").replace(BIAS_LABELS).alias("bias_type_label"))
+    print(long)
     return long
 
 
-def bias_plots(df_long: pd.DataFrame, fdr: str, platform_label: str):
-    """Create bias, AF, and DP plots from long-format data."""
-    # Bias category plot
+def bias_plots(df_long: pl.DataFrame, fdr: str, platform_label: str) -> alt.HConcatChart:
+    """Create bias, allele-frequency, and depth plots from long-format data."""
     bias_chart = (
         alt.Chart(df_long)
         .mark_bar()
@@ -121,29 +110,42 @@ def bias_plots(df_long: pd.DataFrame, fdr: str, platform_label: str):
                 "category:N",
                 axis=alt.Axis(labelAngle=-45),
                 title=None,
-                scale=alt.Scale(
-                    domain=["Bias both reps", "Bias, AF = 0", "Bias, AF > 0"],
-                ),
+                scale=alt.Scale(domain=["Bias both reps", "Bias, AF = 0", "Bias, AF > 0"]),
             ),
             y="count():Q",
             color=alt.Color(
                 "bias_type_label:N",
                 scale=alt.Scale(
-                    domain=df_long["bias_type_label"].unique(),
+                    domain=df_long["bias_type_label"].unique().to_list(),
                     range=["#D81B60", "#1E88E5"],
                 ),
                 title="Bias Type",
-                # legend=None if platform_label != "Nanopore" else alt.Legend(),
             ),
             tooltip=["category", "count()", "bias_type_label"],
         )
-    ).properties(title=f"{platform_label}")
-
-    # AF plot
-    df_af = df_long[df_long["category"] == "Bias, AF > 0"].assign(
-        AF=lambda d: d[["AF_rep1", "AF_rep2"]].max(axis=1).round(2)
+        .properties(title=platform_label)
     )
-    df_af = df_af[(df_af["DP_rep1"] <= 500) & (df_af["DP_rep2"] <= 500)]
+
+    df_af = (
+        df_long.filter(pl.col("category") == "Bias, AF > 0")
+        .with_columns(pl.max_horizontal("AF_rep1", "AF_rep2").round(2).alias("AF"))
+        # .filter((pl.col("DP_rep1") <= 500) & (pl.col("DP_rep2") <= 500))
+        .with_columns(
+            pl.when(pl.col("AF_rep1") == 0).then(pl.col("DP_rep1")).otherwise(pl.col("DP_rep2")).alias("DP_bias"),
+            pl.when(pl.col("AF_rep1") > 0).then(pl.col("DP_rep1")).otherwise(pl.col("DP_rep2")).alias("DP_AF"),
+        )
+    )
+    print(df_af.filter((pl.col("DP_bias") > 1000) | (pl.col("DP_AF") > 1000)))
+    dp_scatter = (
+        alt.Chart(df_af)
+        .mark_circle()
+        .encode(
+            x=alt.X("DP_bias:Q", title="Depth associated with bias"),
+            y=alt.Y("DP_AF:Q", title="Depth associated with AF > 0"),
+            tooltip=["DP_bias:Q", "DP_AF:Q"],
+        )
+        .properties(title="Depth scatter plot for 'Bias, AF > 0'")
+    )
 
     af_chart = (
         alt.Chart(df_af)
@@ -156,13 +158,13 @@ def bias_plots(df_long: pd.DataFrame, fdr: str, platform_label: str):
         .properties(title="AF at one sided biased loci")
     )
 
-    # DP plot
-    df_dp = df_af.melt(
-        id_vars=["chromosome", "position"],
-        value_vars=["DP_rep1", "DP_rep2"],
-        var_name="replicate",
+    df_dp = df_af.unpivot(
+        index=["chromosome", "position"],
+        on=["DP_rep1", "DP_rep2"],
+        variable_name="replicate",
         value_name="DP",
-    ).assign(replicate=lambda d: d["replicate"].map(REPLICATE_LABELS))
+    ).with_columns(pl.col("replicate").replace(REPLICATE_LABELS))
+
     dp_chart = (
         alt.Chart(df_dp)
         .mark_bar()
@@ -171,44 +173,43 @@ def bias_plots(df_long: pd.DataFrame, fdr: str, platform_label: str):
             y="count():Q",
             color=alt.Color(
                 "replicate:N",
-                scale=alt.Scale(
-                    domain=list(REPLICATE_LABELS.values()),
-                    range=["#FFC107", "#004D40"],
-                ),
+                scale=alt.Scale(domain=list(REPLICATE_LABELS.values()), range=["#FFC107", "#004D40"]),
             ),
             tooltip=["DP:Q", "count():Q"],
         )
         .properties(title="Coverage distributions")
     )
 
-    final_chart = (
-        alt.hconcat(bias_chart, af_chart, dp_chart)
+
+    return (
+        alt.hconcat(bias_chart, af_chart, dp_chart, dp_scatter)
         .resolve_scale(color="independent")
         .properties(title=f"FDR {fdr}")
     )
-    return final_chart
 
 
-def empty_plot(fdr):
-    """Create an empty plot with a message."""
-    chart = (
-        alt.Chart(pd.DataFrame({"msg": [f"No bias data for FDR {fdr}"]}))
+def empty_plot(fdr: str) -> alt.Chart:
+    """Placeholder chart shown when there is no bias data for a given FDR."""
+    return (
+        alt.Chart(pl.DataFrame({"msg": [f"No bias data for FDR {fdr}"]}))
         .mark_text(size=20)
         .encode(text="msg:N")
     )
-    return chart
 
 
 samples = snakemake.params["sample"]
 if isinstance(samples, str):
     samples = [samples]
-df = pd.read_parquet(snakemake.input[0], engine="pyarrow")
-df = df[df["sample"].isin(samples)]
+
+df = pl.read_parquet(snakemake.input[0])
+df = df.filter(pl.col("sample").is_in(samples))
 
 platform = snakemake.params["platform"]
 platform_label = "Illumina" if platform == "Illumina_pe" else platform
+
 all_charts = []
-df_long = pd.DataFrame()
+df_long = pl.DataFrame()
+
 for fdr in snakemake.params["fdrs"]:
     cols = [
         "chromosome",
@@ -217,16 +218,14 @@ for fdr in snakemake.params["fdrs"]:
         f"varlo_{fdr}_format_rep2",
         f"varlo_{fdr}_methylation_rep1",
         f"varlo_{fdr}_methylation_rep2",
+        "sample"
     ]
-
-    df_subset = df[cols]
-
+    df_subset = df.select(cols)
+    print(df_subset)
     df_long = build_bias_dataframe(df_subset, fdr)
-    if df_long.empty:
-        chart = empty_plot(fdr)
-    else:
-        chart = bias_plots(df_long, fdr, platform_label)
+    chart = empty_plot(fdr) if df_long.is_empty() else bias_plots(df_long, fdr, platform_label)
     all_charts.append(chart)
+
 final_chart = alt.vconcat(*all_charts)
 final_chart.save(snakemake.output[0])
-df_long.to_parquet(snakemake.output[1])
+df_long.write_parquet(snakemake.output[1])

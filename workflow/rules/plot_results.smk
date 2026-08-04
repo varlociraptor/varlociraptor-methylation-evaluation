@@ -187,13 +187,7 @@ rule plot_bars_illumina:
 
 rule plot_bias:
     input:
-        table=lambda wildcards: expand("results/{{call_type}}/{{seq_platform}}/called/{sample}/result_files/varlo_{fdr}_bias.parquet",
-            sample=config["data"].get(
-                wildcards.seq_platform, config["data"].get(wildcards.call_type, [])
-            ),
-            fdr=config["fdr_alpha"],
-        ),
-        # table="results/{call_type}/{seq_platform}/result_files/replicates.parquet",
+        table="results/{call_type}/{seq_platform}/result_files/replicates.parquet",
     output:
         report(
             "results/{call_type}/{seq_platform}/plots/{sample}_bias.{plot_type}",
@@ -265,6 +259,7 @@ rule concat_plots_bias:
         nanopore="results/single_sample/Nanopore/plots/dummy_bias_df_pdf.parquet",
     output:
         "results/single_sample/plots/bias.pdf",
+        "results/single_sample/plots/bias_depth.pdf",
     log:
         "logs/plot_results/concat_plots_bias.log",
     conda:
