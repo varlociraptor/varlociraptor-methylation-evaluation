@@ -7,7 +7,6 @@ import pandas as pd
 # Redirect stderr to Snakemake log file
 sys.stderr = open(snakemake.log[0], "w")
 
-# Pandas display options (useful for debugging)
 pd.set_option("display.max_columns", None)
 pd.set_option("display.max_rows", 10)
 
@@ -45,7 +44,6 @@ for sample_file in snakemake.input:
 
 merged_samples = {}
 
-# ---- Merge replicates (inner join on genomic positions) ---- #
 
 for sample_name, reps in replicate_dfs.items():
     if 1 not in reps or 2 not in reps:
@@ -61,8 +59,6 @@ for sample_name, reps in replicate_dfs.items():
         how="inner",
         suffixes=("_rep1", "_rep2"),
     )
-
-# ---- Combine all samples ---- #
 
 combined_df = pd.concat(
     [df.assign(sample=sample_name) for sample_name, df in merged_samples.items()],

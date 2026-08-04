@@ -1,22 +1,3 @@
-# TODO MissingOutputException, even if the output is there. You have to rerun the pipeline afterwards
-# rule pb_CpG_download:
-#     output:
-#         "resources/ref_tools/pb-CpG-tools/pb-CpG-tools-v2.3.1-x86_64-unknown-linux-gnu/bin/aligned_bam_to_cpg_scores",
-#         "resources/ref_tools/pb-CpG-tools/pb-CpG-tools-v2.3.1-x86_64-unknown-linux-gnu/models/pileup_calling_model.v1.tflite",
-#     log:
-#         "logs/pb_CpG_tools/pb_CpG_download/download.log",
-#     conda:
-#         "../envs/shell_cmds.yaml"
-#     shell:
-#         """
-
-#         mkdir -p resources/ref_tools/pb-CpG-tools
-#         cd resources/ref_tools/pb-CpG-tools
-#         wget https://github.com/PacificBiosciences/pb-CpG-tools/releases/download/v2.3.1/pb-CpG-tools-v2.3.1-x86_64-unknown-linux-gnu.tar.gz
-#         tar -xzf pb-CpG-tools-v2.3.1-x86_64-unknown-linux-gnu.tar.gz
-#         """
-
-
 rule pb_CpG_compute_methylation:
     input:
         alignment="resources/{platform}/{sample}/alignment_focused_downsampled_dedup_renamed.bam",

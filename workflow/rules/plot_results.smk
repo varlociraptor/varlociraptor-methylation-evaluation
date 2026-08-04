@@ -39,8 +39,6 @@ rule common_tool_df:
             "results/{{call_type}}/{{seq_platform}}/called/{{sample}}/result_files/{method}.parquet",
             method=config["ref_tools"].get(
                 wildcards.seq_platform, []
-
-                # config["ref_tools"].get(wildcards.call_type, []),
             ),
         ),
         varlo=expand(
@@ -86,7 +84,7 @@ rule merge_replicates:
     script:
         "../scripts/merge_replicates.py"
 
-# Bin the methylation values for heatmaps and compute the MAPE for each tool and sample, which is used for the bias plot. This is done in one step to avoid redundant computations (binning is needed for both heatmap and bias plot).
+# Bin the methylation values for heatmaps and compute the discordance measurements for each tool and sample, which is used for the bias plot. This is done in one step to avoid redundant computations (binning is needed for both heatmap and bias plot).
 # We offer the option to have {sample} == "all_samples", which means that the resulting df dfs will contain all samples of the respective platform. This is used for the combined heatmap and bias plot for all Illumina samples.
 rule prepare_plot_df:
     input:
@@ -189,13 +187,7 @@ rule plot_bars_illumina:
 
 rule plot_bias:
     input:
-        table=lambda wildcards: expand("results/{{call_type}}/{{seq_platform}}/called/{sample}/result_files/varlo_{fdr}_bias.parquet",
-            sample=config["data"].get(
-                wildcards.seq_platform, config["data"].get(wildcards.call_type, [])
-            ),
-            fdr=config["fdr_alpha"],
-        ),
-        # table="results/{call_type}/{seq_platform}/result_files/replicates.parquet",
+        table="results/{call_type}/{seq_platform}/result_files/replicates.parquet",
     output:
         report(
             "results/{call_type}/{seq_platform}/plots/{sample}_bias.{plot_type}",

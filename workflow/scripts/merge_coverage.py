@@ -1,5 +1,3 @@
-from pathlib import Path
-
 import polars as pl
 
 sys.stderr = open(snakemake.log[0], "w")

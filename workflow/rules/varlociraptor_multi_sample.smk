@@ -1,4 +1,3 @@
-# TODO: Do I have to hardcode the inputs, since the shell command uses each of them individually?
 rule call_methylation_together_np_pb:
     input:
         pacbio="results/preprocessed/PacBio/{replicate}/normal_{scatteritem}.bcf",

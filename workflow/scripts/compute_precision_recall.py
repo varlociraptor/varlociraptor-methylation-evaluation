@@ -84,7 +84,6 @@ def compute_precision_recall(df, meth_callers, bin_size=5):
 
     results = []
     cov_charts = []
-    print(df.filter((pl.col("no_bias_methylation") == 0) & (pl.col("methylDackel_methylation") > 0)))
     for caller in meth_callers:
         df_caller = df.filter(pl.col(f"{caller}_methylation").is_not_null())
         df_caller = df_caller.with_columns(
@@ -144,21 +143,7 @@ def compute_precision_recall(df, meth_callers, bin_size=5):
         cov_charts.append(
             alt.concat(chart_tn_cv, chart_tp_cv, chart_fn_cv, chart_fp_cv)
         )
-        print(
-            f"caller: {caller}:",
-            "\n\tTP: ",
-            TP,
-            "\n\tTN: ",
-            TN,
-            "\n\tP: ",
-            P,
-            "\n\tN: ",
-            N,
-            "\n\tpositive_rate: ",
-            positive_rate,
-            "\n\tnegative_rate: ",
-            negative_rate,
-        )
+
         results.append(
             {
                 "caller": caller,
@@ -179,8 +164,6 @@ tools_df = pl.read_parquet(snakemake.input[1]).with_columns(
 no_bias_df = pl.read_parquet(snakemake.input["no_bias"]).with_columns(
     pl.col("chromosome").cast(pl.Utf8)
 )
-print("Tools", tools_df.filter(pl.col("position").is_in([5030346])).head(20))
-print("No bias", no_bias_df.filter(pl.col("position").is_in([5030346])).head(20))
 
 df = tools_df.join(
     no_bias_df,
@@ -204,7 +187,6 @@ df = truth_df.join(
     ]
     + [pl.col(f"{caller}_methylation") for caller in meth_callers]
 )
-print("Combined", df.head(20))
 
 df = parse_cov(snakemake.input[2], df)
 

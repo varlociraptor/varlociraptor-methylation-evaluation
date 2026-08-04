@@ -118,7 +118,6 @@ heatmap_data = long_df.to_pandas()
 bins = np.arange(0, 101, bin_size)
 
 callers = long_df["caller"].unique()
-# Remove suffix "_methylation"
 # Grid for all combinations
 grid = pd.MultiIndex.from_product(
     [callers, bins, bins], names=["caller", "true_bin", "caller_bin"]
@@ -204,6 +203,5 @@ distance_plot = (
         ),
     )
 )
-# plot = alt.vconcat(heatmap, distance_plot).resolve_scale(color="independent")
 
 heatmap.save(snakemake.output[0])

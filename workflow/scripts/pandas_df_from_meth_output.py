@@ -3,34 +3,14 @@ import sys
 
 import pandas as pd
 
-# Redirect stderr to Snakemake log
 sys.stderr = open(snakemake.log[0], "w")
 
-# Display options for debugging
 pd.set_option("display.max_columns", None)
 pd.set_option("display.max_rows", 10)
 
 
-# -----------------------------
-# Helper functions
-# -----------------------------
-
-
 def read_tool_file(filepath: str, file_name: str) -> pd.DataFrame:
-    """
-    Parse tool-specific methylation output into a standardized DataFrame.
-
-    Parameters
-    ----------
-    filepath : str
-        Path to the tool output file.
-    file_name : str
-        Tool identifier (e.g., 'varlo', 'methylDackel', 'bsMap').
-
-    Returns
-    -------
-    pd.DataFrame
-        Columns: chromosome, position, tool_methylation
+    """    Parse tool-specific methylation output into a standardized DataFrame.
     """
     records = []
 
@@ -115,27 +95,21 @@ def read_tool_file(filepath: str, file_name: str) -> pd.DataFrame:
                     continue
                 records.append([chrom, position, meth_rate, parts[9]])
 
-            # -----------------------------
-            # MethylDackel / Bismark formats
-            # -----------------------------
+            # MethylDackel / Bismark
             elif file_name in {"methylDackel"}:
                 chrom = parts[0]
                 start, end = int(parts[1]), int(parts[2])
                 meth_rate = float(parts[3])
                 position = (start + end) // 2
                 records.append([chrom, position, meth_rate, pd.NA])
-            # -----------------------------
-            # BisSNP / Bismark formats
-            # -----------------------------
+            # BisSNP / Bismark
             elif file_name in {"bismark", "bisSNP"}:
                 chrom = parts[0]
                 position = int(parts[1])
                 meth_rate = float(parts[2])
                 records.append([chrom, position, meth_rate, pd.NA])
 
-            # -----------------------------
-            # bsMap format
-            # -----------------------------
+            # bsMap
             elif file_name == "bsMap":
                 if parts[0].startswith("chr"):
                     continue
@@ -144,9 +118,7 @@ def read_tool_file(filepath: str, file_name: str) -> pd.DataFrame:
                 meth_rate = float(parts[4]) * 100
                 records.append([chrom, position, meth_rate, pd.NA])
 
-            # -----------------------------
-            # modkit format
-            # -----------------------------
+            # modkit
             elif file_name == "modkit":
                 chrom = parts[0].removeprefix("chr")
                 position = int(parts[2])
@@ -156,9 +128,7 @@ def read_tool_file(filepath: str, file_name: str) -> pd.DataFrame:
                 if modified_base == "m":
                     records.append([chrom, position, meth_rate, pd.NA])
 
-            # -----------------------------
-            # pb_CpG_tools format
-            # -----------------------------
+            # pb_CpG_tools
             elif file_name == "pb_CpG_tools":
                 chrom = parts[0]
                 position = int(parts[2])
@@ -170,12 +140,9 @@ def read_tool_file(filepath: str, file_name: str) -> pd.DataFrame:
     )
 
 
-# -----------------------------
-# Main execution
-# -----------------------------
+
 tool_file = snakemake.input["tool"]
 file_name = os.path.splitext(os.path.basename(tool_file))[0]
 
 df = read_tool_file(tool_file, file_name)
-# Save standardized output
 df.to_parquet(snakemake.output[0], engine="pyarrow", compression="snappy")

@@ -35,9 +35,7 @@ tool_colors = {
     "Varlociraptor α = 0.01": "#05AA8F",
 }
 
-# -----------------------------
-# Main execution
-# -----------------------------
+
 df = pd.read_parquet(snakemake.input["df"], engine="pyarrow")
 distances = pd.read_parquet(snakemake.input["distances"], engine="pyarrow")
 bin_size = snakemake.params["bin_size"]
@@ -198,8 +196,7 @@ bd_plot = (
     )
 )
 
-# resolve_scale(y="independent") makes Dᵣ and Dₐ use separate scales,
-# so each keeps the orient (left/right) and domain set on its own y-encoding.
+
 illumina_histo = (
     alt.layer(bars_da, bars_dr, labels)
     .properties(width=700, height=220)

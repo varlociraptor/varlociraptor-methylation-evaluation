@@ -1,6 +1,5 @@
 # Fake data to simulate reads with Mason2
 
-
 rule mason_download:
     output:
         mason_dir=directory("resources/tools/seqan/apps/mason2"),
@@ -211,29 +210,6 @@ rule mason_coverage_orientation:
     wrapper:
         "v5.5.2/bio/mosdepth"
 
-
-# rule mason_coverage_complete:
-#     input:
-#         bam="resources/Simulate/simulated_data/chr21.bam",
-#         bai="resources/Simulate/simulated_data/chr21.bam.bai",
-#         bed=expand(
-#             "resources/{chrom}/candidates.bed",
-#             chrom=config.get("chrom_filter", config["seq_platforms"].get("Simulate")),
-#         ),
-#     output:
-#         "resources/Simulate/simulated_data/complete_cov.mosdepth.global.dist.txt",
-#         "resources/Simulate/simulated_data/complete_cov.mosdepth.region.dist.txt",
-#         "resources/Simulate/simulated_data/complete_cov.regions.bed.gz",
-#         summary="resources/Simulate/simulated_data/complete_cov.mosdepth.summary.txt",  # this named output is required for prefix parsing
-#     log:
-#         "logs/mason/mason_coverage_complete.log",
-#     params:
-#         extra="--no-per-base --use-median",  # optional
-#     threads: 4  # This value - 1 will be sent to `--threads`
-#     wrapper:
-#         "v5.5.2/bio/mosdepth"
-
-
 rule mason_candidates_vcf:
     input:
         "resources/{chrom}/candidates.bcf",
@@ -306,12 +282,6 @@ rule mason_plot_truth_to_results:
         bin_size=lambda wildcards: config["heatmap_bin_size"],
     script:
         "../scripts/plot_mason_results.py"
-
-
-
-
-
-
 
 rule compute_precision_recall:
     input:

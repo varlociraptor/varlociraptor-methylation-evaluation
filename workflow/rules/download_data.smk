@@ -137,35 +137,6 @@ rule get_fastq_se:
     wrapper:
         "v7.1.0/bio/sra-tools/fasterq-dump"
 
-# rule trim_fastq_pe:
-#     input:
-#         first="resources/Illumina_pe/{sample}/{SRA}/{SRA}_1.fastq",
-#         second="resources/Illumina_pe/{sample}/{SRA}/{SRA}_2.fastq",
-#     output:
-#         first="resources/Illumina_pe/{sample}/{SRA}/{SRA}_1_trimmed.fastq",
-#         second="resources/Illumina_pe/{sample}/{SRA}/{SRA}_2_trimmed.fastq",
-#     log:
-#         "logs/download_data/trim_fastq_pe/{sample}_{SRA}_{SRA}.log",
-#     conda:
-#         "../envs/fastp.yaml"
-#     # wildcard_constraints:
-#     #     sample="^(?!simulated_data).*",
-#         # sample="(?!simulated_data$).*"
-#     shell:
-#         """
-#         fastp \
-#           --in1 {input.first} \
-#           --in2 {input.second} \
-#           --out1 {output.first} \
-#           --out2 {output.second} \
-#           --length_required 2 \
-#           --disable_quality_filtering \
-#           -z 4 \
-#           --trim_poly_g \
-#           --overrepresentation_analysis \
-#           2> {log}
-#         """
-
 rule trim_fastq_pe:
     input:
         sample=["resources/Illumina_pe/{sample}/{SRA}/{SRA}_1.fastq.gz", "resources/Illumina_pe/{sample}/{SRA}/{SRA}_2.fastq.gz"]
@@ -252,25 +223,3 @@ rule get_nanopore_data:
          && wget -qO- {params.url} \
         | samtools view -b - {params.chromosome} > {output.alignment} 2> {log}
         """
-
-
-# rule get_nanopore_data:
-#     output:
-#         alignment="resources/Nanopore/{sample}/{SRA}/alignment.bam",
-#     params:
-#         url=lambda wc: config[str(wc.SRA)],
-#         chromosome=lambda wc: f"chr{config['seq_platforms']['Nanopore']}",
-#     log:
-#         "logs/download_data/get_nanopore_data/{sample}_{SRA}.log",
-#     resources:
-#         mem_mb=4096,
-#     conda:
-#         "../envs/samtools.yaml"
-#     shell:
-#         r"""
-#         set -euo pipefail
-#         mkdir -p $(dirname {output.alignment})
-#         wget -qO- "{params.url}" \
-#         | samtools view -b - "{params.chromosome}" \
-#         > "{output.alignment}" 2> "{log}"
-#         """

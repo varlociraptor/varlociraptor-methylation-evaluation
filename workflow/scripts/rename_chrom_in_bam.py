@@ -10,10 +10,6 @@ def rename_chromosomes_bam(input_bam: str, output_bam: str) -> None:
     """
     Reads a BAM file and removes the 'chr' prefix from all chromosome names
     in both the header and alignment records.
-
-    Parameters:
-        input_bam (str): Path to the input BAM file.
-        output_bam (str): Path where the modified BAM file will be written.
     """
     with pysam.AlignmentFile(input_bam, "rb") as infile:
         # Extract and copy original BAM header
@@ -65,10 +61,7 @@ def rename_chromosomes_bam(input_bam: str, output_bam: str) -> None:
                 outfile.write(new_read)
 
 
-if __name__ == "__main__":
-    # Get input/output paths from Snakemake
-    input_bam = snakemake.input[0]
-    output_bam = snakemake.output[0]
+input_bam = snakemake.input[0]
+output_bam = snakemake.output[0]
 
-    # Execute main renaming function
-    rename_chromosomes_bam(input_bam, output_bam)
+rename_chromosomes_bam(input_bam, output_bam)

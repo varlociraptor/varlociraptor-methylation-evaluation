@@ -1,8 +1,4 @@
 import sys
-from calendar import c
-from graphlib import TopologicalSorter
-from math import dist
-from pickletools import dis
 
 import altair as alt
 import numpy as np
@@ -33,12 +29,10 @@ def plot_distances(df):
         caller_df["distance"] = (
             np.round(
                 (
-                    (
-                        caller_df[f"{caller}_methylation_rep1"]
-                        - caller_df[f"{caller}_methylation_rep2"]
-                    )
-                    / 5
+                    caller_df[f"{caller}_methylation_rep1"]
+                    - caller_df[f"{caller}_methylation_rep2"]
                 )
+                / 5
             )
             * 5
         ).astype(int)

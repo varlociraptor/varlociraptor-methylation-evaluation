@@ -24,17 +24,8 @@ page = out.new_page(width=3 * w, height=h + title_height)
 
 for i, pdf in enumerate(input_pdfs):
     x0 = i * w
-
-    # # Titel
-    # page.insert_text(
-    #     (x0 + 20, 25),
-    #     titles[i],
-    #     fontsize=18,
-    # )
-
     src = fitz.open(pdf)
 
-    # erste Seite der Heatmap-PDF einfügen
     page.show_pdf_page(
         fitz.Rect(x0, title_height, x0 + w, title_height + h),
         src,

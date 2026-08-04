@@ -121,39 +121,6 @@ rule deduplicate_bismark:
         "v9.3.0/bio/bismark/deduplicate_bismark"
 
 
-# rule bismark_methylation_extractor:
-#     input:
-#         bam="resources/ref_tools/bismark/{platform}/dedup/{sample}.deduplicated.bam",
-#     output:
-#         cov_zero_based="resources/ref_tools/bismark/{platform}/meth/{sample}.deduplicated.bedGraph.gz.bismark.zero.cov",
-#         mbias_r1="resources/ref_tools/bismark/{platform}/qc/meth/{sample}.deduplicated.M-bias_R1.png",
-#         # Only for PE BAMS:
-#         mbias_r2="resources/ref_tools/bismark/{platform}/qc/meth/{sample}.deduplicated.M-bias_R2.png",
-#         mbias_report="resources/ref_tools/bismark/{platform}/report/meth/{sample}.deduplicated.M-bias.txt",
-#         splitting_report="resources/ref_tools/bismark/{platform}/report/meth/{sample}.deduplicated_splitting_report.txt",
-#         # 1-based start, 1-based end ('inclusive') methylation info: % and counts
-#         methylome_CpG_cov="resources/ref_tools/bismark/{platform}/meth/cov/{sample}.deduplicated.bismark.cov.gz",
-#         # BedGraph with methylation percentage: 0-based start, end exclusive
-#         methylome_CpG_mlevel_bedGraph="resources/ref_tools/bismark/{platform}/meth/bedgraph/{sample}.deduplicated.bedGraph.gz",
-#         # Primary output files: methylation status at each read cytosine position: (extremely large)
-#         read_base_meth_state_cpg="resources/ref_tools/bismark/{platform}/meth/CpG_context_{sample}.deduplicated.txt.gz",
-#         # * You could merge CHG, CHH using: --merge_non_CpG
-#         read_base_meth_state_chg="resources/ref_tools/bismark/{platform}/meth/CHG_context_{sample}.deduplicated.txt.gz",
-#         read_base_meth_state_chh="resources/ref_tools/bismark/{platform}/meth/CHH_context_{sample}.deduplicated.txt.gz",
-#         # cytosine_report="resources/ref_tools/bismark/{platform}/report/meth/{sample}.deduplicated.cytosine_report.txt",
-#     log:
-#         "logs/bismark/bismark_methylation_extractor/{sample}_{platform}.log",
-#     params:
-#         output_dir="resources/ref_tools/bismark/{platform}/meth",  # optional output dir
-#         extra="--gzip --comprehensive --bedGraph --zero_based",  # optional params string
-#     benchmark:
-#         repeat("benchmarks/{platform}/bismark/bismark_methylation_extractor/{sample}_{platform}.bwa.benchmark.txt", config["benchmark_repeats"])
-#     resources:
-#         mem_mb=16000,
-#     wrapper:
-#         "v5.9.0/bio/bismark/bismark_methylation_extractor"
-
-
 rule bismark_extract:
     input:
         bam="resources/ref_tools/bismark/{platform}/dedup/{sample}.deduplicated.bam",

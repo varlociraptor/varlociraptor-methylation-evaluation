@@ -93,7 +93,6 @@ def point_plot(df, x, y, color, shape, x_title, y_title, height=140):
 records = []
 benchmark_path = snakemake.input.benchmarks
 
-# Validate that the benchmark path exists
 if not os.path.exists(benchmark_path):
     raise FileNotFoundError(f"Benchmark directory not found: {benchmark_path}")
 
@@ -133,11 +132,7 @@ if not records:
 df_all = pd.concat(records, ignore_index=True)
 df_all["platform"] = df_all["platform"].replace("Illumina_pe", "Illumina")
 
-# df_all["task"] = np.where(
-#     df_all["meth_caller"] != "varlociraptor",
-#     "calling",
-#     df_all["task"],
-# )
+
 
 # Define task to task_group mapping
 task_group_mapping = {

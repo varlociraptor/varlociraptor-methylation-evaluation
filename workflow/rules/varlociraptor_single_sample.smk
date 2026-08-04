@@ -53,23 +53,6 @@ rule varlociraptor_call:
     shell:
         "varlociraptor call variants generic --scenario {input.scenario} --obs normal={input.preprocess_obs} > {output} 2> {log}"
 
-# rule varlociraptor_call_no_bias:
-#     input:
-#         preprocess_obs="results/preprocessed/Simulate/simulated_data/normal_{scatteritem}.bcf",
-#         scenario=workflow.source_path("../scenarios/scenario.yaml"),
-#     output:
-#         "results/single_sample/Simulate/called/simulated_data_no_bias/calls_{scatteritem}.bcf",
-#     log:
-#         "logs/varlociraptor_single/varlociraptor_call_no_bias/{scatteritem}.log",
-#     benchmark:
-#         repeat("benchmarks/Simulate/varlociraptor/calling/simulated_data_{scatteritem}.bwa.benchmark.txt", config["benchmark_repeats"])
-#     conda:
-#         "../envs/varlociraptor.yaml"
-#     wildcard_constraints:
-#         seq_platform="(?!multi_sample).*",
-#     shell:
-#         "varlociraptor call variants --omit-alt-locus-bias --omit-homopolymer-artifact-detection --omit-read-orientation-bias --omit-read-position-bias --omit-softclip-bias --omit-strand-bias generic --scenario {input.scenario} --obs normal={input.preprocess_obs}> {output} 2> {log}"
-
 rule gather_calls:
     input:
         gather.split_candidates(
@@ -83,14 +66,3 @@ rule gather_calls:
         "../envs/general.yaml"
     shell:
         "cat {input} > {output} 2> {log}"
-
-
-# rule rename_varlo_output:
-#     input:
-#         "results/{seq_platform}/{sample}/varlo.vcf",
-#     output:
-#         "results/{seq_platform}/{sample}/result_files/varlo.bed",
-#     log:
-#         "logs/varlociraptor/{seq_platform}/{sample}/rename_varlo_output.log",
-#     shell:
-#         "mv {input} {output}"
