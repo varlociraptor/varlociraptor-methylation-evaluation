@@ -174,7 +174,7 @@ bars_da = (
 labels = (
     alt.Chart(df_summary)
     .transform_filter(alt.datum.distance_type == "Dᵣ")
-    .transform_calculate(text_k="datum.number + 'k'")
+    .transform_calculate(text_k="datum.number")
     .mark_text(size=6,dy=-5, color="black")
     .encode(
         text="text_k:N",
