@@ -1,5 +1,6 @@
 rule call_methylation_together_np_pb:
     input:
+        varlo=varlociraptor_binary(),
         pacbio="results/preprocessed/PacBio/{replicate}/normal_{scatteritem}.bcf",
         nanopore="results/preprocessed/Nanopore/{replicate}/normal_{scatteritem}.bcf",
         scenario=workflow.source_path(
@@ -14,14 +15,17 @@ rule call_methylation_together_np_pb:
             "benchmarks/multi_sample/np_bp/np_pb/{replicate}_{scatteritem}.bwa.benchmark.txt",
             config["benchmark_repeats"],
         )
+    params:
+        varlo=varlociraptor_cmd,
     conda:
         "../envs/varlociraptor.yaml"
     shell:
-        "varlociraptor call variants generic --scenario {input.scenario} --obs  pacbio={input.pacbio}  nanopore={input.nanopore} > {output} 2> {log}"
+        "{params.varlo} call variants generic --scenario {input.scenario} --obs  pacbio={input.pacbio}  nanopore={input.nanopore} > {output} 2> {log}"
 
 
 rule call_methylation_together_np_methylSeq:
     input:
+        varlo=varlociraptor_binary(),
         # trueOX="results/preprocessed/Illumina_pe/TrueMethylOX_HG002_LAB01_{replicate}/normal_{scatteritem}.bcf",
         methylSeq="results/preprocessed/Illumina_pe/MethylSeq_HG002_LAB01_{replicate}/normal_{scatteritem}.bcf",
         nanopore="results/preprocessed/Nanopore/{replicate}/normal_{scatteritem}.bcf",
@@ -37,14 +41,17 @@ rule call_methylation_together_np_methylSeq:
             "benchmarks/multi_sample/np_methylSeq/np_methylSeq/{replicate}_{scatteritem}.bwa.benchmark.txt",
             config["benchmark_repeats"],
         )
+    params:
+        varlo=varlociraptor_cmd,
     conda:
         "../envs/varlociraptor.yaml"
     shell:
-        "varlociraptor call variants generic --scenario {input.scenario} --obs  methylSeq={input.methylSeq}  nanopore={input.nanopore} > {output} 2> {log}"
+        "{params.varlo} call variants generic --scenario {input.scenario} --obs  methylSeq={input.methylSeq}  nanopore={input.nanopore} > {output} 2> {log}"
 
 
 rule call_methylation_together_pb_methylSeq:
     input:
+        varlo=varlociraptor_binary(),
         # trueOx="results/preprocessed/Illumina_pe/TrueMethylOX_HG002_LAB01_{replicate}/normal_{scatteritem}.bcf",
         methylSeq="results/preprocessed/Illumina_pe/MethylSeq_HG002_LAB01_{replicate}/normal_{scatteritem}.bcf",
         pacbio="results/preprocessed/PacBio/{replicate}/normal_{scatteritem}.bcf",
@@ -60,7 +67,9 @@ rule call_methylation_together_pb_methylSeq:
             "benchmarks/multi_sample/pb_methylSeq/pb_methylSeq/{replicate}_{scatteritem}.bwa.benchmark.txt",
             config["benchmark_repeats"],
         )
+    params:
+        varlo=varlociraptor_cmd,
     conda:
         "../envs/varlociraptor.yaml"
     shell:
-        "varlociraptor call variants generic --scenario {input.scenario} --obs  methylSeq={input.methylSeq}  pacbio={input.pacbio} > {output} 2> {log}"
+        "{params.varlo} call variants generic --scenario {input.scenario} --obs  methylSeq={input.methylSeq}  pacbio={input.pacbio} > {output} 2> {log}"

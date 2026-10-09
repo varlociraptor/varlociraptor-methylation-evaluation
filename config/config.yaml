@@ -96,6 +96,8 @@ fdr_alpha: [0.1, 0.05, 0.01]
 num_simulated_reads: 630000000
 # seed for simulated data generation
 seed: 0
+# Use development branch of varlociraptor. If null use official varlociraptor release 8.9
+varlociraptor-branch: long-read-no-meth-info
 ###################################### PLOTS ##################################################
 heatmap_bin_size: 5
 # Choose from png, svg, html, pdf

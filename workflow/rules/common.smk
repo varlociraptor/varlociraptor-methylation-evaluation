@@ -128,3 +128,15 @@ seq_platform_to_name = {
     "Nanopore": "Nanopore",
     "PacBio": "PacBio",
 }
+
+
+def varlociraptor_binary():
+    if config.get("varlociraptor-branch") is None:
+        return []
+    return "resources/tools/meth_calling/varlociraptor/target/release/varlociraptor"
+
+
+def varlociraptor_cmd(wildcards, input):
+    if config.get("varlociraptor-branch") is None:
+        return "varlociraptor"
+    return input.varlo

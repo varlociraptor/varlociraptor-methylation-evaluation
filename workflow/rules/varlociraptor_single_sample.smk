@@ -5,6 +5,8 @@ rule build_varlociraptor:
         "logs/build_varlociraptor.log",
     conda:
         "../envs/rust.yaml"
+    params:
+        branch=config.get("varlociraptor-branch"),
     shell:
         """
         (
@@ -14,7 +16,7 @@ rule build_varlociraptor:
         rm -rf varlociraptor
         git clone https://github.com/varlociraptor/varlociraptor.git
         cd varlociraptor
-        git checkout long-read-no-meth-info
+        git checkout {params.branch}
         export CC=x86_64-conda-linux-gnu-cc CXX=x86_64-conda-linux-gnu-c++
         cargo build --release
         ) &> {log}
@@ -23,6 +25,7 @@ rule build_varlociraptor:
 
 rule varlociraptor_preprocess:
     input:
+        varlo=varlociraptor_binary(),
         chromosome=lambda wildcards: expand(
             "resources/{chrom}.fasta",
             chrom=chromosome_by_seq_platform.get(wildcards.seq_platform),
@@ -50,6 +53,8 @@ rule varlociraptor_preprocess:
             "benchmarks/{seq_platform}/varlociraptor/preprocessing/{sample}_{scatteritem}.bwa.benchmark.txt",
             config["benchmark_repeats"],
         )
+    params:
+        varlo=varlociraptor_cmd,
     conda:
         "../envs/varlociraptor.yaml"
     resources:
@@ -61,12 +66,13 @@ rule varlociraptor_preprocess:
         else
             meth="annotated"
         fi
-        varlociraptor preprocess variants --omit-mapq-adjustment {input.chromosome} --candidates {input.candidates} --bam {input.alignments} --methylation-read-type $meth --max-depth 5000 > {output} 2> {log}
+        {params.varlo} preprocess variants --omit-mapq-adjustment {input.chromosome} --candidates {input.candidates} --bam {input.alignments} --methylation-read-type $meth --max-depth 5000 > {output} 2> {log}
         """
 
 
 rule varlociraptor_call:
     input:
+        varlo=varlociraptor_binary(),
         preprocess_obs="results/preprocessed/{seq_platform}/{sample}/normal_{scatteritem}.bcf",
         scenario=workflow.source_path("../scenarios/scenario.yaml"),
     output:
@@ -81,10 +87,12 @@ rule varlociraptor_call:
     wildcard_constraints:
         seq_platform="(?!multi_sample).*",
         sample="(?!simulated_data_no_bias).*",
+    params:
+        varlo=varlociraptor_cmd,
     conda:
         "../envs/varlociraptor.yaml"
     shell:
-        "varlociraptor call variants generic --scenario {input.scenario} --obs normal={input.preprocess_obs} > {output} 2> {log}"
+        "{params.varlo} call variants generic --scenario {input.scenario} --obs normal={input.preprocess_obs} > {output} 2> {log}"
 
 
 rule gather_calls:
