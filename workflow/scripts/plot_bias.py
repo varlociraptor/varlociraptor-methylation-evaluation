@@ -137,56 +137,56 @@ def bias_plots(df_long: pd.DataFrame, fdr: str, platform_label: str):
             ),
             tooltip=["category", "count()", "bias_type_label"],
         )
-    ).properties(title=f"{platform_label}")
+    ).properties(width=150, height=200, title=f"VarLociraptor FDR={fdr}")
 
     # AF plot
-    df_af = df_long[df_long["category"] == "Bias, AF > 0"].assign(
-        AF=lambda d: d[["AF_rep1", "AF_rep2"]].max(axis=1).round(2)
-    )
-    df_af = df_af[(df_af["DP_rep1"] <= 500) & (df_af["DP_rep2"] <= 500)]
+    # df_af = df_long[df_long["category"] == "Bias, AF > 0"].assign(
+    #     AF=lambda d: d[["AF_rep1", "AF_rep2"]].max(axis=1).round(2)
+    # )
+    # df_af = df_af[(df_af["DP_rep1"] <= 500) & (df_af["DP_rep2"] <= 500)]
 
-    af_chart = (
-        alt.Chart(df_af)
-        .mark_bar(color="#05AA8F")
-        .encode(
-            x=alt.X("AF:Q", bin=alt.Bin(step=0.05), title="Allele Frequency"),
-            y="count():Q",
-            tooltip=["AF:Q", "count():Q"],
-        )
-        .properties(title="AF at one sided biased loci")
-    )
+    # af_chart = (
+    #     alt.Chart(df_af)
+    #     .mark_bar(color="#05AA8F")
+    #     .encode(
+    #         x=alt.X("AF:Q", bin=alt.Bin(step=0.05), title="Allele Frequency"),
+    #         y="count():Q",
+    #         tooltip=["AF:Q", "count():Q"],
+    #     )
+    #     .properties(title="AF at one sided biased loci")
+    # )
 
-    # DP plot
-    df_dp = df_af.melt(
-        id_vars=["chromosome", "position"],
-        value_vars=["DP_rep1", "DP_rep2"],
-        var_name="replicate",
-        value_name="DP",
-    ).assign(replicate=lambda d: d["replicate"].map(REPLICATE_LABELS))
-    dp_chart = (
-        alt.Chart(df_dp)
-        .mark_bar()
-        .encode(
-            x=alt.X("DP:Q", bin=alt.Bin(maxbins=50), title="Depth"),
-            y="count():Q",
-            color=alt.Color(
-                "replicate:N",
-                scale=alt.Scale(
-                    domain=list(REPLICATE_LABELS.values()),
-                    range=["#FFC107", "#004D40"],
-                ),
-            ),
-            tooltip=["DP:Q", "count():Q"],
-        )
-        .properties(title="Coverage distributions")
-    )
+    # # DP plot
+    # df_dp = df_af.melt(
+    #     id_vars=["chromosome", "position"],
+    #     value_vars=["DP_rep1", "DP_rep2"],
+    #     var_name="replicate",
+    #     value_name="DP",
+    # ).assign(replicate=lambda d: d["replicate"].map(REPLICATE_LABELS))
+    # dp_chart = (
+    #     alt.Chart(df_dp)
+    #     .mark_bar()
+    #     .encode(
+    #         x=alt.X("DP:Q", bin=alt.Bin(maxbins=50), title="Depth"),
+    #         y="count():Q",
+    #         color=alt.Color(
+    #             "replicate:N",
+    #             scale=alt.Scale(
+    #                 domain=list(REPLICATE_LABELS.values()),
+    #                 range=["#FFC107", "#004D40"],
+    #             ),
+    #         ),
+    #         tooltip=["DP:Q", "count():Q"],
+    #     )
+    #     .properties(title="Coverage distributions")
+    # )
 
-    final_chart = (
-        alt.hconcat(bias_chart, af_chart, dp_chart)
-        .resolve_scale(color="independent")
-        .properties(title=f"FDR {fdr}")
-    )
-    return final_chart
+    # final_chart = (
+    #     alt.hconcat(bias_chart, af_chart, dp_chart)
+    #     .resolve_scale(color="independent")
+    #     .properties(title=f"FDR {fdr}")
+    # )
+    return bias_chart
 
 
 def empty_plot(fdr):
@@ -227,6 +227,6 @@ for fdr in snakemake.params["fdrs"]:
     else:
         chart = bias_plots(df_long, fdr, platform_label)
     all_charts.append(chart)
-final_chart = alt.vconcat(*all_charts)
+final_chart = alt.hconcat(*all_charts).properties(title=f"{platform_label}")
 final_chart.save(snakemake.output[0])
 df_long.to_parquet(snakemake.output[1])
