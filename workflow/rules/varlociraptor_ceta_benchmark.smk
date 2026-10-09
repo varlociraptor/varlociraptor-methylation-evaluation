@@ -1,13 +1,13 @@
 
 
-rule download_varlociraptor:
+rule download_varlociraptor_ceta:
     output:
         direc=directory(
             "resources/tools/ceta_comp/varlociraptor",
         ),
         execu="resources/tools/ceta_comp/varlociraptor/target/release/varlociraptor",
     log:
-        "logs/download_varlociraptor.log",
+        "logs/download_varlociraptor_ceta.log",
     shell:
         """
         PARENT_DIR=$(dirname {output.direc})

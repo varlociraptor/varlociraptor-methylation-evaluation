@@ -1,3 +1,26 @@
+rule build_varlociraptor:
+    output:
+        "resources/tools/meth_calling/varlociraptor/target/release/varlociraptor",
+    log:
+        "logs/build_varlociraptor.log",
+    conda:
+        "../envs/rust.yaml"
+    shell:
+        """
+        (
+        PARENT_DIR=$(dirname $(dirname $(dirname $(dirname {output}))))
+        mkdir -p $PARENT_DIR
+        cd $PARENT_DIR
+        rm -rf varlociraptor
+        git clone https://github.com/varlociraptor/varlociraptor.git
+        cd varlociraptor
+        git checkout long-read-no-meth-info
+        export CC=x86_64-conda-linux-gnu-cc CXX=x86_64-conda-linux-gnu-c++
+        cargo build --release
+        ) &> {log}
+        """
+
+
 rule varlociraptor_preprocess:
     input:
         chromosome=lambda wildcards: expand(

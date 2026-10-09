@@ -1,0 +1,19 @@
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - rust=1.98
+  - varlociraptor =8.9
+  - vega-lite-cli =5.16
+  - libclang
+  - pkg-config
+  - make
+  - cmake
+  - gsl
+  - libcblas
+  - openssl
+  - zlib
+  - bzip2
+  - xz
+  - clangdev
+  - blis
