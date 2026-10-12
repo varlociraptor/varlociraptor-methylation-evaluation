@@ -95,6 +95,24 @@ rule varlociraptor_call:
         "{params.varlo} call variants generic --scenario {input.scenario} --obs normal={input.preprocess_obs} > {output} 2> {log}"
 
 
+# Call HIGH (> 50%) and LOW (<= 50%) methylation events on simulated data to validate FDR control
+rule varlociraptor_call_high_low:
+    input:
+        varlo=varlociraptor_binary(),
+        preprocess_obs="results/preprocessed/Simulate/{sample}/normal_{scatteritem}.bcf",
+        scenario=workflow.source_path("../scenarios/scenario_high_low.yaml"),
+    output:
+        "results/single_sample/Simulate/fdr_calibration/{sample}/calls_{scatteritem}.bcf",
+    log:
+        "logs/varlociraptor_single/varlociraptor_call_high_low/{sample}_{scatteritem}.log",
+    params:
+        varlo=varlociraptor_cmd,
+    conda:
+        "../envs/varlociraptor.yaml"
+    shell:
+        "{params.varlo} call variants generic --scenario {input.scenario} --obs normal={input.preprocess_obs} > {output} 2> {log}"
+
+
 rule gather_calls:
     input:
         gather.split_candidates(

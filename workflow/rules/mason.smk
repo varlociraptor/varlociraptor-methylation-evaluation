@@ -319,3 +319,34 @@ rule compute_precision_recall:
         + [f"varlo_{fdr}" for fdr in config["fdr_alpha"]],
     script:
         "../scripts/compute_precision_recall.py"
+
+
+rule plot_fdr_calibration:
+    input:
+        truth="resources/Simulate/simulated_data/{chrom}_truth.csv",
+        calls="results/single_sample/Simulate/fdr_calibration/simulated_data/result_files/varlo.bed",
+    output:
+        plot=report(
+            "results/single_sample/Simulate/plots/fdr_calibration_{chrom}.{plot_type}",
+            category="single_sample",
+            subcategory="Simulated",
+            labels={
+                "file_type": "fdr_calibration",
+                "sample": "simulated_data",
+            },
+            caption="../report/fdr_calibration.rst",
+        ),
+        table="results/single_sample/Simulate/plots/fdr_calibration_{chrom}_{plot_type}.csv",
+    log:
+        "logs/mason/plot_fdr_calibration/{chrom}_{plot_type}.log",
+    conda:
+        "../envs/python.yaml"
+    params:
+        fdr_levels=[0.01, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1],
+        num_alphas=25,
+        # Coverage stratifications
+        coverage_bins=[0, 20, 40, 60, 80],
+        # Methylation rate in the truth above which a site is defined as HIGH
+        high_threshold=50,
+    script:
+        "../scripts/plot_fdr_calibration.py"

@@ -35,6 +35,9 @@ def compute_results() -> List[List[str]]:
         inputs.append(
             f"results/single_sample/Simulate/plots/simulated_data_{chromosome}.{config['plot_type']}"
         )
+        inputs.append(
+            f"results/single_sample/Simulate/plots/fdr_calibration_{chromosome}.{config['plot_type']}"
+        )
     # Multi-sample common heatmaps
     if "multi_sample" in config["seq_platforms"]:
         inputs.append(heatmap_replicates_common())
@@ -139,4 +142,4 @@ def varlociraptor_binary():
 def varlociraptor_cmd(wildcards, input):
     if config.get("varlociraptor-branch") is None:
         return "varlociraptor"
-    return input.varlo
+    return f"chmod +x {input.varlo}; {input.varlo}"
