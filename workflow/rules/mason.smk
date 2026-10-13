@@ -350,3 +350,33 @@ rule plot_fdr_calibration:
         high_threshold=50,
     script:
         "../scripts/plot_fdr_calibration.py"
+
+
+rule plot_pit_calibration:
+    input:
+        truth="resources/Simulate/simulated_data/{chrom}_truth.csv",
+        calls="results/single_sample/Simulate/fdr_calibration/simulated_data/result_files/varlo.bed",
+    output:
+        plot=report(
+            "results/single_sample/Simulate/plots/pit_calibration_{chrom}.{plot_type}",
+            category="single_sample",
+            subcategory="Simulated",
+            labels={
+                "file_type": "pit_calibration",
+                "sample": "simulated_data",
+            },
+            caption="../report/pit_calibration.rst",
+        ),
+        table="results/single_sample/Simulate/plots/pit_calibration_{chrom}_{plot_type}.csv",
+    log:
+        "logs/mason/plot_pit_calibration/{chrom}_{plot_type}.log",
+    conda:
+        "../envs/python.yaml"
+    params:
+        # Coverage stratifications
+        coverage_bins=[0, 40, 60, 80],
+        num_bins=25,
+        # Seed for the randomized PIT at the point mass θ = 0
+        seed=config["seed"],
+    script:
+        "../scripts/plot_pit_calibration.py"
