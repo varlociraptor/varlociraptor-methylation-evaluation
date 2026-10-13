@@ -100,6 +100,12 @@ seed: 0
 varlociraptor-branch: long-read-no-meth-info
 ###################################### PLOTS ##################################################
 heatmap_bin_size: 5
+# FDR and PIT calibration plots on simulated data
+calibration:
+  # FDR levels for varlociraptor's global FDR control
+  fdr_levels: [0.01, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]
+  # Lower bounds of the coverage bins; the last bin has no upper bound
+  coverage_bins: [0, 40, 60, 80]
 # Choose from png, svg, html, pdf
 # Use html for an interactive snakemake report
 plot_type: pdf

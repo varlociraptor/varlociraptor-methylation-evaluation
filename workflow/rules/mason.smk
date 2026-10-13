@@ -321,10 +321,76 @@ rule compute_precision_recall:
         "../scripts/compute_precision_recall.py"
 
 
+# Truth positions whose coverage falls into the given coverage bin
+rule truth_positions_per_coverage_bin:
+    input:
+        "resources/Simulate/simulated_data/{chrom}_truth.csv",
+    output:
+        "resources/Simulate/simulated_data/{chrom}_coverage_bin_{bin}.tsv",
+    log:
+        "logs/mason/truth_positions_per_coverage_bin/{chrom}_{bin}.log",
+    wildcard_constraints:
+        bin=r"\d+",
+    conda:
+        "../envs/python.yaml"
+    params:
+        coverage_bins=config["calibration"]["coverage_bins"],
+    script:
+        "../scripts/truth_positions_per_coverage_bin.py"
+
+
+# Split the simulated varlociraptor calls into coverage bins defined by the truth coverage.
+# The scattered calls are merged first, since global FDR control has to see all calls of a bin at once.
+rule split_calls_by_coverage_bin:
+    input:
+        calls=gather.split_candidates(
+            "results/single_sample/Simulate/fdr_calibration/simulated_data/calls_{scatteritem}.bcf"
+        ),
+        positions="resources/Simulate/simulated_data/{chrom}_coverage_bin_{bin}.tsv",
+    output:
+        "results/single_sample/Simulate/fdr_calibration/simulated_data/coverage_bins/{chrom}/bin_{bin}.bcf",
+    log:
+        "logs/mason/split_calls_by_coverage_bin/{chrom}_{bin}.log",
+    wildcard_constraints:
+        bin=r"\d+",
+    conda:
+        "../envs/samtools.yaml"
+    shell:
+        "(bcftools concat -Ou {input.calls} | bcftools view -T {input.positions} -Ob -o {output}) 2> {log}"
+
+
+# Select the calls of a coverage bin with varlociraptor's global FDR control on the HIGH event
+rule control_fdr_per_coverage_bin:
+    input:
+        varlo=varlociraptor_binary(),
+        calls="results/single_sample/Simulate/fdr_calibration/simulated_data/coverage_bins/{chrom}/bin_{bin}.bcf",
+    output:
+        "results/single_sample/Simulate/fdr_calibration/simulated_data/coverage_bins/{chrom}/bin_{bin}_fdr_{alpha}.bcf",
+    log:
+        "logs/mason/control_fdr_per_coverage_bin/{chrom}_{bin}_{alpha}.log",
+    wildcard_constraints:
+        bin=r"\d+",
+    params:
+        varlo=varlociraptor_cmd,
+    conda:
+        "../envs/varlociraptor.yaml"
+    shell:
+        "{params.varlo} filter-calls control-fdr {input.calls} --events HIGH --fdr {wildcards.alpha} --mode global-strict > {output} 2> {log}"
+
+
 rule plot_fdr_calibration:
     input:
         truth="resources/Simulate/simulated_data/{chrom}_truth.csv",
-        calls="results/single_sample/Simulate/fdr_calibration/simulated_data/result_files/varlo.bed",
+        # Calls per coverage bin before FDR control, to count the sites per bin
+        unfiltered=expand(
+            "results/single_sample/Simulate/fdr_calibration/simulated_data/coverage_bins/{{chrom}}/bin_{bin}.vcf",
+            bin=range(len(config["calibration"]["coverage_bins"])),
+        ),
+        filtered=expand(
+            "results/single_sample/Simulate/fdr_calibration/simulated_data/coverage_bins/{{chrom}}/bin_{bin}_fdr_{alpha}.vcf",
+            bin=range(len(config["calibration"]["coverage_bins"])),
+            alpha=config["calibration"]["fdr_levels"],
+        ),
     output:
         plot=report(
             "results/single_sample/Simulate/plots/fdr_calibration_{chrom}.{plot_type}",
@@ -342,10 +408,9 @@ rule plot_fdr_calibration:
     conda:
         "../envs/python.yaml"
     params:
-        fdr_levels=[0.01, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1],
-        num_alphas=25,
+        fdr_levels=config["calibration"]["fdr_levels"],
         # Coverage stratifications
-        coverage_bins=[0, 40, 60, 80],
+        coverage_bins=config["calibration"]["coverage_bins"],
         # Methylation rate in the truth above which a site is defined as HIGH
         high_threshold=50,
     script:
@@ -374,7 +439,7 @@ rule plot_pit_calibration:
         "../envs/python.yaml"
     params:
         # Coverage stratifications
-        coverage_bins=[0, 40, 60, 80],
+        coverage_bins=config["calibration"]["coverage_bins"],
         num_bins=25,
         # Seed for the randomized PIT at the point mass θ = 0
         seed=config["seed"],

@@ -1,3 +1,4 @@
+import re
 import sys
 
 import altair as alt
@@ -43,15 +44,7 @@ def coverage_label(bins, i):
     return f"{bins[i]}–{bins[i + 1] - 1}"
 
 
-def select_local(df: pl.DataFrame, alpha: float) -> pl.DataFrame:
-    """Keep every site whose posterior probability of not being HIGH is at most alpha."""
-
-    return df.filter(pl.col("prob_high") >= 1 - alpha)
-
-
-
 truth_df = pl.read_csv(snakemake.input.truth, schema_overrides={"chrom": pl.Utf8})
-calls_df = parse_calls(snakemake.input.calls)
 
 high_threshold = snakemake.params.high_threshold
 coverage_bins = snakemake.params.coverage_bins
@@ -59,7 +52,7 @@ alphas = snakemake.params.fdr_levels
 
 
 coverage_labels = [coverage_label(coverage_bins, i) for i in range(len(coverage_bins))]
-df = calls_df.join(truth_df, on=["chrom", "pos"], how="inner").with_columns(
+truth_df = truth_df.with_columns(
     # Boolean if position is considered highly methylated in truth
     (pl.col("methylation_level") > high_threshold).alias("true_high"),
     # Assign a coverage bin to each single coverage value
@@ -68,31 +61,40 @@ df = calls_df.join(truth_df, on=["chrom", "pos"], how="inner").with_columns(
     .cast(pl.Utf8)
     .alias("coverage"),
 )
-# Divide df into smaller dfs for each coverage bin
-strata = [("all", df)] + [
-    (label, df.filter(pl.col("coverage") == label)) for label in coverage_labels
-]
+# Number of sites per coverage bin before FDR control
+num_sites = {}
+for unfiltered in snakemake.input.unfiltered:
+    # File names look like bin_{bin}.vcf
+    bin_index = int(re.search(r"bin_(\d+)\.vcf$", unfiltered).group(1))
+    num_sites[bin_index] = len(parse_calls(unfiltered))
 
 rows = []
 
-for stratum, stratum_df in strata:
-    for alpha in alphas:
-        selected = select_local(stratum_df, alpha)
-        num_calls = len(selected)
-        num_false = num_calls - selected["true_high"].sum()
+for filtered in snakemake.input.filtered:
+    # File names look like bin_{bin}_fdr_{alpha}.vcf
+    bin_index, alpha = re.search(r"bin_(\d+)_fdr_([\d.]+)\.vcf$", filtered).groups()
+    bin_index = int(bin_index)
+    # Calls selected by varlociraptor's global FDR control within this coverage bin
+    selected = parse_calls(filtered).join(truth_df, on=["chrom", "pos"], how="inner")
+    num_calls = len(selected)
+    num_false = num_calls - selected["true_high"].sum()
 
-        rows.append(
-            {
-                "coverage": stratum,
-                "num_sites": len(stratum_df),
-                "fdr_threshold": float(alpha),
-                "num_calls": num_calls,
-                "num_false_discoveries": num_false,
-                "true_fdr": num_false / num_calls if num_calls else None,
-            }
-        )
+    rows.append(
+        {
+            "bin": bin_index,
+            "coverage": coverage_labels[bin_index],
+            "num_sites": num_sites[bin_index],
+            "fdr_threshold": float(alpha),
+            "num_calls": num_calls,
+            "num_false_discoveries": num_false,
+            # Mean posterior probability of not being HIGH over the selected calls
+            "expected_fdr": selected["prob_not_high"].mean() if num_calls else None,
+            "true_fdr": num_false / num_calls if num_calls else None,
+        }
+    )
 
-result_df = pl.DataFrame(rows)
+# Order by coverage bin, as the legend takes the bin order from the rows
+result_df = pl.DataFrame(rows).sort("bin", "fdr_threshold").drop("bin")
 result_df.write_csv(snakemake.output.table)
 
 coverage_colors = ["#a8e6d9", "#7fd8c6", "#05AA8F", "#126e5f", "#012b24"]
@@ -110,7 +112,11 @@ ticks = [0, 0.2, 0.4, 0.6, 0.8, 1]
 
 
 def plot_fdr():
-    plot_df = result_df.filter(pl.col("coverage") != "all")
+    plot_df = result_df.with_columns(
+        pl.format("{} (n={})", "coverage", "num_sites").alias("coverage")
+    )
+    # Rows are ordered by coverage bin
+    legend_labels = plot_df["coverage"].unique(maintain_order=True).to_list()
     curves = (
         alt.Chart(plot_df)
         .mark_line(point=alt.OverlayMarkDef(size=30), strokeWidth=2)
@@ -129,7 +135,7 @@ def plot_fdr():
             ),
             color=alt.Color(
                 "coverage:N",
-                scale=alt.Scale(domain=coverage_labels, range=coverage_colors),
+                scale=alt.Scale(domain=legend_labels, range=coverage_colors),
                 title="Coverage",
             ),
         )
