@@ -345,7 +345,7 @@ rule plot_fdr_calibration:
         fdr_levels=[0.01, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1],
         num_alphas=25,
         # Coverage stratifications
-        coverage_bins=[0, 20, 40, 60, 80],
+        coverage_bins=[0, 40, 60, 80],
         # Methylation rate in the truth above which a site is defined as HIGH
         high_threshold=50,
     script:

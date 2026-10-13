@@ -74,16 +74,23 @@ def compute_pit(df: pl.DataFrame, rng) -> pl.DataFrame:
         parsed = parse_afd(afd)
         total = p_abs + p_low + p_high
         # We attach the pit values to the original dataframe, so we need to keep the same number of rows.
-        if parsed is None or total <= 0:
+        if total <= 0:
             u_values.append(None)
             continue
-        theta, cdf = parsed
         # Posterior mass of the point θ = 0, conditional on the site not being an artifact
         w0 = p_abs / total
+        # An AFD without area on ]0,1] is only usable if all mass lies at θ = 0
+        if parsed is None and w0 < 1:
+            u_values.append(None)
+            continue
         if theta_true <= 0:
             # We need to sample from the uniform distribution on [0, w0] to get a uniform distribution of u values for sites with θ* = 0. Else we would get a spike at u = w0.
             u = rng.uniform(0, w0)
+        elif parsed is None:
+            # If we have no AFD, but the true methylation level is > 0, we assume that the posterior mass is concentrated at θ = 0.
+            u = 1.0
         else:
+            theta, cdf = parsed
             u = w0 + (1 - w0) * np.interp(theta_true, theta, cdf)
         u_values.append(float(u))
     return df.with_columns(

@@ -27,6 +27,11 @@ def parse_calls(filepath: str) -> pl.DataFrame:
             prob_high = info_dict.get("PROB_HIGH")
             if prob_high is None or prob_high == ".":
                 continue
+            # Skip calls without AFD, as in the PIT calibration
+            format_dict = dict(zip(parts[8].split(":"), parts[9].split(":")))
+            afd = format_dict.get("AFD")
+            if afd is None or afd == ".":
+                continue
             records.append((parts[0], int(parts[1]), phred_to_prob(prob_high)))
     return pl.DataFrame(
         records, schema=["chrom", "pos", "prob_high"]).with_columns((1 - pl.col("prob_high")).alias("prob_not_high"))
