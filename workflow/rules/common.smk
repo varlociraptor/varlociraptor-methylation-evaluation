@@ -13,6 +13,9 @@ def compute_results() -> List[List[str]]:
         if platform != "Simulate" and platform != "multi_sample":
             inputs.append(heatmap_replicates(platform))
             inputs.append(bias_replicates(platform))
+            inputs.append(
+                f"results/single_sample/{platform}/plots/discordance_vs_loci.{config['plot_type']}"
+            )
 
     # Single-sample heatmaps across all FDR thresholds
     if "Illumina_pe" in config["seq_platforms"]:

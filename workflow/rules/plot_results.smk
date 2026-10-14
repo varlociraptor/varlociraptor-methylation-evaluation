@@ -225,6 +225,48 @@ rule plot_bias:
         "../scripts/plot_bias.py"
 
 
+# Discordance vs. number of retained loci for a sweep of minimum coverage filters, applied to all callers in the same way.
+rule plot_discordance_vs_loci:
+    input:
+        meth_data="results/{call_type}/{seq_platform}/result_files/replicates.parquet",
+        coverages_rep1=lambda wildcards: expand(
+            "results/{{call_type}}/{{seq_platform}}/coverages/{sample}_REP01_all.regions.bed.gz",
+            sample=config["samples"][wildcards.seq_platform],
+        ),
+        coverages_rep2=lambda wildcards: expand(
+            "results/{{call_type}}/{{seq_platform}}/coverages/{sample}_REP02_all.regions.bed.gz",
+            sample=config["samples"][wildcards.seq_platform],
+        ),
+    output:
+        report(
+            "results/{call_type}/{seq_platform}/plots/discordance_vs_loci.{plot_type}",
+            category="{call_type}",
+            subcategory=lambda wildcards: seq_platform_to_name[wildcards.seq_platform],
+            labels={
+                "file_type": "discordance_vs_loci",
+                "sample": "all samples",
+            },
+            caption="../report/discordance_vs_loci.rst",
+        ),
+        "results/{call_type}/{seq_platform}/plots/discordance_vs_loci_{plot_type}.parquet",
+    log:
+        "logs/plot_results/plot_discordance_vs_loci/{call_type}_{seq_platform}_{plot_type}.log",
+    conda:
+        "../envs/python.yaml"
+    resources:
+        mem_mb=32000,
+    params:
+        meth_callers=lambda wildcards: config["ref_tools"].get(
+            wildcards.seq_platform, []
+        )
+        + [f"varlo_{fdr}" for fdr in config["fdr_alpha"]],
+        samples=lambda wildcards: config["samples"][wildcards.seq_platform],
+        min_coverages=config["discordance_min_coverages"],
+        plot_type=lambda wildcards: wildcards.plot_type,
+    script:
+        "../scripts/plot_discordance_vs_loci.py"
+
+
 rule plot_runtime_comparison:
     input:
         benchmarks="benchmarks",
