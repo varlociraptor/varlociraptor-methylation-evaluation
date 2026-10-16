@@ -98,6 +98,12 @@ def bias_replicates(seq_platform: str) -> List[str]:
     ]
 
 
+def discordance_vs_loci_samples(wildcards) -> List[str]:
+    return config.get("discordance_vs_loci_samples", {}).get(
+        wildcards.seq_platform, config["samples"][wildcards.seq_platform]
+    )
+
+
 def get_sample_sra(wildcards) -> List[str]:
     """
     Return BAM file paths for a given platform and sample, based on the config.

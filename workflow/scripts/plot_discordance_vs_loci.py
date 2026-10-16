@@ -25,10 +25,11 @@ TOOL_COLORS = {
     "MethylDackel": "#f0700e",
     "Modkit": "#B42CEA",
     "Pb-CpG-tools": "#8D9279",
-    "Varlociraptor α = 1.0": "#006D40",
-    "Varlociraptor α = 0.5": "#005D40",
-    "Varlociraptor α = 0.1": "#004D40",
-    "Varlociraptor α = 0.05": "#126e5f",
+    # One teal ramp from dark (α = 1.0) to light (α = 0.01), so that the α levels are distinguishable
+    "Varlociraptor α = 1.0": "#00362c",
+    "Varlociraptor α = 0.5": "#005345",
+    "Varlociraptor α = 0.1": "#00715f",
+    "Varlociraptor α = 0.05": "#028d77",
     "Varlociraptor α = 0.01": "#05AA8F",
 }
 
@@ -36,7 +37,7 @@ TOOL_COLORS = {
 METRIC_TO_NAME = {
     "mape": "Dᵣ",
     "mae": "Dₐ",
-    "binary_discordance": " Dₛ",
+    # "binary_discordance": " Dₛ",
 }
 
 pl.Config.set_tbl_cols(20)
@@ -113,7 +114,7 @@ def discordance_metrics() -> list[pl.Expr]:
         .mean()
         .alias("mape"),
         (rep1 - rep2).abs().mean().alias("mae"),
-        ((rep1 > 0) != (rep2 > 0)).cast(pl.Float64).mean().alias("binary_discordance"),
+        # ((rep1 > 0) != (rep2 > 0)).cast(pl.Float64).mean().alias("binary_discordance"),
     ]
 
 
@@ -185,6 +186,8 @@ def plot_discordance_vs_loci(df: pl.DataFrame):
 
 meth_callers = snakemake.params["meth_callers"]
 samples = snakemake.params["samples"]
+
+platform = snakemake.params["platform"]
 min_coverages = snakemake.params["min_coverages"]
 
 
@@ -199,7 +202,10 @@ for sample, coverage_path_rep1, coverage_path_rep2 in zip(
     )
     sample_frames.append(
         compute_discordance_vs_loci(df, meth_callers, min_coverages).with_columns(
-            pl.lit(sample.replace("_HG002_", "_")).alias("sample")
+            # PacBio and Nanopore only have the sample "dummy", so we show the platform instead
+            pl.lit(
+                platform if sample == "dummy" else sample.replace("_HG002_", "_")
+            ).alias("sample")
         )
     )
 
@@ -222,5 +228,5 @@ df_discordance = (
 chart = plot_discordance_vs_loci(df_discordance)
 chart.save(snakemake.output[0], scale_factor=2)
 df_discordance.select(
-    "sample", "caller", "min_coverage", "N", "metric", "value"
+    "sample", "caller", "tool_name", "min_coverage", "N", "metric", "value"
 ).write_parquet(snakemake.output[1])
