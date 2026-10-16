@@ -340,6 +340,30 @@ rule debug_pb_cpg_tools:
         pacbio="results/single_sample/PacBio/result_files/replicates.parquet",
         nanopore="results/single_sample/Nanopore/result_files/replicates.parquet",
         illumina="results/single_sample/Illumina_pe/result_files/replicates.parquet",
+        pacbio_coverages_rep1=expand(
+            "results/single_sample/PacBio/coverages/{sample}_REP01_all.regions.bed.gz",
+            sample=config["samples"].get("PacBio", []),
+        ),
+        pacbio_coverages_rep2=expand(
+            "results/single_sample/PacBio/coverages/{sample}_REP02_all.regions.bed.gz",
+            sample=config["samples"].get("PacBio", []),
+        ),
+        illumina_coverages_rep1=expand(
+            "results/single_sample/Illumina_pe/coverages/{sample}_REP01_all.regions.bed.gz",
+            sample=config["samples"].get("Illumina_pe", []),
+        ),
+        illumina_coverages_rep2=expand(
+            "results/single_sample/Illumina_pe/coverages/{sample}_REP02_all.regions.bed.gz",
+            sample=config["samples"].get("Illumina_pe", []),
+        ),
+        nanopore_coverages_rep1=expand(
+            "results/single_sample/Nanopore/coverages/{sample}_REP01_all.regions.bed.gz",
+            sample=config["samples"].get("Nanopore", []),
+        ),
+        nanopore_coverages_rep2=expand(
+            "results/single_sample/Nanopore/coverages/{sample}_REP02_all.regions.bed.gz",
+            sample=config["samples"].get("Nanopore", []),
+        ),
     output:
         report(
             "results/single_sample/plots/debug_pb_cpg_tools.{plot_type}",
@@ -355,5 +379,11 @@ rule debug_pb_cpg_tools:
         "logs/plot_results/debug_pb_cpg_tools_{plot_type}.log",
     conda:
         "../envs/python.yaml"
+    params:
+        pacbio_samples=config["samples"].get("PacBio", []),
+        illumina_samples=config["samples"].get("Illumina_pe", []),
+        nanopore_samples=config["samples"].get("Nanopore", []),
+        # Minimum mosdepth coverage of a replicate value, applied to all callers and platforms
+        min_coverage=20,
     script:
         "../scripts/debug_pb_cpg_tools.py"
