@@ -10,19 +10,7 @@ pd.set_option("display.max_columns", None)
 pd.set_option("display.max_rows", 1000)
 alt.data_transformers.enable("vegafusion")
 
-meth_caller_to_name = {
-    "varlo_0.1": "Varlociraptor α = 0.1",
-    "varlo_0.05": "Varlociraptor α = 0.05",
-    "varlo_0.01": "Varlociraptor α = 0.01",
-    "varlociraptor": "Varlociraptor",
-    "bismark": "Bismark",
-    "bsMap": "BSMAPz",
-    "methylDackel": "MethylDackel",
-    "modkit": "Modkit",
-    "pb_CpG_tools": "Pb-CpG-tools",
-    "bisSNP": "BisSNP",
-}
-
+# Same colors as in plot_discordance_vs_loci.py
 tool_colors = {
     "Bismark": "#D81B60",
     "BSMAPz": "#1E88E5",
@@ -30,8 +18,10 @@ tool_colors = {
     "MethylDackel": "#f0700e",
     "Modkit": "#B42CEA",
     "Pb-CpG-tools": "#8D9279",
-    "Varlociraptor α = 0.1": "#004D40",
-    "Varlociraptor α = 0.05": "#126e5f",
+    "Varlociraptor α = 1.0": "#00362c",
+    "Varlociraptor α = 0.5": "#005345",
+    "Varlociraptor α = 0.1": "#00715f",
+    "Varlociraptor α = 0.05": "#028d77",
     "Varlociraptor α = 0.01": "#05AA8F",
 }
 
