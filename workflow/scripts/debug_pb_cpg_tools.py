@@ -114,7 +114,7 @@ def count_subtitle(df, with_values):
             text += f" ({subset.height:,} values)"
         return text
 
-    low, high = label_text("extreme"), label_text("unextreme")
+    low, high = label_text("extreme"), label_text("non-extreme")
     return f"{low} · {high}"
 
 
@@ -140,9 +140,15 @@ def plot_scatter(df, title, pb_filter):
             ),
         ]
     ).drop_nulls(subset=["rep1", "rep2"])
+    # Merge overlapping points (rounded to 1 %) to keep the PDF small; the count is shown as size
+    points = (
+        data.with_columns(pl.col("rep1").round(0), pl.col("rep2").round(0))
+        .group_by(["tool", "meth_type", "rep1", "rep2"])
+        .agg(pl.len().alias("count"))
+    )
     chart = (
-        alt.Chart(data.to_pandas())
-        .mark_point(filled=True, size=30, opacity=0.3)
+        alt.Chart(points.to_pandas())
+        .mark_point(size=50,filled=True, opacity=0.5)
         .encode(
             x=alt.X(
                 "rep1:Q", title="Replicate 1" if title == "Fully Methylated" else None
@@ -155,8 +161,7 @@ def plot_scatter(df, title, pb_filter):
                     domain=list(TOOL_COLORS), range=list(TOOL_COLORS.values())
                 ),
             ),
-            shape=alt.Shape("meth_type:N", title="Varlo prediction"),
-            tooltip=["chromosome", "position", "tool", "meth_type", "rep1", "rep2"],
+            shape=alt.Shape("meth_type:N", title="Varlociraptor prediction"),
         )
         .properties(
             height=400,
@@ -208,7 +213,7 @@ def plot_histo(df, title):
                 title="Binned methylation" if title == "Fully Methylated" else None,
             ),
             xOffset=alt.XOffset("meth_type:N"),
-            y=alt.Y("percentage:Q", title="Percentage", axis=alt.Axis(format="%")),
+            y=alt.Y("percentage:Q", title="Fraction", axis=alt.Axis(format="%")),
             color=alt.Color(
                 "meth_type:N",
                 scale=alt.Scale(range=["#D81B60", "#1E88E5"]),
@@ -238,13 +243,13 @@ independent = pl.concat(
 unmeth_loci = pl.concat(
     [
         find_loci(pacbio, lambda v: v < 5, lambda v: v == 0, "extreme"),
-        find_loci(pacbio, lambda v: v < 5, lambda v: v >= 10, "unextreme"),
+        find_loci(pacbio, lambda v: v < 5, lambda v: v >= 10, "non-extreme"),
     ]
 )
 # pb-CpG-tools > 95; low: Varlociraptor <= 90, high: Varlociraptor = 100
 meth_loci = pl.concat(
     [
-        find_loci(pacbio, lambda v: v > 95, lambda v: v <= 90, "unextreme"),
+        find_loci(pacbio, lambda v: v > 95, lambda v: v <= 90, "non-extreme"),
         find_loci(pacbio, lambda v: v > 95, lambda v: v == 100, "extreme"),
     ]
 )
