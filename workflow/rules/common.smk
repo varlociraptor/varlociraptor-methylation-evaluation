@@ -59,6 +59,8 @@ def compute_results() -> List[List[str]]:
             inputs.append(
                 f"results/single_sample_full_event/{platform}/plots/full_event_heatmap.{config['plot_type']}"
             )
+    # Supplementary: example of an event's formula tree
+    inputs.append("results/supplementary/event_tree.pdf")
 
     return inputs
 
@@ -105,9 +107,7 @@ def bias_replicates(seq_platform: str) -> List[str]:
 
 
 def discordance_vs_loci_samples(wildcards) -> List[str]:
-    return config.get("discordance_vs_loci_samples", {}).get(
-        wildcards.seq_platform, config["samples"][wildcards.seq_platform]
-    )
+    return config.get("discordance_vs_loci_samples", {})[wildcards.seq_platform]
 
 
 def get_sample_sra(wildcards) -> List[str]:

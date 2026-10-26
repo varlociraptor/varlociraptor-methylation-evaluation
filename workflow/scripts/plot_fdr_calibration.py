@@ -113,7 +113,7 @@ ticks = [0, 0.2, 0.4, 0.6, 0.8, 1]
 
 def plot_fdr():
     plot_df = result_df.with_columns(
-        pl.format("{} (n={})", "coverage", "num_sites").alias("coverage")
+        pl.format("{} (N={})", "coverage", "num_sites").alias("coverage")
     )
     # Rows are ordered by coverage bin
     legend_labels = plot_df["coverage"].unique(maintain_order=True).to_list()
@@ -125,13 +125,13 @@ def plot_fdr():
                 "fdr_threshold:Q",
                 scale=alt.Scale(domain=[0, 1]),
                 axis=alt.Axis(values=ticks),
-                title="FDR threshold (α)",
+                title="Nominal FDR (α)",
             ),
             y=alt.Y(
                 "true_fdr:Q",
                 scale=alt.Scale(domain=[0, 1]),
                 axis=alt.Axis(values=ticks),
-                title="true FDR",
+                title="Empirical FDR",
             ),
             color=alt.Color(
                 "coverage:N",

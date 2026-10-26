@@ -438,8 +438,6 @@ rule plot_pit_calibration:
     conda:
         "../envs/python.yaml"
     params:
-        # Coverage stratifications
-        coverage_bins=config["calibration"]["coverage_bins"],
         num_bins=25,
         # Seed for the randomized PIT at the point mass θ = 0
         seed=config["seed"],
