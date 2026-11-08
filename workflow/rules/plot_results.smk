@@ -387,3 +387,22 @@ rule debug_pb_cpg_tools:
         min_coverage=20,
     script:
         "../scripts/debug_pb_cpg_tools.py"
+
+
+# Static example of the formula tree that Varlociraptor traverses to evaluate an event
+rule event_tree:
+    input:
+        workflow.source_path("../resources/event_tree.pdf"),
+    output:
+        report(
+            "results/supplementary/event_tree.pdf",
+            category="supplementary",
+            labels={
+                "file": f"Exemplary event_tree",
+            },
+            caption="../report/event_tree.rst",
+        ),
+    log:
+        "logs/plot_results/event_tree.log",
+    shell:
+        "cp {input} {output} 2> {log}"
