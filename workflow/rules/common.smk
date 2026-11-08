@@ -53,12 +53,7 @@ def compute_results() -> List[List[str]]:
                 f"results/single_sample/plots/debug_pb_cpg_tools.{config['plot_type']}",
             ]
         )
-    # Supplementary: Varlociraptor with an additional FULL event on long reads
-    for platform in ["PacBio", "Nanopore"]:
-        if platform in config["seq_platforms"]:
-            inputs.append(
-                f"results/single_sample_full_event/{platform}/plots/full_event_heatmap.{config['plot_type']}"
-            )
+
     # Supplementary: example of an event's formula tree
     inputs.append("results/supplementary/event_tree.pdf")
 
