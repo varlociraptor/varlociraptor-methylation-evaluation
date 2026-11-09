@@ -15,12 +15,15 @@ rule call_methylation_together_np_pb:
             "benchmarks/multi_sample/np_bp/np_pb/{replicate}_{scatteritem}.bwa.benchmark.txt",
             config["benchmark_repeats"],
         )
+    wildcard_constraints:
+        # Keep {replicate} from matching REP01/controlled_<fdr> (output of control_fdr_calls)
+        replicate="[^/]+",
     params:
         varlo=varlociraptor_cmd,
     conda:
         "../envs/varlociraptor.yaml"
     shell:
-        "{params.varlo} call variants generic --scenario {input.scenario} --obs  pacbio={input.pacbio}  nanopore={input.nanopore} > {output} 2> {log}"
+        "{params.varlo} call variants --no-absent generic --scenario {input.scenario} --obs  pacbio={input.pacbio}  nanopore={input.nanopore} > {output} 2> {log}"
 
 
 rule call_methylation_together_np_methylSeq:
@@ -41,12 +44,15 @@ rule call_methylation_together_np_methylSeq:
             "benchmarks/multi_sample/np_methylSeq/np_methylSeq/{replicate}_{scatteritem}.bwa.benchmark.txt",
             config["benchmark_repeats"],
         )
+    wildcard_constraints:
+        # Keep {replicate} from matching REP01/controlled_<fdr> (output of control_fdr_calls)
+        replicate="[^/]+",
     params:
         varlo=varlociraptor_cmd,
     conda:
         "../envs/varlociraptor.yaml"
     shell:
-        "{params.varlo} call variants generic --scenario {input.scenario} --obs  methylSeq={input.methylSeq}  nanopore={input.nanopore} > {output} 2> {log}"
+        "{params.varlo} call variants --no-absent generic --scenario {input.scenario} --obs  methylSeq={input.methylSeq}  nanopore={input.nanopore} > {output} 2> {log}"
 
 
 rule call_methylation_together_pb_methylSeq:
@@ -67,9 +73,12 @@ rule call_methylation_together_pb_methylSeq:
             "benchmarks/multi_sample/pb_methylSeq/pb_methylSeq/{replicate}_{scatteritem}.bwa.benchmark.txt",
             config["benchmark_repeats"],
         )
+    wildcard_constraints:
+        # Keep {replicate} from matching REP01/controlled_<fdr> (output of control_fdr_calls)
+        replicate="[^/]+",
     params:
         varlo=varlociraptor_cmd,
     conda:
         "../envs/varlociraptor.yaml"
     shell:
-        "{params.varlo} call variants generic --scenario {input.scenario} --obs  methylSeq={input.methylSeq}  pacbio={input.pacbio} > {output} 2> {log}"
+        "{params.varlo} call variants --no-absent generic --scenario {input.scenario} --obs  methylSeq={input.methylSeq}  pacbio={input.pacbio} > {output} 2> {log}"

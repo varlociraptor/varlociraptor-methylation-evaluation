@@ -17,7 +17,8 @@ rule compute_pandas_df:
 
 rule compute_varlo_df:
     input:
-        tool="results/{call_type}/{seq_platform}/called/{sample}/result_files/varlo.bed",
+        # Calls already filtered by varlociraptor's FDR control at level fdr (rule control_fdr_calls)
+        tool="results/{call_type}/{seq_platform}/called/{sample}/controlled_{fdr}/result_files/varlo.bed",
     output:
         "results/{call_type}/{seq_platform}/called/{sample}/result_files/varlo_{fdr}.parquet",
     log:
@@ -26,8 +27,6 @@ rule compute_varlo_df:
         "../envs/python.yaml"
     resources:
         mem_mb=64000,
-    params:
-        alpha=lambda wildcards: wildcards.fdr,
     script:
         "../scripts/pandas_df_from_meth_output.py"
 

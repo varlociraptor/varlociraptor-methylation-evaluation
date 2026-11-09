@@ -86,13 +86,36 @@ rule varlociraptor_call:
         )
     wildcard_constraints:
         seq_platform="(?!multi_sample).*",
-        sample="(?!simulated_data_no_bias).*",
+        # Calls filtered by control_fdr_calls are not called again
+        sample="(?!.*controlled_).*",
     params:
         varlo=varlociraptor_cmd,
     conda:
         "../envs/varlociraptor.yaml"
     shell:
-        "{params.varlo} call variants generic --scenario {input.scenario} --obs normal={input.preprocess_obs} > {output} 2> {log}"
+        "{params.varlo} call variants --no-absent generic --scenario {input.scenario} --obs normal={input.preprocess_obs} > {output} 2> {log}"
+
+
+# Filter the single- and multi-sample calls with varlociraptor's local FDR control on the bin events
+# Local mode decides per record, so the scattered calls can be filtered separately before gathering.
+rule control_fdr_calls:
+    input:
+        varlo=varlociraptor_binary(),
+        calls="results/{call_type}/{seq_platform}/called/{sample}/calls_{scatteritem}.bcf",
+    output:
+        "results/{call_type}/{seq_platform}/called/{sample}/controlled_{fdr}/calls_{scatteritem}.bcf",
+    log:
+        "logs/varlociraptor_single/control_fdr_calls/{call_type}_{seq_platform}_{sample}_{fdr}_{scatteritem}.log",
+    wildcard_constraints:
+        sample="[^/]+",
+        fdr=r"[0-9.]+",
+    params:
+        varlo=varlociraptor_cmd,
+        events=" ".join(config["control_fdr"]["events"]),
+    conda:
+        "../envs/varlociraptor.yaml"
+    shell:
+        "{params.varlo} filter-calls control-fdr {input.calls} --events {params.events} --fdr {wildcards.fdr} --smart-retain-artifacts --mode local-strict --subsets adjacent-5 > {output} 2> {log}"
 
 
 # Call HIGH (> 50%) and LOW (<= 50%) methylation events on simulated data to validate FDR control

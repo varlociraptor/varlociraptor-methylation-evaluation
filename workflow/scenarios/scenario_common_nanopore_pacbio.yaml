@@ -5,4 +5,13 @@ samples:
     universe: "[0.0, 1.0]"
 
 events:
-  present: "pacbio:]0.0,1.0] & pacbio == nanopore"
+  bin0: "pacbio:[0.0, 0.1[ & pacbio == nanopore"
+  bin1: "pacbio:[0.1, 0.2[ & pacbio == nanopore"
+  bin2: "pacbio:[0.2, 0.3[ & pacbio == nanopore"
+  bin3: "pacbio:[0.3, 0.4[ & pacbio == nanopore"
+  bin4: "pacbio:[0.4, 0.5[ & pacbio == nanopore"
+  bin5: "pacbio:[0.5, 0.6[ & pacbio == nanopore"
+  bin6: "pacbio:[0.6, 0.7[ & pacbio == nanopore"
+  bin7: "pacbio:[0.7, 0.8[ & pacbio == nanopore"
+  bin8: "pacbio:[0.8, 0.9[ & pacbio == nanopore"
+  bin9: "pacbio:[0.9, 1.0] & pacbio == nanopore"
