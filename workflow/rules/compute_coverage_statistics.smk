@@ -65,9 +65,9 @@ rule common_coverage_Illumina:
 
 rule compute_coverage_retention:
     input:
-        coverage_01="results/{call_type}/{seq_platform}/coverages/{sample}_REP01_{mapq}.regions.bed.gz",
-        coverage_02="results/{call_type}/{seq_platform}/coverages/{sample}_REP02_{mapq}.regions.bed.gz",
-        meth_data="results/{call_type}/{seq_platform}/result_files/replicates.parquet",
+        coverage_01="results/single_sample/{seq_platform}/coverages/{sample}_REP01_{mapq}.regions.bed.gz",
+        coverage_02="results/single_sample/{seq_platform}/coverages/{sample}_REP02_{mapq}.regions.bed.gz",
+        meth_data="results/{call_type}/{seq_platform}/result_files/{sample}_replicates.parquet",
     output:
         mae=report(
             "results/{call_type}/{seq_platform}/plots/{sample}_dist_{mapq}.{plot_type}",

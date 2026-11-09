@@ -65,15 +65,15 @@ rule common_tool_df:
 rule merge_replicates:
     input:
         lambda wildcards: expand(
-            "results/{{call_type}}/{{seq_platform}}/result_files/sample_df_{sample}.parquet",
-            sample=config["data"].get(
-                wildcards.seq_platform, config["data"].get(wildcards.call_type, [])
+            "results/{{call_type}}/{{seq_platform}}/result_files/sample_df_{rep}.parquet",
+            rep=replicate_names(
+                wildcards.seq_platform, wildcards.sample, wildcards.call_type
             ),
         ),
     output:
-        "results/{call_type}/{seq_platform}/result_files/replicates.parquet",
+        "results/{call_type}/{seq_platform}/result_files/{sample}_replicates.parquet",
     log:
-        "logs/plot_results/merge_replicates/{call_type}_{seq_platform}.log",
+        "logs/plot_results/merge_replicates/{call_type}_{seq_platform}_{sample}.log",
     conda:
         "../envs/python.yaml"
     resources:
@@ -91,7 +91,7 @@ rule merge_replicates:
 # We offer the option to have {sample} == "all_samples", which means that the resulting df dfs will contain all samples of the respective platform. This is used for the combined heatmap and bias plot for all Illumina samples.
 rule prepare_plot_df:
     input:
-        "results/{call_type}/{seq_platform}/result_files/replicates.parquet",
+        "results/{call_type}/{seq_platform}/result_files/{sample}_replicates.parquet",
     output:
         df="results/{call_type}/{seq_platform}/result_files/{sample}_prepared.parquet",
         distances="results/{call_type}/{seq_platform}/result_files/{sample}_distances.parquet",
@@ -188,7 +188,7 @@ rule plot_bars_illumina:
 
 rule plot_bias:
     input:
-        table="results/{call_type}/{seq_platform}/result_files/replicates.parquet",
+        table="results/{call_type}/{seq_platform}/result_files/{sample}_replicates.parquet",
     output:
         report(
             "results/{call_type}/{seq_platform}/plots/{sample}_bias.{plot_type}",
@@ -337,9 +337,9 @@ rule concat_plots_coverage:
 
 rule debug_pb_cpg_tools:
     input:
-        pacbio="results/single_sample/PacBio/result_files/replicates.parquet",
-        nanopore="results/single_sample/Nanopore/result_files/replicates.parquet",
-        illumina="results/single_sample/Illumina_pe/result_files/replicates.parquet",
+        pacbio="results/single_sample/PacBio/result_files/all_samples_replicates.parquet",
+        nanopore="results/single_sample/Nanopore/result_files/all_samples_replicates.parquet",
+        illumina="results/single_sample/Illumina_pe/result_files/all_samples_replicates.parquet",
         pacbio_coverages_rep1=expand(
             "results/single_sample/PacBio/coverages/{sample}_REP01_all.regions.bed.gz",
             sample=config["samples"].get("PacBio", []),

@@ -156,3 +156,16 @@ def varlociraptor_cmd(wildcards, input):
     if config.get("varlociraptor-branch") is None:
         return "varlociraptor"
     return f"chmod +x {input.varlo}; {input.varlo}"
+
+
+def replicate_names(seq_platform, sample, call_type):
+    """
+    Return the replicates of a sample.
+    "dummy" and "all_samples" return all replicates of the respective platform.
+    """
+    replicates = list(
+        config["data"].get(seq_platform, config["data"].get(call_type, []))
+    )
+    if sample in ["all_samples", "dummy"]:
+        return replicates
+    return [rep for rep in replicates if rep.startswith(f"{sample}_REP")]
