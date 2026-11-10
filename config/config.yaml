@@ -103,6 +103,15 @@ seed: 0
 # Use development branch of varlociraptor. If null use official varlociraptor release 8.9
 varlociraptor-branch: long-read-no-meth-info
 ###################################### PLOTS ##################################################
+# Build the combined paper figures for easy copy & paste in the manuscript
+paper_plots: true
+# Varlociraptor levels shown in the paper figures per platform (subset of fdr_alpha)
+plot_fdr_alpha:
+  PacBio: [0.01]
+  Nanopore: [0.01]
+  multi_sample: [0.01]
+  coverage: [0.01]
+
 heatmap_bin_size: 5
 # FDR and PIT calibration plots on simulated data
 calibration:

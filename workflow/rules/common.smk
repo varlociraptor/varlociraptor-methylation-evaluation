@@ -57,6 +57,10 @@ def compute_results() -> List[List[str]]:
     # Supplementary: example of an event's formula tree
     inputs.append("results/supplementary/event_tree.pdf")
 
+    # Combined paper figures (concat_* rules)
+    if config["paper_plots"]:
+        inputs.append(paper_plots())
+
     return inputs
 
 
@@ -99,6 +103,25 @@ def bias_replicates(seq_platform: str) -> List[str]:
         f"{base_path}/plots/{sample}_bias.{plot_type}"
         for sample in config["samples"][seq_platform]
     ]
+
+
+
+def paper_plots() -> List[str]:
+    """
+    Return file paths of all combined paper figures (concat_* rules) under results/plots_paper/.
+    """
+    plot_type = config["plot_type"]
+    platforms = config["seq_platforms"]
+    paths = []
+    if all(platform in platforms for platform in ["Illumina_pe", "PacBio", "Nanopore"]):
+        paths.append("results/plots_paper/single_sample/bias.pdf")
+        paths.append(
+            f"results/plots_paper/single_sample/discordance_vs_loci.{plot_type}"
+        )
+        paths.append("results/plots_paper/single_sample/coverage.pdf")
+    if "multi_sample" in platforms:
+        paths.append("results/plots_paper/multi_sample/combined_heatmap.pdf")
+    return paths
 
 
 def discordance_vs_loci_samples(wildcards) -> List[str]:

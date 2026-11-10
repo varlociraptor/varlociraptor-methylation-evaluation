@@ -1,4 +1,4 @@
-from turtle import color, width
+import sys
 
 import altair as alt
 import pandas as pd
@@ -18,17 +18,19 @@ sys.stderr = open(snakemake.log[0], "w")
 alt.data_transformers.enable("vegafusion")
 
 meth_caller_to_name = {
-    "varlo_0.1": "Varlociraptor α = 0.1",
-    "varlo_0.05": "Varlociraptor α = 0.05",
-    "varlo_0.01": "Varlociraptor α = 0.01",
-    "varlociraptor": "Varlociraptor",
-    "bismark": "Bismark",
-    "bsMap": "BSMAPz",
-    "methylDackel": "MethylDackel",
-    "modkit": "Modkit",
-    "pb_CpG_tools": "Pb-CpG-tools",
-    "bisSNP": "BisSNP",
-}
+        "varlo_1.0": "Varlociraptor α = 1.0",
+        "varlo_0.5": "Varlociraptor α = 0.5",
+        "varlo_0.1": "Varlociraptor α = 0.1",
+        "varlo_0.05": "Varlociraptor α = 0.05",
+        "varlo_0.01": "Varlociraptor α = 0.01",
+        "varlociraptor": "Varlociraptor",
+        "bismark": "Bismark",
+        "bsMap": "BSMAPz",
+        "methylDackel": "MethylDackel",
+        "modkit": "Modkit",
+        "pb_CpG_tools": "Pb-CpG-tools",
+        "bisSNP": "BisSNP",
+    }
 
 tool_colors = {
     "Bismark": "#D81B60",
@@ -37,8 +39,10 @@ tool_colors = {
     "MethylDackel": "#f0700e",
     "Modkit": "#B42CEA",
     "Pb-CpG-tools": "#8D9279",
-    "Varlociraptor α = 0.1": "#004D40",
-    "Varlociraptor α = 0.05": "#126e5f",
+    "Varlociraptor α = 1.0": "#00362c",
+    "Varlociraptor α = 0.5": "#005345",
+    "Varlociraptor α = 0.1": "#00715f",
+    "Varlociraptor α = 0.05": "#028d77",
     "Varlociraptor α = 0.01": "#05AA8F",
 }
 
@@ -52,6 +56,7 @@ df_nanopore = pl.read_parquet(snakemake.input["nanopore"]).with_columns(
     platform=pl.lit("Nanopore")
 )
 df = pl.concat([df_illumina, df_pacbio, df_nanopore])
+df = df.filter(pl.col("tool").is_in(snakemake.params["callers"]))
 
 df = df.filter(pl.col("min_coverage_bin") <= 80)
 
@@ -76,4 +81,7 @@ line_plot_min_cov_vs_count = (
     )
 ).properties(width=200, height=200).configure_header(labelFontSize=14, labelFontWeight="bold",)
 
-line_plot_min_cov_vs_count.save(snakemake.output[0], scale_factor=2)
+# vl-convert rejects scale != 1 for PDF (vega_to_pdf path, taken when vegafusion pre-compiles the spec)
+line_plot_min_cov_vs_count.save(
+    snakemake.output[0]
+)

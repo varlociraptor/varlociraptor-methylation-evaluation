@@ -39,7 +39,7 @@ def plot_heatmap(
             title=alt.TitleParams(
                 text=titles.get(snakemake.output[0].split("/")[-3], meth_caller_name),
                 subtitle=[
-                    f"N = {number_points}k | Dᵣ = {mape:.2f} | Dₐ = {mae:.2f} | Dₛ = {binary_discordance:.2f}",
+                    f"N = {number_points}k | Dᵣ = {mape:.2f} | Dₐ = {mae:.2f}",
                 ],
                 subtitleFontSize=9,
             ),
@@ -74,15 +74,11 @@ def plot_heatmap(
 combined_counts_df = pd.read_parquet(snakemake.input["df"], engine="pyarrow")
 distances = pd.read_parquet(snakemake.input["distances"], engine="pyarrow")
 bin_size = snakemake.params["bin_size"]
-fdr_levels = snakemake.params.get("fdr_levels", [])
-meth_callers = combined_counts_df["meth_caller"].unique().tolist()
 
-# Filter meth_callers to not include varlo_a with a not in fdr_levels
-meth_callers = [
-    m
-    for m in meth_callers
-    if not (m.split("_")[0] == "varlo" and float(m.split("_")[1]) not in fdr_levels)
-]
+available_callers = set(combined_counts_df["meth_caller"].unique())
+meth_callers = [m for m in snakemake.params["callers"] if m in available_callers]
+missing_callers = [m for m in snakemake.params["callers"] if m not in available_callers]
+
 
 plot_type = snakemake.params.get("plot_type")
 meth_caller_to_name = {

@@ -150,6 +150,18 @@ rule plot_heatmaps:
         "../scripts/plot_heatmaps.py"
 
 
+# We show in the paper the heatmaps only for specific FDR levels. We use this rule to compute heatmaps only for this sppecific FDR level in order to concatenate them later for the paper_plots
+use rule plot_heatmaps as plot_heatmaps_paper with:
+    output:
+        heatmap="results/{call_type}/{seq_platform}/plots/{sample}_heatmap_paper.{plot_type}",
+    log:
+        "logs/plot_results/plot_heatmaps_paper/{call_type}_{seq_platform}_{sample}_{plot_type}.log",
+    params:
+        bin_size=lambda wildcards: config["heatmap_bin_size"],
+        plot_type=lambda wildcards: wildcards.plot_type,
+        callers=lambda wildcards: plot_callers(wildcards, paper=True),
+
+
 rule plot_bars_illumina:
     input:
         df=expand(
@@ -282,12 +294,18 @@ rule plot_runtime_comparison:
 rule concat_plots_multi_sample:
     input:
         plots=[
-            "results/multi_sample/pb_methylSeq/plots/dummy_heatmap.pdf",
-            "results/multi_sample/np_pb/plots/dummy_heatmap.pdf",
-            "results/multi_sample/np_methylSeq/plots/dummy_heatmap.pdf",
+            "results/multi_sample/pb_methylSeq/plots/dummy_heatmap_paper.pdf",
+            "results/multi_sample/np_pb/plots/dummy_heatmap_paper.pdf",
+            "results/multi_sample/np_methylSeq/plots/dummy_heatmap_paper.pdf",
         ],
     output:
-        "results/multi_sample/combined_heatmap.pdf",
+        report(
+            "results/plots_paper/multi_sample/combined_heatmap.pdf",
+            category="supplementary",
+            subcategory="plot_paper",
+            labels={"file": "Multi-sample heatmaps"},
+            caption="../report/combined_heatmap_multi_sample.rst",
+        ),
     log:
         "logs/plot_results/concat_plots_multi_sample.log",
     conda:
@@ -312,7 +330,7 @@ rule concat_plots_bias:
     resources:
         mem_mb=4000,
     params:
-        fdr=config["fdr_alpha"],
+        alpha=str(config["plot_bias_alpha"]),
     script:
         "../scripts/concat_bias.py"
 
@@ -323,13 +341,24 @@ rule concat_plots_coverage:
         pacbio="results/single_sample/PacBio/coverages/dummy_coverage_plot_pdf_all.parquet",
         nanopore="results/single_sample/Nanopore/coverages/dummy_coverage_plot_pdf_all.parquet",
     output:
-        "results/single_sample/plots/coverage.pdf",
+        report(
+            "results/plots_paper/single_sample/coverage.pdf",
+            category="supplementary",
+            subcategory="plot_paper",
+            labels={"file": "Coverage retention"},
+            caption="../report/coverage_retained.rst",
+        ),
     log:
         "logs/plot_results/concat_plots_coverage.log",
     conda:
         "../envs/python.yaml"
     resources:
         mem_mb=4000,
+    params:
+        callers=[
+            tool for tools in config["ref_tools"].values() for tool in tools
+        ]
+        + [f"varlo_{fdr}" for fdr in config["plot_fdr_alpha"].get("coverage", config["fdr_alpha"])],
     script:
         "../scripts/concat_coverage.py"
 
