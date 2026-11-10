@@ -175,11 +175,9 @@ rule plot_bars_illumina:
     output:
         report(
             "results/single_sample/Illumina_pe/plots/bar_plot_single_samples.{plot_type}",
-            category="single_sample",
-            subcategory="Illumina",
+            category="supplementary",
             labels={
-                "file_type": "bar_plot",
-                "sample": "all samples",
+                "file": "Results on all Illumina samples",
             },
             caption="../report/bar_plot_illumina.rst",
         ),
@@ -201,16 +199,7 @@ rule plot_bias:
     input:
         table="results/{call_type}/{seq_platform}/result_files/{sample}_replicates.parquet",
     output:
-        report(
-            "results/{call_type}/{seq_platform}/plots/{sample}_bias.{plot_type}",
-            category="{call_type}",
-            subcategory=lambda wildcards: seq_platform_to_name[wildcards.seq_platform],
-            labels={
-                "file_type": "bias",
-                "sample": "{sample}",
-            },
-            caption="../report/bias.rst",
-        ),
+        "results/{call_type}/{seq_platform}/plots/{sample}_bias.{plot_type}",
         bias_df="results/{call_type}/{seq_platform}/plots/{sample}_bias_df_{plot_type}.parquet",
     log:
         "logs/plot_results/plot_bias/{call_type}_{seq_platform}_{sample}_{plot_type}.log",
@@ -231,7 +220,8 @@ rule plot_bias:
         bin_size=lambda wildcards: config["heatmap_bin_size"],
         platform=lambda wildcards: wildcards.seq_platform,
         plot_type=lambda wildcards: wildcards.plot_type,
-        fdrs=config["fdr_alpha"],
+        # Only the level of the combined bias plot (concat_plots_bias)
+        fdrs=[config["plot_bias_alpha"]],
     script:
         "../scripts/plot_bias.py"
 

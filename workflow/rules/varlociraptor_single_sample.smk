@@ -58,7 +58,7 @@ rule varlociraptor_preprocess:
     conda:
         "../envs/varlociraptor.yaml"
     resources:
-        mem_mb=16000,
+        mem_mb=lambda wc: 6000 if wc.seq_platform in ["Nanopore", "PacBio"] else 2000,
     shell:
         """
         if [[ "{wildcards.seq_platform}" == "Illumina_pe" || "{wildcards.seq_platform}" == "Illumina_se" || "{wildcards.seq_platform}" == "Simulate" ]]; then
@@ -116,24 +116,6 @@ rule control_fdr_calls:
         "../envs/varlociraptor.yaml"
     shell:
         "{params.varlo} filter-calls control-fdr {input.calls} --events {params.events} --fdr {wildcards.fdr} --smart-retain-artifacts --mode local-strict --subsets adjacent-5 > {output} 2> {log}"
-
-
-# Call HIGH (> 50%) and LOW (<= 50%) methylation events on simulated data to validate FDR control
-rule varlociraptor_call_high_low:
-    input:
-        varlo=varlociraptor_binary(),
-        preprocess_obs="results/preprocessed/Simulate/{sample}/normal_{scatteritem}.bcf",
-        scenario=workflow.source_path("../scenarios/scenario_high_low.yaml"),
-    output:
-        "results/single_sample/Simulate/fdr_calibration/{sample}/calls_{scatteritem}.bcf",
-    log:
-        "logs/varlociraptor_single/varlociraptor_call_high_low/{sample}_{scatteritem}.log",
-    params:
-        varlo=varlociraptor_cmd,
-    conda:
-        "../envs/varlociraptor.yaml"
-    shell:
-        "{params.varlo} call variants generic --scenario {input.scenario} --obs normal={input.preprocess_obs} > {output} 2> {log}"
 
 
 rule gather_calls:

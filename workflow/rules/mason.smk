@@ -300,27 +300,6 @@ rule mason_plot_truth_to_results:
         "../scripts/plot_mason_results.py"
 
 
-rule compute_precision_recall:
-    input:
-        truth="resources/Simulate/simulated_data/{chrom}_truth.csv",
-        results_rep="results/single_sample/Simulate/result_files/sample_df_simulated_data.parquet",
-        no_bias="results/single_sample/Simulate/called/simulated_data_no_bias/result_files/varlo_0.01.parquet",
-        # coverage="resources/Simulate/simulated_data/complete_cov.regions.bed",
-        # tool="results/{platform}/{protocol}/result_files/{method}.parquet",
-    output:
-        precall="results/single_sample/Simulate/plots/precall_{chrom}.{plot_type}",
-        cov_dist="results/single_sample/Simulate/plots/{chrom}_cov_dist.{plot_type}",
-    log:
-        "logs/mason/compute_precision_recall/{chrom}_{plot_type}.log",
-    conda:
-        "../envs/python.yaml"
-    params:
-        meth_callers=lambda wildcards: config["ref_tools"].get("Simulate", [])
-        + [f"varlo_{fdr}" for fdr in config["fdr_alpha"]],
-    script:
-        "../scripts/compute_precision_recall.py"
-
-
 # Truth positions whose coverage falls into the given coverage bin
 rule truth_positions_per_coverage_bin:
     input:
@@ -359,8 +338,8 @@ rule split_calls_by_coverage_bin:
         "(bcftools concat -Ou {input.calls} | bcftools view -T {input.positions} -Ob -o {output}) 2> {log}"
 
 
-# Select the calls of a coverage bin with varlociraptor's global FDR control on the HIGH event
-rule control_fdr_per_coverage_bin:
+# Select the calls of a coverage bin with varlociraptor's global FDR control on the HIGH event (for the FDR plots)
+rule control_fdr_high_low_simulate:
     input:
         varlo=varlociraptor_binary(),
         calls="results/single_sample/Simulate/fdr_calibration/simulated_data/coverage_bins/{chrom}/bin_{bin}.bcf",

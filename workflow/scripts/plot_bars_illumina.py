@@ -50,6 +50,8 @@ for s in samples:
         # Filter df for sample and meth caller
         df_filtered = df[(df["sample"] == s) & (df["meth_caller"] == m)]
         number = df_filtered["count"].sum() if not df_filtered.empty else 0
+        # Number of loci in thousands, shown above the bars
+        number_k = round(number / 1000)
 
         # Filter distances for sample and meth caller
         distances_filtered = distances[
@@ -73,7 +75,7 @@ for s in samples:
             {
                 "sample": s,
                 "meth_caller": meth_caller_to_name.get(m, m),
-                "number": str(number)[:3],
+                "number": number_k,
                 "distance": float(mape_distance),
                 "distance_type": "Dᵣ",
             }
@@ -82,7 +84,7 @@ for s in samples:
             {
                 "sample": s,
                 "meth_caller": meth_caller_to_name.get(m, m),
-                "number": str(number)[:3],
+                "number": number_k,
                 "distance": float(binary_discordance),
                 "distance_type": "Bd",
             }
@@ -91,7 +93,7 @@ for s in samples:
             {
                 "sample": s,
                 "meth_caller": meth_caller_to_name.get(m, m),
-                "number": str(number)[:3],
+                "number": number_k,
                 "distance": float(mae_distance),
                 "distance_type": "Dₐ",
             }
