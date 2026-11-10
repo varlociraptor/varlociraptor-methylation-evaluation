@@ -12,7 +12,6 @@ def compute_results() -> List[List[str]]:
     for platform in config["seq_platforms"].keys():
         if platform != "Simulate" and platform != "multi_sample":
             inputs.append(heatmap_replicates(platform))
-            inputs.append(bias_replicates(platform))
             inputs.append(
                 f"results/single_sample/{platform}/plots/discordance_vs_loci.{config['plot_type']}"
             )
@@ -21,9 +20,6 @@ def compute_results() -> List[List[str]]:
     if "Illumina_pe" in config["seq_platforms"]:
         inputs.append(
             f"results/single_sample/Illumina_pe/plots/all_samples_heatmap.{config['plot_type']}"
-        )
-        inputs.append(
-            f"results/single_sample/Illumina_pe/plots/all_samples_bias.{config['plot_type']}"
         )
         inputs.append(
             f"results/single_sample/Illumina_pe/plots/bar_plot_single_samples.{config['plot_type']}"
@@ -92,16 +88,31 @@ def heatmap_replicates_common() -> List[str]:
     ]
 
 
-def bias_replicates(seq_platform: str) -> List[str]:
-    """
-    Return file paths for bias for a given sequencing platform.
-    """
-    base_path = Path("results/single_sample") / seq_platform
-    plot_type = config["plot_type"]
+# Single-sample components (seq_platform, sample with {replicate}) of each multi-sample comparison
+MULTI_SAMPLE_COMPONENTS = {
+    "pb_methylSeq": [
+        ("Illumina_pe", "MethylSeq_HG002_LAB01_{replicate}"),
+        ("PacBio", "{replicate}"),
+    ],
+    "np_methylSeq": [
+        ("Illumina_pe", "MethylSeq_HG002_LAB01_{replicate}"),
+        ("Nanopore", "{replicate}"),
+    ],
+    "np_pb": [("PacBio", "{replicate}"), ("Nanopore", "{replicate}")],
+}
 
     return [
-        f"{base_path}/plots/{sample}_bias.{plot_type}"
-        for sample in config["samples"][seq_platform]
+        f"results/single_sample/{platform}/called/{sample}/result_files/varlo_{fdr}.parquet"
+        for fdr in config["venn_fdr_alpha"]
+    ]
+
+def venn_labels(wildcards) -> List[str]:
+    """
+    Return the column labels (A, B) of the single-sample components of a comparison.
+    """
+    return [
+        VENN_PLATFORM_LABELS[platform]
+        for platform, _ in MULTI_SAMPLE_COMPONENTS[wildcards.comparison]
     ]
 
 

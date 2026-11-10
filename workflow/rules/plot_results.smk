@@ -322,7 +322,13 @@ rule concat_plots_bias:
         pacbio="results/single_sample/PacBio/plots/dummy_bias_df_pdf.parquet",
         nanopore="results/single_sample/Nanopore/plots/dummy_bias_df_pdf.parquet",
     output:
-        "results/single_sample/plots/bias.pdf",
+        report(
+            "results/plots_paper/single_sample/bias.pdf",
+            category="supplementary",
+            subcategory="plot_paper",
+            labels={"file": "bias"},
+            caption="../report/bias.rst",
+        ),
     log:
         "logs/plot_results/concat_plots_bias.log",
     conda:
