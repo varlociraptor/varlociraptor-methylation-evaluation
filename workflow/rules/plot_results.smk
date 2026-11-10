@@ -224,17 +224,17 @@ rule plot_bias:
         "../scripts/plot_bias.py"
 
 
-# Discordance vs. number of retained loci for a sweep of minimum coverage filters, applied to all callers in the same way.
+# Discordance vs. number of retained loci for the Varlociraptor FDR levels. Other callers get the min coverage threshold that retains the closest number of loci.
 rule plot_discordance_vs_loci:
     input:
-        meth_data="results/{call_type}/{seq_platform}/result_files/replicates.parquet",
+        meth_data="results/{call_type}/{seq_platform}/result_files/all_samples_replicates.parquet",
         coverages_rep1=lambda wildcards: expand(
-            "results/{{call_type}}/{{seq_platform}}/coverages/{sample}_REP01_all.regions.bed.gz",
-            sample=config["samples"][wildcards.seq_platform],
+            "results/single_sample/{{seq_platform}}/coverages/{sample}_REP01_all.regions.bed.gz",
+            sample=discordance_vs_loci_samples(wildcards),
         ),
         coverages_rep2=lambda wildcards: expand(
-            "results/{{call_type}}/{{seq_platform}}/coverages/{sample}_REP02_all.regions.bed.gz",
-            sample=config["samples"][wildcards.seq_platform],
+            "results/single_sample/{{seq_platform}}/coverages/{sample}_REP02_all.regions.bed.gz",
+            sample=discordance_vs_loci_samples(wildcards),
         ),
     output:
         report(
@@ -259,9 +259,9 @@ rule plot_discordance_vs_loci:
             wildcards.seq_platform, []
         )
         + [f"varlo_{fdr}" for fdr in config["fdr_alpha"]],
-        samples=lambda wildcards: config["samples"][wildcards.seq_platform],
-        min_coverages=config["discordance_min_coverages"],
+        samples=discordance_vs_loci_samples,
         plot_type=lambda wildcards: wildcards.plot_type,
+        platform=lambda wildcards: seq_platform_to_name[wildcards.seq_platform],
     script:
         "../scripts/plot_discordance_vs_loci.py"
 
@@ -332,6 +332,29 @@ rule concat_plots_coverage:
         mem_mb=4000,
     script:
         "../scripts/concat_coverage.py"
+
+
+rule concat_plots_discordance_vs_loci:
+    input:
+        illumina="results/{call_type}/Illumina_pe/plots/discordance_vs_loci_{plot_type}.parquet",
+        pacbio="results/{call_type}/PacBio/plots/discordance_vs_loci_{plot_type}.parquet",
+        nanopore="results/{call_type}/Nanopore/plots/discordance_vs_loci_{plot_type}.parquet",
+    output:
+        report(
+            "results/plots_paper/{call_type}/discordance_vs_loci.{plot_type}",
+            category="supplementary",
+            subcategory="plot_paper",
+            labels={"file": "Discordance vs. loci"},
+            caption="../report/discordance_vs_loci.rst",
+        ),
+    log:
+        "logs/plot_results/concat_plots_discordance_vs_loci/{call_type}_{plot_type}.log",
+    conda:
+        "../envs/python.yaml"
+    resources:
+        mem_mb=4000,
+    script:
+        "../scripts/concat_discordance_vs_loci.py"
 
 
 rule debug_pb_cpg_tools:

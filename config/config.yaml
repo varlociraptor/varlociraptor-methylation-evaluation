@@ -110,13 +110,12 @@ calibration:
   fdr_levels: [0.01, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]
   # Lower bounds of the coverage bins; the last bin has no upper bound
   coverage_bins: [0, 40, 60, 80]
-# Minimum coverage thresholds (min over both replicates) for the discordance vs. retained loci curves. 0 applies no coverage filter.
-illumina_pe_min_coverages: [0, 4, 8, 12, 16]
-pacbio_min_coverages: [0, 10, 20, 30, 40]
-nanopore_min_coverages: [0, 25, 50, 75]
 # Samples shown in the discordance vs. retained loci plot; platforms without an entry use all samples
 discordance_vs_loci_samples:
-  Illumina_pe: [TruSeq_HG002_LAB01, EMSeq_HG002_LAB01, TrueMethylBS_HG002_LAB01]
+  Illumina_pe: [TruSeq_HG002_LAB01, MethylSeq_HG002_LAB01, TrueMethylBS_HG002_LAB01]
+  # Illumina_pe: [TruSeq_HG002_LAB01, EMSeq_HG002_LAB01, TrueMethylBS_HG002_LAB01, SPLAT_HG002_LAB01, MethylSeq_HG002_LAB01, EMSeq_HG002_LAB02, TrueMethylOX_HG002_LAB01]
+  PacBio: [dummy]
+  Nanopore: [dummy]
 # Choose from png, svg, html, pdf
 # Use html for an interactive snakemake report
 plot_type: pdf
