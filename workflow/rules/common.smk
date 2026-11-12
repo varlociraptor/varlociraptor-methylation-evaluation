@@ -108,7 +108,15 @@ def paper_plots() -> List[str]:
         paths.append(
             f"results/plots_paper/single_sample/discordance_vs_loci.{plot_type}"
         )
-        paths.append("results/plots_paper/single_sample/coverage.pdf")
+        paths.append("results/supplementary/single_sample/bias_all_levels.pdf")
+        paths.append(
+            f"results/supplementary/single_sample/discordance_vs_loci_all_samples.{plot_type}"
+        )
+    for platform in ["PacBio", "Nanopore"]:
+        if platform in platforms:
+            paths.append(
+                f"results/plots_paper/single_sample/{platform}/dummy_heatmap.{plot_type}"
+            )
     if "multi_sample" in platforms:
         paths.append("results/plots_paper/multi_sample/combined_heatmap.pdf")
     return paths
