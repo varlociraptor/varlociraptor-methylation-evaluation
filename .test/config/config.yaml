@@ -25,9 +25,22 @@ seed: 0
 scatter_number: 1
 # Define FDR alpha levels for varlociraptor methylation filtering
 fdr_alpha: [0.01, 1.0]
+# Use development branch of varlociraptor (needed for --omit-absent-event, --artifact-as etc.)
+varlociraptor-branch: artifact-as-event
 
 ###################################### PLOTS ##################################################
 
 heatmap_bin_size: 5
 # Choose from png, svg, html
 plot_type: pdf
+
+control_fdr:
+  events: [BIN0, BIN1, BIN2, BIN3, BIN4, BIN5, BIN6, BIN7, BIN8, BIN9]
+
+paper_plots: false
+plot_bias_alpha: 0.01
+
+# FDR calibration on simulated data
+calibration:
+  fdr_levels: [0.01, 0.1, 1]
+  coverage_bins: [0, 40]

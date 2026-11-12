@@ -55,10 +55,12 @@ def compute_results() -> List[List[str]]:
 
     # Supplementary: example of an event's formula tree
     inputs.append("results/supplementary/event_tree.pdf")
-    inputs.append("results/supplementary/single_sample/bias_all_levels.pdf")
-    inputs.append(
-        f"results/supplementary/single_sample/discordance_vs_loci_all_samples.pdf"
-    )
+    # Supplementary plots combining Illumina, PacBio and Nanopore
+    if {"Illumina_pe", "PacBio", "Nanopore"} <= config["seq_platforms"].keys():
+        inputs.append("results/supplementary/single_sample/bias_all_levels.pdf")
+        inputs.append(
+            "results/supplementary/single_sample/discordance_vs_loci_all_samples.pdf"
+        )
 
     # Combined paper figures (concat_* rules)
     if config["paper_plots"]:
