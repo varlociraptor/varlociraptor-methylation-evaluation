@@ -52,6 +52,10 @@ def compute_results() -> List[List[str]]:
 
     # Supplementary: example of an event's formula tree
     inputs.append("results/supplementary/event_tree.pdf")
+    inputs.append("results/supplementary/single_sample/bias_all_levels.pdf")
+    inputs.append(
+        f"results/supplementary/single_sample/discordance_vs_loci_all_samples.{plot_type}"
+    )
 
     # Combined paper figures (concat_* rules)
     if config["paper_plots"]:
@@ -107,10 +111,6 @@ def paper_plots() -> List[str]:
         paths.append("results/plots_paper/single_sample/bias.pdf")
         paths.append(
             f"results/plots_paper/single_sample/discordance_vs_loci.{plot_type}"
-        )
-        paths.append("results/supplementary/single_sample/bias_all_levels.pdf")
-        paths.append(
-            f"results/supplementary/single_sample/discordance_vs_loci_all_samples.{plot_type}"
         )
     for platform in ["PacBio", "Nanopore"]:
         if platform in platforms:
