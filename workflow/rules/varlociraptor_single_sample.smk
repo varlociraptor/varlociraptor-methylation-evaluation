@@ -116,7 +116,8 @@ rule control_fdr_calls:
     conda:
         "../envs/varlociraptor.yaml"
     shell:
-        "{params.varlo} filter-calls control-fdr {input.calls} --events {params.events} --fdr {wildcards.fdr} --smart-retain-artifacts --mode local-strict --subsets adjacent-5 > {output} 2> {log}"
+        "{params.varlo} filter-calls control-fdr {input.calls} --events {params.events} --fdr {wildcards.fdr} --artifact-as BIN0 --mode local-strict --subsets adjacent-5 > {output} 2> {log}"
+
 
 
 rule gather_calls:
