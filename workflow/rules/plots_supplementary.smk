@@ -217,3 +217,31 @@ rule event_tree:
         "logs/plot_results/event_tree.log",
     shell:
         "cp {input} {output} 2> {log}"
+
+
+# MAPQ distribution of the evaluated chromosome vs. the whole genome, from all reads of the whole-genome alignment
+# of one Illumina replicate
+rule plot_mapq_distribution:
+    input:
+        lambda wildcards: "resources/Illumina_pe/{rep}/{sra}/alignment.bam".format(
+            rep=config["mapq_comparison"]["replicate"],
+            sra=config["data"]["Illumina_pe"][config["mapq_comparison"]["replicate"]][0],
+        ),
+    output:
+        report(
+            "results/supplementary/single_sample/mapq_distribution.{plot_type}",
+            category="supplementary",
+            labels={"file": "MAPQ distribution chromosome vs. genome"},
+            caption="../report/mapq_distribution.rst",
+        ),
+    log:
+        "logs/plot_results/plot_mapq_distribution_{plot_type}.log",
+    conda:
+        "../envs/python.yaml"
+    resources:
+        mem_mb=4000,
+    params:
+        chromosome=lambda wildcards: str(config["seq_platforms"]["Illumina_pe"]),
+        replicate=lambda wildcards: config["mapq_comparison"]["replicate"],
+    script:
+        "../scripts/plot_mapq_distribution.py"

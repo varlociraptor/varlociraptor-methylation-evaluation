@@ -24,6 +24,9 @@ def compute_results() -> List[List[str]]:
         inputs.append(
             f"results/single_sample/Illumina_pe/plots/bar_plot_single_samples.{config['plot_type']}"
         )
+        inputs.append(
+            f"results/supplementary/single_sample/mapq_distribution.{config['plot_type']}"
+        )
     if "Simulate" in config["seq_platforms"]:
 
         chromosome = (

@@ -130,6 +130,9 @@ discordance_vs_loci_samples:
   Illumina_pe: [TruSeq_HG002_LAB01, EMSeq_HG002_LAB01, TrueMethylBS_HG002_LAB01, SPLAT_HG002_LAB01, MethylSeq_HG002_LAB01, EMSeq_HG002_LAB02, TrueMethylOX_HG002_LAB01]
   PacBio: [dummy]
   Nanopore: [dummy]
+# Whole-genome alignment used to compare the MAPQ distribution of the evaluated chromosome with the genome
+mapq_comparison:
+  replicate: TruSeq_HG002_LAB01_REP01
 # Choose from png, svg, html, pdf
 # Use html for an interactive snakemake report
 plot_type: pdf
