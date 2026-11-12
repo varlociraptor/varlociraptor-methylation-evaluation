@@ -214,6 +214,8 @@ rule event_tree:
             },
             caption="../report/event_tree.rst",
         ),
+    conda:
+        "../envs/python.yaml"
     log:
         "logs/plot_results/event_tree.log",
     shell:
