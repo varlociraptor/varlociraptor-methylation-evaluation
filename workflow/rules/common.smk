@@ -54,7 +54,7 @@ def compute_results() -> List[List[str]]:
     inputs.append("results/supplementary/event_tree.pdf")
     inputs.append("results/supplementary/single_sample/bias_all_levels.pdf")
     inputs.append(
-        f"results/supplementary/single_sample/discordance_vs_loci_all_samples.{plot_type}"
+        f"results/supplementary/single_sample/discordance_vs_loci_all_samples.pdf"
     )
 
     # Combined paper figures (concat_* rules)
