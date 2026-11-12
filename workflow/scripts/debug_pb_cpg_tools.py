@@ -89,10 +89,10 @@ def load_platform(platform, callers):
 
 
 def find_loci(pacbio, pb_condition, varlo_condition, meth_type):
-    """Loci where both conditions hold in the same replicate, in at least one replicate."""
+    """Loci where both conditions hold in both replicates."""
     return (
         pacbio.filter(
-            pl.any_horizontal(
+            pl.all_horizontal(
                 pb_condition(pl.col(f"pb_cpg_{rep}"))
                 & varlo_condition(pl.col(f"varlo_{rep}"))
                 for rep in ["rep1", "rep2"]
@@ -217,7 +217,7 @@ def plot_histo(df, title):
             color=alt.Color(
                 "meth_type:N",
                 scale=alt.Scale(range=["#D81B60", "#1E88E5"]),
-                title="Varlo prediction",
+                title="Varlociraptor prediction",
             ),
         )
         .properties(
@@ -268,7 +268,8 @@ chart = (
     alt.hconcat(scatter, histo)
     .resolve_scale(color="independent", shape="independent")
     .configure_axis(labelFontSize=18, titleFontSize=20)
-    .configure_legend(labelFontSize=18, titleFontSize=20)
+    # Default titleLimit (180 px) truncates "Varlociraptor prediction" at this font size
+    .configure_legend(labelFontSize=18, titleFontSize=20, titleLimit=400)
     .configure_title(fontSize=22, subtitleFontSize=18)
     .configure_header(labelFontSize=18, titleFontSize=20)
 )
