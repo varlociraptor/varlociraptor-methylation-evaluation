@@ -119,6 +119,25 @@ rule control_fdr_calls:
         "{params.varlo} filter-calls control-fdr {input.calls} --events {params.events} --fdr {wildcards.fdr} --artifact-as BIN0 --mode local-strict --subsets adjacent-5 > {output} 2> {log}"
 
 
+# Filter the calls with varlociraptor's local FDR control on the ARTIFACT event only. Used by the bias plots (rule plot_bias).
+rule control_fdr_artifact:
+    input:
+        varlo=varlociraptor_binary(),
+        calls="results/{call_type}/{seq_platform}/called/{sample}/calls_{scatteritem}.bcf",
+    output:
+        "results/{call_type}/{seq_platform}/called/{sample}/controlled_artifact_{fdr}/calls_{scatteritem}.bcf",
+    log:
+        "logs/varlociraptor_single/control_fdr_artifact/{call_type}_{seq_platform}_{sample}_{fdr}_{scatteritem}.log",
+    wildcard_constraints:
+        sample="[^/]+",
+        fdr=r"[0-9.]+",
+    params:
+        varlo=varlociraptor_cmd,
+    conda:
+        "../envs/varlociraptor.yaml"
+    shell:
+        "{params.varlo} filter-calls control-fdr {input.calls} --events ARTIFACT --fdr {wildcards.fdr} --mode local-strict > {output} 2> {log}"
+
 
 rule gather_calls:
     input:
