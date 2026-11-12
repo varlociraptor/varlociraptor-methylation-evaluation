@@ -223,6 +223,14 @@ rule plot_bars_illumina:
 rule plot_bias:
     input:
         table="results/{call_type}/{seq_platform}/result_files/{sample}_replicates.parquet",
+        # Calls passing the FDR control on the ARTIFACT event
+        artifact=expand(
+            "results/{call_type}/{seq_platform}/called/{rep}/result_files/varlo_artifact_{fdr}.parquet",
+            call_type=wildcards.call_type,
+            seq_platform=wildcards.seq_platform,
+            rep=replicate_names(wildcards.seq_platform, wildcards.sample, wildcards.call_type),
+            fdr=config["fdr_alpha"],
+        ),
     output:
         "results/{call_type}/{seq_platform}/plots/{sample}_bias.{plot_type}",
         bias_df="results/{call_type}/{seq_platform}/plots/{sample}_bias_df_{plot_type}.parquet",
@@ -233,10 +241,6 @@ rule plot_bias:
     resources:
         mem_mb=32000,
     params:
-        meth_callers=lambda wildcards: config["ref_tools"].get(
-            wildcards.seq_platform, []
-        )
-        + ["varlo"],
         sample=lambda wildcards: (
             config["samples"].get("Illumina_pe", [])
             if wildcards.sample == "all_samples"
@@ -378,37 +382,24 @@ rule concat_plots_bias:
     resources:
         mem_mb=4000,
     params:
-        alpha=str(config["plot_bias_alpha"]),
+        alphas=[str(config["plot_bias_alpha"])],
     script:
         "../scripts/concat_bias.py"
 
 
-rule concat_plots_coverage:
-    input:
-        illumina="results/single_sample/Illumina_pe/coverages/all_samples_coverage_plot_pdf_all.parquet",
-        pacbio="results/single_sample/PacBio/coverages/dummy_coverage_plot_pdf_all.parquet",
-        nanopore="results/single_sample/Nanopore/coverages/dummy_coverage_plot_pdf_all.parquet",
+# Bias plot for all ARTIFACT FDR levels (one row per level)
+use rule concat_plots_bias as concat_plots_bias_all_levels with:
     output:
         report(
-            "results/plots_paper/single_sample/coverage.pdf",
+            "results/supplementary/single_sample/bias_all_levels.pdf",
             category="supplementary",
-            subcategory="plot_paper",
-            labels={"file": "Coverage retention"},
-            caption="../report/coverage_retained.rst",
+            labels={"file": "Bias (all ARTIFACT FDR levels)"},
+            caption="../report/bias.rst",
         ),
     log:
-        "logs/plot_results/concat_plots_coverage.log",
-    conda:
-        "../envs/python.yaml"
-    resources:
-        mem_mb=4000,
+        "logs/plot_results/concat_plots_bias_all_levels.log",
     params:
-        callers=[
-            tool for tools in config["ref_tools"].values() for tool in tools
-        ]
-        + [f"varlo_{fdr}" for fdr in config["plot_fdr_alpha"].get("coverage", config["fdr_alpha"])],
-    script:
-        "../scripts/concat_coverage.py"
+        alphas=[str(a) for a in config["fdr_alpha"]],
 
 
 rule concat_plots_discordance_vs_loci:

@@ -14,7 +14,18 @@ BIAS_COLORS = {
     "Read Position Bias": "#004D40",
     "Soft‑clipped Bias": "#8E44AD",
     "Haplotype Error": "#FF7F0E",
+    "Fragment End Bias": "#6D4C41",
 }
+
+CATEGORIES = [
+    "Bias both reps",
+    "Bias, AF = 0",
+    "Bias, AF ]0.0, 0.2]",
+    "Bias, AF ]0.2, 0.4]",
+    "Bias, AF ]0.4, 0.6]",
+    "Bias, AF ]0.6, 0.8]",
+    "Bias, AF ]0.8, 1.0]",
+]
 
 
 def bias_plots(df_long: pd.DataFrame, panel_order: list, alpha: str):
@@ -29,9 +40,7 @@ def bias_plots(df_long: pd.DataFrame, panel_order: list, alpha: str):
                 "category:N",
                 axis=alt.Axis(labelAngle=-45),
                 title=None,
-                scale=alt.Scale(
-                    domain=["Bias both reps", "Bias, AF = 0", "Bias, AF > 0"],
-                ),
+                scale=alt.Scale(domain=CATEGORIES),
             ),
             y=alt.Y("count():Q", title="Number of loci"),
             color=alt.Color(
@@ -48,7 +57,7 @@ def bias_plots(df_long: pd.DataFrame, panel_order: list, alpha: str):
                 "platform_label:N", sort=panel_order, title=None, columns=3
             ),
         )
-        .properties(title=f"Varlociraptor α = {alpha}")
+        .properties(title=f"ARTIFACT FDR α = {alpha}")
     )
 
     return bias_chart
@@ -57,14 +66,14 @@ def bias_plots(df_long: pd.DataFrame, panel_order: list, alpha: str):
 def empty_plot(alpha):
     """Create an empty plot with a message."""
     chart = (
-        alt.Chart(pd.DataFrame({"msg": [f"No bias data for α = {alpha}"]}))
+        alt.Chart(pd.DataFrame({"msg": [f"No bias data for ARTIFACT FDR α = {alpha}"]}))
         .mark_text(size=20)
         .encode(text="msg:N")
     )
     return chart
 
 
-alpha = snakemake.params.alpha
+alphas = snakemake.params.alphas
 
 # Read all bias dataframes and label each with its panel title
 inputs = [
@@ -80,10 +89,14 @@ for path, label in inputs:
     df_panel["platform_label"] = label
     dfs.append(df_panel)
 df = pd.concat(dfs, ignore_index=True)
-df = df[df["fdr"] == alpha]
 
-if df.empty:
-    chart = empty_plot(alpha)
-else:
-    chart = bias_plots(df, panel_order, alpha)
+# One row of platform panels per ARTIFACT FDR level α
+charts = []
+for alpha in alphas:
+    df_alpha = df[df["fdr"] == alpha]
+    if df_alpha.empty:
+        charts.append(empty_plot(alpha))
+    else:
+        charts.append(bias_plots(df_alpha, panel_order, alpha))
+chart = charts[0] if len(charts) == 1 else alt.vconcat(*charts)
 chart.save(snakemake.output[0])

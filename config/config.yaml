@@ -113,8 +113,8 @@ plot_fdr_alpha:
   coverage: [0.01]
 
 
-# Varlociraptor level of the combined bias plot (concat_plots_bias), must be in fdr_alpha
-plot_bias_alpha: 1.0
+# ARTIFACT FDR level of the paper bias plot (concat_plots_bias), must be in fdr_alpha
+plot_bias_alpha: 0.01
 heatmap_bin_size: 5
 # FDR and PIT calibration plots on simulated data
 calibration:
