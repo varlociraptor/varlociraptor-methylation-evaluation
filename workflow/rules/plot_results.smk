@@ -293,6 +293,33 @@ rule plot_discordance_vs_loci:
         "../scripts/plot_discordance_vs_loci.py"
 
 
+# Same as plot_discordance_vs_loci, but with all samples of the platform (supplementary)
+use rule plot_discordance_vs_loci as plot_discordance_vs_loci_all_samples with:
+    input:
+        meth_data="results/{call_type}/{seq_platform}/result_files/all_samples_replicates.parquet",
+        coverages_rep1=lambda wildcards: expand(
+            "results/single_sample/{{seq_platform}}/coverages/{sample}_REP01_all.regions.bed.gz",
+            sample=config["samples"][wildcards.seq_platform],
+        ),
+        coverages_rep2=lambda wildcards: expand(
+            "results/single_sample/{{seq_platform}}/coverages/{sample}_REP02_all.regions.bed.gz",
+            sample=config["samples"][wildcards.seq_platform],
+        ),
+    output:
+        "results/{call_type}/{seq_platform}/plots/all_samples/discordance_vs_loci.{plot_type}",
+        "results/{call_type}/{seq_platform}/plots/all_samples/discordance_vs_loci_{plot_type}.parquet",
+    log:
+        "logs/plot_results/plot_discordance_vs_loci_all_samples/{call_type}_{seq_platform}_{plot_type}.log",
+    params:
+        meth_callers=lambda wildcards: config["ref_tools"].get(
+            wildcards.seq_platform, []
+        )
+        + [f"varlo_{fdr}" for fdr in config["fdr_alpha"]],
+        samples=lambda wildcards: config["samples"][wildcards.seq_platform],
+        plot_type=lambda wildcards: wildcards.plot_type,
+        platform=lambda wildcards: seq_platform_to_name[wildcards.seq_platform],
+
+
 rule plot_runtime_comparison:
     input:
         benchmarks="benchmarks",
@@ -405,6 +432,29 @@ rule concat_plots_discordance_vs_loci:
         mem_mb=4000,
     script:
         "../scripts/concat_discordance_vs_loci.py"
+
+
+# Discordance vs. loci with all samples of each platform (supplementary)
+use rule concat_plots_discordance_vs_loci as concat_plots_discordance_vs_loci_all_samples with:
+    input:
+        illumina=lambda wildcards: discordance_vs_loci_all_parquet(
+            wildcards.call_type, "Illumina_pe", wildcards.plot_type
+        ),
+        pacbio=lambda wildcards: discordance_vs_loci_all_parquet(
+            wildcards.call_type, "PacBio", wildcards.plot_type
+        ),
+        nanopore=lambda wildcards: discordance_vs_loci_all_parquet(
+            wildcards.call_type, "Nanopore", wildcards.plot_type
+        ),
+    output:
+        report(
+            "results/supplementary/{call_type}/discordance_vs_loci_all_samples.{plot_type}",
+            category="supplementary",
+            labels={"file": "Discordance vs. loci (all samples)"},
+            caption="../report/discordance_vs_loci.rst",
+        ),
+    log:
+        "logs/plot_results/concat_plots_discordance_vs_loci_all_samples/{call_type}_{plot_type}.log",
 
 
 rule debug_pb_cpg_tools:

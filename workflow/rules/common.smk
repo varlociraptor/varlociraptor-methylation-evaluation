@@ -118,6 +118,19 @@ def discordance_vs_loci_samples(wildcards) -> List[str]:
     return config.get("discordance_vs_loci_samples", {})[wildcards.seq_platform]
 
 
+def discordance_vs_loci_all_parquet(
+    call_type: str, platform: str, plot_type: str
+) -> str:
+    """
+    Parquet of discordance vs. loci with all samples of the platform. Reuses the one of the selected samples
+    if the selection already contains all samples (avoids recomputing).
+    """
+    selected = config.get("discordance_vs_loci_samples", {}).get(platform, [])
+    if sorted(selected) == sorted(config["samples"].get(platform, [])):
+        return f"results/{call_type}/{platform}/plots/discordance_vs_loci_{plot_type}.parquet"
+    return f"results/{call_type}/{platform}/plots/all_samples/discordance_vs_loci_{plot_type}.parquet"
+
+
 def get_sample_sra(wildcards) -> List[str]:
     """
     Return BAM file paths for a given platform and sample, based on the config.
