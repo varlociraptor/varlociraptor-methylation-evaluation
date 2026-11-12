@@ -224,7 +224,7 @@ rule plot_bias:
     input:
         table="results/{call_type}/{seq_platform}/result_files/{sample}_replicates.parquet",
         # Calls passing the FDR control on the ARTIFACT event
-        artifact=expand(
+        artifact=lambda wildcards: expand(
             "results/{call_type}/{seq_platform}/called/{rep}/result_files/varlo_artifact_{fdr}.parquet",
             call_type=wildcards.call_type,
             seq_platform=wildcards.seq_platform,
@@ -246,7 +246,6 @@ rule plot_bias:
             if wildcards.sample == "all_samples"
             else wildcards.sample
         ),
-        bin_size=lambda wildcards: config["heatmap_bin_size"],
         platform=lambda wildcards: wildcards.seq_platform,
         plot_type=lambda wildcards: wildcards.plot_type,
         # Only the level of the combined bias plot (concat_plots_bias)
