@@ -7,10 +7,10 @@ rule find_candidates:
         "resources/{chromosome}/candidates.bcf",
     log:
         "logs/candidates/find_candidates/{chromosome}.log",
-    params:
-        varlo=varlociraptor_cmd,
     conda:
         "../envs/varlociraptor.yaml"
+    params:
+        varlo=varlociraptor_cmd,
     shell:
         "{params.varlo} methylation-candidates {input.fasta} {output} --motifs CG 2> {log}"
 

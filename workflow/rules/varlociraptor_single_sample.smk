@@ -53,12 +53,12 @@ rule varlociraptor_preprocess:
             "benchmarks/{seq_platform}/varlociraptor/preprocessing/{sample}_{scatteritem}.bwa.benchmark.txt",
             config["benchmark_repeats"],
         )
-    params:
-        varlo=varlociraptor_cmd,
     conda:
         "../envs/varlociraptor.yaml"
     resources:
         mem_mb=lambda wc: 6000 if wc.seq_platform in ["Nanopore", "PacBio"] else 2000,
+    params:
+        varlo=varlociraptor_cmd,
     shell:
         """
         if [[ "{wildcards.seq_platform}" == "Illumina_pe" || "{wildcards.seq_platform}" == "Illumina_se" || "{wildcards.seq_platform}" == "Simulate" ]]; then
@@ -88,11 +88,11 @@ rule varlociraptor_call:
         seq_platform="(?!multi_sample).*",
         # Calls filtered by control_fdr_calls are not called again
         sample="(?!.*controlled_).*",
+    conda:
+        "../envs/varlociraptor.yaml"
     params:
         varlo=varlociraptor_cmd,
         omit_bias=omit_bias_flags(),
-    conda:
-        "../envs/varlociraptor.yaml"
     shell:
         "{params.varlo} call variants {params.omit_bias} --omit-absent-event generic --scenario {input.scenario} --obs normal={input.preprocess_obs} > {output} 2> {log}"
 
@@ -110,11 +110,11 @@ rule control_fdr_calls:
     wildcard_constraints:
         sample="[^/]+",
         fdr=r"[0-9.]+",
+    conda:
+        "../envs/varlociraptor.yaml"
     params:
         varlo=varlociraptor_cmd,
         events=" ".join(config["control_fdr"]["events"]),
-    conda:
-        "../envs/varlociraptor.yaml"
     shell:
         "{params.varlo} filter-calls control-fdr {input.calls} --events {params.events} --fdr {wildcards.fdr} --artifact-as BIN0 --mode local-strict --subsets adjacent-5 > {output} 2> {log}"
 
@@ -131,10 +131,10 @@ rule control_fdr_artifact:
     wildcard_constraints:
         sample="[^/]+",
         fdr=r"[0-9.]+",
-    params:
-        varlo=varlociraptor_cmd,
     conda:
         "../envs/varlociraptor.yaml"
+    params:
+        varlo=varlociraptor_cmd,
     shell:
         "{params.varlo} filter-calls control-fdr {input.calls} --events ARTIFACT --fdr {wildcards.fdr} --mode local-strict > {output} 2> {log}"
 

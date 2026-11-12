@@ -99,9 +99,16 @@ def plot_callers(wildcards, paper: bool = False) -> List[str]:
     """Heatmap callers: reference tools, then the Varlociraptor levels (paper: only those of plot_fdr_alpha)."""
     fdrs = config["fdr_alpha"]
     if paper:
-        key = "multi_sample" if wildcards.call_type == "multi_sample" else wildcards.seq_platform
+        key = (
+            "multi_sample"
+            if wildcards.call_type == "multi_sample"
+            else wildcards.seq_platform
+        )
         fdrs = config["plot_fdr_alpha"].get(key, fdrs)
-    return config["ref_tools"].get(wildcards.seq_platform, []) + [f"varlo_{fdr}" for fdr in fdrs]
+    return config["ref_tools"].get(wildcards.seq_platform, []) + [
+        f"varlo_{fdr}" for fdr in fdrs
+    ]
+
 
 def paper_plots() -> List[str]:
     """

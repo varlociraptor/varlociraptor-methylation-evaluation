@@ -43,7 +43,9 @@ rule plot_bias:
             "results/{call_type}/{seq_platform}/called/{rep}/result_files/varlo_artifact_{fdr}.parquet",
             call_type=wildcards.call_type,
             seq_platform=wildcards.seq_platform,
-            rep=replicate_names(wildcards.seq_platform, wildcards.sample, wildcards.call_type),
+            rep=replicate_names(
+                wildcards.seq_platform, wildcards.sample, wildcards.call_type
+            ),
             fdr=config["fdr_alpha"],
         ),
     output:

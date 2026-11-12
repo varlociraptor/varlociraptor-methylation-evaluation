@@ -23,11 +23,11 @@ use rule plot_heatmaps_paper as plot_heatmaps_paper_single_sample with:
             },
             caption="../report/heatmap.rst",
         ),
+    log:
+        "logs/plot_results/plot_heatmaps_paper_single_sample/{call_type}_{seq_platform}_{sample}_{plot_type}.log",
     wildcard_constraints:
         call_type="single_sample",
         seq_platform="PacBio|Nanopore",
-    log:
-        "logs/plot_results/plot_heatmaps_paper_single_sample/{call_type}_{seq_platform}_{sample}_{plot_type}.log",
 
 
 rule plot_bars_illumina:
@@ -200,6 +200,7 @@ use rule concat_plots_discordance_vs_loci as concat_plots_discordance_vs_loci_al
     log:
         "logs/plot_results/concat_plots_discordance_vs_loci_all_samples/{call_type}_{plot_type}.log",
 
+
 # Static example of the formula tree that Varlociraptor traverses to evaluate an event
 rule event_tree:
     input:
@@ -225,7 +226,9 @@ rule plot_mapq_distribution:
     input:
         lambda wildcards: "resources/Illumina_pe/{rep}/{sra}/alignment.bam".format(
             rep=config["mapq_comparison"]["replicate"],
-            sra=config["data"]["Illumina_pe"][config["mapq_comparison"]["replicate"]][0],
+            sra=config["data"]["Illumina_pe"][config["mapq_comparison"]["replicate"]][
+                0
+            ],
         ),
     output:
         report(

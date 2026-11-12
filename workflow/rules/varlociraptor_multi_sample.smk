@@ -18,11 +18,11 @@ rule call_methylation_together_np_pb:
     wildcard_constraints:
         # Keep {replicate} from matching REP01/controlled_<fdr> (output of control_fdr_calls)
         replicate="[^/]+",
+    conda:
+        "../envs/varlociraptor.yaml"
     params:
         varlo=varlociraptor_cmd,
         omit_bias=omit_bias_flags(),
-    conda:
-        "../envs/varlociraptor.yaml"
     shell:
         "{params.varlo} call variants {params.omit_bias} --omit-absent-event generic --scenario {input.scenario} --obs  pacbio={input.pacbio}  nanopore={input.nanopore} > {output} 2> {log}"
 
@@ -48,11 +48,11 @@ rule call_methylation_together_np_methylSeq:
     wildcard_constraints:
         # Keep {replicate} from matching REP01/controlled_<fdr> (output of control_fdr_calls)
         replicate="[^/]+",
+    conda:
+        "../envs/varlociraptor.yaml"
     params:
         varlo=varlociraptor_cmd,
         omit_bias=omit_bias_flags(),
-    conda:
-        "../envs/varlociraptor.yaml"
     shell:
         "{params.varlo} call variants {params.omit_bias} --omit-absent-event generic --scenario {input.scenario} --obs  methylSeq={input.methylSeq}  nanopore={input.nanopore} > {output} 2> {log}"
 
@@ -78,10 +78,10 @@ rule call_methylation_together_pb_methylSeq:
     wildcard_constraints:
         # Keep {replicate} from matching REP01/controlled_<fdr> (output of control_fdr_calls)
         replicate="[^/]+",
+    conda:
+        "../envs/varlociraptor.yaml"
     params:
         varlo=varlociraptor_cmd,
         omit_bias=omit_bias_flags(),
-    conda:
-        "../envs/varlociraptor.yaml"
     shell:
         "{params.varlo} call variants {params.omit_bias} --omit-absent-event  generic --scenario {input.scenario} --obs  methylSeq={input.methylSeq}  pacbio={input.pacbio} > {output} 2> {log}"
