@@ -10,19 +10,7 @@ pd.set_option("display.max_columns", None)
 pd.set_option("display.max_rows", 1000)
 alt.data_transformers.enable("vegafusion")
 
-meth_caller_to_name = {
-    "varlo_0.1": "Varlociraptor α = 0.1",
-    "varlo_0.05": "Varlociraptor α = 0.05",
-    "varlo_0.01": "Varlociraptor α = 0.01",
-    "varlociraptor": "Varlociraptor",
-    "bismark": "Bismark",
-    "bsMap": "BSMAPz",
-    "methylDackel": "MethylDackel",
-    "modkit": "Modkit",
-    "pb_CpG_tools": "Pb-CpG-tools",
-    "bisSNP": "BisSNP",
-}
-
+# Same colors as in plot_discordance_vs_loci.py
 tool_colors = {
     "Bismark": "#D81B60",
     "BSMAPz": "#1E88E5",
@@ -30,8 +18,10 @@ tool_colors = {
     "MethylDackel": "#f0700e",
     "Modkit": "#B42CEA",
     "Pb-CpG-tools": "#8D9279",
-    "Varlociraptor α = 0.1": "#004D40",
-    "Varlociraptor α = 0.05": "#126e5f",
+    "Varlociraptor α = 1.0": "#00362c",
+    "Varlociraptor α = 0.5": "#005345",
+    "Varlociraptor α = 0.1": "#00715f",
+    "Varlociraptor α = 0.05": "#028d77",
     "Varlociraptor α = 0.01": "#05AA8F",
 }
 
@@ -60,6 +50,8 @@ for s in samples:
         # Filter df for sample and meth caller
         df_filtered = df[(df["sample"] == s) & (df["meth_caller"] == m)]
         number = df_filtered["count"].sum() if not df_filtered.empty else 0
+        # Number of loci in thousands, shown above the bars
+        number_k = round(number / 1000)
 
         # Filter distances for sample and meth caller
         distances_filtered = distances[
@@ -83,7 +75,7 @@ for s in samples:
             {
                 "sample": s,
                 "meth_caller": meth_caller_to_name.get(m, m),
-                "number": str(number)[:3],
+                "number": number_k,
                 "distance": float(mape_distance),
                 "distance_type": "Dᵣ",
             }
@@ -92,7 +84,7 @@ for s in samples:
             {
                 "sample": s,
                 "meth_caller": meth_caller_to_name.get(m, m),
-                "number": str(number)[:3],
+                "number": number_k,
                 "distance": float(binary_discordance),
                 "distance_type": "Bd",
             }
@@ -101,7 +93,7 @@ for s in samples:
             {
                 "sample": s,
                 "meth_caller": meth_caller_to_name.get(m, m),
-                "number": str(number)[:3],
+                "number": number_k,
                 "distance": float(mae_distance),
                 "distance_type": "Dₐ",
             }
@@ -174,7 +166,7 @@ bars_da = (
 labels = (
     alt.Chart(df_summary)
     .transform_filter(alt.datum.distance_type == "Dᵣ")
-    .transform_calculate(text_k="datum.number + 'k'")
+    .transform_calculate(text_k="datum.number")
     .mark_text(size=6,dy=-5, color="black")
     .encode(
         text="text_k:N",

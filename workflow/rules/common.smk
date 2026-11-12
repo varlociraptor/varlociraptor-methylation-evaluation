@@ -12,7 +12,9 @@ def compute_results() -> List[List[str]]:
     for platform in config["seq_platforms"].keys():
         if platform != "Simulate" and platform != "multi_sample":
             inputs.append(heatmap_replicates(platform))
-            inputs.append(bias_replicates(platform))
+            inputs.append(
+                f"results/single_sample/{platform}/plots/discordance_vs_loci.{config['plot_type']}"
+            )
 
     # Single-sample heatmaps across all FDR thresholds
     if "Illumina_pe" in config["seq_platforms"]:
@@ -20,10 +22,10 @@ def compute_results() -> List[List[str]]:
             f"results/single_sample/Illumina_pe/plots/all_samples_heatmap.{config['plot_type']}"
         )
         inputs.append(
-            f"results/single_sample/Illumina_pe/plots/all_samples_bias.{config['plot_type']}"
+            f"results/single_sample/Illumina_pe/plots/bar_plot_single_samples.{config['plot_type']}"
         )
         inputs.append(
-            f"results/single_sample/Illumina_pe/plots/bar_plot_single_samples.{config['plot_type']}"
+            f"results/supplementary/single_sample/mapq_distribution.{config['plot_type']}"
         )
     if "Simulate" in config["seq_platforms"]:
 
@@ -35,6 +37,12 @@ def compute_results() -> List[List[str]]:
         inputs.append(
             f"results/single_sample/Simulate/plots/simulated_data_{chromosome}.{config['plot_type']}"
         )
+        inputs.append(
+            f"results/single_sample/Simulate/plots/fdr_calibration_{chromosome}.{config['plot_type']}"
+        )
+        inputs.append(
+            f"results/single_sample/Simulate/plots/pit_calibration_{chromosome}.{config['plot_type']}"
+        )
     # Multi-sample common heatmaps
     if "multi_sample" in config["seq_platforms"]:
         inputs.append(heatmap_replicates_common())
@@ -44,6 +52,19 @@ def compute_results() -> List[List[str]]:
                 f"results/single_sample/plots/debug_pb_cpg_tools.{config['plot_type']}",
             ]
         )
+
+    # Supplementary: example of an event's formula tree
+    inputs.append("results/supplementary/event_tree.pdf")
+    # Supplementary plots combining Illumina, PacBio and Nanopore
+    if {"Illumina_pe", "PacBio", "Nanopore"} <= config["seq_platforms"].keys():
+        inputs.append("results/supplementary/single_sample/bias_all_levels.pdf")
+        inputs.append(
+            "results/supplementary/single_sample/discordance_vs_loci_all_samples.pdf"
+        )
+
+    # Combined paper figures (concat_* rules)
+    if config["paper_plots"]:
+        inputs.append(paper_plots())
 
     return inputs
 
@@ -76,17 +97,58 @@ def heatmap_replicates_common() -> List[str]:
     ]
 
 
-def bias_replicates(seq_platform: str) -> List[str]:
-    """
-    Return file paths for bias for a given sequencing platform.
-    """
-    base_path = Path("results/single_sample") / seq_platform
-    plot_type = config["plot_type"]
-
-    return [
-        f"{base_path}/plots/{sample}_bias.{plot_type}"
-        for sample in config["samples"][seq_platform]
+def plot_callers(wildcards, paper: bool = False) -> List[str]:
+    """Heatmap callers: reference tools, then the Varlociraptor levels (paper: only those of plot_fdr_alpha)."""
+    fdrs = config["fdr_alpha"]
+    if paper:
+        key = (
+            "multi_sample"
+            if wildcards.call_type == "multi_sample"
+            else wildcards.seq_platform
+        )
+        fdrs = config["plot_fdr_alpha"].get(key, fdrs)
+    return config["ref_tools"].get(wildcards.seq_platform, []) + [
+        f"varlo_{fdr}" for fdr in fdrs
     ]
+
+
+def paper_plots() -> List[str]:
+    """
+    Return file paths of all combined paper figures (concat_* rules) under results/plots_paper/.
+    """
+    plot_type = config["plot_type"]
+    platforms = config["seq_platforms"]
+    paths = []
+    if all(platform in platforms for platform in ["Illumina_pe", "PacBio", "Nanopore"]):
+        paths.append("results/plots_paper/single_sample/bias.pdf")
+        paths.append(
+            f"results/plots_paper/single_sample/discordance_vs_loci.{plot_type}"
+        )
+    for platform in ["PacBio", "Nanopore"]:
+        if platform in platforms:
+            paths.append(
+                f"results/plots_paper/single_sample/{platform}/dummy_heatmap.{plot_type}"
+            )
+    if "multi_sample" in platforms:
+        paths.append("results/plots_paper/multi_sample/combined_heatmap.pdf")
+    return paths
+
+
+def discordance_vs_loci_samples(wildcards) -> List[str]:
+    return config.get("discordance_vs_loci_samples", {})[wildcards.seq_platform]
+
+
+def discordance_vs_loci_all_parquet(
+    call_type: str, platform: str, plot_type: str
+) -> str:
+    """
+    Parquet of discordance vs. loci with all samples of the platform. Reuses the one of the selected samples
+    if the selection already contains all samples (avoids recomputing).
+    """
+    selected = config.get("discordance_vs_loci_samples", {}).get(platform, [])
+    if sorted(selected) == sorted(config["samples"].get(platform, [])):
+        return f"results/{call_type}/{platform}/plots/discordance_vs_loci_{plot_type}.parquet"
+    return f"results/{call_type}/{platform}/plots/all_samples/discordance_vs_loci_{plot_type}.parquet"
 
 
 def get_sample_sra(wildcards) -> List[str]:
@@ -128,3 +190,43 @@ seq_platform_to_name = {
     "Nanopore": "Nanopore",
     "PacBio": "PacBio",
 }
+
+
+def varlociraptor_binary():
+    if config.get("varlociraptor-branch") is None:
+        return []
+    return "resources/tools/meth_calling/varlociraptor/target/release/varlociraptor"
+
+
+OMIT_BIAS_FLAGS = [
+    "--omit-strand-bias",
+    "--omit-read-orientation-bias",
+    "--omit-read-position-bias",
+    "--omit-softclip-bias",
+    "--omit-homopolymer-artifact-detection",
+    "--omit-alt-locus-bias",
+]
+
+
+def omit_bias_flags() -> str:
+    """Flags of `varlociraptor call variants` to disable the bias model (config omit_bias)."""
+    return " ".join(OMIT_BIAS_FLAGS) if config.get("omit_bias", False) else ""
+
+
+def varlociraptor_cmd(wildcards, input):
+    if config.get("varlociraptor-branch") is None:
+        return "varlociraptor"
+    return f"chmod +x {input.varlo}; {input.varlo}"
+
+
+def replicate_names(seq_platform, sample, call_type):
+    """
+    Return the replicates of a sample.
+    "dummy" and "all_samples" return all replicates of the respective platform.
+    """
+    replicates = list(
+        config["data"].get(seq_platform, config["data"].get(call_type, []))
+    )
+    if sample in ["all_samples", "dummy"]:
+        return replicates
+    return [rep for rep in replicates if rep.startswith(f"{sample}_REP")]

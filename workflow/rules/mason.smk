@@ -300,22 +300,143 @@ rule mason_plot_truth_to_results:
         "../scripts/plot_mason_results.py"
 
 
-rule compute_precision_recall:
+# Truth positions whose coverage falls into the given coverage bin
+rule truth_positions_per_coverage_bin:
     input:
-        truth="resources/Simulate/simulated_data/{chrom}_truth.csv",
-        results_rep="results/single_sample/Simulate/result_files/sample_df_simulated_data.parquet",
-        no_bias="results/single_sample/Simulate/called/simulated_data_no_bias/result_files/varlo_0.01.parquet",
-        # coverage="resources/Simulate/simulated_data/complete_cov.regions.bed",
-        # tool="results/{platform}/{protocol}/result_files/{method}.parquet",
+        "resources/Simulate/simulated_data/{chrom}_truth.csv",
     output:
-        precall="results/single_sample/Simulate/plots/precall_{chrom}.{plot_type}",
-        cov_dist="results/single_sample/Simulate/plots/{chrom}_cov_dist.{plot_type}",
+        "resources/Simulate/simulated_data/{chrom}_coverage_bin_{bin}.tsv",
     log:
-        "logs/mason/compute_precision_recall/{chrom}_{plot_type}.log",
+        "logs/mason/truth_positions_per_coverage_bin/{chrom}_{bin}.log",
+    wildcard_constraints:
+        bin=r"\d+",
     conda:
         "../envs/python.yaml"
     params:
-        meth_callers=lambda wildcards: config["ref_tools"].get("Simulate", [])
-        + [f"varlo_{fdr}" for fdr in config["fdr_alpha"]],
+        coverage_bins=config["calibration"]["coverage_bins"],
     script:
-        "../scripts/compute_precision_recall.py"
+        "../scripts/truth_positions_per_coverage_bin.py"
+
+
+# Split the simulated varlociraptor calls into coverage bins defined by the truth coverage.
+# The scattered calls are merged first, since global FDR control has to see all calls of a bin at once.
+rule split_calls_by_coverage_bin:
+    input:
+        calls=gather.split_candidates(
+            "results/single_sample/Simulate/fdr_calibration/simulated_data/calls_{scatteritem}.bcf"
+        ),
+        positions="resources/Simulate/simulated_data/{chrom}_coverage_bin_{bin}.tsv",
+    output:
+        "results/single_sample/Simulate/fdr_calibration/simulated_data/coverage_bins/{chrom}/bin_{bin}.bcf",
+    log:
+        "logs/mason/split_calls_by_coverage_bin/{chrom}_{bin}.log",
+    wildcard_constraints:
+        bin=r"\d+",
+    conda:
+        "../envs/samtools.yaml"
+    shell:
+        "(bcftools concat -Ou {input.calls} | bcftools view -T {input.positions} -Ob -o {output}) 2> {log}"
+
+
+# Call HIGH (> 50%) and LOW (<= 50%) methylation events on simulated data to validate FDR control
+rule varlociraptor_call_high_low_simulate:
+    input:
+        varlo=varlociraptor_binary(),
+        preprocess_obs="results/preprocessed/Simulate/{sample}/normal_{scatteritem}.bcf",
+        scenario=workflow.source_path("../scenarios/scenario_high_low.yaml"),
+    output:
+        "results/single_sample/Simulate/fdr_calibration/{sample}/calls_{scatteritem}.bcf",
+    log:
+        "logs/varlociraptor_single/varlociraptor_call_high_low/{sample}_{scatteritem}.log",
+    conda:
+        "../envs/varlociraptor.yaml"
+    params:
+        varlo=varlociraptor_cmd,
+    shell:
+        "{params.varlo} call variants generic --scenario {input.scenario} --obs normal={input.preprocess_obs} > {output} 2> {log}"
+
+
+# Select the calls of a coverage bin with varlociraptor's global FDR control on the HIGH event (for the FDR plots)
+rule control_fdr_high_low_simulate:
+    input:
+        varlo=varlociraptor_binary(),
+        calls="results/single_sample/Simulate/fdr_calibration/simulated_data/coverage_bins/{chrom}/bin_{bin}.bcf",
+    output:
+        "results/single_sample/Simulate/fdr_calibration/simulated_data/coverage_bins/{chrom}/bin_{bin}_fdr_{alpha}.bcf",
+    log:
+        "logs/mason/control_fdr_per_coverage_bin/{chrom}_{bin}_{alpha}.log",
+    wildcard_constraints:
+        bin=r"\d+",
+    conda:
+        "../envs/varlociraptor.yaml"
+    params:
+        varlo=varlociraptor_cmd,
+    shell:
+        "{params.varlo} filter-calls control-fdr {input.calls} --events HIGH --fdr {wildcards.alpha} --mode global-strict > {output} 2> {log}"
+
+
+rule plot_fdr_calibration:
+    input:
+        truth="resources/Simulate/simulated_data/{chrom}_truth.csv",
+        # Calls per coverage bin before FDR control, to count the sites per bin
+        unfiltered=expand(
+            "results/single_sample/Simulate/fdr_calibration/simulated_data/coverage_bins/{{chrom}}/bin_{bin}.vcf",
+            bin=range(len(config["calibration"]["coverage_bins"])),
+        ),
+        filtered=expand(
+            "results/single_sample/Simulate/fdr_calibration/simulated_data/coverage_bins/{{chrom}}/bin_{bin}_fdr_{alpha}.vcf",
+            bin=range(len(config["calibration"]["coverage_bins"])),
+            alpha=config["calibration"]["fdr_levels"],
+        ),
+    output:
+        plot=report(
+            "results/single_sample/Simulate/plots/fdr_calibration_{chrom}.{plot_type}",
+            category="single_sample",
+            subcategory="Simulated",
+            labels={
+                "file_type": "fdr_calibration",
+                "sample": "simulated_data",
+            },
+            caption="../report/fdr_calibration.rst",
+        ),
+        table="results/single_sample/Simulate/plots/fdr_calibration_{chrom}_{plot_type}.csv",
+    log:
+        "logs/mason/plot_fdr_calibration/{chrom}_{plot_type}.log",
+    conda:
+        "../envs/python.yaml"
+    params:
+        fdr_levels=config["calibration"]["fdr_levels"],
+        # Coverage stratifications
+        coverage_bins=config["calibration"]["coverage_bins"],
+        # Methylation rate in the truth above which a site is defined as HIGH
+        high_threshold=50,
+    script:
+        "../scripts/plot_fdr_calibration.py"
+
+
+rule plot_pit_calibration:
+    input:
+        truth="resources/Simulate/simulated_data/{chrom}_truth.csv",
+        calls="results/single_sample/Simulate/fdr_calibration/simulated_data/result_files/varlo.bed",
+    output:
+        plot=report(
+            "results/single_sample/Simulate/plots/pit_calibration_{chrom}.{plot_type}",
+            category="single_sample",
+            subcategory="Simulated",
+            labels={
+                "file_type": "pit_calibration",
+                "sample": "simulated_data",
+            },
+            caption="../report/pit_calibration.rst",
+        ),
+        table="results/single_sample/Simulate/plots/pit_calibration_{chrom}_{plot_type}.csv",
+    log:
+        "logs/mason/plot_pit_calibration/{chrom}_{plot_type}.log",
+    conda:
+        "../envs/python.yaml"
+    params:
+        num_bins=25,
+        # Seed for the randomized PIT at the point mass θ = 0
+        seed=config["seed"],
+    script:
+        "../scripts/plot_pit_calibration.py"

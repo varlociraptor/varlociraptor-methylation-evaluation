@@ -1,0 +1,1 @@
+Discordance between the methylation rates of Varlociraptor's multi-sample calls, side by side for the combinations PacBio and MethylSeq, Nanopore and PacBio, and Nanopore and MethylSeq. Each panel corresponds to the multi-sample heatmap of that combination.

@@ -1,5 +1,31 @@
+rule build_varlociraptor:
+    output:
+        "resources/tools/meth_calling/varlociraptor/target/release/varlociraptor",
+    log:
+        "logs/build_varlociraptor.log",
+    conda:
+        "../envs/rust.yaml"
+    params:
+        branch=config.get("varlociraptor-branch"),
+    shell:
+        """
+        (
+        PARENT_DIR=$(dirname $(dirname $(dirname $(dirname {output}))))
+        mkdir -p $PARENT_DIR
+        cd $PARENT_DIR
+        rm -rf varlociraptor
+        git clone https://github.com/varlociraptor/varlociraptor.git
+        cd varlociraptor
+        git checkout {params.branch}
+        export CC=x86_64-conda-linux-gnu-cc CXX=x86_64-conda-linux-gnu-c++
+        cargo build --release
+        ) &> {log}
+        """
+
+
 rule varlociraptor_preprocess:
     input:
+        varlo=varlociraptor_binary(),
         chromosome=lambda wildcards: expand(
             "resources/{chrom}.fasta",
             chrom=chromosome_by_seq_platform.get(wildcards.seq_platform),
@@ -30,7 +56,9 @@ rule varlociraptor_preprocess:
     conda:
         "../envs/varlociraptor.yaml"
     resources:
-        mem_mb=16000,
+        mem_mb=lambda wc: 6000 if wc.seq_platform in ["Nanopore", "PacBio"] else 2000,
+    params:
+        varlo=varlociraptor_cmd,
     shell:
         """
         if [[ "{wildcards.seq_platform}" == "Illumina_pe" || "{wildcards.seq_platform}" == "Illumina_se" || "{wildcards.seq_platform}" == "Simulate" ]]; then
@@ -38,12 +66,13 @@ rule varlociraptor_preprocess:
         else
             meth="annotated"
         fi
-        varlociraptor preprocess variants --omit-mapq-adjustment {input.chromosome} --candidates {input.candidates} --bam {input.alignments} --methylation-read-type $meth --max-depth 5000 > {output} 2> {log}
+        {params.varlo} preprocess variants --omit-mapq-adjustment {input.chromosome} --candidates {input.candidates} --bam {input.alignments} --methylation-read-type $meth --max-depth 5000 > {output} 2> {log}
         """
 
 
 rule varlociraptor_call:
     input:
+        varlo=varlociraptor_binary(),
         preprocess_obs="results/preprocessed/{seq_platform}/{sample}/normal_{scatteritem}.bcf",
         scenario=workflow.source_path("../scenarios/scenario.yaml"),
     output:
@@ -57,11 +86,57 @@ rule varlociraptor_call:
         )
     wildcard_constraints:
         seq_platform="(?!multi_sample).*",
-        sample="(?!simulated_data_no_bias).*",
+        # Calls filtered by control_fdr_calls are not called again
+        sample="(?!.*controlled_).*",
     conda:
         "../envs/varlociraptor.yaml"
+    params:
+        varlo=varlociraptor_cmd,
+        omit_bias=omit_bias_flags(),
     shell:
-        "varlociraptor call variants generic --scenario {input.scenario} --obs normal={input.preprocess_obs} > {output} 2> {log}"
+        "{params.varlo} call variants {params.omit_bias} --omit-absent-event generic --scenario {input.scenario} --obs normal={input.preprocess_obs} > {output} 2> {log}"
+
+
+# Filter the single- and multi-sample calls with varlociraptor's local FDR control on the bin events
+# Local mode decides per record, so the scattered calls can be filtered separately before gathering.
+rule control_fdr_calls:
+    input:
+        varlo=varlociraptor_binary(),
+        calls="results/{call_type}/{seq_platform}/called/{sample}/calls_{scatteritem}.bcf",
+    output:
+        "results/{call_type}/{seq_platform}/called/{sample}/controlled_{fdr}/calls_{scatteritem}.bcf",
+    log:
+        "logs/varlociraptor_single/control_fdr_calls/{call_type}_{seq_platform}_{sample}_{fdr}_{scatteritem}.log",
+    wildcard_constraints:
+        sample="[^/]+",
+        fdr=r"[0-9.]+",
+    conda:
+        "../envs/varlociraptor.yaml"
+    params:
+        varlo=varlociraptor_cmd,
+        events=" ".join(config["control_fdr"]["events"]),
+    shell:
+        "{params.varlo} filter-calls control-fdr {input.calls} --events {params.events} --fdr {wildcards.fdr} --artifact-as BIN0 --mode local-strict --subsets adjacent-5 > {output} 2> {log}"
+
+
+# Filter the calls with varlociraptor's local FDR control on the ARTIFACT event only. Used by the bias plots (rule plot_bias).
+rule control_fdr_artifact:
+    input:
+        varlo=varlociraptor_binary(),
+        calls="results/{call_type}/{seq_platform}/called/{sample}/calls_{scatteritem}.bcf",
+    output:
+        "results/{call_type}/{seq_platform}/called/{sample}/controlled_artifact_{fdr}/calls_{scatteritem}.bcf",
+    log:
+        "logs/varlociraptor_single/control_fdr_artifact/{call_type}_{seq_platform}_{sample}_{fdr}_{scatteritem}.log",
+    wildcard_constraints:
+        sample="[^/]+",
+        fdr=r"[0-9.]+",
+    conda:
+        "../envs/varlociraptor.yaml"
+    params:
+        varlo=varlociraptor_cmd,
+    shell:
+        "{params.varlo} filter-calls control-fdr {input.calls} --events ARTIFACT --fdr {wildcards.fdr} --mode local-strict > {output} 2> {log}"
 
 
 rule gather_calls:
