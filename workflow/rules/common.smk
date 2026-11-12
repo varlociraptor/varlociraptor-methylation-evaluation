@@ -165,6 +165,21 @@ def varlociraptor_binary():
     return "resources/tools/meth_calling/varlociraptor/target/release/varlociraptor"
 
 
+OMIT_BIAS_FLAGS = [
+    "--omit-strand-bias",
+    "--omit-read-orientation-bias",
+    "--omit-read-position-bias",
+    "--omit-softclip-bias",
+    "--omit-homopolymer-artifact-detection",
+    "--omit-alt-locus-bias",
+]
+
+
+def omit_bias_flags() -> str:
+    """Flags of `varlociraptor call variants` to disable the bias model (config omit_bias)."""
+    return " ".join(OMIT_BIAS_FLAGS) if config.get("omit_bias", False) else ""
+
+
 def varlociraptor_cmd(wildcards, input):
     if config.get("varlociraptor-branch") is None:
         return "varlociraptor"

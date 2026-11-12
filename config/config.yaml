@@ -101,7 +101,7 @@ num_simulated_reads: 630000000
 # seed for simulated data generation
 seed: 0
 # Use development branch of varlociraptor. If null use official varlociraptor release 8.9
-varlociraptor-branch: long-read-no-meth-info
+omit_bias: false
 ###################################### PLOTS ##################################################
 # Build the combined paper figures for easy copy & paste in the manuscript
 paper_plots: true

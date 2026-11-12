@@ -20,10 +20,11 @@ rule call_methylation_together_np_pb:
         replicate="[^/]+",
     params:
         varlo=varlociraptor_cmd,
+        omit_bias=omit_bias_flags(),
     conda:
         "../envs/varlociraptor.yaml"
     shell:
-        "{params.varlo} call variants --no-absent generic --scenario {input.scenario} --obs  pacbio={input.pacbio}  nanopore={input.nanopore} > {output} 2> {log}"
+        "{params.varlo} call variants {params.omit_bias} --no-absent generic --scenario {input.scenario} --obs  pacbio={input.pacbio}  nanopore={input.nanopore} > {output} 2> {log}"
 
 
 rule call_methylation_together_np_methylSeq:
@@ -49,10 +50,11 @@ rule call_methylation_together_np_methylSeq:
         replicate="[^/]+",
     params:
         varlo=varlociraptor_cmd,
+        omit_bias=omit_bias_flags(),
     conda:
         "../envs/varlociraptor.yaml"
     shell:
-        "{params.varlo} call variants --no-absent generic --scenario {input.scenario} --obs  methylSeq={input.methylSeq}  nanopore={input.nanopore} > {output} 2> {log}"
+        "{params.varlo} call variants {params.omit_bias} --no-absent generic --scenario {input.scenario} --obs  methylSeq={input.methylSeq}  nanopore={input.nanopore} > {output} 2> {log}"
 
 
 rule call_methylation_together_pb_methylSeq:
@@ -78,7 +80,8 @@ rule call_methylation_together_pb_methylSeq:
         replicate="[^/]+",
     params:
         varlo=varlociraptor_cmd,
+        omit_bias=omit_bias_flags(),
     conda:
         "../envs/varlociraptor.yaml"
     shell:
-        "{params.varlo} call variants --no-absent generic --scenario {input.scenario} --obs  methylSeq={input.methylSeq}  pacbio={input.pacbio} > {output} 2> {log}"
+        "{params.varlo} call variants {params.omit_bias} --no-absent  generic --scenario {input.scenario} --obs  methylSeq={input.methylSeq}  pacbio={input.pacbio} > {output} 2> {log}"

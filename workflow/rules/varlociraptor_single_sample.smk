@@ -90,10 +90,11 @@ rule varlociraptor_call:
         sample="(?!.*controlled_).*",
     params:
         varlo=varlociraptor_cmd,
+        omit_bias=omit_bias_flags(),
     conda:
         "../envs/varlociraptor.yaml"
     shell:
-        "{params.varlo} call variants --no-absent generic --scenario {input.scenario} --obs normal={input.preprocess_obs} > {output} 2> {log}"
+        "{params.varlo} call variants {params.omit_bias} --no-absent generic --scenario {input.scenario} --obs normal={input.preprocess_obs} > {output} 2> {log}"
 
 
 # Filter the single- and multi-sample calls with varlociraptor's local FDR control on the bin events
