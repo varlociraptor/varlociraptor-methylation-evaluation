@@ -88,34 +88,6 @@ def heatmap_replicates_common() -> List[str]:
     ]
 
 
-# Single-sample components (seq_platform, sample with {replicate}) of each multi-sample comparison
-MULTI_SAMPLE_COMPONENTS = {
-    "pb_methylSeq": [
-        ("Illumina_pe", "MethylSeq_HG002_LAB01_{replicate}"),
-        ("PacBio", "{replicate}"),
-    ],
-    "np_methylSeq": [
-        ("Illumina_pe", "MethylSeq_HG002_LAB01_{replicate}"),
-        ("Nanopore", "{replicate}"),
-    ],
-    "np_pb": [("PacBio", "{replicate}"), ("Nanopore", "{replicate}")],
-}
-
-    return [
-        f"results/single_sample/{platform}/called/{sample}/result_files/varlo_{fdr}.parquet"
-        for fdr in config["venn_fdr_alpha"]
-    ]
-
-def venn_labels(wildcards) -> List[str]:
-    """
-    Return the column labels (A, B) of the single-sample components of a comparison.
-    """
-    return [
-        VENN_PLATFORM_LABELS[platform]
-        for platform, _ in MULTI_SAMPLE_COMPONENTS[wildcards.comparison]
-    ]
-
-
 def plot_callers(wildcards, paper: bool = False) -> List[str]:
     """Heatmap callers: reference tools, then the Varlociraptor levels (paper: only those of plot_fdr_alpha)."""
     fdrs = config["fdr_alpha"]
