@@ -127,9 +127,13 @@ rule plot_heatmaps:
             "results/{call_type}/{seq_platform}/plots/{sample}_heatmap.{plot_type}",
             category="{call_type}",
             subcategory=lambda wildcards: seq_platform_to_name[wildcards.seq_platform],
-            labels={
+            labels=lambda wildcards: {
                 "file_type": "heatmap",
-                "sample": "{sample}",
+                "sample": (
+                    "all samples"
+                    if wildcards.sample in ["dummy", "all_samples"]
+                    else wildcards.sample
+                ),
             },
             caption="../report/heatmap.rst",
         ),
@@ -145,7 +149,8 @@ rule plot_heatmaps:
     params:
         bin_size=lambda wildcards: config["heatmap_bin_size"],
         plot_type=lambda wildcards: wildcards.plot_type,
-        fdr_levels=lambda wildcards: config["fdr_alpha"],
+        callers=plot_callers,
+        alpha_in_title=True,
     script:
         "../scripts/plot_heatmaps.py"
 
@@ -160,6 +165,26 @@ use rule plot_heatmaps as plot_heatmaps_paper with:
         bin_size=lambda wildcards: config["heatmap_bin_size"],
         plot_type=lambda wildcards: wildcards.plot_type,
         callers=lambda wildcards: plot_callers(wildcards, paper=True),
+        alpha_in_title=False,
+
+
+# Paper heatmaps of the single-sample long-read platforms (Modkit, pb-CpG-tools, Varlociraptor at plot_fdr_alpha)
+use rule plot_heatmaps_paper as plot_heatmaps_paper_single_sample with:
+    output:
+        heatmap=report(
+            "results/plots_paper/{call_type}/{seq_platform}/{sample}_heatmap.{plot_type}",
+            category="supplementary",
+            subcategory="plot_paper",
+            labels=lambda wildcards: {
+                "file": f"Heatmap {seq_platform_to_name[wildcards.seq_platform]}"
+            },
+            caption="../report/heatmap.rst",
+        ),
+    wildcard_constraints:
+        call_type="single_sample",
+        seq_platform="PacBio|Nanopore",
+    log:
+        "logs/plot_results/plot_heatmaps_paper_single_sample/{call_type}_{seq_platform}_{sample}_{plot_type}.log",
 
 
 rule plot_bars_illumina:

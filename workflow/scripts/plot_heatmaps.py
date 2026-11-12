@@ -32,12 +32,23 @@ def plot_heatmap(
         distances["meth_caller"] == meth_caller, "binary_discordance"
     ].iloc[0]
     number_points = df["count"].sum() // 1000
+    # Multi-sample: comparison as title; in the report additionally the caller
+    # (incl. FDR level) as second line, in the paper heatmaps only the comparison
+    comparison = snakemake.output[0].split("/")[-3]
+    if comparison in titles:
+        title = (
+            [titles[comparison], meth_caller_name]
+            if snakemake.params["alpha_in_title"]
+            else titles[comparison]
+        )
+    else:
+        title = meth_caller_name
 
     heatmap = (
         alt.Chart(
             df,
             title=alt.TitleParams(
-                text=titles.get(snakemake.output[0].split("/")[-3], meth_caller_name),
+                text=title,
                 subtitle=[
                     f"N = {number_points}k | Dᵣ = {mape:.2f} | Dₐ = {mae:.2f}",
                 ],
